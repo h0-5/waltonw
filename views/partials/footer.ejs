@@ -8,52 +8,46 @@
     <div class="ft-orb-r"></div>
     <div class="ft-orb-c"></div>
     <div class="ft-inner">
-        <div style="display:grid;grid-template-columns:1fr;gap:2.5rem">
-            <!-- Brand -->
-            <div>
-                <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.25rem">
-                    <div class="ft-logo-ring"><img src="<%= _ftSettings.site_logo_url || '/images/walton-logo.svg' %>" alt="Walton Family"></div>
-                    <div><div class="ft-brand-name">Walton Family</div><div class="ft-brand-tag">Community</div></div>
+        <!-- Brand -->
+        <div style="text-align:right">
+            <div style="display:flex;align-items:center;gap:.6rem;justify-content:flex-end">
+                <div>
+                    <div class="ft-brand-name">Walton Family</div>
+                    <div class="ft-brand-tag">Community</div>
                 </div>
-                <p class="ft-desc">عائلتك الأولى في وناسة تايم — انضم وعيش التجربة.</p>
-                <div class="ft-socials">
-                    <a href="<%= _ftSettings.discord_server_url || '#' %>" target="_blank" class="ft-social discord"><i class="fab fa-discord"></i></a>
-                </div>
+                <div class="ft-logo-ring"><img src="<%= _ftSettings.site_logo_url || '/images/walton-logo.svg' %>" alt="WF"></div>
             </div>
-            <!-- Quick Links -->
-            <div>
-                <h4 class="ft-col-title">روابط سريعة</h4>
-                <ul style="display:flex;flex-direction:column;gap:.25rem">
-                    <li><a href="/" class="ft-link"><i class="fas fa-chevron-left"></i>الرئيسية</a></li>
-                    <li><a href="/applications" class="ft-link"><i class="fas fa-chevron-left"></i>التقديمات</a></li>
-                    <li><a href="/rules" class="ft-link"><i class="fas fa-chevron-left"></i>القوانين</a></li>
-                    <li><a href="/store" class="ft-link"><i class="fas fa-chevron-left"></i>المتجر</a></li>
-                    <li><a href="/games" class="ft-link"><i class="fas fa-chevron-left"></i>الألعاب</a></li>
-                    <li><a href="/about" class="ft-link"><i class="fas fa-chevron-left"></i>من نحن</a></li>
-                </ul>
+            <div class="ft-socials" style="justify-content:flex-end">
+                <a href="<%= _ftSettings.discord_server_url || '#' %>" target="_blank" class="ft-social discord"><i class="fab fa-discord"></i></a>
             </div>
         </div>
-        <div class="ft-divider"></div>
+        <!-- Links -->
+        <div class="ft-links-wrap" style="text-align:right">
+            <div>
+                <h4 class="ft-col-title">روابط</h4>
+                <a href="/" class="ft-link"><i class="fas fa-chevron-left"></i>الرئيسية</a>
+                <a href="/store" class="ft-link"><i class="fas fa-chevron-left"></i>المتجر</a>
+                <a href="/games" class="ft-link"><i class="fas fa-chevron-left"></i>الألعاب</a>
+            </div>
+            <div>
+                <h4 class="ft-col-title">المزيد</h4>
+                <a href="/rules" class="ft-link"><i class="fas fa-chevron-left"></i>القوانين</a>
+                <a href="/applications" class="ft-link"><i class="fas fa-chevron-left"></i>التقديمات</a>
+                <a href="/about" class="ft-link"><i class="fas fa-chevron-left"></i>من نحن</a>
+            </div>
+        </div>
     </div>
-    <!-- Bottom bar -->
     <div class="ft-bottom">
         <div class="ft-cr">
             <span class="ft-cr-sym">&copy;</span>
             <span class="ft-cr-year"><%= new Date().getFullYear() %></span>
-            <span class="ft-cr-dot"></span>
-            <span class="ft-cr-brand">Walton Family</span>
-            <span class="ft-cr-sep">|</span>
-            <span class="ft-cr-rights"> جميع الحقوق محفوظة</span>
-            <i class="fas fa-lock ft-cr-lock"></i>
+            <span class="ft-cr-brand"> Walton Family</span>
         </div>
         <div class="ft-made">
             <i class="fas fa-code ft-made-icon"></i>
-            <span class="ft-dev-name ft-dev-special">KHARBOSH</span>
+            <span class="ft-dev-name">KHARBOSH</span>
             <span class="ft-dev-sep">&middot;</span>
             <span class="ft-dev-name">h05</span>
-            <span class="ft-made-text" style="color:rgba(var(--ac-rgb),.5)">:</span>
-            <span class="ft-made-text">Dev Team</span>
-            <i class="fas fa-code ft-made-icon"></i>
         </div>
     </div>
 </footer>
