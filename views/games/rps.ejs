@@ -1,0 +1,108 @@
+<%- include('../partials/header') %>
+<link rel="stylesheet" href="/css/games.css">
+</head>
+<body>
+<div class="game-page solo-game">
+  <div class="game-header">
+    <a href="/games" class="back-btn"><i class="fas fa-arrow-right"></i> العودة</a>
+    <h1><i class="fas fa-hand-rock"></i> حجر ورقة مقص</h1>
+    <div class="game-info-badge">
+      <i class="fas fa-user"></i> فردي
+    </div>
+  </div>
+
+  <div class="game-content">
+    <div class="rps-game">
+      <div class="score-display">
+        <div class="score-item">
+          <span class="score-label">أنت</span>
+          <span class="score-value" id="playerScore">0</span>
+        </div>
+        <div class="score-divider">:</div>
+        <div class="score-item">
+          <span class="score-label">الجهاز</span>
+          <span class="score-value" id="computerScore">0</span>
+        </div>
+      </div>
+
+      <div class="rps-choices">
+        <button class="rps-btn" data-choice="rock">
+          <i class="fas fa-hand-rock"></i>
+          <span>حجر</span>
+        </button>
+        <button class="rps-btn" data-choice="paper">
+          <i class="fas fa-hand-paper"></i>
+          <span>ورقة</span>
+        </button>
+        <button class="rps-btn" data-choice="scissors">
+          <i class="fas fa-hand-scissors"></i>
+          <span>مقص</span>
+        </button>
+      </div>
+
+      <div class="rps-result" id="rpsResult" style="display:none;">
+        <div class="result-choices">
+          <div class="result-choice player">
+            <span class="choice-label">أنت</span>
+            <i class="fas" id="playerChoice"></i>
+          </div>
+          <span class="vs">VS</span>
+          <div class="result-choice computer">
+            <span class="choice-label">الجهاز</span>
+            <i class="fas" id="computerChoice"></i>
+          </div>
+        </div>
+        <div class="result-text" id="resultText"></div>
+      </div>
+
+      <button class="game-btn primary" id="playAgain" style="display:none;">
+        <i class="fas fa-redo"></i> العب مرة أخرى
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+let playerScore = 0, computerScore = 0;
+const choices = ['rock', 'paper', 'scissors'];
+const icons = { rock: 'fa-hand-rock', paper: 'fa-hand-paper', scissors: 'fa-hand-scissors' };
+
+document.querySelectorAll('.rps-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const playerChoice = this.dataset.choice;
+    const computerChoice = choices[Math.floor(Math.random() * 3)];
+
+    document.getElementById('playerChoice').className = 'fas ' + icons[playerChoice];
+    document.getElementById('computerChoice').className = 'fas ' + icons[computerChoice];
+
+    let result = '';
+    if (playerChoice === computerChoice) {
+      result = 'تعادل!';
+    } else if (
+      (playerChoice === 'rock' && computerChoice === 'scissors') ||
+      (playerChoice === 'paper' && computerChoice === 'rock') ||
+      (playerChoice === 'scissors' && computerChoice === 'paper')
+    ) {
+      playerScore++;
+      result = 'فزت!';
+    } else {
+      computerScore++;
+      result = 'خسرت!';
+    }
+
+    document.getElementById('playerScore').textContent = playerScore;
+    document.getElementById('computerScore').textContent = computerScore;
+    document.getElementById('resultText').textContent = result;
+    document.getElementById('rpsResult').style.display = 'block';
+    document.getElementById('playAgain').style.display = 'flex';
+  });
+});
+
+document.getElementById('playAgain').addEventListener('click', function() {
+  document.getElementById('rpsResult').style.display = 'none';
+  this.style.display = 'none';
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+#section-palaces .wf-reveal,
+#section-vehicles .wf-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+}
+#section-palaces,
+#section-vehicles {
+    display: none;
+}
+#section-palaces.active,
+#section-vehicles.active {
+    display: block;
+}

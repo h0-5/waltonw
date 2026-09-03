@@ -1,0 +1,101 @@
+<%- include('layout') %>
+
+<div class="admin-content">
+  <!-- Animated Stats Row -->
+  <div class="stats-row">
+    <div class="stat-card" style="--delay:0">
+      <div class="stat-icon users"><i class="fas fa-users"></i></div>
+      <div class="stat-info">
+        <h3><%= stats.users || 0 %></h3>
+        <p>مستخدم</p>
+      </div>
+    </div>
+    <div class="stat-card" style="--delay:1">
+      <div class="stat-icon products"><i class="fas fa-box"></i></div>
+      <div class="stat-info">
+        <h3><%= stats.products || 0 %></h3>
+        <p>منتج</p>
+      </div>
+    </div>
+    <div class="stat-card" style="--delay:2">
+      <div class="stat-icon orders"><i class="fas fa-shopping-bag"></i></div>
+      <div class="stat-info">
+        <h3><%= stats.orders || 0 %></h3>
+        <p>طلب</p>
+      </div>
+    </div>
+    <div class="stat-card" style="--delay:3">
+      <div class="stat-icon tickets"><i class="fas fa-headset"></i></div>
+      <div class="stat-info">
+        <h3><%= stats.openTickets || 0 %></h3>
+        <p>تذكرة مفتوحة</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Secondary Stats -->
+  <div class="admin-grid" style="margin-bottom:20px">
+    <div class="admin-card" style="border-image: linear-gradient(135deg, rgba(var(--ac-rgb),0.3), transparent) 1; border-width: 1px; border-style: solid;">
+      <h3><i class="fas fa-chart-line"></i> نشاط آخر 24 ساعة</h3>
+      <div class="quick-actions">
+        <div class="quick-action">
+          <i class="fas fa-user-check" style="color:#4ade80"></i>
+          <div><div style="font-size:20px;font-weight:700"><%= stats.activeToday || 0 %></div><div style="font-size:11px;color:rgba(255,255,255,0.4)">أعضاء نشطين</div></div>
+        </div>
+        <div class="quick-action">
+          <i class="fas fa-cart-plus" style="color:#facc15"></i>
+          <div><div style="font-size:20px;font-weight:700"><%= stats.newOrders || 0 %></div><div style="font-size:11px;color:rgba(255,255,255,0.4)">طلبات جديدة</div></div>
+        </div>
+        <div class="quick-action">
+          <i class="fas fa-envelope-open" style="color:#fb923c"></i>
+          <div><div style="font-size:20px;font-weight:700"><%= stats.openTickets || 0 %></div><div style="font-size:11px;color:rgba(255,255,255,0.4)">تذاكر مفتوحة</div></div>
+        </div>
+        <div class="quick-action">
+          <i class="fas fa-box" style="color:var(--ac)"></i>
+          <div><div style="font-size:20px;font-weight:700"><%= stats.products || 0 %></div><div style="font-size:11px;color:rgba(255,255,255,0.4)">المنتجات</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-card" style="border-image: linear-gradient(135deg, rgba(var(--ac-rgb),0.3), transparent) 1; border-width: 1px; border-style: solid;">
+      <h3><i class="fas fa-bolt"></i> إجراءات سريعة</h3>
+      <div class="quick-actions">
+        <a href="/admin/users" class="quick-action"><i class="fas fa-users"></i> المستخدمين</a>
+        <a href="/admin/products" class="quick-action"><i class="fas fa-box"></i> المنتجات</a>
+        <a href="/admin/orders" class="quick-action"><i class="fas fa-shopping-bag"></i> الطلبات</a>
+        <a href="/admin/news" class="quick-action"><i class="fas fa-newspaper"></i> الأخبار</a>
+        <a href="/admin/rules" class="quick-action"><i class="fas fa-gavel"></i> القوانين</a>
+        <a href="/admin/discounts" class="quick-action"><i class="fas fa-tag"></i> أكواد الخصم</a>
+        <a href="/admin/broadcast" class="quick-action"><i class="fas fa-bullhorn"></i> البث</a>
+        <a href="/admin/settings" class="quick-action"><i class="fas fa-cog"></i> الإعدادات</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Row -->
+  <div class="admin-grid">
+    <div class="admin-card" style="border-image: linear-gradient(135deg, rgba(var(--ac-rgb),0.3), transparent) 1; border-width: 1px; border-style: solid;">
+      <h3><i class="fas fa-shield-alt"></i> الوصول السريع</h3>
+      <div class="quick-actions">
+        <a href="/admin/roles" class="quick-action"><i class="fas fa-user-shield"></i> الرتب</a>
+        <a href="/admin/banned" class="quick-action"><i class="fas fa-ban"></i> المحظورين</a>
+        <a href="/admin/about" class="quick-action"><i class="fas fa-info-circle"></i> من نحن</a>
+        <a href="/admin/logs" class="quick-action"><i class="fas fa-history"></i> السجلات</a>
+      </div>
+    </div>
+    <div class="admin-card" style="border-image: linear-gradient(135deg, rgba(var(--ac-rgb),0.3), transparent) 1; border-width: 1px; border-style: solid; text-align:center; display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:180px">
+      <div style="font-size:64px;margin-bottom:10px;background:linear-gradient(135deg,var(--ac),#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:900">WF</div>
+      <div style="color:rgba(255,255,255,0.5);font-size:13px">Admin Panel — Walton Family</div>
+      <div style="color:rgba(255,255,255,0.25);font-size:11px;margin-top:4px">Node.js v2.0</div>
+    </div>
+  </div>
+</div>
+
+<style>
+.stat-card { animation: slideUp 0.5s ease calc(var(--delay) * 0.1s) both; }
+@keyframes slideUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+.admin-card { animation: fadeIn 0.4s ease both; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+</style>
+
+<%- include('admin_footer') %>

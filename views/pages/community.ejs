@@ -1,0 +1,84 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+
+<div class="community-container">
+    <div class="community-layout">
+        <!-- Sidebar -->
+        <div class="community-sidebar">
+            <div class="sidebar-header">
+                <h3>
+                    <div class="sidebar-icon">
+                        <i class="fas fa-users text-white"></i>
+                    </div>
+                    أعضاء العائلة
+                </h3>
+            </div>
+            <div class="online-users" id="online-users">
+                <div class="user-item">
+                    <div class="user-avatar">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                    <div class="user-info">
+                        <div class="user-name">جاري التحميل...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Container -->
+        <div class="chat-container">
+            <!-- Chat Header -->
+            <div class="chat-header">
+                <h2>
+                    <div class="chat-icon">
+                        <i class="fas fa-comments text-white text-2xl"></i>
+                    </div>
+                    <span>مجتمع Walton Family</span>
+                    <span class="verified-badge">
+                        <i class="fas fa-shield-check"></i>
+                        لأعضاء العائلة فقط
+                    </span>
+                </h2>
+                <button id="muteNotifBtn" onclick="toggleCommunityNotif()" title="كتم إشعارات المجتمع"
+                    style="margin-right:auto;display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:10px;font-size:.78rem;font-weight:700;cursor:pointer;border:1px solid;transition:all .2s;background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.35);color:#86efac;">
+                    <i id="muteNotifIcon" class="fas fa-bell"></i>
+                    <span id="muteNotifText">الإشعارات مفعّلة</span>
+                </button>
+            </div>
+
+            <!-- Chat Messages -->
+            <div class="chat-messages" id="chat-messages">
+                <div class="empty-state">
+                    <i class="fas fa-comments"></i>
+                    <p>مرحباً بك في مجتمع Walton Family!</p>
+                    <p style="font-size: 16px; color: #666;">ابدأ المحادثة مع الأعضاء الموثقين</p>
+                </div>
+            </div>
+
+            <!-- Chat Input -->
+            <div class="chat-input-container">
+                <div id="chat-locked-notice" style="display:none;text-align:center;padding:10px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:10px;color:#fca5a5;font-size:.85rem;font-weight:700;margin-bottom:8px;">
+                    <i class="fas fa-lock" style="margin-left:6px;"></i>هذا الشات مقفل حالياً
+                </div>
+                <% if (user) { %>
+                <form id="chatForm" class="chat-form" onsubmit="return sendMessage(event)">
+                    <input type="text" id="messageInput" placeholder="اكتب رسالتك..." maxlength="1000" autocomplete="off">
+                    <button type="submit" class="send-btn" id="sendBtn">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+                <% } else { %>
+                <a href="/auth/discord" class="login-prompt">
+                    <i class="fab fa-discord"></i> سجّل دخول للدردشة
+                </a>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>
+<script src="/js/main.js"></script>
+<script src="/js/community.js"></script>
+</body>
+</html>

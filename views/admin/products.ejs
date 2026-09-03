@@ -1,0 +1,137 @@
+<%- include('layout') %>
+<script>document.getElementById('pageTitle').textContent = 'إدارة المنتجات';</script>
+
+<div class="admin-content">
+  <div class="content-header">
+    <h2><i class="fas fa-box"></i> إدارة المنتجات</h2>
+    <button class="add-btn" onclick="document.getElementById('addProductModal').classList.add('show')">
+      <i class="fas fa-plus"></i> إضافة منتج
+    </button>
+  </div>
+
+  <div class="table-container">
+    <table class="admin-table" id="productsTable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>الصورة</th>
+          <th>الاسم</th>
+          <th>التصنيف</th>
+          <th>السعر</th>
+          <th>المخزون</th>
+          <th>الحالة</th>
+          <th>إجراءات</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (products && products.length > 0) { %>
+          <% products.forEach(p => { %>
+            <tr>
+              <td><%= p.id %></td>
+              <td>
+                <% if (p.image) { %>
+                  <img src="<%= p.image %>" alt="img" class="table-img">
+                <% } else { %>
+                  <div class="no-img"><i class="fas fa-box"></i></div>
+                <% } %>
+              </td>
+              <td><%= p.name %></td>
+              <td><span class="category-badge"><%= p.category_type || 'عام' %></span></td>
+              <td>
+                <% if (p.price_points) { %><%= p.price_points %> نقطة<% } %>
+                <% if (p.price_money) { %>$<%= p.price_money %><% } %>
+              </td>
+              <td><%= p.stock || 0 %></td>
+              <td>
+                <span class="status-badge <%= p.is_active ? 'active' : 'inactive' %>">
+                  <%= p.is_active ? 'نشط' : 'معطل' %>
+                </span>
+              </td>
+              <td>
+                <div class="action-btns">
+                  <button class="action-btn edit" onclick="editProduct(<%= p.id %>)"><i class="fas fa-edit"></i></button>
+                  <button class="action-btn delete" onclick="deleteProduct(<%= p.id %>)"><i class="fas fa-trash"></i></button>
+                </div>
+              </td>
+            </tr>
+          <% }) %>
+        <% } else { %>
+          <tr><td colspan="8" class="empty-row">لا يوجد منتجات</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Add Product Modal -->
+<div class="modal" id="addProductModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>إضافة منتج جديد</h2>
+      <button class="modal-close" onclick="closeModal('addProductModal')">&times;</button>
+    </div>
+    <form id="addProductForm" class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>اسم المنتج</label>
+          <input type="text" name="name" required>
+        </div>
+        <div class="form-group">
+          <label>التصنيف</label>
+          <select name="category_type">
+            <option value="bot_item">عنصر بوت</option>
+            <option value="purchase">شراء</option>
+            <option value="random_box">صندوق عشوائي</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>الوصف</label>
+        <textarea name="description" rows="3"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>السعر (نقاط)</label>
+          <input type="number" name="price_points" min="0">
+        </div>
+        <div class="form-group">
+          <label>السعر ($)</label>
+          <input type="number" name="price_money" step="0.01" min="0">
+        </div>
+        <div class="form-group">
+          <label>المخزون</label>
+          <input type="number" name="stock" min="0" value="0">
+        </div>
+      </div>
+      <button type="submit" class="submit-btn"><i class="fas fa-plus"></i> إضافة</button>
+    </form>
+  </div>
+</div>
+
+<script>
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+function deleteProduct(id) {
+  if (confirm('هل أنت متأكد من حذف هذا المنتج؟')) {
+    fetch('/api/admin/products/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ product_id: id })
+    }).then(() => location.reload());
+  }
+}
+
+document.getElementById('addProductForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const formData = new FormData(this);
+  const data = Object.fromEntries(formData);
+  await fetch('/api/admin/products/add', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  location.reload();
+});
+</script>
+
+<%- include('admin_footer') %>

@@ -1,0 +1,142 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+
+<div class="cy-about-page">
+    <!-- Sticky Side Nav -->
+    <nav class="about-nav" id="aboutNav">
+        <a href="#about-hero" data-label="البداية" class="active"></a>
+        <a href="#about-stats" data-label="الإحصائيات"></a>
+        <a href="#about-story" data-label="القصة"></a>
+        <a href="#about-members" data-label="الأعضاء"></a>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="about-hero" class="cy-about-hero">
+        <div class="cy-about-hero-icon">
+            <div class="hex-ring"></div>
+            <div class="hex-ring-inner"></div>
+            <i class="fas fa-scroll"></i>
+        </div>
+        <h1 class="page-heading">The Story of Walton Family</h1>
+        <p class="cy-about-hero-sub">The story of ambition, strategy, and enduring legacy</p>
+        <div class="cy-about-hero-line"></div>
+        <div class="cy-about-hero-location">
+            <i class="fas fa-location-dot"></i>
+            New York City
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="cy-about-main">
+        <!-- Stats Section -->
+        <section id="about-stats" class="about-stats">
+            <div class="stat-card wf-reveal">
+                <i class="fas fa-users stat-icon"></i>
+                <span class="stat-number" data-target="40+">0</span>
+                <span class="stat-label">Members</span>
+            </div>
+            <div class="stat-card wf-reveal">
+                <i class="fas fa-book-open stat-icon"></i>
+                <span class="stat-number" data-target="8">0</span>
+                <span class="stat-label">Chapters</span>
+            </div>
+            <div class="stat-card wf-reveal">
+                <i class="fas fa-calendar stat-icon"></i>
+                <span class="stat-number" data-target="2026">0</span>
+                <span class="stat-label">Established</span>
+            </div>
+            <div class="stat-card wf-reveal">
+                <i class="fas fa-location-dot stat-icon"></i>
+                <span class="stat-number" data-target="NYC">0</span>
+                <span class="stat-label">HQ</span>
+            </div>
+        </section>
+
+        <!-- Timeline Story -->
+        <section id="about-story">
+            <h2 class="about-section-title wf-reveal">Our Story</h2>
+            <div class="about-timeline">
+                <% if (typeof paragraphs !== 'undefined' && paragraphs && paragraphs.length > 0) { %>
+                    <% paragraphs.forEach(function(para, i) { %>
+                        <% var text = typeof para === 'object' ? (para.text || '') : para; %>
+                        <% if (text.trim()) { %>
+                        <div class="timeline-item wf-reveal" style="transition-delay:<%= i * 0.05 %>s">
+                            <div class="tl-card">
+                                <div class="tl-chapter-label">
+                                    <span class="chapter-num">Chapter <%= String(i + 1).padStart(2, '0') %></span>
+                                </div>
+                                <p class="tl-text"><%= text %></p>
+                            </div>
+                        </div>
+                        <% } %>
+                    <% }); %>
+                <% } else { %>
+                <div class="timeline-item wf-reveal">
+                    <div class="tl-card">
+                        <div class="tl-chapter-label">
+                            <span class="chapter-num">Chapter 01</span>
+                        </div>
+                        <p class="tl-text">In the city of New York City, where interests intertwine and wills are tested under the pressure of ambition and competition, the name Walton was not merely a family surname circulated among people; it was the starting point for a comprehensive strategic vision.</p>
+                    </div>
+                </div>
+                <div class="timeline-item wf-reveal" style="transition-delay:0.05s">
+                    <div class="tl-card">
+                        <div class="tl-chapter-label">
+                            <span class="chapter-num">Chapter 02</span>
+                        </div>
+                        <p class="tl-text">From the very beginning, Hayder Walton and Robson Walton understood that true power is not imposed by loud voices, nor gained through fleeting impulses, but is built through careful planning, consistent discipline, and a deep understanding of power dynamics.</p>
+                    </div>
+                </div>
+                <% } %>
+            </div>
+        </section>
+
+        <!-- Members Section -->
+        <section id="about-members" class="about-members">
+            <h2 class="about-section-title wf-reveal">Founders</h2>
+            <div class="members-grid">
+                <% if (typeof members !== 'undefined' && members && members.length > 0) { %>
+                    <% members.forEach(function(member) { %>
+                    <div class="member-card wf-reveal">
+                        <div class="mc-avatar" <% if (member.avatar) { %>style="background-image:url('<%= member.avatar %>');background-size:cover;background-position:center"<% } %>>
+                            <% if (!member.avatar) { %>
+                            <span class="avatar-fallback"><%= member.name.split(' ').map(function(p){ return p.charAt(0).toUpperCase(); }).join('').substring(0, 2) %></span>
+                            <% } %>
+                        </div>
+                        <div class="mc-name"><%= member.name %></div>
+                        <div class="mc-title" style="color:<%= member.role_color || '#9ca3af' %>"><%= member.role || 'Founder' %></div>
+                        <div class="mc-discord">
+                            <i class="fab fa-discord"></i>
+                            <span><%= member.discord_user || '' %></span>
+                        </div>
+                    </div>
+                    <% }); %>
+                <% } else { %>
+                <div class="member-card wf-reveal">
+                    <div class="mc-avatar"><span class="avatar-fallback">HW</span></div>
+                    <div class="mc-name">Hayder Walton</div>
+                    <div class="mc-title" style="color:#f97316">Patriarch</div>
+                    <div class="mc-discord"><i class="fab fa-discord"></i><span>e.d7_</span></div>
+                </div>
+                <div class="member-card wf-reveal">
+                    <div class="mc-avatar"><span class="avatar-fallback">RW</span></div>
+                    <div class="mc-name">Robson Walton</div>
+                    <div class="mc-title" style="color:#f97316">Patriarch</div>
+                    <div class="mc-discord"><i class="fab fa-discord"></i><span>h0.5</span></div>
+                </div>
+                <div class="member-card wf-reveal">
+                    <div class="mc-avatar"><span class="avatar-fallback">AW</span></div>
+                    <div class="mc-name">Abdullah Walton</div>
+                    <div class="mc-title" style="color:#f97316">Founder</div>
+                    <div class="mc-discord"><i class="fab fa-discord"></i><span>59u5</span></div>
+                </div>
+                <% } %>
+            </div>
+        </section>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>
+<script src="/js/main.js"></script>
+</body>
+</html>

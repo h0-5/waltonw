@@ -1,0 +1,105 @@
+<%- include('../partials/header') %>
+<link rel="stylesheet" href="/css/games.css">
+</head>
+<body>
+<div class="game-page">
+  <div class="game-header">
+    <a href="/games" class="back-btn"><i class="fas fa-arrow-right"></i> العودة</a>
+    <h1><i class="fas fa-user-secret"></i> مافيا</h1>
+    <div class="game-info-badge">
+      <i class="fas fa-users"></i> 4-12 لاعب
+    </div>
+  </div>
+
+  <div class="game-content">
+    <!-- Room Lobby -->
+    <div class="game-lobby" id="gameLobby">
+      <div class="lobby-card">
+        <h2>انضم لغرفة</h2>
+        <p>العب مع أصدقائك في لعبة المافيا المثيرة</p>
+        
+        <div class="lobby-actions">
+          <div class="form-group">
+            <label>رقم الغرفة</label>
+            <input type="text" id="roomCode" placeholder="أدخل رمز الغرفة">
+          </div>
+          <button class="game-btn primary" id="joinRoom">
+            <i class="fas fa-sign-in-alt"></i> انضم
+          </button>
+          <div class="divider"><span>أو</span></div>
+          <button class="game-btn secondary" id="createRoom">
+            <i class="fas fa-plus"></i> إنشاء غرفة جديدة
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game Room -->
+    <div class="game-room" id="gameRoom" style="display:none;">
+      <div class="room-header">
+        <span class="room-code">الغرفة: <strong id="displayRoomCode">---</strong></span>
+        <span class="room-players">اللاعبون: <strong id="playerCount">0</strong>/12</span>
+        <button class="game-btn small" id="startGame" style="display:none;">
+          <i class="fas fa-play"></i> بدء اللعبة
+        </button>
+      </div>
+      <div class="players-grid" id="playersGrid"></div>
+      <div class="game-chat" id="gameChat"></div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+let currentRoom = null;
+let isHost = false;
+
+document.getElementById('createRoom').addEventListener('click', async () => {
+  const res = await fetch('/api/games/room/create', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ game: 'mafia' })
+  });
+  const data = await res.json();
+  if (data.roomCode) {
+    joinRoom(data.roomCode);
+  }
+});
+
+document.getElementById('joinRoom').addEventListener('click', () => {
+  const code = document.getElementById('roomCode').value.trim();
+  if (code) joinRoom(code);
+});
+
+function joinRoom(code) {
+  socket.emit('join-room', { room: code, game: 'mafia' });
+  currentRoom = code;
+  document.getElementById('gameLobby').style.display = 'none';
+  document.getElementById('gameRoom').style.display = 'block';
+  document.getElementById('displayRoomCode').textContent = code;
+}
+
+socket.on('room-update', (data) => {
+  document.getElementById('playerCount').textContent = data.players.length;
+  const grid = document.getElementById('playersGrid');
+  grid.innerHTML = data.players.map(p => `
+    <div class="player-card ${p.isHost ? 'host' : ''}">
+      <img src="${p.avatar || '/images/default-avatar.png'}" alt="avatar">
+      <span>${p.username}</span>
+      ${p.isHost ? '<span class="host-badge">مضيف</span>' : ''}
+    </div>
+  `).join('');
+  if (data.isHost) {
+    document.getElementById('startGame').style.display = 'flex';
+    isHost = true;
+  }
+});
+
+socket.on('game-start', (data) => {
+  WaltonAPI.showNotification('بدأت اللعبة! دورك الآن.', 'info');
+});
+</script>
+</body>
+</html>

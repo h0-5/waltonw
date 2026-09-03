@@ -1,0 +1,530 @@
+/* ═══════════════════════════════════════════════════════════════
+   CYBERPUNK & GAMING UI — PROPERTIES PAGE — WALTON FAMILY
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+    --bg-deep: #0a0910;
+    --bg: #120f1e;
+    --bg-card: rgba(18, 15, 30, 0.7);
+    --bg-card-solid: #120f1e;
+    --accent: var(--ac, #a78bfa);
+    --accent-rgb: var(--ac-rgb, 167, 139, 250);
+    --accent-dim: rgba(var(--accent-rgb), 0.12);
+    --accent-glow: rgba(var(--accent-rgb), 0.25);
+    --accent-light: var(--ac-light, #c4b5fd);
+    --accent-light-rgb: var(--ac-light-rgb, 196, 181, 253);
+    --purple: #780ecf;
+    --purple-rgb: 120, 14, 207;
+    --purple-dark: #600ba5;
+    --purple-dim: rgba(120, 14, 207, 0.15);
+    --purple-glow: rgba(120, 14, 207, 0.3);
+    --border: rgba(167, 139, 250, 0.12);
+    --border-hover: rgba(167, 139, 250, 0.35);
+    --text: #f0eef6;
+    --text-dim: rgba(240, 238, 246, 0.5);
+    --danger: #ff3860;
+    --neon-green: #39ff14;
+    --amber: #f59e0b;
+}
+
+* {
+    -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
+}
+
+/* ── Cyberpunk Background Grid ── */
+.cy-props-page {
+    min-height: 100vh;
+    background-color: var(--bg-deep);
+    background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(var(--purple-rgb),0.03) 59px, rgba(var(--purple-rgb),0.03) 60px),
+        repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(var(--purple-rgb),0.03) 59px, rgba(var(--purple-rgb),0.03) 60px);
+    position: relative;
+    padding-bottom: 3rem;
+}
+
+/* Ambient glow */
+.cy-props-page::before {
+    content: '';
+    position: fixed;
+    top: -20%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 50%;
+    background: radial-gradient(ellipse, rgba(var(--purple-rgb),0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.cy-props-page::after {
+    content: '';
+    position: fixed;
+    bottom: -10%;
+    right: -10%;
+    width: 40%;
+    height: 40%;
+    background: radial-gradient(ellipse, rgba(var(--accent-rgb),0.04) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ── Hero Section ── */
+.cy-props-hero {
+    width: 100%;
+    padding: 3.5rem 1.5rem 2.5rem;
+    text-align: center;
+    position: relative;
+    background: linear-gradient(180deg, rgba(var(--purple-rgb),0.15) 0%, rgba(var(--purple-rgb),0.05) 40%, transparent 100%);
+    overflow: hidden;
+    z-index: 1;
+}
+
+.cy-props-hero::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 1px; height: 60px;
+    background: linear-gradient(180deg, var(--accent), transparent);
+    opacity: 0.4;
+}
+
+.cy-props-hero::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(var(--purple-rgb),0.04) 39px, rgba(var(--purple-rgb),0.04) 40px),
+        repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(var(--purple-rgb),0.04) 39px, rgba(var(--purple-rgb),0.04) 40px);
+    pointer-events: none;
+}
+
+/* Hex Ring Icon */
+.cy-props-hero-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px; height: 80px;
+    position: relative;
+    margin-bottom: 1.2rem;
+    z-index: 2;
+}
+
+.cy-props-hero-icon .hex-ring {
+    position: absolute;
+    inset: -8px;
+    border: 1.5px solid rgba(var(--accent-rgb),0.2);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    animation: hexPulse 4s ease-in-out infinite;
+}
+
+.cy-props-hero-icon .hex-ring-inner {
+    position: absolute;
+    inset: -2px;
+    border: 1px solid rgba(var(--accent-rgb),0.35);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+
+@keyframes hexPulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 0.85; }
+}
+
+.cy-props-hero-icon i {
+    font-size: 2.2rem;
+    color: var(--accent);
+    text-shadow: 0 0 12px rgba(var(--accent-rgb),0.6);
+    position: relative;
+    z-index: 2;
+}
+
+/* Title */
+.cy-props-hero h1 {
+    font-size: clamp(2.2rem, 6vw, 3.2rem);
+    font-weight: 900;
+    line-height: 1.15;
+    margin: 0 0 0.5rem 0;
+    letter-spacing: -0.02em;
+    position: relative;
+    z-index: 2;
+    background: linear-gradient(135deg, #ffffff 10%, var(--accent-light, #c4b5fd) 40%, var(--accent, #a78bfa) 70%, var(--purple, #780ecf) 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: heroTitleShine 5s ease-in-out infinite;
+    filter: drop-shadow(0 0 20px rgba(var(--purple-rgb),0.2));
+}
+
+@keyframes heroTitleShine {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.cy-props-hero-sub {
+    color: var(--text-dim);
+    font-size: 0.95rem;
+    font-weight: 400;
+    margin: 0 0 1.5rem 0;
+    position: relative;
+    z-index: 2;
+}
+
+.cy-props-hero-line {
+    width: 120px;
+    height: 2px;
+    margin: 0 auto;
+    background: linear-gradient(90deg, var(--accent), var(--purple));
+    border-radius: 2px;
+    position: relative;
+    z-index: 2;
+}
+
+.cy-props-hero-line::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    background: linear-gradient(90deg, var(--accent), var(--purple));
+    border-radius: 4px;
+    filter: blur(6px);
+    opacity: 0.4;
+}
+
+/* ── Main Container ── */
+.cy-props-main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 1.5rem 3rem;
+    position: relative;
+    z-index: 1;
+}
+
+/* ── Tab Navigation ── */
+.cy-props-tabs {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    padding: 0 1rem;
+}
+
+.cy-props-tab {
+    padding: 0.65rem 1.5rem;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    color: var(--text-dim);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.cy-props-tab:hover {
+    border-color: var(--border-hover);
+    color: var(--text);
+}
+
+.cy-props-tab-active {
+    background: linear-gradient(135deg, var(--accent), rgba(var(--accent-rgb),0.7)) !important;
+    color: #fff !important;
+    border-color: transparent !important;
+    box-shadow: 0 0 15px rgba(var(--accent-rgb),0.25);
+    font-weight: 800;
+}
+
+.cy-props-tab i {
+    font-size: 0.8rem;
+}
+
+/* ── Property Card — Inventory Slot Style ── */
+.cy-prop-card {
+    position: relative;
+    background: linear-gradient(160deg, rgba(18, 15, 30, 0.98), rgba(10, 9, 16, 0.95));
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Gradient border glow */
+.cy-prop-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: linear-gradient(160deg, rgba(var(--accent-rgb),0.4), transparent 40%, transparent 60%, rgba(var(--purple-rgb),0.4));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* Corner accents */
+.cy-prop-card .corner-tl {
+    position: absolute;
+    top: 0; left: 0;
+    width: 20px; height: 20px;
+    border-top: 2px solid var(--accent);
+    border-left: 2px solid var(--accent);
+    border-radius: 14px 0 0 0;
+    opacity: 0.4;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: 11;
+}
+
+.cy-prop-card .corner-br {
+    position: absolute;
+    bottom: 0; right: 0;
+    width: 20px; height: 20px;
+    border-bottom: 2px solid var(--purple);
+    border-right: 2px solid var(--purple);
+    border-radius: 0 0 14px 0;
+    opacity: 0.4;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: 11;
+}
+
+.cy-prop-card:hover {
+    border-color: var(--border-hover);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3), 0 0 15px rgba(var(--purple-rgb),0.08);
+}
+
+.cy-prop-card:hover .corner-tl,
+.cy-prop-card:hover .corner-br { opacity: 1; }
+
+.cy-prop-card:hover::before {
+    background: linear-gradient(160deg, rgba(var(--accent-rgb),0.5), transparent 30%, transparent 70%, rgba(var(--purple-rgb),0.5));
+}
+
+/* ── Card Header ── */
+.cy-prop-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 1rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    z-index: 1;
+    background: linear-gradient(180deg, rgba(var(--accent-rgb),0.05), transparent);
+}
+
+.cy-prop-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: rgba(var(--accent-rgb),0.12);
+    border: 1px solid rgba(var(--accent-rgb),0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cy-prop-card:hover .cy-prop-icon {
+    background: rgba(var(--accent-rgb),0.2);
+    border-color: rgba(var(--accent-rgb),0.4);
+    transform: scale(1.05);
+    box-shadow: 0 0 12px rgba(var(--accent-rgb),0.2);
+}
+
+.cy-prop-title {
+    font-weight: 800;
+    font-size: 1.05rem;
+    color: #fff;
+    margin: 0;
+}
+
+/* ── Image Container ── */
+.cy-prop-img-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    cursor: pointer;
+    background: linear-gradient(135deg, rgba(var(--purple-rgb),0.08), rgba(var(--accent-rgb),0.03));
+}
+
+.cy-prop-img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+    transition: transform 0.4s ease;
+}
+
+.cy-prop-img-wrap:hover img {
+    transform: scale(1.03);
+}
+
+/* Dark vignette overlay */
+.cy-prop-img-wrap::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0,0,0,0.15), transparent 50%, rgba(0,0,0,0.15));
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* Zoom icon hint */
+.cy-prop-img-hint {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    z-index: 5;
+    background: rgba(10, 9, 16, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 4px 10px;
+    border-radius: 0;
+    border: 1px solid rgba(var(--accent-rgb),0.15);
+    clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 5px 100%, 0 calc(100% - 5px));
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--accent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.cy-prop-img-wrap:hover .cy-prop-img-hint {
+    opacity: 1;
+}
+
+/* ── Empty State ── */
+.cy-empty {
+    text-align: center;
+    padding: 3.5rem 2rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+.cy-empty-icon {
+    width: 70px; height: 70px;
+    background: rgba(var(--accent-rgb),0.08);
+    border: 1px solid rgba(var(--accent-rgb),0.15);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.2rem;
+    color: rgba(var(--accent-rgb),0.35);
+    font-size: 1.8rem;
+}
+
+.cy-empty h3 {
+    color: rgba(255,255,255,0.6);
+    font-size: 1.1rem;
+    font-weight: 800;
+    margin-bottom: 0.3rem;
+}
+
+.cy-empty p {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+}
+
+/* ── Lightbox ── */
+.cy-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(0, 0, 0, 0.95);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.cy-lightbox.open {
+    display: flex;
+}
+
+.cy-lightbox img {
+    max-width: 95vw;
+    max-height: 90vh;
+    object-fit: contain;
+    border-radius: 12px;
+    box-shadow: 0 0 60px rgba(var(--purple-rgb),0.15), 0 20px 60px rgba(0,0,0,0.5);
+    border: 1px solid rgba(var(--accent-rgb),0.1);
+}
+
+.cy-lightbox-close {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 44px; height: 44px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    color: rgba(255,255,255,0.7);
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.cy-lightbox-close:hover {
+    background: rgba(255,56,96,0.2);
+    border-color: rgba(255,56,96,0.3);
+    color: #fff;
+}
+
+/* ── Touch devices ── */
+@media (hover: none) and (pointer: coarse) {
+    .cy-prop-card:hover { border-color: var(--border); box-shadow: 0 4px 24px rgba(0,0,0,0.3); }
+    .cy-prop-card:hover .corner-tl,
+    .cy-prop-card:hover .corner-br { opacity: 0.4; }
+    .cy-prop-card:hover .cy-prop-icon { transform: none; }
+    .cy-prop-img-wrap:hover img { transform: none; }
+    .cy-prop-img-hint { opacity: 0.6; }
+}
+
+/* ── Mobile ── */
+@media (max-width: 640px) {
+    .cy-props-hero { padding: 2.5rem 1rem 2rem; }
+    .cy-props-hero-icon { width: 64px; height: 64px; }
+    .cy-props-hero-icon i { font-size: 1.8rem; }
+    .cy-props-main { padding: 0 1rem 2rem; }
+    .cy-props-tabs { gap: 0.5rem; }
+    .cy-props-tab { padding: 0.55rem 1.2rem; font-size: 0.8rem; }
+    .cy-prop-card { border-radius: 12px; margin-bottom: 1.2rem; }
+    .cy-prop-header { padding: 0.8rem 1rem; gap: 10px; }
+    .cy-prop-icon { width: 36px; height: 36px; font-size: 0.95rem; }
+    .cy-prop-title { font-size: 0.95rem; }
+}
+
+/* ── Small Mobile ── */
+@media (max-width: 480px) {
+    .cy-props-hero h1 { font-size: 1.8rem; }
+    .cy-props-hero-sub { font-size: 0.85rem; }
+    .cy-prop-card { border-radius: 10px; }
+    .cy-prop-icon { width: 32px; height: 32px; font-size: 0.85rem; border-radius: 8px; }
+    .cy-prop-title { font-size: 0.9rem; }
+}

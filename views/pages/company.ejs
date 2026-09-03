@@ -1,0 +1,210 @@
+<%- include('../partials/header') %>
+<link rel="stylesheet" href="/css/company-page.css">
+<%- include('../partials/navbar') %>
+
+<div class="cy-co-page" dir="rtl">
+    <div class="cy-co-hero">
+        <div class="cy-co-hero-icon">
+            <div class="hex-ring"></div>
+            <div class="hex-ring-inner"></div>
+            <i class="fas fa-briefcase"></i>
+        </div>
+        <h1 class="page-heading">الشركة</h1>
+        <p class="cy-co-hero-sub">معلومات و أنشطة شركة والتون</p>
+        <div class="cy-co-hero-line"></div>
+    </div>
+
+    <div class="cy-co-main">
+        <div class="cy-co-tabs">
+            <button onclick="showTab('info')" id="tab-info" class="cy-co-tab cy-co-tab-active">
+                <i class="fas fa-info-circle"></i>معلومات الشركة
+            </button>
+            <button onclick="showTab('activities')" id="tab-activities" class="cy-co-tab">
+                <i class="fas fa-star"></i>الأنشطة
+            </button>
+        </div>
+
+        <!-- Info Section -->
+        <div id="section-info" class="active">
+            <% if (infoItems.length === 0) { %>
+            <div class="cy-co-empty cy-co-reveal">
+                <div class="cy-co-empty-icon"><i class="fas fa-info-circle"></i></div>
+                <h3>لا توجد معلومات مضافة حالياً</h3>
+                <p>سيتم إضافة معلومات الشركة قريباً</p>
+            </div>
+            <% } else { %>
+            <% infoItems.forEach(function(item, i) { %>
+            <div class="cy-co-card cy-co-reveal" style="transition-delay:<%= i * 0.08 %>s">
+                <div class="corner-tl"></div><div class="corner-br"></div>
+                <div class="cy-co-header">
+                    <div class="cy-co-icon"><i class="fas fa-building"></i></div>
+                    <h3 class="cy-co-title"><%= item.title %></h3>
+                </div>
+                <div class="cy-co-body">
+                    <% if (item.description) { %><p class="cy-co-desc"><%= item.description %></p><% } %>
+                    <% if (item.image) { %>
+                    <div class="cy-co-img-wrap" onclick="openLightbox(this.dataset.img)" data-img="<%= item.image %>">
+                        <img src="<%= item.image %>" alt="<%= item.title %>" loading="<%= i <= 1 ? 'eager' : 'lazy' %>" decoding="async">
+                        <div class="cy-co-img-hint"><i class="fas fa-search-plus"></i> تكبير</div>
+                    </div>
+                    <% } %>
+                </div>
+            </div>
+            <% }); %>
+            <% } %>
+        </div>
+
+        <!-- Activities Section -->
+        <div id="section-activities">
+            <% if (activityItems.length === 0) { %>
+            <div class="cy-co-empty cy-co-reveal">
+                <div class="cy-co-empty-icon"><i class="fas fa-star"></i></div>
+                <h3>لا توجد أنشطة مضافة حالياً</h3>
+                <p>سيتم إضافة أنشطة الشركة قريباً</p>
+            </div>
+            <% } else { %>
+            <% activityItems.forEach(function(item, i) {
+                var isSvc = !!item.service_status;
+                var statusMap = {available:{bg:'rgba(52,211,153,0.12)',c:'#34d399',bd:'rgba(52,211,153,0.25)',l:'متوفر'},ended:{bg:'rgba(239,68,68,0.12)',c:'#ef4444',bd:'rgba(239,68,68,0.25)',l:'منتهي'},coming_soon:{bg:'rgba(234,179,8,0.12)',c:'#eab308',bd:'rgba(234,179,8,0.25)',l:'قريباً'}};
+                var st = statusMap[item.service_status] || {};
+            %>
+            <div class="cy-co-card cy-co-reveal" style="transition-delay:<%= i * 0.08 %>s<%= isSvc ? ';border-color:rgba(var(--accent-rgb),0.2)' : '' %>">
+                <div class="corner-tl"></div><div class="corner-br"></div>
+                <div class="cy-co-header">
+                    <div class="cy-co-icon"><i class="fas fa-star"></i></div>
+                    <h3 class="cy-co-title"><%= item.title %></h3>
+                    <% if (isSvc && st.l) { %>
+                    <span style="margin-right:auto;font-size:.7rem;padding:2px 10px;border-radius:6px;background:<%= st.bg %>;color:<%= st.c %>;border:1px solid <%= st.bd %>"><%= st.l %></span>
+                    <% } %>
+                </div>
+                <div class="cy-co-body">
+                    <% if (item.description) { %><p class="cy-co-desc"><%= item.description %></p><% } %>
+                    <% if (item.image) { %>
+                    <div class="cy-co-img-wrap" onclick="openLightbox(this.dataset.img)" data-img="<%= item.image %>">
+                        <img src="<%= item.image %>" alt="<%= item.title %>" loading="<%= i <= 1 ? 'eager' : 'lazy' %>" decoding="async">
+                        <div class="cy-co-img-hint"><i class="fas fa-search-plus"></i> تكبير</div>
+                    </div>
+                    <% } %>
+                    <% if (isSvc) { %>
+                    <div style="margin-top:1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+                        <% if (item.service_status === 'coming_soon') { %>
+                        <span style="background:rgba(234,179,8,0.12);border:1px solid rgba(234,179,8,0.35);color:#eab308;padding:.6rem 1.5rem;border-radius:10px;font-weight:700;font-size:.85rem"><i class="fas fa-clock"></i> قريباً</span>
+                        <% } else if (user) { %>
+                        <button onclick="openSvcForm(<%= item.id %>)" style="background:linear-gradient(135deg,rgba(var(--purple-rgb),0.3),rgba(var(--purple-rgb),0.5));border:1px solid rgba(var(--purple-rgb),0.4);color:#c084fc;padding:.6rem 1.5rem;border-radius:10px;font-weight:700;cursor:pointer;font-size:.85rem;transition:all .3s"><i class="fas fa-hand-paper"></i> استفادة من الخدمة</button>
+                        <% } else { %>
+                        <a href="/auth/discord" style="display:inline-block;padding:.6rem 1.5rem;border-radius:10px;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.5);font-size:.85rem;text-decoration:none"><i class="fas fa-sign-in-alt"></i> سجل دخول للاستفادة</a>
+                        <% } %>
+                    </div>
+                    <% } %>
+                </div>
+            </div>
+            <% }); %>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<div id="svcModal" class="cy-co-lightbox" style="display:none;z-index:200" onclick="closeSvcModal()">
+    <div style="background:#0d0a14;border:1px solid rgba(var(--accent-rgb),0.25);border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;margin:2rem auto;position:relative" onclick="event.stopPropagation()">
+        <div style="padding:1.25rem 1.5rem;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;gap:.5rem">
+            <h3 id="svcModalTitle" style="color:#fff;font-weight:800;font-size:1.1rem;margin:0"><i class="fas fa-concierge-bell" style="color:var(--accent)"></i> طلب خدمة</h3>
+            <span id="svcPkgBadge" style="margin-right:auto;font-size:.7rem;padding:2px 10px;border-radius:6px;background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.25);display:none"></span>
+        </div>
+        <div id="svcPkgStep" style="padding:1.25rem 1.5rem"></div>
+        <form id="svcForm" style="padding:1.25rem 1.5rem;display:none" onsubmit="submitServiceRequest(event)">
+            <input type="hidden" name="service_id" id="svcFormSid">
+            <input type="hidden" name="package_id" id="svcFormPkgId" value="0">
+            <div id="svcFormQuestions"></div>
+            <div style="display:flex;gap:.6rem;margin-top:1.5rem">
+                <button type="submit" style="flex:1;padding:.7rem 1.5rem;border-radius:10px;border:none;background:linear-gradient(135deg,var(--purple),rgba(var(--purple-rgb),0.7));color:#fff;font-weight:700;cursor:pointer;font-size:.9rem">إرسال الطلب</button>
+                <button type="button" onclick="closeSvcModal()" style="flex:1;padding:.7rem 1.5rem;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:rgba(255,255,255,0.6);font-weight:700;cursor:pointer;font-size:.9rem">إلغاء</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="lightbox" class="cy-co-lightbox" onclick="closeLightbox()">
+    <img id="lightboxImg" src="" alt="صورة مكبرة">
+    <button class="cy-co-lightbox-close" onclick="closeLightbox()"><i class="fas fa-times"></i></button>
+</div>
+
+<script>
+var svcQData = <%- JSON.stringify(servicesQuestions) %>;
+var svcPkgData = <%- JSON.stringify(servicesPackages) %>;
+
+function showTab(tab) {
+    var info = document.getElementById('section-info');
+    var activities = document.getElementById('section-activities');
+    var tabI = document.getElementById('tab-info');
+    var tabA = document.getElementById('tab-activities');
+    if (tab === 'info') {
+        info.classList.add('active'); activities.classList.remove('active');
+        tabI.classList.add('cy-co-tab-active'); tabA.classList.remove('cy-co-tab-active');
+    } else {
+        activities.classList.add('active'); info.classList.remove('active');
+        tabA.classList.add('cy-co-tab-active'); tabI.classList.remove('cy-co-tab-active');
+    }
+}
+function openLightbox(src) { document.getElementById('lightboxImg').src = src; document.getElementById('lightbox').classList.add('open'); if (event) event.stopPropagation(); }
+function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); document.getElementById('lightboxImg').src = ''; }
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') { closeLightbox(); closeSvcModal(); } });
+
+function openSvcForm(sid) {
+    document.getElementById('svcModal').style.display = 'flex';
+    document.getElementById('svcFormSid').value = sid;
+    document.getElementById('svcFormPkgId').value = '0';
+    var pkgs = svcPkgData[sid] || [];
+    if (pkgs.length > 0) {
+        document.getElementById('svcPkgStep').style.display = '';
+        document.getElementById('svcForm').style.display = 'none';
+        document.getElementById('svcPkgBadge').style.display = 'none';
+        var h = '<div style="text-align:center;margin-bottom:1.2rem"><div style="color:var(--accent);font-weight:700;font-size:.95rem">اختر البكج المناسب</div></div>';
+        pkgs.forEach(function(pkg) {
+            var img = pkg.image_type === 'emoji' ? '<span style="font-size:2.5rem">' + pkg.image_value + '</span>' : '<img src="' + pkg.image_value + '" style="width:64px;height:64px;border-radius:12px;object-fit:cover">';
+            h += '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:1rem;margin-bottom:.8rem;display:flex;gap:.8rem;align-items:center;cursor:pointer;transition:all .2s" onclick="selectPackage(' + sid + ',' + pkg.id + ')">'
+                + img + '<div style="flex:1"><div style="color:#fff;font-weight:700">' + pkg.name + '</div>'
+                + '<div style="color:var(--accent);font-weight:800;font-size:.85rem">$' + (+pkg.price).toFixed(2) + ' · ' + pkg.days + ' يوم</div></div></div>';
+        });
+        document.getElementById('svcPkgStep').innerHTML = h;
+    } else { showSvcQuestions(sid); }
+}
+function selectPackage(sid, pkgId) {
+    document.getElementById('svcFormPkgId').value = pkgId;
+    var pkgs = svcPkgData[sid] || [];
+    for (var i=0;i<pkgs.length;i++) { if (pkgs[i].id==pkgId) {
+        document.getElementById('svcPkgBadge').style.display = 'inline-block';
+        document.getElementById('svcPkgBadge').textContent = pkgs[i].name + ' · $' + (+pkgs[i].price).toFixed(2);
+    }}
+    showSvcQuestions(sid);
+}
+function showSvcQuestions(sid) {
+    document.getElementById('svcPkgStep').style.display = 'none';
+    document.getElementById('svcForm').style.display = '';
+    var qs = svcQData[sid] || [{id:'d_name',question:'الاسم الكامل',type:'text',required:1},{id:'d_phone',question:'رقم الجوال',type:'text',required:1},{id:'d_notes',question:'ملاحظات',type:'text',required:0}];
+    var h = '';
+    qs.forEach(function(q) {
+        var r = q.required == 1;
+        h += '<div style="margin-bottom:1.2rem"><label style="color:#fff;font-weight:600;font-size:.9rem;display:block;margin-bottom:.5rem">' + q.question + (r?' <span style="color:#ef4444">*</span>':'') + '</label>';
+        if (q.type === 'text' || q.type === 'datetime' || q.type === 'character_name')
+            h += '<input type="text" name="sq_' + q.id + '" ' + (r?'required':'') + ' placeholder="أدخل الإجابة..." style="width:100%;padding:.7rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-size:.85rem;box-sizing:border-box">';
+        else if (q.type === 'image')
+            h += '<input type="file" name="sq_' + q.id + '" accept="image/*" ' + (r?'required':'') + ' style="width:100%;padding:.6rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-size:.85rem;box-sizing:border-box">';
+        else if (q.type === 'price')
+            h += '<div style="color:var(--accent);font-weight:900;font-size:1.6rem;text-align:center">$' + (+q.price_per_day).toFixed(2) + '</div><input type="hidden" name="sq_' + q.id + '" value="1">';
+        h += '</div>';
+    });
+    document.getElementById('svcFormQuestions').innerHTML = h;
+}
+function closeSvcModal() { document.getElementById('svcModal').style.display = 'none'; }
+
+async function submitServiceRequest(e) {
+    e.preventDefault();
+    var fd = new FormData(e.target);
+    var res = await fetch('/api/company/service-request', { method: 'POST', body: fd });
+    var data = await res.json();
+    alert(data.success ? 'تم إرسال طلب الخدمة بنجاح!' : (data.error || 'خطأ'));
+    if (data.success) closeSvcModal();
+}
+</script>
+
+<%- include('../partials/footer') %>

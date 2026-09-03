@@ -1,0 +1,97 @@
+<%- include('../partials/header') %>
+<link rel="stylesheet" href="/css/games.css">
+</head>
+<body>
+<div class="game-page solo-game">
+  <div class="game-header">
+    <a href="/games" class="back-btn"><i class="fas fa-arrow-right"></i> العودة</a>
+    <h1><i class="fas fa-brain"></i> الذاكرة</h1>
+    <div class="game-info-badge"><i class="fas fa-user"></i> فردي</div>
+  </div>
+
+  <div class="game-content">
+    <div class="memory-game">
+      <div class="memory-stats">
+        <span><i class="fas fa-redo"></i> المحاولات: <strong id="moves">0</strong></span>
+        <span><i class="fas fa-clock"></i> الوقت: <strong id="timer">0:00</strong></span>
+        <span><i class="fas fa-star"></i> الأزواج: <strong id="pairs">0</strong>/8</span>
+      </div>
+      <div class="memory-grid" id="memoryGrid"></div>
+      <button class="game-btn primary" id="restartGame">
+        <i class="fas fa-redo"></i> إعادة
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+const emojis = ['🎮', '🎯', '🎪', '🎭', '🎨', '🎬', '🎤', '🎧'];
+let cards = [], flipped = [], matched = 0, moves = 0, seconds = 0, timerInterval;
+
+function initGame() {
+  cards = [...emojis, ...emojis].sort(() => Math.random() - 0.5);
+  flipped = []; matched = 0; moves = 0; seconds = 0;
+  clearInterval(timerInterval);
+  document.getElementById('moves').textContent = '0';
+  document.getElementById('timer').textContent = '0:00';
+  document.getElementById('pairs').textContent = '0';
+  document.getElementById('restartGame').style.display = 'none';
+
+  const grid = document.getElementById('memoryGrid');
+  grid.innerHTML = cards.map((emoji, i) => `
+    <div class="memory-card" data-index="${i}">
+      <div class="card-inner">
+        <div class="card-front">?</div>
+        <div class="card-back">${emoji}</div>
+      </div>
+    </div>
+  `).join('');
+
+  grid.querySelectorAll('.memory-card').forEach(card => {
+    card.addEventListener('click', () => flipCard(card));
+  });
+}
+
+function flipCard(card) {
+  if (flipped.length >= 2 || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+  if (!timerInterval) timerInterval = setInterval(() => {
+    seconds++;
+    document.getElementById('timer').textContent = Math.floor(seconds/60) + ':' + String(seconds%60).padStart(2,'0');
+  }, 1000);
+
+  card.classList.add('flipped');
+  flipped.push(card);
+
+  if (flipped.length === 2) {
+    moves++;
+    document.getElementById('moves').textContent = moves;
+    const [a, b] = flipped;
+    if (cards[a.dataset.index] === cards[b.dataset.index]) {
+      a.classList.add('matched');
+      b.classList.add('matched');
+      matched++;
+      document.getElementById('pairs').textContent = matched;
+      flipped = [];
+      if (matched === 8) {
+        clearInterval(timerInterval);
+        setTimeout(() => {
+          WaltonAPI.showNotification('مبروك! فزت في ' + moves + ' محاولة!', 'success');
+          document.getElementById('restartGame').style.display = 'flex';
+        }, 500);
+      }
+    } else {
+      setTimeout(() => {
+        a.classList.remove('flipped');
+        b.classList.remove('flipped');
+        flipped = [];
+      }, 800);
+    }
+  }
+}
+
+document.getElementById('restartGame').addEventListener('click', initGame);
+initGame();
+</script>
+</body>
+</html>

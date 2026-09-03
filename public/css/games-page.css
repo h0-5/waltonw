@@ -1,0 +1,570 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #0a0000;
+    background-image:
+        radial-gradient(ellipse 80% 60% at 50% -10%, rgba(var(--ac-rgb),0.18) 0%, transparent 70%),
+        linear-gradient(rgba(var(--ac-rgb),0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(var(--ac-rgb),0.04) 1px, transparent 1px);
+    background-size: 100% 100%, 40px 40px, 40px 40px;
+    background-attachment: fixed;
+    font-family: 'Cairo', 'Tajawal', sans-serif;
+    min-height: 100vh;
+}
+
+/* الصفحة الرئيسية */
+.games-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+}
+
+/* ==================== Hero Section ==================== */
+.games-hero {
+    text-align: center;
+    padding: 2.5rem 1rem 2rem;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(var(--ac-rgb),0.05), rgba(0,0,0,0.2));
+    border-radius: 32px;
+    margin-bottom: 2rem;
+}
+
+.games-hero-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 70%;
+    height: 200px;
+    background: radial-gradient(ellipse, rgba(var(--ac-rgb),0.2), transparent 70%);
+    filter: blur(50px);
+    pointer-events: none;
+    animation: heroGlowPulse 4s ease-in-out infinite;
+}
+
+@keyframes heroGlowPulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+.games-hero-icons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 1;
+    flex-wrap: wrap;
+}
+
+.games-hero-icon {
+    font-size: 2rem;
+    display: inline-block;
+    animation: heroIconFloat 2.5s ease-in-out infinite;
+    filter: drop-shadow(0 0 10px rgba(var(--ac-rgb),0.5));
+    background: rgba(0,0,0,0.3);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.games-hero-icon:hover {
+    transform: scale(1.1);
+    background: rgba(var(--ac-rgb),0.2);
+}
+
+.games-hero-icon:nth-child(1) { animation-delay: 0s; }
+.games-hero-icon:nth-child(2) { animation-delay: 0.2s; }
+.games-hero-icon:nth-child(3) { animation-delay: 0.4s; }
+.games-hero-icon:nth-child(4) { animation-delay: 0.6s; }
+.games-hero-icon:nth-child(5) { animation-delay: 0.8s; }
+
+@keyframes heroIconFloat {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-8px) scale(1.1); }
+}
+
+.games-hero-title {
+    font-size: clamp(1.8rem, 5vw, 2.8rem);
+    font-weight: 900;
+    background: linear-gradient(90deg, #fff, rgba(var(--ac-rgb),0.8), var(--ac), rgba(var(--ac-rgb),0.8), #fff);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: heroShimmer 5s linear infinite;
+    margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+@keyframes heroShimmer {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+}
+
+.games-hero-sub {
+    color: rgba(255,255,255,0.55);
+    font-size: 0.9rem;
+    max-width: 500px;
+    margin: 0 auto 1rem;
+    line-height: 1.6;
+    position: relative;
+    z-index: 1;
+}
+
+/* ==================== Stats Bar ==================== */
+.games-stats-bar {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
+}
+
+.games-stat-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(var(--ac-rgb),0.1);
+    border: 1px solid rgba(var(--ac-rgb),0.2);
+    border-radius: 50px;
+    padding: 0.4rem 1.2rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.7);
+    transition: all 0.3s;
+}
+
+.games-stat-pill:hover {
+    border-color: rgba(var(--ac-rgb),0.5);
+    transform: translateY(-2px);
+}
+
+.games-stat-pill i {
+    color: var(--ac);
+    font-size: 0.8rem;
+}
+
+.games-stat-pill span {
+    color: var(--ac);
+    font-weight: 900;
+    font-size: 1rem;
+}
+
+/* ==================== Admin Button ==================== */
+.admin-games-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: rgba(var(--ac-rgb),0.12);
+    border: 1px solid rgba(var(--ac-rgb),0.3);
+    color: var(--ac);
+    padding: 0.5rem 1.3rem;
+    border-radius: 40px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.3s;
+    margin-top: 0.8rem;
+}
+
+.admin-games-btn:hover {
+    background: rgba(var(--ac-rgb),0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(var(--ac-rgb),0.2);
+}
+
+/* ==================== Section Title ==================== */
+.games-section {
+    margin-bottom: 2.5rem;
+}
+
+.games-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: rgba(255,255,255,0.85);
+    margin-bottom: 1.2rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 2px solid rgba(var(--ac-rgb),0.15);
+}
+
+.games-section-title i {
+    color: var(--ac);
+    font-size: 1.2rem;
+}
+
+.count-badge {
+    background: rgba(var(--ac-rgb),0.15);
+    border: 1px solid rgba(var(--ac-rgb),0.3);
+    color: var(--ac);
+    font-size: 0.7rem;
+    padding: 0.15rem 0.6rem;
+    border-radius: 30px;
+    font-weight: 800;
+}
+
+/* ==================== Games Grid ==================== */
+.games-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1.3rem;
+}
+
+/* ==================== Game Card ==================== */
+.game-card {
+    background: linear-gradient(135deg, #0a0a0a, #120800, #0a0500);
+    background-size: 200% 200%;
+    border-radius: 20px;
+    border: 1px solid rgba(var(--ac-rgb),0.12);
+    padding: 1.5rem 1.2rem 1.2rem;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.6rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    /* cardGlow + cardSweep — محذوفان (ثقيلان على الأجهزة الضعيفة) */
+}
+
+.game-card::after {
+    content:'';
+    position:absolute;
+    bottom:0;left:0;right:0;
+    height:60%;
+    background:linear-gradient(transparent,rgba(0,0,0,.6));
+    pointer-events:none;
+    opacity:0;
+    transition:opacity .4s
+}
+.game-card:hover::after { opacity:1 }
+
+.game-card:hover {
+    transform: translateY(-6px) scale(1.02);
+    border-color: rgba(var(--ac-rgb),0.5);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.4), 0 0 20px rgba(var(--ac-rgb),0.15);
+}
+
+.game-card.coming-soon {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.game-card.coming-soon:hover {
+    transform: translateY(-3px) scale(1.01);
+    border-color: rgba(var(--ac-rgb),0.2);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+/* ==================== Icon ==================== */
+.game-icon-wrap {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    margin-bottom: 0.3rem;
+    flex-shrink: 0;
+}
+
+.game-icon-wrap::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    background: conic-gradient(var(--game-color, #f97316), transparent 60%, var(--game-color, #f97316));
+    animation: iconSpin 8s linear infinite;
+    opacity: 0.5;
+}
+
+.game-card.coming-soon .game-icon-wrap::before {
+    animation: none;
+    opacity: 0.15;
+}
+
+@keyframes iconSpin {
+    to { transform: rotate(360deg); }
+}
+
+.game-icon-wrap::after {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0a0a0a, #1a0a00);
+}
+
+.game-icon-wrap i {
+    position: relative;
+    z-index: 1;
+    font-size: 1.8rem;
+    color: var(--game-color, #f97316);
+}
+
+/* ==================== Badges ==================== */
+.game-type-tag {
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 0.2rem 0.6rem;
+    border-radius: 30px;
+    position: absolute;
+    top: 0.8rem;
+    right: 0.8rem;
+    letter-spacing: 0.04em;
+    backdrop-filter: blur(4px);
+}
+
+.game-badge {
+    position: absolute;
+    top: 0.8rem;
+    left: 0.8rem;
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 0.2rem 0.6rem;
+    border-radius: 30px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    backdrop-filter: blur(4px);
+}
+
+/* ==================== Text ==================== */
+.game-title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: rgba(255,255,255,0.95);
+    line-height: 1.3;
+}
+
+.game-desc {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.45);
+    line-height: 1.5;
+    flex: 1;
+}
+
+.game-players {
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.35);
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.active-session-badge {
+    font-size: 0.65rem;
+    color: #10b981;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: rgba(16,185,129,0.12);
+    border: 1px solid rgba(16,185,129,0.3);
+    padding: 0.15rem 0.6rem;
+    border-radius: 20px;
+    font-weight: 800;
+}
+
+/* ==================== Play Button ==================== */
+.game-play-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1.3rem;
+    border-radius: 40px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.25s;
+    margin-top: 0.3rem;
+    text-decoration: none;
+    color: white;
+}
+
+.game-play-btn.active-btn {
+    background: linear-gradient(135deg, var(--game-color, #f97316), var(--game-color, #f97316)cc);
+    box-shadow: 0 4px 15px rgba(249,115,22,0.3);
+}
+
+.game-play-btn.active-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(249,115,22,0.5);
+}
+
+.game-play-btn.soon-btn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.3);
+    cursor: not-allowed;
+}
+
+/* ==================== Tips Section ==================== */
+.games-tips {
+    margin-top: 3rem;
+    padding: 1.5rem;
+    background: rgba(0,0,0,0.2);
+    border-radius: 20px;
+    border: 1px solid rgba(var(--ac-rgb),0.08);
+    text-align: center;
+}
+
+.games-tips h3 {
+    font-size: 0.9rem;
+    color: var(--ac);
+    margin-bottom: 0.8rem;
+}
+
+.games-tips p {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.4);
+    line-height: 1.6;
+}
+
+/* ==================== Responsive ==================== */
+@media (max-width: 768px) {
+    .games-page {
+        padding: 1rem;
+    }
+    
+    .games-grid {
+        grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+        gap: 1rem;
+    }
+    
+    .game-card {
+        padding: 1rem 0.8rem 0.9rem;
+    }
+    
+    .game-icon-wrap {
+        width: 55px;
+        height: 55px;
+    }
+    
+    .game-icon-wrap i {
+        font-size: 1.4rem;
+    }
+    
+    .game-title {
+        font-size: 0.85rem;
+    }
+    
+    .game-desc {
+        font-size: 0.7rem;
+    }
+    
+    .games-hero-icon {
+        width: 45px;
+        height: 45px;
+        font-size: 1.3rem;
+    }
+    
+    /* إيقاف الأنيميشن على الموبايل */
+    .game-card {
+        animation: none !important;
+    }
+    
+    .game-icon-wrap::before {
+        animation: none !important;
+    }
+    
+    .games-hero-icon {
+        animation: none !important;
+    }
+    
+    .games-hero-glow {
+        display: none !important;
+    }
+
+    /* إيقاف باقي الأنيميشن الثقيلة */
+    .games-hero-title {
+        animation: none !important;
+        background: var(--ac, #f97316) !important;
+    }
+    .game-card::after {
+        display: none !important;
+    }
+    * {
+        transition-duration: 0.1s !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .games-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.8rem;
+    }
+    
+    .game-card {
+        padding: 0.8rem 0.6rem 0.7rem;
+    }
+    
+    .game-icon-wrap {
+        width: 48px;
+        height: 48px;
+    }
+    
+    .game-icon-wrap i {
+        font-size: 1.2rem;
+    }
+    
+    .games-stats-bar {
+        gap: 0.5rem;
+    }
+    
+    .games-stat-pill {
+        padding: 0.3rem 0.8rem;
+        font-size: 0.7rem;
+    }
+}
+
+/* تأثير ظهور العناصر عند التمرير */
+.wf-reveal {
+    opacity: 0;
+    transform: translateY(20px);
+}
+.wf-reveal.wf-visible {
+    animation: reveal 0.5s ease forwards;
+}
+.wf-reveal.wf-visible .game-card {
+    animation: reveal 0.5s ease forwards;
+}
+
+@keyframes reveal {
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.game-card.wf-reveal:not(.wf-visible) { animation: none !important }
+
+/* ==================== أجهزة ضعيفة / prefers-reduced-motion ==================== */
+@media (prefers-reduced-motion: reduce) {
+    .game-card,
+    .game-icon-wrap::before,
+    .games-hero-icon,
+    .games-hero-title,
+    .games-hero-glow { animation: none !important; }
+    .game-card::after,
+    .games-hero-glow { display: none !important; }
+    .games-hero-title {
+        background: var(--ac, #f97316) !important;
+        -webkit-text-fill-color: initial !important;
+    }
+    * { transition-duration: 0.1s !important; }
+}

@@ -1,0 +1,109 @@
+<%- include('partials/header') %>
+<%- include('partials/navbar') %>
+
+<main class="checkout-page">
+  <section class="checkout-hero">
+    <div class="container">
+      <h1><i class="fas fa-credit-card"></i> إتمام الشراء</h1>
+    </div>
+  </section>
+
+  <section class="checkout-content">
+    <div class="container">
+      <div class="checkout-layout">
+        <div class="checkout-form-wrapper">
+          <form id="checkoutForm">
+            <div class="checkout-card">
+              <h3><i class="fas fa-map-marker-alt"></i> عنوان الشحن</h3>
+              <div class="form-group">
+                <label>الاسم الكامل</label>
+                <input type="text" name="full_name" required placeholder="اسمك الكامل">
+              </div>
+              <div class="form-group">
+                <label>العنوان</label>
+                <input type="text" name="address" required placeholder="المدينة، الحي، الشارع">
+              </div>
+              <div class="form-group">
+                <label>رقم الهاتف</label>
+                <input type="tel" name="phone" required placeholder="+966XXXXXXXXX">
+              </div>
+            </div>
+
+            <div class="checkout-card">
+              <h3><i class="fas fa-credit-card"></i> طريقة الدفع</h3>
+              <div class="payment-methods">
+                <label class="payment-option">
+                  <input type="radio" name="payment" value="points" checked>
+                  <div class="payment-box">
+                    <i class="fas fa-coins"></i>
+                    <span>نقاط البوت</span>
+                  </div>
+                </label>
+                <label class="payment-option">
+                  <input type="radio" name="payment" value="cash">
+                  <div class="payment-box">
+                    <i class="fas fa-money-bill"></i>
+                    <span>الدفع عند الاستلام</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div class="checkout-card">
+              <h3><i class="fas fa-tag"></i> كود الخصم</h3>
+              <div class="discount-input">
+                <input type="text" id="discountCode" placeholder="أدخل كود الخصم">
+                <button type="button" class="apply-btn" id="applyDiscount">تطبيق</button>
+              </div>
+            </div>
+
+            <button type="submit" class="checkout-btn">
+              <i class="fas fa-check"></i> تأكيد الطلب
+            </button>
+          </form>
+        </div>
+
+        <div class="checkout-summary">
+          <div class="summary-card">
+            <h3>ملخص الطلب</h3>
+            <div class="summary-items" id="summaryItems">
+              <p>لا توجد منتجات</p>
+            </div>
+            <div class="summary-total">
+              <span>الإجمالي:</span>
+              <span id="checkoutTotal">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<%- include('partials/footer') %>
+<script src="/js/main.js"></script>
+<script>
+document.getElementById('checkoutForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const formData = new FormData(this);
+  const data = Object.fromEntries(formData);
+  try {
+    const res = await fetch('/api/orders/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (result.success) {
+      WaltonAPI.showNotification('تم تأكيد الطلب بنجاح!', 'success');
+      setTimeout(() => window.location.href = '/orders', 1500);
+    } else {
+      WaltonAPI.showNotification(result.error || 'فشل إنشاء الطلب', 'error');
+    }
+  } catch(e) {
+    WaltonAPI.showNotification('حدث خطأ', 'error');
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<%- include('layout') %>
+<div class="admin-card" style="max-width:800px">
+  <h3 style="margin-bottom:20px"><i class="fas fa-info-circle"></i> إدارة محتوى صفحة "من نحن"</h3>
+  <form id="aboutForm">
+    <div class="form-group">
+      <label><i class="fas fa-heading"></i> العنوان</label>
+      <input type="text" name="title" value="<%= about.title || 'Walton Family' %>">
+    </div>
+    <div class="form-group">
+      <label><i class="fas fa-map-marker-alt"></i> الموقع</label>
+      <input type="text" name="location" value="<%= about.location || 'New York City' %>">
+    </div>
+    <div class="form-group">
+      <label><i class="fas fa-book-open"></i> القصة (نص طويل)</label>
+      <textarea name="story" rows="8" placeholder="قصة العائلة..."><%= about.story || '' %></textarea>
+    </div>
+    <div class="form-group">
+      <label><i class="fas fa-users"></i> الأعضاء (مفصولة بفواصل)</label>
+      <input type="text" name="members" value="<%= about.members || '' %>" placeholder="Hayder Walton, Robson Walton">
+    </div>
+    <div class="form-group">
+      <label><i class="fab fa-discord"></i> أسماء Discord (JSON)</label>
+      <textarea name="member_discords" rows="2"><%= about.member_discords || '{}' %></textarea>
+    </div>
+    <div class="form-group">
+      <label><i class="fas fa-images"></i> صور الأعضاء (JSON)</label>
+      <textarea name="member_avatars" rows="2"><%= about.member_avatars || '{}' %></textarea>
+    </div>
+    <button type="submit" class="admin-btn primary" style="width:100%"><i class="fas fa-save"></i> حفظ</button>
+  </form>
+  <div id="aboutResult" style="margin-top:15px;display:none"></div>
+</div>
+<script>
+document.getElementById('aboutForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const res = await fetch('/api/admin/about', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(Object.fromEntries(fd)) });
+  const data = await res.json();
+  const result = document.getElementById('aboutResult');
+  result.style.display = 'block';
+  result.innerHTML = data.success ? '<div style="color:#4ade80;padding:10px;background:rgba(34,197,94,0.1);border-radius:8px">تم الحفظ بنجاح!</div>' : '<div style="color:#fca5a5;padding:10px;background:rgba(239,68,68,0.1);border-radius:8px">' + (data.error || 'خطأ') + '</div>';
+});
+</script>
+<%- include('admin_footer') %>

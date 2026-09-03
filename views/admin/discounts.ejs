@@ -1,0 +1,61 @@
+<%- include('layout') %>
+<div class="admin-card">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <h3 style="margin:0;border:none;padding:0"><i class="fas fa-tag"></i> أكواد الخصم</h3>
+    <button onclick="showAdd()" class="admin-btn primary"><i class="fas fa-plus"></i> إضافة</button>
+  </div>
+  <table class="admin-table">
+    <thead><tr><th>#</th><th>الكود</th><th>النسبة</th><th>الحد الأقصى</th><th>انتهت</th><th>إجراءات</th></tr></thead>
+    <tbody>
+      <% if (discounts.length > 0) { %>
+        <% discounts.forEach(function(d, i) { %>
+        <tr>
+          <td><%= i + 1 %></td>
+          <td><code style="background:rgba(var(--ac-rgb),0.15);padding:3px 8px;border-radius:6px;color:var(--ac)"><%= d.code %></code></td>
+          <td><%= d.discount_percent %>%</td>
+          <td><%= d.max_uses || '∞' %></td>
+          <td><%= d.expires_at ? new Date(d.expires_at).toLocaleDateString('ar-SA') : '—' %></td>
+          <td><button onclick="deleteDiscount(<%= d.id %>)" class="admin-btn danger small"><i class="fas fa-trash"></i></button></td>
+        </tr>
+        <% }); %>
+      <% } else { %>
+        <tr><td colspan="6" style="text-align:center;padding:2rem;color:rgba(255,255,255,0.3)">لا توجد أكواد خصم</td></tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+
+<div id="addModal" class="admin-modal" style="display:none">
+  <div class="modal-content">
+    <h3>إضافة كود خصم</h3>
+    <form id="addForm">
+      <div class="form-group"><label>الكود</label><input type="text" name="code" placeholder="FALL2025" required></div>
+      <div class="form-group"><label>نسبة الخصم (%)</label><input type="number" name="discount_percent" min="1" max="100" required></div>
+      <div class="form-group"><label>الحد الأقصى للاستخدام</label><input type="number" name="max_uses" placeholder="اتركه فارغ للا محدود"></div>
+      <div class="form-group"><label>تاريخ الانتهاء</label><input type="datetime-local" name="expires_at"></div>
+      <div class="modal-actions">
+        <button type="button" onclick="closeModal('addModal')" class="admin-btn">إلغاء</button>
+        <button type="submit" class="admin-btn primary">حفظ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function showAdd() { document.getElementById('addModal').style.display = 'flex'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+document.getElementById('addForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const res = await fetch('/api/admin/discounts', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(Object.fromEntries(fd)) });
+  const data = await res.json();
+  if (data.success) location.reload(); else alert(data.error || 'خطأ');
+});
+async function deleteDiscount(id) {
+  if (!confirm('هل أنت متأكد؟')) return;
+  const res = await fetch('/api/admin/discounts/' + id, { method: 'DELETE' });
+  const data = await res.json();
+  if (data.success) location.reload();
+}
+</script>
+<%- include('admin_footer') %>

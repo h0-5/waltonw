@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> | Walton Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  <style>
+    :root {
+      --ac: <%= accentColor %>;
+      --ac-rgb: <%= accentColor.replace('#', '').match(/.{2}/g).map(h => parseInt(h, 16)).join(', ') %>;
+      --bg-url: url('<%= bgUrl %>');
+      --mobile-bg-url: url('<%= mobileBgUrl %>');
+    }
+    body {
+      background-image: var(--bg-url);
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      background-repeat: no-repeat;
+    }
+    @media (max-width: 768px) {
+      body { background-image: var(--mobile-bg-url); }
+    }
+  </style>
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="admin-sidebar" id="adminSidebar">
+    <div class="sidebar-header">
+      <a href="/admin" class="admin-logo">
+        <img src="<%= settings.site_logo_url || '/images/walton-logo.svg' %>" alt="WF" style="width:32px;height:32px;border-radius:50%;">
+        <span class="logo-text">Admin</span>
+      </a>
+      <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/admin" class="nav-item<%= currentPath === '/admin' ? ' active' : '' %>">
+        <i class="fas fa-tachometer-alt"></i><span>لوحة التحكم</span>
+      </a>
+      <div class="nav-section-title">المحتوى</div>
+      <a href="/admin/users" class="nav-item<%= currentPath === '/admin/users' ? ' active' : '' %>">
+        <i class="fas fa-users"></i><span>المستخدمين</span>
+      </a>
+      <a href="/admin/products" class="nav-item<%= currentPath === '/admin/products' ? ' active' : '' %>">
+        <i class="fas fa-box"></i><span>المنتجات</span>
+      </a>
+      <a href="/admin/orders" class="nav-item<%= currentPath === '/admin/orders' ? ' active' : '' %>">
+        <i class="fas fa-shopping-bag"></i><span>الطلبات</span>
+      </a>
+      <a href="/admin/news" class="nav-item<%= currentPath === '/admin/news' ? ' active' : '' %>">
+        <i class="fas fa-newspaper"></i><span>الأخبار</span>
+      </a>
+      <div class="nav-section-title">الادارة</div>
+      <a href="/admin/rules" class="nav-item<%= currentPath === '/admin/rules' ? ' active' : '' %>">
+        <i class="fas fa-gavel"></i><span>القوانين</span>
+      </a>
+      <a href="/admin/discounts" class="nav-item<%= currentPath === '/admin/discounts' ? ' active' : '' %>">
+        <i class="fas fa-tag"></i><span>أكواد الخصم</span>
+      </a>
+      <a href="/admin/applications" class="nav-item<%= currentPath === '/admin/applications' ? ' active' : '' %>">
+        <i class="fas fa-file-alt"></i><span>الطلبات المقدمة</span>
+      </a>
+      <a href="/admin/tickets" class="nav-item<%= currentPath === '/admin/tickets' ? ' active' : '' %>">
+        <i class="fas fa-headset"></i><span>التذاكر</span>
+      </a>
+      <a href="/admin/broadcast" class="nav-item<%= currentPath === '/admin/broadcast' ? ' active' : '' %>">
+        <i class="fas fa-bullhorn"></i><span>البث</span>
+      </a>
+      <div class="nav-section-title">النظام</div>
+      <a href="/admin/about" class="nav-item<%= currentPath === '/admin/about' ? ' active' : '' %>">
+        <i class="fas fa-info-circle"></i><span>صفحة من نحن</span>
+      </a>
+      <a href="/admin/settings" class="nav-item<%= currentPath === '/admin/settings' ? ' active' : '' %>">
+        <i class="fas fa-cog"></i><span>الإعدادات</span>
+      </a>
+      <a href="/admin/roles" class="nav-item<%= currentPath === '/admin/roles' ? ' active' : '' %>">
+        <i class="fas fa-user-shield"></i><span>الرتب</span>
+      </a>
+      <a href="/admin/banned" class="nav-item<%= currentPath === '/admin/banned' ? ' active' : '' %>">
+        <i class="fas fa-ban"></i><span>المحظورين</span>
+      </a>
+      <div class="nav-divider"></div>
+      <a href="/" class="nav-item">
+        <i class="fas fa-home"></i><span>الموقع</span>
+      </a>
+      <a href="/auth/logout" class="nav-item logout">
+        <i class="fas fa-sign-out-alt"></i><span>خروج</span>
+      </a>
+    </nav>
+  </aside>
+  <main class="admin-main">
+    <header class="admin-header">
+      <div class="header-right">
+        <button class="mobile-sidebar-btn" id="mobileSidebarBtn"><i class="fas fa-bars"></i></button>
+        <h1 id="pageTitle"><%= title %></h1>
+      </div>
+      <div class="header-left">
+        <div class="admin-user">
+          <img src="<%= user ? (user.profile_picture || '/images/default-avatar.png') : '/images/default-avatar.png' %>" alt="avatar">
+          <span><%= user ? user.username : 'Admin' %></span>
+        </div>
+      </div>
+    </header>
+    <div class="admin-content">

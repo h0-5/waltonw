@@ -1,0 +1,112 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+
+<main class="cart-page">
+  <section class="cart-hero">
+    <div class="container">
+      <h1>
+        <i class="fas fa-shopping-cart"></i>
+        سلة المشتريات
+      </h1>
+    </div>
+  </section>
+
+  <section class="cart-content">
+    <div class="container">
+      <% if (cartItems && cartItems.length > 0) { %>
+        <div class="cart-layout">
+          <!-- Cart Items -->
+          <div class="cart-items">
+            <% cartItems.forEach(item => { %>
+              <div class="cart-item" data-id="<%= item.id %>">
+                <div class="item-image">
+                  <% if (item.image) { %>
+                    <img src="<%= item.image %>" alt="<%= item.name %>">
+                  <% } else { %>
+                    <div class="no-image"><i class="fas fa-box"></i></div>
+                  <% } %>
+                </div>
+                <div class="item-details">
+                  <h3><%= item.name %></h3>
+                  <p class="item-price">
+                    <% if (item.price_points) { %>
+                      <i class="fas fa-coins"></i> <%= item.price_points %> نقطة
+                    <% } else { %>
+                      <i class="fas fa-dollar-sign"></i> $<%= item.price %>
+                    <% } %>
+                  </p>
+                </div>
+                <div class="item-quantity">
+                  <form action="/cart/update" method="POST" class="quantity-form">
+                    <input type="hidden" name="item_id" value="<%= item.id %>">
+                    <button type="submit" name="action" value="decrease" class="qty-btn">
+                      <i class="fas fa-minus"></i>
+                    </button>
+                    <span class="qty-value"><%= item.quantity %></span>
+                    <button type="submit" name="action" value="increase" class="qty-btn">
+                      <i class="fas fa-plus"></i>
+                    </button>
+                  </form>
+                </div>
+                <div class="item-total">
+                  <% if (item.price_points) { %>
+                    <i class="fas fa-coins"></i> <%= item.price_points * item.quantity %> نقطة
+                  <% } else { %>
+                    <i class="fas fa-dollar-sign"></i> $<%= (item.price * item.quantity).toFixed(2) %>
+                  <% } %>
+                </div>
+                <form action="/cart/remove" method="POST">
+                  <input type="hidden" name="item_id" value="<%= item.id %>">
+                  <button type="submit" class="remove-btn" title="إزالة">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </form>
+              </div>
+            <% }) %>
+          </div>
+
+          <!-- Order Summary -->
+          <div class="order-summary">
+            <h3>
+              <i class="fas fa-receipt"></i>
+              ملخص الطلب
+            </h3>
+            <div class="summary-row">
+              <span>المجموع الفرعي:</span>
+              <span id="subtotal"><%= total %></span>
+            </div>
+            <div class="summary-row total">
+              <span>الإجمالي:</span>
+              <span id="total"><%= total %></span>
+            </div>
+            <a href="/checkout" class="checkout-btn">
+              <i class="fas fa-credit-card"></i>
+              إتمام الشراء
+            </a>
+            <a href="/store" class="continue-shopping">
+              <i class="fas fa-arrow-right"></i>
+              متابعة التسوق
+            </a>
+          </div>
+        </div>
+      <% } else { %>
+        <div class="empty-cart">
+          <div class="empty-icon">
+            <i class="fas fa-shopping-cart"></i>
+          </div>
+          <h2>سلتك فارغة</h2>
+          <p>لم تضف أي منتجات بعد</p>
+          <a href="/store" class="shop-btn">
+            <i class="fas fa-store"></i>
+            تصفح المتجر
+          </a>
+        </div>
+      <% } %>
+    </div>
+  </section>
+</main>
+
+<%- include('../partials/footer') %>
+<script src="/js/main.js"></script>
+</body>
+</html>

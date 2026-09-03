@@ -1,0 +1,108 @@
+<%- include('../partials/header') %>
+<link rel="stylesheet" href="/css/games.css">
+</head>
+<body>
+<div class="game-page solo-game">
+  <div class="game-header">
+    <a href="/games" class="back-btn"><i class="fas fa-arrow-right"></i> العودة</a>
+    <h1><i class="fas fa-dharmachakra"></i> عجلة الحظ</h1>
+    <div class="game-info-badge"><i class="fas fa-user"></i> فردي</div>
+  </div>
+
+  <div class="game-content">
+    <div class="spin-game">
+      <div class="wheel-container">
+        <div class="wheel-pointer"><i class="fas fa-caret-down"></i></div>
+        <canvas id="wheelCanvas" width="400" height="400"></canvas>
+      </div>
+      <div class="spin-result" id="spinResult" style="display:none;">
+        <h2>نتيجة اللعب</h2>
+        <p id="spinText"></p>
+      </div>
+      <button class="game-btn primary spin-btn" id="spinBtn">
+        <i class="fas fa-sync-alt"></i> لف!
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+const segments = [
+  { text: '10 نقاط', color: '#ef4444', points: 10 },
+  { text: '25 نقطة', color: '#3b82f6', points: 25 },
+  { text: '50 نقطة', color: '#22c55e', points: 50 },
+  { text: 'لا شيء', color: '#6b7280', points: 0 },
+  { text: '100 نقطة', color: '#f97316', points: 100 },
+  { text: '5 نقاط', color: '#8b5cf6', points: 5 },
+  { text: '75 نقطة', color: '#ec4899', points: 75 },
+  { text: 'لا شيء', color: '#6b7280', points: 0 }
+];
+
+const canvas = document.getElementById('wheelCanvas');
+const ctx = canvas.getContext('2d');
+const centerX = canvas.width / 2;
+const centerY = canvas.height / 2;
+const radius = 180;
+let currentAngle = 0;
+let spinning = false;
+
+function drawWheel() {
+  const sliceAngle = (2 * Math.PI) / segments.length;
+  segments.forEach((seg, i) => {
+    const startAngle = currentAngle + i * sliceAngle;
+    const endAngle = startAngle + sliceAngle;
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+    ctx.fillStyle = seg.color;
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    ctx.rotate(startAngle + sliceAngle / 2);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 12px Cairo';
+    ctx.fillText(seg.text, 40, 4);
+    ctx.restore();
+  });
+}
+
+document.getElementById('spinBtn').addEventListener('click', function() {
+  if (spinning) return;
+  spinning = true;
+  this.disabled = true;
+  const sliceAngle = (2 * Math.PI) / segments.length;
+  const randomIndex = Math.floor(Math.random() * segments.length);
+  const targetAngle = (2 * Math.PI * 3) + (segments.length - randomIndex) * sliceAngle;
+  const startAngle = currentAngle;
+  const duration = 4000;
+  const startTime = Date.now();
+
+  function animate() {
+    const elapsed = Date.now() - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    currentAngle = startAngle + targetAngle * ease;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawWheel();
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      spinning = false;
+      document.getElementById('spinBtn').disabled = false;
+      const result = segments[randomIndex];
+      document.getElementById('spinText').textContent = result.points > 0 ? `فزت بـ ${result.text}!` : 'لم تفز هذه المرة!';
+      document.getElementById('spinResult').style.display = 'block';
+      if (result.points > 0) WaltonAPI.showNotification(`فزت بـ ${result.text}!`, 'success');
+    }
+  }
+  animate();
+});
+
+drawWheel();
+</script>
+</body>
+</html>

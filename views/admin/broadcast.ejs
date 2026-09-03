@@ -1,0 +1,36 @@
+<%- include('layout') %>
+<div class="admin-card" style="max-width:700px">
+  <h3 style="margin-bottom:20px"><i class="fas fa-bullhorn"></i> بث إشعار</h3>
+  <form id="broadcastForm">
+    <div class="form-group">
+      <label><i class="fas fa-heading"></i> العنوان</label>
+      <input type="text" name="title" placeholder="عنوان الإشعار" required>
+    </div>
+    <div class="form-group">
+      <label><i class="fas fa-comment"></i> الرسالة</label>
+      <textarea name="message" rows="4" placeholder="نص الإشعار" required></textarea>
+    </div>
+    <div class="form-group">
+      <label><i class="fas fa-users"></i> الإرسال إلى</label>
+      <select name="target">
+        <option value="all">جميع الأعضاء</option>
+        <option value="admins">الإدارة فقط</option>
+        <option value="family">أفراد العائلة</option>
+      </select>
+    </div>
+    <button type="submit" class="admin-btn primary" style="width:100%"><i class="fas fa-paper-plane"></i> إرسال</button>
+  </form>
+  <div id="broadcastResult" style="margin-top:15px;display:none"></div>
+</div>
+<script>
+document.getElementById('broadcastForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const res = await fetch('/api/admin/broadcast', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(Object.fromEntries(fd)) });
+  const data = await res.json();
+  const result = document.getElementById('broadcastResult');
+  result.style.display = 'block';
+  result.innerHTML = data.success ? '<div style="color:#4ade80;padding:10px;background:rgba(34,197,94,0.1);border-radius:8px">تم الإرسال بنجاح!</div>' : '<div style="color:#fca5a5;padding:10px;background:rgba(239,68,68,0.1);border-radius:8px">' + (data.error || 'خطأ') + '</div>';
+});
+</script>
+<%- include('admin_footer') %>

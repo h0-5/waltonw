@@ -1,0 +1,106 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+
+<div class="cy-rules-page">
+    <!-- Hero Section -->
+    <div class="cy-rules-hero">
+        <div class="cy-rules-hero-icon">
+            <div class="hex-ring"></div>
+            <div class="hex-ring-inner"></div>
+            <i class="fas fa-gavel"></i>
+        </div>
+        <h1 class="page-heading">قوانين المجتمع</h1>
+        <p class="cy-rules-hero-sub">يرجى الالتزام بهذه القوانين للحفاظ على بيئة آمنة ومحترمة</p>
+        <div class="cy-rules-hero-line"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="cy-rules-main">
+        <% if (typeof rules !== 'undefined' && rules && rules.length > 0) { %>
+        <div class="rules-outer">
+            <div class="rules-grid-wrapper">
+                <%
+                // Group rules by category
+                const grouped = {};
+                rules.forEach(function(r) {
+                    const cat = r.category || 'أخرى';
+                    if (!grouped[cat]) grouped[cat] = [];
+                    grouped[cat].push(r);
+                });
+                %>
+
+                <% Object.keys(grouped).forEach(function(cat, ci) { %>
+                <div class="rules-category wf-reveal" style="transition-delay:<%= ci * 0.1 %>s">
+                    <div class="corner-tl"></div>
+                    <div class="corner-br"></div>
+
+                    <div class="category-header">
+                        <div class="category-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h2 class="category-title"><%= cat %></h2>
+                        <span class="cat-count"><%= grouped[cat].length %></span>
+                    </div>
+
+                    <div class="rules-grid">
+                        <% grouped[cat].forEach(function(rule, index) { %>
+                        <div class="rule-card" style="transition-delay:<%= ci * 0.08 + index * 0.04 %>s">
+                            <div class="rule-number"><%= index + 1 %></div>
+                            <div class="rule-content"><%= rule.rule_text %></div>
+                        </div>
+                        <% }); %>
+                    </div>
+                </div>
+                <% }); %>
+            </div>
+        </div>
+        <% } else { %>
+        <!-- Static Rules -->
+        <div class="rules-outer">
+            <div class="rules-grid-wrapper">
+                <div class="rules-category wf-reveal">
+                    <div class="corner-tl"></div>
+                    <div class="corner-br"></div>
+                    <div class="category-header">
+                        <div class="category-icon"><i class="fas fa-globe"></i></div>
+                        <h2 class="category-title">قوانين عامة</h2>
+                        <span class="cat-count">5</span>
+                    </div>
+                    <div class="rules-grid">
+                        <div class="rule-card"><div class="rule-number">1</div><div class="rule-content">احترم جميع الأعضاء وتجنب الإساءة أو الإهانة في المحادثات</div></div>
+                        <div class="rule-card"><div class="rule-number">2</div><div class="rule-content">يمنع السبام أو المنشن المزعج</div></div>
+                        <div class="rule-card"><div class="rule-number">3</div><div class="rule-content">يجب أن يكون اسم المستخدم لائقاً</div></div>
+                        <div class="rule-card"><div class="rule-number">4</div><div class="rule-content">يمنع الخوض في النقاشات الحساسة أو الجدلية.</div></div>
+                        <div class="rule-card"><div class="rule-number">5</div><div class="rule-content">يمنع الابتزاز ممنوع منعاً باتاً ويعرضك للحظر</div></div>
+                    </div>
+                </div>
+                <div class="rules-category wf-reveal" style="transition-delay:0.1s">
+                    <div class="corner-tl"></div>
+                    <div class="corner-br"></div>
+                    <div class="category-header">
+                        <div class="category-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                        <h2 class="category-title">العقوبات</h2>
+                        <span class="cat-count">5</span>
+                    </div>
+                    <div class="rules-grid">
+                        <div class="rule-card"><div class="rule-number">1</div><div class="rule-content">المخالفة الأولى : تحذير</div></div>
+                        <div class="rule-card"><div class="rule-number">2</div><div class="rule-content">المخالفة الثانية : ميوت ( 1h - 7days)</div></div>
+                        <div class="rule-card"><div class="rule-number">3</div><div class="rule-content">مخالفة الثالثة : طرد مؤقت</div></div>
+                        <div class="rule-card"><div class="rule-number">4</div><div class="rule-content">مخالفة الرابعة : حظر مؤقت</div></div>
+                        <div class="rule-card"><div class="rule-number">5</div><div class="rule-content">مخالفة الخامسة : حظر دائم من المجتمع</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <% } %>
+
+        <div class="cy-rules-footer wf-reveal">
+            <p><i class="fas fa-info-circle"></i>آخر تحديث: <%= new Date().toISOString().split('T')[0] %></p>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>
+<script src="/js/main.js"></script>
+</body>
+</html>

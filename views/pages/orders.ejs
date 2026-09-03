@@ -1,0 +1,64 @@
+<%- include('partials/header') %>
+<%- include('partials/navbar') %>
+
+<main class="orders-page">
+  <section class="orders-hero">
+    <div class="container">
+      <h1><i class="fas fa-box"></i> طلباتي</h1>
+    </div>
+  </section>
+
+  <section class="orders-content">
+    <div class="container">
+      <% if (orders && orders.length > 0) { %>
+        <div class="orders-list">
+          <% orders.forEach(order => { %>
+            <div class="order-card">
+              <div class="order-header">
+                <span class="order-id">#<%= order.id %></span>
+                <span class="order-status status-<%= order.status %>">
+                  <% if (order.status === 'pending') { %>
+                    <i class="fas fa-clock"></i> قيد المراجعة
+                  <% } else if (order.status === 'approved') { %>
+                    <i class="fas fa-check"></i> مقبول
+                  <% } else if (order.status === 'shipped') { %>
+                    <i class="fas fa-truck"></i> قيد الشحن
+                  <% } else if (order.status === 'delivered') { %>
+                    <i class="fas fa-check-double"></i> تم التوصيل
+                  <% } else { %>
+                    <i class="fas fa-times"></i> ملغي
+                  <% } %>
+                </span>
+              </div>
+              <div class="order-body">
+                <div class="order-info">
+                  <p><i class="fas fa-calendar"></i> التاريخ: <%= new Date(order.created_at).toLocaleDateString('ar-SA') %></p>
+                  <p><i class="fas fa-money-bill"></i> المبلغ: <%= order.total_amount %></p>
+                </div>
+              </div>
+              <div class="order-footer">
+                <a href="/order_details?id=<%= order.id %>" class="view-btn">
+                  <i class="fas fa-eye"></i> التفاصيل
+                </a>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <div class="empty-state">
+          <i class="fas fa-box-open"></i>
+          <h3>لا توجد طلبات</h3>
+          <p>لم تقم بأي طلبات بعد</p>
+          <a href="/store" class="shop-btn">
+            <i class="fas fa-store"></i> تصفح المتجر
+          </a>
+        </div>
+      <% } %>
+    </div>
+  </section>
+</main>
+
+<%- include('partials/footer') %>
+<script src="/js/main.js"></script>
+</body>
+</html>

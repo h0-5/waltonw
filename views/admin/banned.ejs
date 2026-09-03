@@ -1,0 +1,31 @@
+<%- include('layout') %>
+<div class="admin-card">
+  <h3 style="margin-bottom:20px"><i class="fas fa-ban"></i> المحظورين</h3>
+  <table class="admin-table">
+    <thead><tr><th>#</th><th>المستخدم</th><th>البريد</th><th>الرتبة</th><th>إجراءات</th></tr></thead>
+    <tbody>
+      <% if (banned.length > 0) { %>
+        <% banned.forEach(function(u, i) { %>
+        <tr>
+          <td><%= i + 1 %></td>
+          <td><%= u.username %></td>
+          <td><%= u.email || '—' %></td>
+          <td><span class="badge"><%= u.role %></span></td>
+          <td><button onclick="unbanUser(<%= u.id %>)" class="admin-btn success small"><i class="fas fa-unlock"></i> إلغاء الحظر</button></td>
+        </tr>
+        <% }); %>
+      <% } else { %>
+        <tr><td colspan="5" style="text-align:center;padding:2rem;color:rgba(255,255,255,0.3)">لا يوجد محظورين</td></tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+<script>
+async function unbanUser(id) {
+  if (!confirm('إلغاء حظر هذا المستخدم؟')) return;
+  const res = await fetch('/api/admin/users/' + id + '/unban', { method: 'POST' });
+  const data = await res.json();
+  if (data.success) location.reload();
+}
+</script>
+<%- include('admin_footer') %>

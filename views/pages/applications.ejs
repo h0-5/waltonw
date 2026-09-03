@@ -1,0 +1,105 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+
+<div class="cy-apps-page">
+    <!-- Hero Section -->
+    <div class="cy-apps-hero">
+        <div class="cy-apps-hero-icon">
+            <div class="hex-ring"></div>
+            <div class="hex-ring-inner"></div>
+            <i class="fas fa-file-signature"></i>
+        </div>
+        <h1 class="page-heading">التقديمات</h1>
+        <p class="cy-apps-hero-sub">اختر التقديم المناسب لك من القائمة أدناه، وكن جزءاً من مجتمعنا المتميز</p>
+        <div class="cy-apps-hero-line"></div>
+        <div class="hero-metrics">
+            <div class="metric">
+                <div class="metric-val" id="openCount"><%= typeof applications !== 'undefined' ? applications.filter(function(a){ return a.status === 'open'; }).length : 0 %></div>
+                <div class="metric-label">تقديم مفتوح</div>
+            </div>
+            <div class="metric">
+                <div class="metric-val" id="totalCount"><%= typeof applications !== 'undefined' ? applications.length : 0 %></div>
+                <div class="metric-label">إجمالي التقديمات</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="cy-apps-main">
+        <div class="sec-head reveal">
+            <h2 class="sec-title">
+                <span class="bar"></span>
+                التقديمات المتاحة
+            </h2>
+            <span class="sec-badge" id="countBadge"><%= typeof applications !== 'undefined' ? applications.filter(function(a){ return a.status === 'open'; }).length : 0 %> مفتوح</span>
+        </div>
+
+        <div class="deck">
+            <% if (typeof applications !== 'undefined' && applications && applications.length > 0) { %>
+                <% applications.forEach(function(app, ai) { %>
+                <article class="card reveal stagger-<%= (ai % 6) + 1 %>">
+                    <div class="holo-border"></div>
+                    <div class="top-shine"></div>
+                    <div class="inner-light"></div>
+
+                    <div class="status <%= app.status === 'open' ? 'open' : 'closed' %>">
+                        <span class="dot"></span>
+                        <%= app.status === 'open' ? 'مفتوح للتقديم' : 'مغلق حالياً' %>
+                    </div>
+
+                    <div class="card-head">
+                        <div class="icon-box">
+                            <div class="icon">
+                                <% if (app.image) { %>
+                                    <img loading="lazy" src="<%= app.image %>" alt="<%= app.title || app.application_type %>">
+                                <% } else { %>
+                                    <div class="fallback">
+                                        <i class="fas fa-<%= app.application_type === 'leader' ? 'crown' : (app.application_type === 'member' ? 'users' : (app.application_type === 'support' ? 'headset' : 'file-alt')) %>"></i>
+                                    </div>
+                                <% } %>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="card-title"><%= app.title || app.application_type %></h3>
+                            <span class="card-type"><%= app.application_type === 'leader' ? 'قيادة' : (app.application_type === 'member' ? 'عضوية' : (app.application_type === 'support' ? 'دعم فني' : app.application_type)) %></span>
+                        </div>
+                    </div>
+
+                    <% if (app.description) { %>
+                    <p class="card-desc"><%= app.description.substring(0, 150) %></p>
+                    <% } %>
+
+                    <div class="card-actions">
+                        <% if (app.status === 'open') { %>
+                            <% if (user) { %>
+                            <a href="/applications/form/<%= app.application_type %>" class="apply-btn">
+                                <i class="fas fa-paper-plane"></i> قدّم الآن
+                            </a>
+                            <% } else { %>
+                            <a href="/auth/discord" class="apply-btn">
+                                <i class="fab fa-discord"></i> سجّل دخول أولاً
+                            </a>
+                            <% } %>
+                        <% } else { %>
+                            <button class="apply-btn disabled" disabled>
+                                <i class="fas fa-lock"></i> مغلق حالياً
+                            </button>
+                        <% } %>
+                    </div>
+                </article>
+                <% }); %>
+            <% } else { %>
+            <div class="empty-state">
+                <div class="empty-state-icon"><i class="fas fa-inbox"></i></div>
+                <h3>لا توجد طلبات متاحة حالياً</h3>
+                <p>تابعنا للحصول على فرص جديدة</p>
+            </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>
+<script src="/js/main.js"></script>
+</body>
+</html>

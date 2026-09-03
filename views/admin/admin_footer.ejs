@@ -1,0 +1,15 @@
+    </main>
+</div>
+<script>
+document.getElementById('sidebarToggle').addEventListener('click', function() {
+  document.getElementById('adminSidebar').classList.toggle('collapsed');
+});
+var mobBtn = document.getElementById('mobileSidebarBtn');
+if (mobBtn) {
+  mobBtn.addEventListener('click', function() {
+    document.getElementById('adminSidebar').classList.toggle('show');
+  });
+}
+</script>
+</body>
+</html>

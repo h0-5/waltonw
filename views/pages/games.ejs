@@ -1,0 +1,245 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+
+<div class="games-page">
+    <!-- Hero Section -->
+    <div class="games-hero wf-reveal">
+        <div class="games-hero-glow"></div>
+        <div class="games-hero-icons">
+            <span class="games-hero-icon">&#127920;</span>
+            <span class="games-hero-icon">&#128373;&#65039;</span>
+            <span class="games-hero-icon">&#128308;</span>
+            <span class="games-hero-icon">&#10067;</span>
+            <span class="games-hero-icon">&#127918;</span>
+        </div>
+        <h1 class="games-hero-title"><span style="-webkit-text-fill-color:initial">&#127918;</span> منصة الألعاب</h1>
+        <p class="games-hero-sub">
+            اكتشف عالم من المتعة والتحدي! العب مع الأصدقاء، كوّن فرقاً، تنافس على المراكز الأولى، واكسب النقاط.
+        </p>
+        <div class="games-stats-bar">
+            <div class="games-stat-pill">
+                <i class="fas fa-gamepad"></i>
+                <span>15</span> لعبة
+            </div>
+            <div class="games-stat-pill">
+                <i class="fas fa-bolt"></i>
+                <span>12</span> متاحة
+            </div>
+            <div class="games-stat-pill">
+                <i class="fas fa-users"></i>
+                <span>5</span> جماعية
+            </div>
+            <div class="games-stat-pill">
+                <i class="fas fa-user"></i>
+                <span>7</span> فردية
+            </div>
+        </div>
+    </div>
+
+    <!-- الألعاب المتاحة -->
+    <div class="games-section wf-reveal">
+        <div class="games-section-title">
+            <i class="fas fa-play-circle"></i>
+            &#127919; العب الآن
+            <span class="count-badge">12</span>
+        </div>
+        <div class="games-grid">
+            <!-- مافيا -->
+            <a href="/games/mafia" class="game-card wf-reveal" style="--game-color: #ef4444; --order: 1">
+                <span class="game-badge" style="background: #8b5cf622; color: #8b5cf6; border: 1px solid #8b5cf644">جماعي</span>
+                <span class="game-type-tag" style="background: #8b5cf622; color: #8b5cf6; border: 1px solid #8b5cf644">👥 جماعي</span>
+                <div class="game-icon-wrap">
+                    <i class="fas fa-user-secret"></i>
+                </div>
+                <div class="game-card-body">
+                    <h3 class="game-name">مافيا</h3>
+                    <p class="game-desc">لعبة أدوار سرية — مافيا ضد المواطنين، من سيكشف الآخر أولاً؟</p>
+                    <div class="game-meta">
+                        <span class="game-players"><i class="fas fa-users"></i> 4-12 لاعب</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- إمبوستر -->
+            <a href="/games/impostor" class="game-card wf-reveal" style="--game-color: #6366f1; --order: 2">
+                <span class="game-badge" style="background: #8b5cf622; color: #8b5cf6; border: 1px solid #8b5cf644">جماعي</span>
+                <span class="game-type-tag" style="background: #8b5cf622; color: #8b5cf6; border: 1px solid #8b5cf644">👥 جماعي</span>
+                <div class="game-icon-wrap">
+                    <i class="fas fa-user-ninja"></i>
+                </div>
+                <div class="game-card-body">
+                    <h3 class="game-name">إمبوستر</h3>
+                    <p class="game-desc">أكمل مهامك أو اكشف الإمبوستر قبل أن يقضي على الطاقم!</p>
+                    <div class="game-meta">
+                        <span class="game-players"><i class="fas fa-users"></i> 4-10 لاعب</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- تريفيا -->
+            <a href="/games/trivia" class="game-card wf-reveal" style="--game-color: #3b82f6; --order: 3">
+                <span class="game-badge" style="background: #8b5cf622; color: #8b5cf6; border: 1px solid #8b5cf644">جماعي</span>
+                <span class="game-type-tag" style="background: #8b5cf622; color: #8b5cf6; border: 1px solid #8b5cf644">👥 جماعي</span>
+                <div class="game-icon-wrap">
+                    <i class="fas fa-question-circle"></i>
+                </div>
+                <div class="game-card-body">
+                    <h3 class="game-name">تريفيا</h3>
+                    <p class="game-desc">أسئلة وأجوبة جماعية — أسرع من يجيب صحيح يكسب أكثر نقاط!</p>
+                    <div class="game-meta">
+                        <span class="game-players"><i class="fas fa-users"></i> 2-20 لاعب</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- أونو -->
+            <a href="/games/uno" class="game-card wf-reveal" style="--game-color: #ef4444; --order: 4">
+                <span class="game-badge" style="background: #8b5cf622; color: #8b5cf6; border: 1px solid #8b5cf644">جماعي</span>
+                <span class="game-type-tag" style="background: #8b5cf622; color: #8b5cf6; border: 1px solid #8b5cf644">👥 جماعي</span>
+                <div class="game-icon-wrap">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <div class="game-card-body">
+                    <h3 class="game-name">أونو</h3>
+                    <p class="game-desc">العب أونو مع أصدقائك — تخلص من بطاقاتك قبل الجميع وانتصر!</p>
+                    <div class="game-meta">
+                        <span class="game-players"><i class="fas fa-users"></i> 2-8 لاعب</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- طيارة -->
+            <a href="/games/aviator" class="game-card wf-reveal" style="--game-color: #f97316; --order: 5">
+                <span class="game-badge" style="background: #f9731622; color: #f97316; border: 1px solid #f9731644">حصري</span>
+                <span class="game-type-tag" style="background: #10b98122; color: #10b981; border: 1px solid #10b98144">🎯 فردي</span>
+                <div class="game-icon-wrap">
+                    <i class="fas fa-plane"></i>
+                </div>
+                <div class="game-card-body">
+                    <h3 class="game-name">طيارة</h3>
+                    <p class="game-desc">طير بالـ multiplier قبل ما تتحطم! سجّل ربحك في الوقت المناسب</p>
+                    <div class="game-meta">
+                        <span class="game-players"><i class="fas fa-user"></i> فردي</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- الوصلة المفقودة -->
+            <a href="/games/find_link" class="game-card wf-reveal" style="--game-color: #06b6d4; --order: 6">
+                <span class="game-badge" style="background: #10b98122; color: #10b981; border: 1px solid #10b98144">جديد</span>
+                <span class="game-type-tag" style="background: #10b98122; color: #10b981; border: 1px solid #10b98144">🎯 فردي</span>
+                <div class="game-icon-wrap">
+                    <i class="fas fa-link"></i>
+                </div>
+                <div class="game-card-body">
+                    <h3 class="game-name">الوصلة المفقودة</h3>
+                    <p class="game-desc">شوف الإيموجيات وخمّن الرابط المشترك بينهم — هل تقدر تجيبها؟</p>
+                    <div class="game-meta">
+                        <span class="game-players"><i class="fas fa-user"></i> فردي</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- الكلمة المتقاطعة -->
+            <a href="/games/crossword" class="game-card wf-reveal" style="--game-color: #8b5cf6; --order: 7">
+                <span class="game-badge" style="background: #10b98122; color: #10b981; border: 1px solid #10b98144">جديد</span>
+                <span class="game-type-tag" style="background: #10b98122; color: #10b981; border: 1px solid #10b98144">🎯 فردي</span>
+                <div class="game-icon-wrap">
+                    <i class="fas fa-border-all"></i>
+                </div>
+                <div class="game-card-body">
+                    <h3 class="game-name">الكلمة المتقاطعة</h3>
+                    <p class="game-desc">حل الكلمات المتقاطعة — اختبر معلوماتك ووسع مدارك!</p>
+                    <div class="game-meta">
+                        <span class="game-players"><i class="fas fa-user"></i> فردي</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- حجر ورقة مقص -->
+            <a href="/games/rps" class="game-card wf-reveal" style="--game-color: #22c55e; --order: 8">
+                <span class="game-badge" style="background: #10b98122; color: #10b981; border: 1px solid #10b98144">كلاسيكي</span>
+                <span class="game-type-tag" style="background: #10b98122; color: #10b981; border: 1px solid #10b98144">🎯 فردي</span>
+                <div class="game-icon-wrap">
+                    <i class="fas fa-hand-rock"></i>
+                </div>
+                <div class="game-card-body">
+                    <h3 class="game-name">حجر ورقة مقص</h3>
+                    <p class="game-desc">الكلاسيكي الخالد — اختبر حظك!</p>
+                    <div class="game-meta">
+                        <span class="game-players"><i class="fas fa-user"></i> فردي</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- روليت الحظ -->
+            <a href="/games/spin_wheel" class="game-card wf-reveal" style="--game-color: #f97316; --order: 9">
+                <span class="game-badge" style="background: #f59e0b22; color: #f59e0b; border: 1px solid #f59e0b44">فعالية</span>
+                <span class="game-type-tag" style="background: #f9731622; color: #f97316; border: 1px solid #f9731644">🎁 فعالية</span>
+                <div class="game-icon-wrap">
+                    <i class="fas fa-dharmachakra"></i>
+                </div>
+                <div class="game-card-body">
+                    <h3 class="game-name">روليت الحظ</h3>
+                    <p class="game-desc">الأدمن ينشئ روليت، الأعضاء يشاركون، وتُلف لاختيار الفائزين</p>
+                    <div class="game-meta">
+                        <span class="game-players"><i class="fas fa-users"></i> جماعي</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- الذاكرة -->
+            <a href="/games/memory" class="game-card wf-reveal" style="--game-color: #06b6d4; --order: 10">
+                <span class="game-badge" style="background: #10b98122; color: #10b981; border: 1px solid #10b98144">متوفر</span>
+                <span class="game-type-tag" style="background: #10b98122; color: #10b981; border: 1px solid #10b98144">🎯 فردي</span>
+                <div class="game-icon-wrap">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <div class="game-card-body">
+                    <h3 class="game-name">الذاكرة</h3>
+                    <p class="game-desc">اختبر قوة ذاكرتك — تذكر المواقع وانقز!</p>
+                    <div class="game-meta">
+                        <span class="game-players"><i class="fas fa-user"></i> فردي</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- الكلمة المشفرة -->
+            <a href="/games/word_scramble" class="game-card wf-reveal" style="--game-color: #0ea5e9; --order: 11">
+                <span class="game-badge" style="background: #10b98122; color: #10b981; border: 1px solid #10b98144">جديد</span>
+                <span class="game-type-tag" style="background: #10b98122; color: #10b981; border: 1px solid #10b98144">🎯 فردي</span>
+                <div class="game-icon-wrap">
+                    <i class="fas fa-font"></i>
+                </div>
+                <div class="game-card-body">
+                    <h3 class="game-name">الكلمة المشفرة</h3>
+                    <p class="game-desc">رتّب الحروف لتكوّن الكلمة الصحيحة — سرعتك هي سلاحك</p>
+                    <div class="game-meta">
+                        <span class="game-players"><i class="fas fa-user"></i> فردي</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- سباق الحساب -->
+            <a href="/games/math_race" class="game-card wf-reveal" style="--game-color: #ec4899; --order: 12">
+                <span class="game-badge" style="background: #10b98122; color: #10b981; border: 1px solid #10b98144">متوفر</span>
+                <span class="game-type-tag" style="background: #10b98122; color: #10b9811; border: 1px solid #10b98144">🎯 فردي</span>
+                <div class="game-icon-wrap">
+                    <i class="fas fa-calculator"></i>
+                </div>
+                <div class="game-card-body">
+                    <h3 class="game-name">سباق الحساب</h3>
+                    <p class="game-desc">حل المعادلات بسرعة!</p>
+                    <div class="game-meta">
+                        <span class="game-players"><i class="fas fa-user"></i> فردي</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>
+<script src="/js/main.js"></script>
+</body>
+</html>

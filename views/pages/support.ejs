@@ -1,0 +1,141 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+
+<main class="support-page">
+  <section class="support-hero">
+    <div class="container">
+      <div class="support-hero-content">
+        <div class="support-hero-icon">
+          <i class="fas fa-headset"></i>
+        </div>
+        <h1>الدعم الفني</h1>
+        <p>نحن هنا لمساعدتك - أرسل تذكرة وسنرد عليك في أقرب وقت</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="support-form-section">
+    <div class="container">
+      <div class="support-form-wrapper">
+        <form id="supportForm" class="support-form">
+          <h2>
+            <i class="fas fa-envelope"></i>
+            إرسال تذكرة جديدة
+          </h2>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="name">
+                <i class="fas fa-user"></i>
+                الاسم
+              </label>
+              <input type="text" id="name" name="name" required 
+                     value="<%= user ? user.username : '' %>" 
+                     placeholder="اسمك">
+            </div>
+            <div class="form-group">
+              <label for="email">
+                <i class="fas fa-envelope"></i>
+                البريد الإلكتروني
+              </label>
+              <input type="email" id="email" name="email" required 
+                     value="<%= user ? user.email || '' : '' %>" 
+                     placeholder="بريدك الإلكتروني">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="priority">
+              <i class="fas fa-flag"></i>
+              الأولوية
+            </label>
+            <select id="priority" name="priority" required>
+              <option value="low">منخفضة</option>
+              <option value="medium" selected>متوسطة</option>
+              <option value="high">عالية</option>
+              <option value="urgent">عاجلة</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="subject">
+              <i class="fas fa-heading"></i>
+              الموضوع
+            </label>
+            <input type="text" id="subject" name="subject" required 
+                   placeholder="موضوع التذكرة">
+          </div>
+
+          <div class="form-group">
+            <label for="message">
+              <i class="fas fa-comment"></i>
+              الرسالة
+            </label>
+            <textarea id="message" name="message" rows="6" required 
+                      placeholder="اشرح مشكلتك بالتفصيل..."></textarea>
+          </div>
+
+          <button type="submit" class="submit-btn">
+            <i class="fas fa-paper-plane"></i>
+            إرسال التذكرة
+          </button>
+        </form>
+      </div>
+
+      <!-- FAQ Section -->
+      <div class="faq-section">
+        <h2>
+          <i class="fas fa-question-circle"></i>
+          أسئلة شائعة
+        </h2>
+        <div class="faq-grid">
+          <div class="faq-item">
+            <h3>كيف أسجّل دخول؟</h3>
+            <p>اضغط على زر "تسجيل الدخول" واستخدم حساب Discord الخاص بك للمصادقة.</p>
+          </div>
+          <div class="faq-item">
+            <h3>كيف أحصل على نقاط؟</h3>
+            <p>يمكنك الحصول على النقاط من الألعاب والمشاركة في الأنشطة والجوائز.</p>
+          </div>
+          <div class="faq-item">
+            <h3>كيف أشتر من المتجر؟</h3>
+            <p>اذهب للمتجر واختر المنتج ثم اضغط شراء. تأكد من أن لديك نقاط كافية.</p>
+          </div>
+          <div class="faq-item">
+            <h3>كم يستغرق الرد؟</h3>
+            <p>نحاول الرد خلال 24 ساعة. للحالات العاجلة، استخدم الأولوية العالية.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<%- include('../partials/footer') %>
+<script src="/js/main.js"></script>
+<script>
+document.getElementById('supportForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const formData = new FormData(this);
+  const data = Object.fromEntries(formData);
+
+  try {
+    const res = await fetch('/api/support/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (result.success) {
+      WaltonAPI.showNotification('تم إرسال التذكرة بنجاح!', 'success');
+      this.reset();
+    } else {
+      WaltonAPI.showNotification(result.error || 'فشل الإرسال', 'error');
+    }
+  } catch(e) {
+    WaltonAPI.showNotification('حدث خطأ في الإرسال', 'error');
+  }
+});
+</script>
+</body>
+</html>

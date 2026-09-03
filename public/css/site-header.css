@@ -1,0 +1,537 @@
+/* Default CSS Variables - overridden by site_accent.php inline style */
+
+/* حماية فورية للوجو - أولوية قصوى */
+.logo-wrapper img,
+.logo img,
+.site-logo,
+.nav-logo img,
+.nav-logo-img,
+img[src*="logo"],
+img[src*="walton"],
+img[alt*="logo" i],
+img[alt*="walton" i],
+header img[src*="logo"],
+.header img[src*="logo"] {
+    background: none !important;
+    background-image: none !important;
+    background-color: transparent !important;
+    opacity: 1 !important;
+}
+
+/* حماية قوية لصورة البروفايل في الهيدر */
+.user-avatar,
+.nav-avatar,
+.profile-skip,
+.user-btn img,
+.nav-actions img,
+.navbar img[alt*="avatar" i],
+.navbar img[class*="avatar"],
+.navbar img[class*="user"],
+img[data-profile-protected="true"],
+img[data-lightbox-skip="true"] {
+    pointer-events: none !important;
+    cursor: default !important;
+    transform: none !important;
+    transition: none !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: block !important;
+    background: none !important;
+    background-image: none !important;
+    background-color: transparent !important;
+}
+
+/* منع أي تأثيرات hover على صور البروفايل */
+.user-avatar:hover,
+.nav-avatar:hover,
+.profile-skip:hover,
+.user-btn img:hover,
+.nav-actions img:hover,
+img[data-profile-protected="true"]:hover,
+img[data-lightbox-skip="true"]:hover {
+    transform: none !important;
+    box-shadow: none !important;
+    cursor: default !important;
+    opacity: 1 !important;
+}
+
+/* حماية إضافية من JavaScript */
+.user-avatar,
+.nav-avatar,
+.profile-skip,
+img[data-profile-protected="true"] {
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    user-select: none !important;
+}
+
+/* استعادة الأنيميشن الأصلي للوجو */
+.hero-section .logo-wrapper img {
+    animation: logoFloat 3s ease-in-out infinite, logoPulse 2s ease-in-out infinite !important;
+    background: none !important;
+}
+
+.nav-logo-img {
+    animation: logoSpin 6s ease-in-out infinite, logoGlow 3s ease-in-out infinite !important;
+    background: none !important;
+}
+
+/* منع تطبيق fast-img على اللوجو */
+.nav-logo-img.fast-img,
+.logo-wrapper img.fast-img,
+.logo img.fast-img,
+img[src*="logo"].fast-img {
+    background: none !important;
+    background-image: none !important;
+    background-color: transparent !important;
+    animation: none !important;
+    opacity: 1 !important;
+}
+
+/* استعادة الأنيميشن للوجو حتى لو كان له كلاس fast-img */
+.nav-logo-img.fast-img {
+    animation: logoSpin 6s ease-in-out infinite, logoGlow 3s ease-in-out infinite !important;
+}
+
+.hero-section .logo-wrapper img.fast-img {
+    animation: logoFloat 3s ease-in-out infinite, logoPulse 2s ease-in-out infinite !important;
+}
+
+.page-icon-box{background:linear-gradient(135deg,rgba(var(--ac-rgb),0.2),rgba(var(--ac-rgb),0.1));border:1px solid rgba(var(--ac-rgb),0.3);box-shadow:0 8px 30px rgba(var(--ac-rgb),0.3)}
+.page-icon-box i{color:var(--ac)}
+.app-btn{background:linear-gradient(135deg,var(--ac),var(--ac-dark));box-shadow:0 4px 16px rgba(var(--ac-rgb),0.35)}
+
+/* ========== إجبار الدائرة المتحركة على الظهور - أولوية قصوى ========== */
+.logo-wrapper::before {
+    content: '' !important;
+    position: absolute !important;
+    top: -2px !important;
+    left: -2px !important;
+    right: -2px !important;
+    bottom: -2px !important;
+    border-radius: 50% !important;
+    background: conic-gradient(
+        var(--ac, #ff6b1a),
+        rgba(var(--ac-rgb, 249,115,22), 0.5),
+        var(--ac, #ff6b1a),
+        rgba(var(--ac-rgb, 249,115,22), 0.3),
+        var(--ac, #ff6b1a)
+    ) !important;
+    animation: spinBorder 3s linear infinite !important;
+    z-index: 0 !important;
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: none !important;
+}
+
+@keyframes spinBorder {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.logo-wrapper::after {
+    content: '' !important;
+    position: absolute !important;
+    inset: 0px !important;
+    border-radius: 50% !important;
+    background: #000 !important;
+    z-index: 1 !important;
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.logo-wrapper {
+    position: relative !important;
+    overflow: visible !important;
+    z-index: 10 !important;
+}
+
+.hero-section {
+    position: relative !important;
+    overflow: visible !important;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{margin:0;padding:0;min-height:100vh}
+body{margin:0;padding:0;font-family:'Cairo',sans-serif;direction:rtl;min-height:100vh;color:#fff}
+body{background:#0a0000;padding-top:70px}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:rgba(0,0,0,0.3)}
+::-webkit-scrollbar-thumb{background:rgba(249,115,22,0.5);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:rgba(249,115,22,0.8)}
+
+/* أ¢â€‌â‚¬أ¢â€‌â‚¬ NAVBAR أ¢â€‌â‚¬أ¢â€‌â‚¬ */
+.navbar{
+  position:fixed;top:0;left:0;right:0;height:70px;z-index:50;
+  display:flex;align-items:center;justify-content:space-between;padding:0 2rem;
+  background: transparent; border: none; box-shadow: none;
+  transform: translateY(0); opacity: 1;
+  transition: transform 0.45s cubic-bezier(.4,0,.2,1), opacity 0.35s ease;
+  will-change: transform, opacity;
+}
+.navbar.hidden-nav{ transform:translateY(-100%); opacity:0; }
+
+/* Logo group */
+.nav-logo-group{display:flex;align-items:center;gap:.5rem;flex-shrink:0}
+
+/* Logo */
+.nav-logo{display:flex;align-items:center;gap:.65rem;text-decoration:none;flex-shrink:0}
+
+.nav-logo-img{
+  width:40px;height:40px;
+  animation: logoSpin 6s ease-in-out infinite, logoGlow 3s ease-in-out infinite;
+  transition:transform .2s;
+}
+@keyframes logoSpin {
+  0%,100%{transform:rotateY(0deg)}
+  50%{transform:rotateY(360deg)}
+}
+@keyframes logoGlow {
+  0%,100%{filter:drop-shadow(0 0 6px rgba(255,107,26,0.5))}
+  50%{filter:drop-shadow(0 0 18px rgba(255,140,0,1)) drop-shadow(0 0 35px rgba(255,107,26,0.8))}
+}
+
+.nav-logo-text{
+  font-size:1rem;font-weight:800;font-family:'Cinzel Decorative',serif;
+  background:linear-gradient(90deg,#fff 0%,var(--ac-light,#fed7aa) 25%,var(--ac,#f97316) 50%,#fff 75%,var(--ac-light,#fed7aa) 100%);
+  background-size:200% auto;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  letter-spacing:1px;
+  animation:textShine 3s linear infinite;
+}
+@keyframes textShine {
+  0%{background-position:200% center}
+  100%{background-position:-200% center}
+}
+
+.nav-logo-sub{
+  font-size:.5rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;
+  background:linear-gradient(90deg,var(--ac,#f97316),#fff,var(--ac,#f97316));
+  background-size:200% auto;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:textShine 2s linear infinite reverse;
+}
+
+/* Nav links - Centered */
+.nav-links{
+  display:flex;
+  align-items:center;
+  gap:clamp(0.4rem, 1.2vw, 1.5rem);
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  white-space:nowrap;
+}
+.nav-link{
+  display:flex;
+  align-items:center;
+  gap:.35rem;
+  font-size:clamp(0.72rem, 1vw, 0.9rem);
+  font-weight:600;
+  color:rgba(255,255,255,0.7);
+  text-decoration:none;
+  transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space:nowrap;
+  position:relative;
+  padding:0.5rem 0;
+  cursor:pointer;
+}
+
+/* Orange underline animation on hover */
+.nav-link::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 50%;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--ac), var(--ac-light), var(--ac));
+  border-radius: 2px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateX(50%);
+  box-shadow: 0 0 8px rgba(var(--ac-rgb),0.6);
+}
+
+/* Hover effects - text color + underline animation */
+.nav-link:hover {
+  color: var(--ac) !important;
+  transform: translateY(-1px);
+  text-shadow: 0 0 8px rgba(var(--ac-rgb),0.4);
+}
+
+.nav-link:hover::before {
+  width: 100%;
+  right: 0;
+  transform: translateX(0);
+}
+
+/* Icon hover animation */
+.nav-link i{
+  font-size:clamp(0.65rem, 0.9vw, 0.8rem);
+  color:rgba(var(--ac-rgb),0.6);
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), color 0.2s, text-shadow 0.2s;
+}
+
+.nav-link:hover i {
+  color: var(--ac);
+  transform: scale(1.35) rotate(-10deg);
+  text-shadow: 0 0 8px rgba(var(--ac-rgb),0.7);
+}
+
+/* Active link styles */
+.nav-link.active {
+  color: var(--ac);
+  position: relative;
+}
+
+.nav-link.active i {
+  color: var(--ac);
+  animation: iconBounce 2.5s ease-in-out infinite;
+}
+
+@keyframes iconBounce {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  30% { transform: scale(1.25) rotate(-8deg); }
+  60% { transform: scale(1.1) rotate(4deg); }
+}
+
+/* Active link underline - with pulse animation */
+.nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--ac), var(--ac-light));
+  border-radius: 2px;
+  box-shadow: 0 0 10px rgba(var(--ac-rgb),0.8);
+  animation: activePulse 1.5s ease-in-out infinite;
+}
+
+/* Remove the before pseudo-element for active links to avoid conflict */
+.nav-link.active::before {
+  display: none;
+}
+
+/* Pulse animation for active link */
+@keyframes activePulse {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 5px rgba(var(--ac-rgb),0.5);
+  }
+  50% {
+    opacity: 0.7;
+    box-shadow: 0 0 15px rgba(var(--ac-rgb),0.9);
+  }
+}
+
+/* Actions - Right side */
+.nav-actions{display:flex;align-items:center;gap:1rem;flex-shrink:0}
+
+/* Icon buttons - Clean circles */
+.icon-btn{
+  width:36px;height:36px;border-radius:50%;
+  background: transparent;
+  border: none;
+  color:rgba(255,255,255,0.6);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:1rem;transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position:relative;
+}
+.icon-btn:hover{
+  color:var(--ac);
+  transform: scale(1.1) rotate(8deg);
+}
+
+/* Notification badge */
+#notificationBadge{
+  position:absolute;top:-2px;right:-2px;
+  min-width:16px;height:16px;
+  background: var(--ac);
+  color:#fff;font-size:.55rem;font-weight:800;
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  padding:0 3px;border:1px solid #000;
+  animation: badgePulse 1.5s ease-in-out infinite;
+}
+#notificationBadge.hidden { display:none !important; }
+
+@keyframes badgePulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(var(--ac-rgb),0.7);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 4px rgba(var(--ac-rgb),0);
+  }
+}
+
+/* Notification dropdown */
+#notificationDropdown{
+  display:none;
+  position:fixed;
+  width:320px;
+  max-width:calc(100vw - 16px);
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(20px);
+  border:1px solid rgba(var(--ac-rgb),0.2);
+  border-radius:12px;
+  box-shadow:0 20px 40px rgba(0,0,0,0.5);
+  z-index:9999;overflow:hidden;
+  animation: dropdownFadeIn 0.2s ease-out;
+}
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+#notificationDropdown:not(.hidden){display:block}
+#notificationList{max-height:320px;overflow-y:auto}
+#notificationList>div{
+  padding:.75rem 1rem;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+  font-size:.8rem;color:rgba(255,255,255,0.7);
+  cursor:pointer;transition:background .2s;
+}
+#notificationList>div:hover{background:rgba(var(--ac-rgb),0.12);}
+
+/* User button - Clean */
+.user-btn{
+  display:flex;align-items:center;gap:.5rem;
+  background: transparent;
+  border: none;
+  cursor:pointer;transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration:none;
+  padding:0.25rem;
+  border-radius:40px;
+}
+.user-btn:hover{
+  background: rgba(var(--ac-rgb),0.15);
+  transform: translateY(-1px);
+}
+
+/* Avatar */
+.user-avatar{
+  width:32px;height:32px;border-radius:50%;
+  object-fit:cover;
+  border:2px solid rgba(var(--ac-rgb),0.5);
+  flex-shrink:0;
+  transition: all 0.3s ease;
+  pointer-events: none !important; /* منع أي تفاعل مع صورة البروفايل */
+}
+.user-btn:hover .user-avatar {
+  border-color: var(--ac);
+  transform: scale(1.05);
+  box-shadow: 0 0 12px rgba(var(--ac-rgb),0.5);
+}
+.user-avatar-placeholder{
+  width:32px;height:32px;border-radius:50%;
+  background: linear-gradient(135deg, rgba(var(--ac-rgb),0.3), rgba(var(--ac-rgb),0.1));
+  border:2px solid rgba(var(--ac-rgb),0.5);
+  display:flex;align-items:center;justify-content:center;
+  font-size:.8rem;font-weight:800;color:var(--ac);
+  flex-shrink:0;
+  transition: all 0.3s ease;
+}
+.user-btn:hover .user-avatar-placeholder {
+  border-color: var(--ac);
+  transform: scale(1.05);
+  box-shadow: 0 0 12px rgba(var(--ac-rgb),0.5);
+}
+.user-name{font-size:.85rem;font-weight:600;color:rgba(255,255,255,0.85);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-chevron{font-size:.6rem;color:rgba(var(--ac-rgb),0.6);transition:transform 0.3s ease;margin-left:.1rem}
+.user-btn:hover .user-chevron{transform:rotate(180deg)}
+
+/* User dropdown */
+#userMenuDropdown{
+  display:none;
+  position:fixed;
+  width:180px;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(20px);
+  border:1px solid rgba(var(--ac-rgb),0.2);
+  border-radius:12px;
+  box-shadow:0 20px 40px rgba(0,0,0,0.5);
+  overflow:hidden;z-index:9999;
+  animation: dropdownFadeIn 0.2s ease-out;
+}
+#userMenuDropdown:not(.hidden){
+  display:block;
+}
+.user-drop-item{
+  display:flex;align-items:center;gap:.65rem;
+  padding:.75rem 1rem;
+  font-size:.8rem;font-weight:600;
+  text-decoration:none;transition:all 0.25s ease;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.8);
+}
+.user-drop-item:last-child{border-bottom:none}
+.user-drop-item:hover{
+  background:rgba(var(--ac-rgb),0.12);
+  color:var(--ac);
+  transform: translateX(-5px);
+}
+.user-drop-item i{width:16px;font-size:.75rem;transition:transform 0.2s;}
+.user-drop-item:hover i{transform: scale(1.1);}
+
+/* Login button - Clean */
+.login-btn{
+  display:flex;align-items:center;gap:.45rem;
+  padding:.5rem 1rem;border-radius:8px;
+  background: var(--ac);
+  color:#fff;font-size:.8rem;font-weight:600;
+  text-decoration:none;transition:all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+.login-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transition: left 0.5s ease;
+}
+.login-btn:hover::before {
+  left: 100%;
+}
+.login-btn:hover{
+  background: var(--ac-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(var(--ac-rgb),0.5);
+}
+
+/* Mobile */
+#mobileMenuBtn{display:none;width:36px;height:36px;border-radius:10px;background:rgba(var(--ac-rgb),0.2);border:2px solid var(--ac,#f97316);color:#fff;cursor:pointer;align-items:center;justify-content:center;font-size:1.1rem;transition:all 0.3s ease;flex-shrink:0}
+#mobileMenuBtn:hover{background:var(--ac,#f97316);transform:scale(1.08);box-shadow:0 0 15px rgba(var(--ac-rgb),0.6)}
+#mobileNav{display:none;position:fixed;top:70px;left:0;right:0;background:rgba(0,0,0,0.95);backdrop-filter:blur(20px);border-bottom:1px solid rgba(var(--ac-rgb),0.2);padding:1rem;z-index:49;flex-direction:column;gap:.3rem;max-height:calc(100vh - 70px);overflow-y:auto}
+#mobileNav.open{display:flex;animation: dropdownFadeIn 0.2s ease-out;}
+#mobileNav .nav-link{justify-content:flex-start;color:rgba(255,255,255,0.7);font-size:.85rem;padding:.55rem .75rem;transition:all 0.2s;}
+#mobileNav .nav-link:hover{color:var(--ac);padding-right:1rem;}
+
+/* Responsive breakpoints */
+@media(max-width:1280px){
+  .nav-links{gap:clamp(0.3rem, 0.8vw, 1rem)}
+  .nav-link{font-size:clamp(0.68rem, 0.85vw, 0.82rem)}
+}
+@media(max-width:1100px){
+  .nav-links{display:none}
+  #mobileMenuBtn{display:flex}
+}
+@media(max-width:768px){
+  .navbar{padding:0 1rem}
+}
+@media(max-width:480px){
+  .nav-logo-text,.nav-logo-sub{display:none}
+}

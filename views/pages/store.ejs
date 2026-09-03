@@ -1,0 +1,193 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+
+<div class="cy-page-bg" dir="rtl">
+    <!-- Hero Section -->
+    <div class="cy-hero">
+        <div class="cy-hero-icon">
+            <div class="hex-ring"></div>
+            <div class="hex-ring-inner"></div>
+            <i class="fas fa-coins"></i>
+        </div>
+        <h1>متجر النقاط</h1>
+        <p class="cy-hero-sub">استبدل نقاطك بمكافآت حصرية وعناصر مميزة</p>
+        <div class="cy-hero-line"></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="cy-tabs">
+        <a href="/store" class="cy-tab cy-tab-active">
+            <i class="fas fa-coins"></i>متجر النقاط
+        </a>
+        <a href="/store/products" class="cy-tab">
+            <i class="fas fa-store"></i>المتجر العام
+        </a>
+    </div>
+
+    <!-- Main Content -->
+    <div class="cy-main">
+        <!-- Search & Filter Bar -->
+        <div class="mb-6">
+            <form method="GET" action="/store">
+                <div class="cy-search-bar">
+                    <input type="text" name="search" placeholder="ابحث عن منتج..." value="<%= typeof search !== 'undefined' ? search : '' %>" class="cy-search-input">
+                    <button type="submit" class="cy-search-btn">
+                        <i class="fas fa-search"></i> بحث
+                    </button>
+                    <!-- Category Dropdown -->
+                    <div style="position:relative">
+                        <button type="button" onclick="toggleFsCatMenu()" id="fsCatBtn" class="cy-cat-btn">
+                            <i class="fas fa-th-large"></i>
+                            <span>الفئات</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div id="fsCatMenu" class="cy-cat-dropdown">
+                            <a href="/store" class="cat-active">
+                                <i class="fas fa-th-large" style="width:14px;font-size:.7rem"></i> الكل
+                            </a>
+                            <a href="/store?cat=bot_item">
+                                <i class="fas fa-tag" style="width:14px;font-size:.7rem"></i> منتجات البوت
+                            </a>
+                            <a href="/store?cat=purchase">
+                                <i class="fas fa-tag" style="width:14px;font-size:.7rem"></i> شراء منتج
+                            </a>
+                            <a href="/store?cat=random_box">
+                                <i class="fas fa-tag" style="width:14px;font-size:.7rem"></i> صناديق عشوائية
+                            </a>
+                        </div>
+                    </div>
+                    <!-- Points Balance -->
+                    <% if (user) { %>
+                    <div class="cy-points-badge">
+                        <i class="fas fa-coins"></i>
+                        <span><%= typeof userPoints !== 'undefined' ? userPoints.toLocaleString() : '0' %> نقطة</span>
+                    </div>
+                    <% } %>
+                </div>
+            </form>
+        </div>
+
+        <!-- Products Grid -->
+        <% if (typeof products !== 'undefined' && products && products.length > 0) { %>
+        <div class="cy-product-grid">
+            <% products.forEach(function(item) { %>
+            <div class="cy-product-card">
+                <div class="corner-tl"></div>
+                <div class="corner-br"></div>
+
+                <!-- Image Section -->
+                <div class="cy-card-img-wrap">
+                    <% if (item.image) { %>
+                    <img src="<%= item.image %>" alt="<%= item.name %>" draggable="false" oncontextmenu="return false">
+                    <% } else { %>
+                    <i class="fas fa-<%= item.category_type === 'random_box' ? 'gift' : (item.category_type === 'purchase' ? 'shopping-bag' : 'box') %> placeholder-icon"></i>
+                    <% } %>
+
+                    <!-- Category Badge -->
+                    <span class="cy-cat-badge">
+                        <%= item.category_type === 'bot_item' ? '🎒 منتجات البوت' : (item.category_type === 'purchase' || item.category_type === 'purchase_money' ? '🛒 شراء منتج' : '📦 صندوق عشوائي') %>
+                    </span>
+
+                    <!-- Left Badges -->
+                    <div class="cy-badges-left">
+                        <% if (item.coming_soon) { %>
+                        <span class="cy-badge-coming-soon"><i class="fas fa-clock"></i> قريباً</span>
+                        <% } %>
+                        <% if (item.ended) { %>
+                        <span class="cy-badge-ended"><i class="fas fa-ban"></i> انتهى</span>
+                        <% } %>
+                    </div>
+                </div>
+
+                <!-- Info Section -->
+                <div class="cy-card-info">
+                    <div class="cy-card-title">
+                        <span class="title-text"><%= item.name %></span>
+                        <span class="card-id">#<%= item.id %></span>
+                    </div>
+
+                    <% if (item.description) { %>
+                    <div class="cy-card-desc"><%= item.description.substring(0, 80) %></div>
+                    <% } %>
+
+                    <!-- Prices -->
+                    <div class="cy-prices">
+                        <% if (item.price_points) { %>
+                        <span class="cy-price-points"><i class="fas fa-coins"></i> <%= item.price_points %> نقطة</span>
+                        <% } %>
+                        <% if (item.price_money) { %>
+                        <span class="cy-price-money"><i class="fas fa-dollar-sign"></i> $<%= item.price_money %></span>
+                        <% } %>
+                    </div>
+
+                    <!-- Stock Bar -->
+                    <div class="cy-stock-wrap">
+                        <div class="cy-stock-bar">
+                            <div class="cy-stock-fill stock-high" style="width: 100%"></div>
+                        </div>
+                        <span class="cy-stock-label stock-high-text">متوفر</span>
+                    </div>
+
+                    <!-- Buy Button -->
+                    <% if (user) { %>
+                        <% if (!item.ended && (item.stock === -1 || item.stock > 0)) { %>
+                        <button class="cy-buy-btn ripple-btn" onclick="buyProduct(<%= item.id %>)" data-id="<%= item.id %>" data-name="<%= item.name %>" data-type="<%= item.category_type %>" data-pts="<%= item.price_points || 0 %>">
+                            <i class="fas fa-shopping-cart"></i> شراء
+                        </button>
+                        <% } else { %>
+                        <button class="cy-buy-btn disabled" disabled>
+                            <i class="fas fa-times"></i> غير متوفر
+                        </button>
+                        <% } %>
+                    <% } else { %>
+                    <a href="/auth/discord" class="cy-buy-btn">
+                        <i class="fab fa-discord"></i> سجّل دخول أولاً
+                    </a>
+                    <% } %>
+                </div>
+            </div>
+            <% }); %>
+        </div>
+        <% } else { %>
+        <div class="cy-empty">
+            <div class="cy-empty-card">
+                <div class="cy-empty-icon">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <div class="cy-empty-title">لا توجد منتجات بعد</div>
+                <div class="cy-empty-desc">ترقبوا إضافة منتجات جديدة قريباً</div>
+            </div>
+        </div>
+        <% } %>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>
+<script src="/js/main.js"></script>
+<script>
+function toggleFsCatMenu() {
+    var menu = document.getElementById('fsCatMenu');
+    menu.classList.toggle('open');
+}
+
+async function buyProduct(productId) {
+    try {
+        var res = await fetch('/api/store/buy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ product_id: productId })
+        });
+        var data = await res.json();
+        if (data.success) {
+            alert('تم الشراء بنجاح!');
+            setTimeout(function() { location.reload(); }, 1000);
+        } else {
+            alert(data.error || 'فشل الشراء');
+        }
+    } catch(e) {
+        alert('حدث خطأ');
+    }
+}
+</script>
+</body>
+</html>

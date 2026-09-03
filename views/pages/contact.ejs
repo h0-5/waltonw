@@ -1,0 +1,86 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+
+<main class="contact-page">
+  <section class="contact-hero">
+    <div class="container">
+      <div class="contact-hero-content">
+        <div class="contact-hero-icon">
+          <i class="fab fa-discord"></i>
+        </div>
+        <h1>تواصل معنا</h1>
+        <p>انضم لسيرفرنا على ديسكورد وكن جزءاً من مجتمعنا</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="contact-content">
+    <div class="container">
+      <div class="contact-card">
+        <div class="discord-icon-large">
+          <i class="fab fa-discord"></i>
+        </div>
+        <h2>سيرفر Discord</h2>
+        <p>انضم الآن وتفاعل مع آلاف الأعضاء النشطين</p>
+        
+        <div class="invite-link-box">
+          <input type="text" id="inviteLink" value="https://discord.gg/rcj6FuekX6" readonly>
+          <button class="copy-btn" id="copyBtn" onclick="copyInvite()">
+            <i class="fas fa-copy"></i>
+            نسخ
+          </button>
+        </div>
+
+        <a href="https://discord.gg/rcj6FuekX6" target="_blank" class="join-discord-btn">
+          <i class="fab fa-discord"></i>
+          انضم الآن
+        </a>
+      </div>
+
+      <div class="features-row">
+        <div class="feature-box">
+          <div class="feature-icon">
+            <i class="fas fa-users"></i>
+          </div>
+          <h3>مجتمع نشط</h3>
+          <p>آلاف الأعضاء النشطين والمنشورات اليومية</p>
+        </div>
+        <div class="feature-box">
+          <div class="feature-icon">
+            <i class="fas fa-bell"></i>
+          </div>
+          <h3>تحديثات فورية</h3>
+          <p>احصل على آخر الأخبار والعروض أولاً بأول</p>
+        </div>
+        <div class="feature-box">
+          <div class="feature-icon">
+            <i class="fas fa-headset"></i>
+          </div>
+          <h3>دعم مباشر</h3>
+          <p>فريق الدعم جاهز لمساعدتك في أي وقت</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<%- include('../partials/footer') %>
+<script src="/js/main.js"></script>
+<script>
+function copyInvite() {
+  const input = document.getElementById('inviteLink');
+  const btn = document.getElementById('copyBtn');
+  
+  navigator.clipboard.writeText(input.value).then(() => {
+    btn.innerHTML = '<i class="fas fa-check"></i> تم النسخ';
+    btn.classList.add('copied');
+    
+    setTimeout(() => {
+      btn.innerHTML = '<i class="fas fa-copy"></i> نسخ';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+</script>
+</body>
+</html>

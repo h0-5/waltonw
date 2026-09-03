@@ -1,0 +1,188 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+
+<!-- Particle Background -->
+<div class="particle-bg" id="particleBg"></div>
+
+<!-- Floating Actions -->
+<div class="floating-actions">
+    <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="floating-btn" title="العودة للأعلى">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+</div>
+
+<div class="custom-container">
+    <!-- Hero Section - 3D Animated -->
+    <section class="hero-section-modern" id="heroSection">
+        <div class="logo-wrapper-modern" id="heroLogo">
+            <div class="logo-inner-glow"></div>
+            <img src="<%= settings.site_logo_url || '/images/walton-logo.svg' %>" alt="Walton Family">
+        </div>
+        <h1 class="hero-title-modern">مرحباً بك في Walton Family</h1>
+        <p class="hero-sub-modern" id="heroSubText">أكثر من مجرد عائلة - مجتمع متكامل من الدعم والإبداع</p>
+        <div class="btn-group">
+            <a href="/applications" class="btn-primary-modern ripple-btn">
+                <i class="fas fa-user-plus"></i> انضم الآن
+            </a>
+            <% if (user) { %>
+            <a href="/community" class="btn-outline-modern ripple-btn">
+                <i class="fas fa-comments"></i> المجتمع
+            </a>
+            <% } else { %>
+            <a href="/store" class="btn-outline-modern ripple-btn">
+                <i class="fas fa-store"></i> المتجر
+            </a>
+            <% } %>
+        </div>
+    </section>
+
+    <!-- Stats Cards - 3D Tilt -->
+    <div class="stats-grid-modern">
+        <div class="stat-card-modern wf-reveal">
+            <i class="fas fa-headset stat-icon-modern"></i>
+            <div class="stat-content">
+                <div class="stat-number-modern stat-number"><%= stats.support %></div>
+                <div class="stat-label-modern">دعم فني</div>
+            </div>
+        </div>
+        <div class="stat-card-modern wf-reveal">
+            <i class="fas fa-users-cog stat-icon-modern"></i>
+            <div class="stat-content">
+                <div class="stat-number-modern stat-number"><%= stats.staff %></div>
+                <div class="stat-label-modern">فريق إداري</div>
+            </div>
+        </div>
+        <div class="stat-card-modern wf-reveal">
+            <i class="fas fa-users stat-icon-modern"></i>
+            <div class="stat-content">
+                <div class="stat-number-modern stat-number"><%= stats.members %></div>
+                <div class="stat-label-modern">عضو في العائلة</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- News Section -->
+    <section style="margin: 3rem 0;">
+        <div class="section-header wf-reveal">
+            <h2 class="section-title-modern">
+                <i class="fas fa-newspaper"></i> آخر الأخبار والمسابقات
+            </h2>
+        </div>
+        
+        <div class="news-grid-modern">
+            <% if (typeof news !== 'undefined' && news && news.length > 0) { %>
+                <% news.forEach(function(item, index) { %>
+                <div class="news-card-modern wf-reveal" style="animation-delay: <%= index * 0.1 %>s">
+                    <div class="news-card-content">
+                        <div class="news-badge <%= item.type === 'giveaway' ? 'news-badge-giveaway' : 'news-badge-info' %>">
+                            <i class="fas fa-<%= item.type === 'giveaway' ? 'gift' : 'info-circle' %>"></i>
+                            <%= item.type === 'giveaway' ? 'مسابقة' : 'خبر' %>
+                        </div>
+                        <h3 class="news-title-modern"><%= item.title %></h3>
+                        <div class="news-date-modern">
+                            <i class="fas fa-clock"></i> <%= new Date(item.created_at).toLocaleDateString('ar-SA') %>
+                        </div>
+                        <div class="news-content-modern"><%= item.content ? item.content.substring(0, 200) : '' %></div>
+                    </div>
+                    <% if (item.image) { %>
+                    <picture class="img-preloader">
+                        <img src="<%= item.image %>" alt="صورة الخبر" class="fast-img" loading="lazy" decoding="async">
+                    </picture>
+                    <% } %>
+                </div>
+                <% }); %>
+            <% } else { %>
+            <div style="text-align: center; padding: 3rem; background: rgba(18,15,30,0.7); border-radius: 24px; border: 1px solid var(--border); grid-column: 1/-1;">
+                <i class="fas fa-newspaper" style="font-size: 3rem; color: rgba(var(--ac-rgb),0.4); margin-bottom: 1rem; display: block;"></i>
+                <p style="color: var(--text-dim);">لا توجد أخبار أو مسابقات حالياً</p>
+            </div>
+            <% } %>
+        </div>
+    </section>
+
+    <!-- Discord Section - Neon Glow -->
+    <section class="discord-section-modern wf-reveal">
+        <div class="discord-card-modern">
+            <i class="fab fa-discord discord-icon-modern"></i>
+            <div class="discord-online-indicator">
+                <span class="discord-online-dot"></span>
+                <span>متصل الآن</span>
+            </div>
+            <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.5rem; color: white;">ادخل إلى Discord</h2>
+            <p style="color: var(--text-dim); margin-bottom: 1.5rem; font-size: 0.88rem;">تواصل مع المجتمع والبقاء على اطلاع بآخر الأخبار</p>
+            <a href="<%= settings.discord_server_url || '#' %>" target="_blank" class="btn-primary-modern" style="background: #5865F2; box-shadow: 0 8px 25px rgba(88,101,242,0.4); margin: 0 auto; justify-content: center;">
+                <i class="fab fa-discord"></i> انضم الآن
+            </a>
+        </div>
+    </section>
+
+    <!-- Games Section -->
+    <section class="discord-section-modern wf-reveal" style="margin-top: 1rem;">
+        <div class="discord-card-modern games-card-modern">
+            <div class="games-icons-row">
+                <span class="games-float-icon" style="animation-delay:0s">&#127920;</span>
+                <span class="games-float-icon" style="animation-delay:0.4s">&#127919;</span>
+                <span class="games-float-icon" style="animation-delay:0.8s">&#127922;</span>
+                <span class="games-float-icon" style="animation-delay:1.2s">&#127183;</span>
+                <span class="games-float-icon" style="animation-delay:1.6s">&#127942;</span>
+            </div>
+            <h2 style="font-size: 1.4rem; font-weight: 800; margin-bottom: 0.5rem; color: white;">منطقة الألعاب</h2>
+            <p style="color: var(--text-dim); margin-bottom: 1.5rem; font-size: 0.88rem;">العب واكسب نقاط يومياً — ألعاب متنوعة تنتظرك!</p>
+            <a href="/games" class="btn-primary-modern" style="margin: 0 auto; justify-content: center;">
+                <i class="fas fa-gamepad"></i> اذهب للألعاب
+            </a>
+        </div>
+    </section>
+</div>
+
+<script>
+// Particle System
+(function() {
+    const container = document.getElementById('particleBg');
+    if (!container) return;
+    const count = window.innerWidth < 768 ? 15 : 30;
+    for (let i = 0; i < count; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.animationDuration = (8 + Math.random() * 12) + 's';
+        p.style.animationDelay = Math.random() * 8 + 's';
+        p.style.width = p.style.height = (2 + Math.random() * 3) + 'px';
+        container.appendChild(p);
+    }
+})();
+
+// 3D Tilt on mouse move for stat cards
+document.querySelectorAll('.stat-card-modern').forEach(card => {
+    card.addEventListener('mousemove', e => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        const rotateX = (y - centerY) / 15;
+        const rotateY = (centerX - x) / 15;
+        card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-8px)`;
+    });
+    card.addEventListener('mouseleave', () => {
+        card.style.transform = 'perspective(800px) rotateX(0) rotateY(0) translateY(0)';
+    });
+});
+
+// Hero parallax on scroll
+window.addEventListener('scroll', () => {
+    const hero = document.getElementById('heroSection');
+    const logo = document.getElementById('heroLogo');
+    if (!hero || !logo) return;
+    const scrollY = window.scrollY;
+    const opacity = Math.max(0, 1 - scrollY / 500);
+    const scale = Math.max(0.8, 1 - scrollY / 3000);
+    logo.style.opacity = opacity;
+    logo.style.transform = `scale(${scale})`;
+});
+</script>
+
+<%- include('../partials/footer') %>
+<script src="/js/main.js"></script>
+</body>
+</html>

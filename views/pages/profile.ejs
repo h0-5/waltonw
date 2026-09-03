@@ -1,0 +1,173 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+
+<main class="profile-page">
+  <section class="profile-hero">
+    <div class="container">
+      <div class="profile-cover">
+        <img src="<%= user.cover_photo || '/images/default-cover.jpg' %>" alt="cover" class="cover-image">
+        <div class="cover-overlay"></div>
+      </div>
+      <div class="profile-header">
+        <div class="profile-avatar-wrapper">
+          <img src="<%= user.profile_picture || '/images/default-avatar.png' %>" alt="avatar" class="profile-avatar">
+          <% if (user.role) { %>
+            <span class="role-badge role-<%= user.role %>"><%= user.role %></span>
+          <% } %>
+        </div>
+        <div class="profile-info">
+          <h1 class="profile-name"><%= user.username %></h1>
+          <p class="profile-id">ID: <%= user.id %> | Discord: <%= user.discord_id %></p>
+          <div class="profile-joined">
+            <i class="fas fa-calendar"></i>
+            انضم في: <%= new Date(user.created_at).toLocaleDateString('ar-SA') %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="profile-content">
+    <div class="container">
+      <div class="profile-grid">
+        <!-- Main Content -->
+        <div class="profile-main">
+          <!-- Edit Profile Card -->
+          <div class="profile-card">
+            <h3>
+              <i class="fas fa-edit"></i>
+              تعديل الملف الشخصي
+            </h3>
+            <form id="profileForm">
+              <div class="form-group">
+                <label for="username">
+                  <i class="fas fa-user"></i>
+                  اسم المستخدم
+                </label>
+                <input type="text" id="username" value="<%= user.username %>" 
+                       minlength="3" maxlength="30" required>
+              </div>
+              <button type="submit" class="save-btn">
+                <i class="fas fa-save"></i>
+                حفظ التغييرات
+              </button>
+            </form>
+          </div>
+
+          <!-- Stats Card -->
+          <div class="profile-card">
+            <h3>
+              <i class="fas fa-chart-bar"></i>
+              إحصائياتي
+            </h3>
+            <div class="stats-grid">
+              <div class="stat-item">
+                <i class="fas fa-coins"></i>
+                <span class="stat-value"><%= user.total_game_points || 0 %></span>
+                <span class="stat-label">نقطة</span>
+              </div>
+              <div class="stat-item">
+                <i class="fas fa-shopping-bag"></i>
+                <span class="stat-value"><%= user.orders_count || 0 %></span>
+                <span class="stat-label">طلب</span>
+              </div>
+              <div class="stat-item">
+                <i class="fas fa-ticket"></i>
+                <span class="stat-value"><%= user.tickets_closed || 0 %></span>
+                <span class="stat-label">تذكرة</span>
+              </div>
+              <div class="stat-item">
+                <i class="fas fa-trophy"></i>
+                <span class="stat-value"><%= user.achievements_count || 0 %></span>
+                <span class="stat-label">إنجاز</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="profile-sidebar">
+          <!-- Quick Links -->
+          <div class="profile-card">
+            <h3>
+              <i class="fas fa-link"></i>
+              روابط سريعة
+            </h3>
+            <div class="quick-links">
+              <a href="/orders" class="quick-link">
+                <i class="fas fa-box"></i>
+                طلباتي
+              </a>
+              <a href="/cart" class="quick-link">
+                <i class="fas fa-shopping-cart"></i>
+                سلة المشتريات
+              </a>
+              <a href="/my_discounts" class="quick-link">
+                <i class="fas fa-tag"></i>
+                خصوماتي
+              </a>
+              <a href="/applications/my" class="quick-link">
+                <i class="fas fa-file-alt"></i>
+                طلباتي المقدمة
+              </a>
+              <a href="/support/my-tickets" class="quick-link">
+                <i class="fas fa-headset"></i>
+                تذاكري
+              </a>
+            </div>
+          </div>
+
+          <!-- Account Info -->
+          <div class="profile-card">
+            <h3>
+              <i class="fas fa-info-circle"></i>
+              معلومات الحساب
+            </h3>
+            <div class="account-info">
+              <div class="info-item">
+                <span class="info-label">البريد:</span>
+                <span class="info-value"><%= user.email || 'غير محدد' %></span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">الرتبة:</span>
+                <span class="info-value role-color"><%= user.role %></span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">آخر دخول:</span>
+                <span class="info-value"><%= user.last_login ? new Date(user.last_login).toLocaleString('ar-SA') : 'غير معروف' %></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<%- include('../partials/footer') %>
+<script src="/js/main.js"></script>
+<script>
+document.getElementById('profileForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const username = document.getElementById('username').value;
+
+  try {
+    const res = await fetch('/api/profile/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username })
+    });
+    const data = await res.json();
+    if (data.success) {
+      WaltonAPI.showNotification('تم التحديث بنجاح!', 'success');
+      setTimeout(() => location.reload(), 1000);
+    } else {
+      WaltonAPI.showNotification(data.error || 'فشل التحديث', 'error');
+    }
+  } catch(e) {
+    WaltonAPI.showNotification('حدث خطأ', 'error');
+  }
+});
+</script>
+</body>
+</html>

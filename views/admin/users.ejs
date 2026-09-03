@@ -1,0 +1,156 @@
+<%- include('layout') %>
+<script>document.getElementById('pageTitle').textContent = 'إدارة المستخدمين';</script>
+
+<div class="admin-content">
+  <div class="content-header">
+    <h2><i class="fas fa-users"></i> إدارة المستخدمين</h2>
+    <div class="header-actions">
+      <div class="admin-search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchUsers" placeholder="بحث بالاسم أو ID..." oninput="filterUsers()">
+      </div>
+    </div>
+  </div>
+
+  <div class="table-container">
+    <table class="admin-table" id="usersTable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>المستخدم</th>
+          <th>البريد</th>
+          <th>الرتبة</th>
+          <th>تاريخ التسجيل</th>
+          <th>إجراءات</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (users && users.length > 0) { %>
+          <% users.forEach(u => { %>
+            <tr data-search="<%= u.username %> <%= u.id %> <%= u.email %>">
+              <td><code style="color:var(--ac)"><%= u.id %></code></td>
+              <td>
+                <div style="display:flex;align-items:center;gap:10px">
+                  <img src="<%= u.avatar || '/images/default-avatar.png' %>" alt="" style="width:32px;height:32px;border-radius:50%;border:2px solid <%= u.is_banned ? '#ef4444' : 'var(--ac)' %>">
+                  <div>
+                    <div style="font-weight:600"><%= u.username %></div>
+                    <% if (u.is_banned) { %><span style="color:#ef4444;font-size:11px">محظور</span><% } %>
+                  </div>
+                </div>
+              </td>
+              <td><%= u.email || '-' %></td>
+              <td><span class="badge"><%= u.role %></span></td>
+              <td style="color:var(--text-dim);font-size:12px"><%= new Date(u.created_at).toLocaleDateString('ar-SA') %></td>
+              <td>
+                <div style="display:flex;gap:6px">
+                  <button class="admin-btn small" onclick="editUser(<%= u.id %>, '<%= u.username %>', '<%= u.email || '' %>')"><i class="fas fa-edit"></i></button>
+                  <button class="admin-btn small" onclick="changeRole(<%= u.id %>, '<%= u.role %>')"><i class="fas fa-user-shield"></i></button>
+                  <% if (u.is_banned) { %>
+                    <button class="admin-btn success small" onclick="unbanUser(<%= u.id %>%)"><i class="fas fa-unlock"></i></button>
+                  <% } else { %>
+                    <button class="admin-btn danger small" onclick="banUser(<%= u.id %>)"><i class="fas fa-ban"></i></button>
+                  <% } %>
+                </div>
+              </td>
+            </tr>
+          <% }) %>
+        <% } else { %>
+          <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-dim)">لا يوجد مستخدمين</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div id="editModal" class="admin-modal" style="display:none">
+  <div class="modal-content">
+    <h3><i class="fas fa-edit"></i> تعديل المستخدم</h3>
+    <form id="editForm">
+      <input type="hidden" name="user_id" id="editUserId">
+      <div class="form-group"><label>اسم المستخدم</label><input type="text" name="username" id="editUsername" required></div>
+      <div class="form-group"><label>البريد</label><input type="email" name="email" id="editEmail"></div>
+      <div class="modal-actions">
+        <button type="button" onclick="closeModal('editModal')" class="admin-btn">إلغاء</button>
+        <button type="submit" class="admin-btn primary">حفظ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="roleModal" class="admin-modal" style="display:none">
+  <div class="modal-content">
+    <h3><i class="fas fa-user-shield"></i> تغيير الرتبة</h3>
+    <form id="roleForm">
+      <input type="hidden" name="user_id" id="roleUserId">
+      <div class="form-group">
+        <label>الرتبة الجديدة</label>
+        <select name="role" id="newRole">
+          <option value="user">عضو</option>
+          <option value="family_member">عضو عائلة</option>
+          <option value="company_member">عضو شركة</option>
+          <option value="vip">VIP</option>
+          <option value="support">دعم فني</option>
+          <option value="moderator">مشرف</option>
+          <option value="observer">مراقب</option>
+          <option value="supervisor">مشرف عام</option>
+          <option value="deputy_executive">نائب تنفيذي</option>
+          <option value="executive">تنفيذي</option>
+          <option value="deputy_leadership">نائب قيادة</option>
+          <option value="leadership">قيادة</option>
+          <option value="vice_president">نائب رئيس</option>
+          <option value="chairman">رئيس</option>
+          <option value="founder">مؤسس</option>
+          <option value="developer">مطور</option>
+          <option value="owner">مالك</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button type="button" onclick="closeModal('roleModal')" class="admin-btn">إلغاء</button>
+        <button type="submit" class="admin-btn primary">تغيير</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function filterUsers() {
+  const q = document.getElementById('searchUsers').value.toLowerCase();
+  document.querySelectorAll('#usersTable tbody tr').forEach(r => {
+    r.style.display = (r.dataset.search || '').toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+function editUser(id, name, email) {
+  document.getElementById('editUserId').value = id;
+  document.getElementById('editUsername').value = name;
+  document.getElementById('editEmail').value = email;
+  document.getElementById('editModal').style.display = 'flex';
+}
+function changeRole(id, role) {
+  document.getElementById('roleUserId').value = id;
+  document.getElementById('newRole').value = role;
+  document.getElementById('roleModal').style.display = 'flex';
+}
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+async function banUser(id) {
+  if (!confirm('هل أنت متأكد من حظر هذا المستخدم؟')) return;
+  await fetch('/api/admin/users/ban', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id:id}) });
+  location.reload();
+}
+async function unbanUser(id) {
+  await fetch('/api/admin/users/unban', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id:id}) });
+  location.reload();
+}
+document.getElementById('editForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  await fetch('/api/admin/users/update', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(Object.fromEntries(fd)) });
+  location.reload();
+});
+document.getElementById('roleForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  await fetch('/api/admin/users/role', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(Object.fromEntries(fd)) });
+  location.reload();
+});
+</script>
+<%- include('admin_footer') %>

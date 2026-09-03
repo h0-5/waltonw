@@ -1,0 +1,79 @@
+<%
+  var _ftSettings = typeof settings !== 'undefined' ? settings : {};
+  var _ftUser = typeof user !== 'undefined' ? user : null;
+%>
+<footer class="wf-footer">
+    <div class="ft-grid"></div>
+    <div class="ft-glow-top"></div>
+    <div class="ft-orb-l"></div>
+    <div class="ft-orb-r"></div>
+    <div class="ft-orb-c"></div>
+    <div class="ft-inner">
+        <div style="display:grid;grid-template-columns:1fr;gap:2.5rem">
+            <!-- Brand -->
+            <div>
+                <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.25rem">
+                    <div class="ft-logo-ring"><img src="<%= _ftSettings.site_logo_url || '/images/walton-logo.svg' %>" alt="Walton Family"></div>
+                    <div><div class="ft-brand-name">Walton Family</div><div class="ft-brand-tag">Community</div></div>
+                </div>
+                <p class="ft-desc">عائلتك الأولى في وناسة تايم — انضم وعيش التجربة.</p>
+                <div class="ft-socials">
+                    <a href="<%= _ftSettings.discord_server_url || '#' %>" target="_blank" class="ft-social discord"><i class="fab fa-discord"></i></a>
+                </div>
+            </div>
+            <!-- Quick Links -->
+            <div>
+                <h4 class="ft-col-title">روابط سريعة</h4>
+                <ul style="display:flex;flex-direction:column;gap:.25rem">
+                    <li><a href="/" class="ft-link"><i class="fas fa-chevron-left"></i>الرئيسية</a></li>
+                    <li><a href="/applications" class="ft-link"><i class="fas fa-chevron-left"></i>التقديمات</a></li>
+                    <li><a href="/rules" class="ft-link"><i class="fas fa-chevron-left"></i>القوانين</a></li>
+                    <li><a href="/store" class="ft-link"><i class="fas fa-chevron-left"></i>المتجر</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="ft-divider"></div>
+    </div>
+    <!-- Bottom bar -->
+    <div class="ft-bottom" style="justify-content:center;flex-direction:column;align-items:center;gap:.75rem">
+        <div class="ft-cr">
+            <span class="ft-cr-sym">&copy;</span>
+            <span class="ft-cr-year"><%= new Date().getFullYear() %></span>
+            <span class="ft-cr-dot"></span>
+            <span class="ft-cr-brand">Walton Family</span>
+            <span class="ft-cr-sep">|</span>
+            <span class="ft-cr-rights"> جميع الحقوق محفوظة</span>
+            <i class="fas fa-lock ft-cr-lock"></i>
+        </div>
+        <div class="ft-made" style="white-space:nowrap;gap:.35rem">
+            <i class="fas fa-code ft-made-icon"></i>
+            <span class="ft-dev-name ft-dev-special">KHARBOSH</span>
+            <span class="ft-dev-sep">&middot;</span>
+            <span class="ft-dev-name">h05</span>
+            <span class="ft-made-text" style="color:rgba(var(--ac-rgb),.5)">:</span>
+            <span class="ft-made-text">Dev Team</span>
+            <i class="fas fa-code ft-made-icon"></i>
+        </div>
+    </div>
+</footer>
+
+<div id="userStatusBar" style="position:fixed;bottom:0;left:0;right:0;z-index:9999;height:32px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:rgba(var(--ac-rgb),0.18);border-top:2px solid rgba(var(--ac-rgb),0.5);font-family:'Cairo','Tajawal',sans-serif;font-size:12px;gap:12px" class="hide-mobile">
+    <div style="display:flex;align-items:center;gap:10px;color:rgba(255,255,255,0.45);flex-shrink:0">
+        <span id="statusClock" style="font-weight:700;letter-spacing:.5px"></span>
+        <span id="statusDate" style="color:rgba(255,255,255,0.3)"></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;overflow:hidden">
+        <% if (_ftUser) { %>
+            <span style="padding:2px 10px;border-radius:20px;font-weight:800;font-size:11px;background:rgba(var(--ac-rgb),0.85);border:1px solid rgba(var(--ac-rgb),0.9);color:#fff;white-space:nowrap"><%= _ftUser.role %></span>
+            <span style="color:rgba(255,255,255,0.7);font-weight:700;white-space:nowrap"><%= _ftUser.username %></span>
+            <span style="color:rgba(255,255,255,0.25)">&bull;</span>
+            <span style="color:rgba(255,255,255,0.35);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px"><%= _ftUser.email || '' %></span>
+        <% } else { %>
+            <span style="color:rgba(255,255,255,0.4)">زائر</span>
+        <% } %>
+    </div>
+    <div style="color:rgba(255,255,255,0.3);flex-shrink:0;font-weight:700">#<%= _ftUser ? _ftUser.id : '' %></div>
+</div>
+<style>body{padding-bottom:32px!important}</style>
+<script>(function(){function tick(){var now=new Date();var h=('0'+now.getHours()).slice(-2),m=('0'+now.getMinutes()).slice(-2),s=('0'+now.getSeconds()).slice(-2);var el=document.getElementById('statusClock');if(el)el.textContent=h+':'+m+':'+s;var d=document.getElementById('statusDate');if(d)d.textContent=now.getFullYear()+'-'+('0'+(now.getMonth()+1)).slice(-2)+'-'+('0'+now.getDate()).slice(-2);}tick();setInterval(tick,1000);})();</script>
+<script>(function(){var els=document.querySelectorAll('.wf-reveal,.wf-reveal-left,.wf-reveal-right,.wf-reveal-scale');if(!els.length)return;var io=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visible');io.unobserve(e.target);}});},{threshold:0.12});els.forEach(function(el){io.observe(el);});})();</script>

@@ -1,0 +1,65 @@
+<%- include('layout') %>
+<script>document.getElementById('pageTitle').textContent = 'الإعدادات';</script>
+
+<div class="admin-content">
+  <div class="content-header">
+    <h2><i class="fas fa-cog"></i> إعدادات الموقع</h2>
+  </div>
+
+  <form id="settingsForm" class="settings-form">
+    <div class="settings-grid">
+      <div class="settings-card">
+        <h3><i class="fas fa-globe"></i> الإعدادات العامة</h3>
+        <div class="form-group">
+          <label>اسم الموقع</label>
+          <input type="text" name="site_name" value="<%= settings.site_name || 'Walton Family' %>">
+        </div>
+        <div class="form-group">
+          <label>رابط الموقع</label>
+          <input type="url" name="site_url" value="<%= settings.site_url || '' %>">
+        </div>
+        <div class="form-group">
+          <label>لون التمييز</label>
+          <input type="color" name="accent_color" value="<%= settings.accent_color || '#f97316' %>">
+        </div>
+      </div>
+      <div class="settings-card">
+        <h3><i class="fas fa-shield-alt"></i> الأمان</h3>
+        <div class="form-group">
+          <label class="toggle-label">
+            <input type="checkbox" name="maintenance_mode" <%= settings.maintenance_mode ? 'checked' : '' %>>
+            <span class="toggle-slider"></span>
+            وضع الصيانة
+          </label>
+        </div>
+        <div class="form-group">
+          <label class="toggle-label">
+            <input type="checkbox" name="games_locked" <%= settings.games_locked ? 'checked' : '' %>>
+            <span class="toggle-slider"></span>
+            قفل الألعاب
+          </label>
+        </div>
+      </div>
+    </div>
+    <button type="submit" class="submit-btn"><i class="fas fa-save"></i> حفظ الإعدادات</button>
+  </form>
+</div>
+
+<script>
+document.getElementById('settingsForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const formData = new FormData(this);
+  const data = Object.fromEntries(formData);
+  data.maintenance_mode = formData.has('maintenance_mode') ? '1' : '0';
+  data.games_locked = formData.has('games_locked') ? '1' : '0';
+  const res = await fetch('/api/admin/settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  const result = await res.json();
+  if (result.success) WaltonAPI.showNotification('تم حفظ الإعدادات', 'success');
+});
+</script>
+
+<%- include('admin_footer') %>

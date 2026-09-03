@@ -1,0 +1,114 @@
+<%
+  var _nbSiteName = typeof siteName !== 'undefined' ? siteName : 'Walton Family';
+  var _nbSettings = typeof settings !== 'undefined' ? settings : {};
+  var _nbUser = typeof user !== 'undefined' ? user : null;
+  var _nbPath = typeof currentPath !== 'undefined' ? currentPath : '/';
+%>
+<nav class="navbar">
+  <!-- Logo + Mobile Menu -->
+  <div class="nav-logo-group">
+    <a href="/" class="nav-logo">
+      <img src="<%= _nbSettings.site_logo_url || '/images/walton-logo.svg' %>" alt="<%= _nbSiteName %>" class="nav-logo-img">
+      <div>
+        <div class="nav-logo-text">Walton Family</div>
+        <div class="nav-logo-sub">Community</div>
+      </div>
+    </a>
+    <button id="mobileMenuBtn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
+  </div>
+
+  <!-- Desktop Links - Centered -->
+  <div class="nav-links">
+    <a href="/" class="nav-link<%= _nbPath === '/' || _nbPath === '/home' ? ' active' : '' %>"><i class="fas fa-home"></i>الرئيسية</a>
+    <a href="/rules" class="nav-link<%= _nbPath === '/rules' ? ' active' : '' %>"><i class="fas fa-gavel"></i>القوانين</a>
+    <a href="/applications" class="nav-link<%= _nbPath === '/applications' ? ' active' : '' %>"><i class="fas fa-file-alt"></i>التقديمات</a>
+    <a href="/store" class="nav-link<%= _nbPath === '/store' ? ' active' : '' %>"><i class="fas fa-store"></i>المتجر</a>
+    <a href="/games" class="nav-link<%= _nbPath === '/games' ? ' active' : '' %>"><i class="fas fa-gamepad" style="color:var(--ac)"></i>الألعاب</a>
+    <a href="/community" class="nav-link<%= _nbPath === '/community' ? ' active' : '' %>"><i class="fas fa-comments"></i>المجتمع</a>
+    <a href="/about" class="nav-link<%= _nbPath === '/about' ? ' active' : '' %>"><i class="fas fa-info-circle"></i>من نحن</a>
+    <% if (_nbUser && ['owner', 'developer', 'founder', 'moderator', 'support', 'admin'].includes(_nbUser.role)) { %>
+      <a href="/admin" class="nav-link" style="color:var(--ac)"><i class="fas fa-shield-alt" style="color:var(--ac)"></i>الإدارة</a>
+    <% } %>
+  </div>
+
+  <!-- Actions - Right side -->
+  <div class="nav-actions">
+    <% if (_nbUser) { %>
+      <!-- Notifications -->
+      <div style="position:relative">
+        <button class="icon-btn" id="notifToggle" onclick="toggleNotifications()">
+          <i class="fas fa-bell"></i>
+          <span id="notificationBadge" class="<%= (typeof unreadCount !== 'undefined' && unreadCount > 0) ? '' : 'hidden' %>"><%= typeof unreadCount !== 'undefined' ? unreadCount : '' %></span>
+        </button>
+        <div id="notificationDropdown" class="hidden">
+          <div style="padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,107,26,0.12)">
+            <span style="font-weight:800;font-size:.85rem;color:#fff">الإشعارات</span>
+            <div style="display:flex;gap:6px;">
+              <button onclick="markAllRead()" style="font-size:.7rem;padding:.2rem .5rem;border-radius:6px;background:rgba(var(--ac-rgb),0.15);color:var(--ac);border:1px solid rgba(var(--ac-rgb),0.3);cursor:pointer;transition:all 0.2s;">قراءة الكل</button>
+              <button onclick="deleteAllNotifications()" title="حذف الكل" style="font-size:.7rem;padding:.2rem .5rem;border-radius:6px;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3);cursor:pointer;transition:all 0.2s;"><i class="fas fa-trash"></i></button>
+            </div>
+          </div>
+          <div id="notificationList">
+            <div style="padding:1.5rem;text-align:center;color:rgba(255,255,255,0.35);font-size:.8rem">لا توجد إشعارات</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- User menu -->
+      <div style="position:relative" id="userMenuWrap">
+        <button class="user-btn" id="userMenuBtn" onclick="toggleUserMenu()">
+          <span class="user-name"><%= _nbUser.username %></span>
+          <i class="fas fa-chevron-down user-chevron"></i>
+          <% if (_nbUser.profile_picture) { %>
+            <img src="<%= _nbUser.profile_picture %>" alt="avatar" class="user-avatar no-lightbox skip-lightbox profile-skip nav-avatar" data-lightbox-skip="true" data-profile-protected="true" style="pointer-events: none !important;">
+          <% } else { %>
+            <div class="user-avatar-placeholder"><%= _nbUser.username.charAt(0).toUpperCase() %></div>
+          <% } %>
+        </button>
+        <div id="userMenuDropdown" class="hidden">
+          <a href="/profile" class="user-drop-item"><i class="fas fa-user"></i>الملف الشخصي</a>
+          <a href="/auth/logout" class="user-drop-item" style="color:#f87171"><i class="fas fa-sign-out-alt"></i>تسجيل خروج</a>
+        </div>
+      </div>
+    <% } else { %>
+      <a href="/auth/discord" class="login-btn">
+        <i class="fab fa-discord"></i>
+        <span>تسجيل الدخول</span>
+      </a>
+    <% } %>
+  </div>
+</nav>
+
+<!-- Mobile Nav -->
+<div id="mobileNav">
+  <a href="/" class="nav-link<%= _nbPath === '/' ? ' active' : '' %>"><i class="fas fa-home"></i>الرئيسية</a>
+  <a href="/rules" class="nav-link<%= _nbPath === '/rules' ? ' active' : '' %>"><i class="fas fa-gavel"></i>القوانين</a>
+  <a href="/applications" class="nav-link<%= _nbPath === '/applications' ? ' active' : '' %>"><i class="fas fa-file-alt"></i>التقديمات</a>
+  <a href="/store" class="nav-link<%= _nbPath === '/store' ? ' active' : '' %>"><i class="fas fa-store"></i>المتجر</a>
+  <a href="/games" class="nav-link<%= _nbPath === '/games' ? ' active' : '' %>" style="color:var(--ac)"><i class="fas fa-gamepad" style="color:var(--ac)"></i>الألعاب</a>
+  <a href="/community" class="nav-link<%= _nbPath === '/community' ? ' active' : '' %>"><i class="fas fa-comments"></i>المجتمع</a>
+  <a href="/about" class="nav-link<%= _nbPath === '/about' ? ' active' : '' %>"><i class="fas fa-info-circle"></i>من نحن</a>
+  <% if (!_nbUser) { %>
+    <a href="/auth/discord" class="nav-link" style="color:var(--ac)"><i class="fab fa-discord" style="color:var(--ac)"></i>تسجيل الدخول</a>
+  <% } %>
+  <% if (_nbUser && ['owner', 'developer', 'founder', 'moderator', 'support', 'admin'].includes(_nbUser.role)) { %>
+    <a href="/admin" class="nav-link" style="color:var(--ac)"><i class="fas fa-shield-alt" style="color:var(--ac)"></i>الإدارة</a>
+  <% } %>
+</div>
+
+<script>
+function toggleMobileMenu() {
+  const nav = document.getElementById('mobileNav');
+  nav.classList.toggle('open');
+}
+function toggleNotifications() {
+  const dd = document.getElementById('notificationDropdown');
+  dd.classList.toggle('hidden');
+}
+function toggleUserMenu() {
+  const dd = document.getElementById('userMenuDropdown');
+  dd.classList.toggle('hidden');
+}
+function markAllRead() {}
+function deleteAllNotifications() {}
+</script>

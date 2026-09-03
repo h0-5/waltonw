@@ -1,0 +1,57 @@
+<%- include('partials/header') %>
+<%- include('partials/navbar') %>
+
+<main class="discounts-page">
+  <section class="discounts-hero">
+    <div class="container">
+      <h1><i class="fas fa-tag"></i> خصوماتي</h1>
+    </div>
+  </section>
+
+  <section class="discounts-content">
+    <div class="container">
+      <% if (discounts && discounts.length > 0) { %>
+        <div class="discounts-grid">
+          <% discounts.forEach(d => { %>
+            <div class="discount-card">
+              <div class="discount-icon">
+                <i class="fas fa-tag"></i>
+              </div>
+              <div class="discount-info">
+                <h3><%= d.code %></h3>
+                <p class="discount-percent">خصم <%= d.discount_percent %>%</p>
+                <% if (d.expires_at) { %>
+                  <p class="discount-expiry">
+                    <i class="fas fa-clock"></i>
+                    ينتهي: <%= new Date(d.expires_at).toLocaleDateString('ar-SA') %>
+                  </p>
+                <% } %>
+                <button class="copy-code" onclick="copyCode('<%= d.code %>')">
+                  <i class="fas fa-copy"></i> نسخ الكود
+                </button>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <div class="empty-state">
+          <i class="fas fa-tag"></i>
+          <h3>لا توجد خصومات</h3>
+          <p>لم تحصل على أي أكواد خصم بعد</p>
+        </div>
+      <% } %>
+    </div>
+  </section>
+</main>
+
+<%- include('partials/footer') %>
+<script src="/js/main.js"></script>
+<script>
+function copyCode(code) {
+  navigator.clipboard.writeText(code).then(() => {
+    WaltonAPI.showNotification('تم نسخ الكود!', 'success');
+  });
+}
+</script>
+</body>
+</html>

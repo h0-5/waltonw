@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <%
+    var _siteName = typeof siteName !== 'undefined' ? siteName : 'Walton Family';
+    var _accentColor = typeof accentColor !== 'undefined' ? accentColor : '#780ecf';
+    var _acRgb = _accentColor.replace('#', '').match(/.{2}/g).map(function(h){ return parseInt(h, 16); }).join(', ');
+    var _bgUrl = typeof bgUrl !== 'undefined' ? bgUrl : '';
+    var _mobileBgUrl = typeof mobileBgUrl !== 'undefined' ? mobileBgUrl : '';
+  %>
+  <meta name="description" content="<%= _siteName %> - مجتمعنا الرقمي">
+  <title><%= title %> | <%= _siteName %></title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&family=Tajawal:wght@400;500;700&family=Cinzel+Decorative:wght@700&family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Styles - Old site CSS files -->
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/site-header.css">
+  <link rel="stylesheet" href="/css/footer.css">
+  <link rel="stylesheet" href="/css/home.css">
+  <link rel="stylesheet" href="/css/store.css">
+  <link rel="stylesheet" href="/css/games-page.css">
+  <link rel="stylesheet" href="/css/rules-page.css">
+  <link rel="stylesheet" href="/css/about.css">
+  <link rel="stylesheet" href="/css/applications-page.css">
+  <link rel="stylesheet" href="/css/community.css">
+  <link rel="stylesheet" href="/css/profile.css">
+  <link rel="stylesheet" href="/css/products.css">
+  
+  <style>
+    :root {
+      --ac: <%= _accentColor %>;
+      --ac-rgb: <%= _acRgb %>;
+      --ac-dark: <%= _accentColor %>;
+      --ac-light: <%= _accentColor %>;
+      --bg-url: url('<%= _bgUrl %>');
+      --mobile-bg-url: url('<%= _mobileBgUrl %>');
+    }
+    body {
+      background-image: var(--bg-url);
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      background-repeat: no-repeat;
+    }
+    @media (max-width: 768px) {
+      body {
+        background-image: var(--mobile-bg-url);
+      }
+    }
+  </style>
+</head>
+<body>

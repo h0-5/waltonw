@@ -1,0 +1,18 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+
+<main class="error-page">
+  <div class="error-container">
+    <div class="error-code">500</div>
+    <h1>خطأ في الخادم</h1>
+    <p><%= error || 'حدث خطأ غير متوقع. يرجى المحاولة لاحقاً.' %></p>
+    <a href="/" class="error-btn">
+      <i class="fas fa-home"></i>
+      العودة للرئيسية
+    </a>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>
+</body>
+</html>
