@@ -53,7 +53,7 @@ router.get('/logout', (req, res) => {
     req.session.destroy((err) => {
       if (err) console.error('Session destroy error:', err);
       res.clearCookie('wf_session');
-      res.redirect('/');
+      res.redirect('/auth/login');
     });
   });
 });
