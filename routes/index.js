@@ -274,6 +274,7 @@ router.get('/applications/form/:type', isAuthenticated, async (req, res) => {
     let hasRequiredRole = true;
     let hasBlacklistRole = false;
     let discordError = false;
+    let discordApiDown = false;
     const requiredRoleId = appData.required_discord_role_id || '';
     const blacklistRoleId = '1477685263722479627';
 
@@ -282,9 +283,15 @@ router.get('/applications/form/:type', isAuthenticated, async (req, res) => {
 
     if (discordId) {
       if (requiredRoleId) {
-        hasRequiredRole = await checkDiscordRole(discordId, requiredRoleId);
+        const roleResult = await checkDiscordRole(discordId, requiredRoleId);
+        if (roleResult === null) {
+          discordApiDown = true;
+        } else {
+          hasRequiredRole = roleResult;
+        }
       }
-      hasBlacklistRole = await checkDiscordRole(discordId, blacklistRoleId);
+      const blacklistResult = await checkDiscordRole(discordId, blacklistRoleId);
+      if (blacklistResult === true) hasBlacklistRole = true;
     } else {
       discordError = true;
     }
@@ -300,6 +307,7 @@ router.get('/applications/form/:type', isAuthenticated, async (req, res) => {
       hasRequiredRole,
       hasBlacklistRole,
       discordError,
+      discordApiDown,
       discordId,
       settings
     });
@@ -340,14 +348,15 @@ router.post('/api/applications/submit', isAuthenticated, async (req, res) => {
 
     const blacklistRoleId = '1477685263722479627';
     const isBlacklisted = await checkDiscordRole(discordId, blacklistRoleId);
-    if (isBlacklisted) return res.status(400).json({ error: 'أنت مدرج في القائمة السوداء' });
+    if (isBlacklisted === true) return res.status(400).json({ error: 'أنت مدرج في القائمة السوداء' });
 
     if (appData.required_discord_role_id) {
       const hasRole = await checkDiscordRole(discordId, appData.required_discord_role_id);
-      if (!hasRole) return res.status(400).json({ error: 'ليس لديك الرول المطلوب في ديسكورد' });
+      if (hasRole === false) return res.status(400).json({ error: 'ليس لديك الرول المطلوب في ديسكورد — يجب أن تكون عضو في العائلة' });
+      if (hasRole === null) console.warn(`[Discord] API unavailable for user ${discordId} — allowing submission`);
     }
 
-    const questions = await db.query('SELECT * FROM application_questions WHERE application_type = ? ORDER BY order_index ASC', [type]);
+    const [questions] = await db.query('SELECT * FROM application_questions WHERE application_type = ? ORDER BY order_index ASC', [type]);
     const answersData = {};
     const submitAnswers = typeof answers === 'object' ? answers : {};
 

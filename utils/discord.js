@@ -8,74 +8,70 @@ const PROXY_BASE = process.env.DISCORD_PROXY_BASE || 'https://dawn-sun-102d.abdl
 const roleCache = new Map();
 const CACHE_TTL = 5 * 60 * 1000;
 
-async function getBotBaseUrl() {
-  try {
-    const [rows] = await db.query("SELECT setting_value FROM site_settings WHERE setting_key = 'bot_base_url' LIMIT 1");
-    if (rows.length && rows[0].setting_value) {
-      return rows[0].setting_value;
-    }
-  } catch(e) {}
-  return 'http://fi8.bot-hosting.net:21346';
+function httpsGet(url, headers, timeout) {
+  const https = require('https');
+  return new Promise(resolve => {
+    const opts = { timeout };
+    if (headers) opts.headers = headers;
+    const req = https.get(url, opts, res => {
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => {
+        try { resolve(JSON.parse(data)); } catch(e) { resolve(null); }
+      });
+    });
+    req.on('error', () => resolve(null));
+    req.on('timeout', () => { req.destroy(); resolve(null); });
+  });
+}
+
+async function fetchMemberRoles(discordUserId) {
+  const discordApiUrl = `https://discord.com/api/v10/guilds/${GUILD_ID}/members/${discordUserId}`;
+
+  // 1) Try direct Discord API call (works on localhost)
+  if (BOT_TOKEN) {
+    const directResult = await httpsGet(discordApiUrl, { 'Authorization': `Bot ${BOT_TOKEN}` }, 8000);
+    if (directResult && directResult.roles) return directResult.roles;
+  }
+
+  // 2) Fallback to Cloudflare Worker proxy
+  const proxyUrl = `${PROXY_BASE}?target=${encodeURIComponent(discordApiUrl)}&bot_token=${encodeURIComponent(BOT_TOKEN)}`;
+  const proxyResult = await httpsGet(proxyUrl, null, 10000);
+  if (proxyResult && proxyResult.roles) return proxyResult.roles;
+
+  return null;
 }
 
 async function checkDiscordRole(discordUserId, roleId) {
-  if (!discordUserId || !roleId) return false;
+  if (!discordUserId || !roleId) return null;
 
   const cacheKey = `${discordUserId}_${roleId}`;
   const cached = roleCache.get(cacheKey);
   if (cached && Date.now() - cached.ts < CACHE_TTL) return cached.value;
 
   try {
-    const https = require('https');
-    const url = `${PROXY_BASE}?target=${encodeURIComponent(`https://discord.com/api/v10/guilds/${GUILD_ID}/members/${discordUserId}`)}&bot_token=${encodeURIComponent(BOT_TOKEN)}`;
-
-    const result = await new Promise((resolve, reject) => {
-      const req = https.get(url, { timeout: 8000 }, res => {
-        let data = '';
-        res.on('data', c => data += c);
-        res.on('end', () => {
-          try { resolve(JSON.parse(data)); } catch(e) { resolve(null); }
-        });
-      });
-      req.on('error', () => resolve(null));
-      req.on('timeout', () => { req.destroy(); resolve(null); });
-    });
-
-    if (result && result.roles) {
-      const hasRole = result.roles.includes(roleId);
-      roleCache.set(cacheKey, { value: hasRole, ts: Date.now() });
-      return hasRole;
+    const roles = await fetchMemberRoles(discordUserId);
+    if (roles === null) {
+      console.error(`[Discord] Could not fetch roles for user ${discordUserId} — API unavailable`);
+      return null;
     }
+    const hasRole = roles.includes(roleId);
+    roleCache.set(cacheKey, { value: hasRole, ts: Date.now() });
+    return hasRole;
   } catch(e) {
     console.error('Discord role check error:', e.message);
+    return null;
   }
-
-  return false;
 }
 
 async function getDiscordMemberRoles(discordUserId) {
   if (!discordUserId) return [];
-
   try {
-    const https = require('https');
-    const url = `${PROXY_BASE}?target=${encodeURIComponent(`https://discord.com/api/v10/guilds/${GUILD_ID}/members/${discordUserId}`)}&bot_token=${encodeURIComponent(BOT_TOKEN)}`;
-
-    const result = await new Promise((resolve, reject) => {
-      const req = https.get(url, { timeout: 8000 }, res => {
-        let data = '';
-        res.on('data', c => data += c);
-        res.on('end', () => {
-          try { resolve(JSON.parse(data)); } catch(e) { resolve(null); }
-        });
-      });
-      req.on('error', () => resolve(null));
-      req.on('timeout', () => { req.destroy(); resolve(null); });
-    });
-
-    return (result && result.roles) ? result.roles : [];
+    const roles = await fetchMemberRoles(discordUserId);
+    return roles || [];
   } catch(e) {
     return [];
   }
 }
 
-module.exports = { checkDiscordRole, getDiscordMemberRoles, getBotBaseUrl, GUILD_ID };
+module.exports = { checkDiscordRole, getDiscordMemberRoles, getBotBaseUrl: async () => 'http://fi8.bot-hosting.net:21346', GUILD_ID };
