@@ -104,16 +104,6 @@ router.get('/roles', isAdmin, async (req, res) => {
   }
 });
 
-// Logs
-router.get('/logs', isAdmin, async (req, res) => {
-  try {
-    const [logs] = await db.execute('SELECT * FROM admin_logs ORDER BY id DESC LIMIT 100');
-    res.render('admin/logs', { title: 'السجلات', logs, currentPath: req.path });
-  } catch(err) {
-    res.render('admin/logs', { title: 'السجلات', logs: [], currentPath: req.path });
-  }
-});
-
 // Rules Management
 router.get('/rules', isAdmin, async (req, res) => {
   try {
@@ -244,15 +234,28 @@ router.get('/logs', isAdmin, async (req, res) => {
 
   const totalPages = Math.ceil(total / limit) || 1;
 
-  res.render('admin/logs', {
-    title: 'السجلات',
-    logs: logs || [],
-    cat: useCat,
-    total: total || 0,
-    page: page,
-    totalPages: totalPages,
-    currentPath: req.path
-  });
+  try {
+    console.log('[LOGS] Rendering with:', { cat: useCat, total, page, totalPages, logsCount: logs.length });
+    res.render('admin/logs', {
+      title: 'السجلات',
+      logs: logs || [],
+      cat: useCat,
+      total: total || 0,
+      page: page,
+      totalPages: totalPages,
+      currentPath: req.path
+    }, function(err, html) {
+      if (err) {
+        console.error('[LOGS] Render error:', err.message);
+        console.error('[LOGS] Render stack:', err.stack);
+        return res.status(500).send('Render failed: ' + err.message);
+      }
+      res.send(html);
+    });
+  } catch(e) {
+    console.error('[LOGS] Sync error:', e.message);
+    res.status(500).send('Sync error: ' + e.message);
+  }
 });
 
 module.exports = router;
