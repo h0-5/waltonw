@@ -2,9 +2,17 @@
 <link rel="stylesheet" href="/css/company-page.css">
 <%- include('../partials/navbar') %>
 
-<%- include('../partials/page-hero', { pageTitle: 'الشركة', pageIcon: 'fas fa-briefcase', pageDesc: 'معلومات وأنشطة شركة والتون', pageStats: [{ value: infoItems.length, label: 'معلومات' }, { value: activityItems.length, label: 'أنشطة' }] }) %>
-
 <div class="cy-co-page" dir="rtl">
+    <div class="cy-co-hero">
+        <div class="cy-co-hero-icon">
+            <div class="hex-ring"></div>
+            <div class="hex-ring-inner"></div>
+            <i class="fas fa-briefcase"></i>
+        </div>
+        <h1 class="page-heading">الشركة</h1>
+        <p class="cy-co-hero-sub">معلومات و أنشطة شركة والتون</p>
+        <div class="cy-co-hero-line"></div>
+    </div>
 
     <div class="cy-co-main">
         <div class="cy-co-tabs">

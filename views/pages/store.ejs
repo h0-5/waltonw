@@ -1,9 +1,18 @@
 <%- include('../partials/header') %>
 <%- include('../partials/navbar') %>
 
-<%- include('../partials/page-hero', { pageTitle: 'متجر النقاط', pageIcon: 'fas fa-coins', pageDesc: 'استبدل نقاطك بمكافآت حصرية وعناصر مميزة', pageStats: [{ value: userPoints || 0, label: 'نقاطك' }, { value: products.length, label: 'منتج' }] }) %>
-
 <div class="cy-page-bg" dir="rtl">
+    <!-- Hero Section -->
+    <div class="cy-hero">
+        <div class="cy-hero-icon">
+            <div class="hex-ring"></div>
+            <div class="hex-ring-inner"></div>
+            <i class="fas fa-coins"></i>
+        </div>
+        <h1>متجر النقاط</h1>
+        <p class="cy-hero-sub">استبدل نقاطك بمكافآت حصرية وعناصر مميزة</p>
+        <div class="cy-hero-line"></div>
+    </div>
 
     <!-- Tabs -->
     <div class="cy-tabs">

@@ -3,9 +3,17 @@
 <link rel="stylesheet" href="/css/properties-inline.css">
 <%- include('../partials/navbar') %>
 
-<%- include('../partials/page-hero', { pageTitle: 'الممتلكات', pageIcon: 'fas fa-building', pageDesc: 'استكشف ممتلكات عائلة والتون الفاخرة', pageStats: [{ value: palaces.length, label: 'قصور' }, { value: vehicles.length, label: 'مركبات' }] }) %>
-
 <div class="cy-props-page" dir="rtl">
+    <div class="cy-props-hero">
+        <div class="cy-props-hero-icon">
+            <div class="hex-ring"></div>
+            <div class="hex-ring-inner"></div>
+            <i class="fas fa-building"></i>
+        </div>
+        <h1 class="page-heading">ممتلكات العائلة</h1>
+        <p class="cy-props-hero-sub">جميع ممتلكات عائلة والتون</p>
+        <div class="cy-props-hero-line"></div>
+    </div>
 
     <div class="cy-props-main">
         <div class="cy-props-tabs">
