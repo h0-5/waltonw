@@ -12,7 +12,6 @@
     </div>
   </div>
 
-  <!-- Stats -->
   <div style="display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap">
     <div style="background:rgba(var(--ac-rgb),.05);border:1px solid rgba(var(--ac-rgb),.12);border-radius:12px;padding:.8rem 1.2rem;flex:1;min-width:120px;text-align:center">
       <div style="font-size:1.5rem;font-weight:900;color:var(--ac)"><%= total %></div>
@@ -24,70 +23,57 @@
     </div>
   </div>
 
-  <!-- Logs Table -->
   <table class="admin-table">
     <thead>
       <tr>
-        <% if (cat === 'admin') { %>
-          <th>#</th><th>المستخدم</th><th>الإجراء</th><th>النوع</th><th>التفاصيل</th><th>التاريخ</th>
-        <% } else if (cat === 'bot') { %>
-          <th>#</th><th>الإجراء</th><th>Discord ID</th><th>التفاصيل</th><th>التاريخ</th>
-        <% } else if (cat === 'products') { %>
-          <th>#</th><th>المستخدم</th><th>الإجراء</th><th>المنتج</th><th>التفاصيل</th><th>التاريخ</th>
-        <% } else if (cat === 'games') { %>
-          <th>#</th><th>المستخدم</th><th>اللعبة</th><th>نقاط</th><th>XP</th><th>التاريخ</th>
-        <% } else if (cat === 'activity') { %>
-          <th>#</th><th>المستخدم</th><th>الإجراء</th><th>التفاصيل</th><th>التاريخ</th>
-        <% } %>
+        <% var hdrs = { admin: ['#','المستخدم','الإجراء','النوع','التفاصيل','التاريخ'], bot: ['#','الإجراء','Discord ID','التفاصيل','التاريخ'], products: ['#','المستخدم','الإجراء','المنتج','التفاصيل','التاريخ'], games: ['#','المستخدم','اللعبة','نقاط','XP','التاريخ'], activity: ['#','المستخدم','الإجراء','التفاصيل','التاريخ'] }; var h = hdrs[cat] || hdrs.admin; %>
+        <% h.forEach(function(th){ %><th><%= th %></th><% }); %>
       </tr>
     </thead>
     <tbody>
-      <% if (logs.length > 0) { %>
-        <% logs.forEach(function(log, i) { %>
+      <% if (!logs || logs.length === 0) { %>
+        <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-dim)">لا توجد سجلات</td></tr>
+      <% } else { %>
+        <% for (var i = 0; i < logs.length; i++) { var log = logs[i]; var idx = (page - 1) * 30 + i + 1; %>
         <tr>
+          <td><%= idx %></td>
           <% if (cat === 'admin') { %>
-            <td><%= (page - 1) * 30 + i + 1 %></td>
             <td style="font-weight:700;color:#fff"><%= log.username || '-' %></td>
             <td><span class="badge"><%= log.action || '-' %></span></td>
             <td><%= log.target_type || '-' %></td>
-            <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="<%= log.details || '' %>"><%= (log.details || '-').substring(0, 80) %></td>
+            <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="<%= log.details || '' %>"><%= String(log.details || '-').substring(0, 80) %></td>
             <td style="font-size:.7rem;color:var(--text-dim)"><%= log.created_at ? new Date(log.created_at).toLocaleDateString('ar-SA') + ' ' + new Date(log.created_at).toLocaleTimeString('ar-SA', {hour:'2-digit',minute:'2-digit'}) : '-' %></td>
           <% } else if (cat === 'bot') { %>
-            <td><%= (page - 1) * 30 + i + 1 %></td>
             <td><span class="badge"><%= log.action || '-' %></span></td>
             <td style="font-family:monospace;font-size:.75rem"><%= log.discord_id || '-' %></td>
-            <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><%= (log.details || '-').substring(0, 80) %></td>
+            <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><%= String(log.details || '-').substring(0, 80) %></td>
             <td style="font-size:.7rem;color:var(--text-dim)"><%= log.created_at ? new Date(log.created_at).toLocaleDateString('ar-SA') : '-' %></td>
           <% } else if (cat === 'products') { %>
-            <td><%= (page - 1) * 30 + i + 1 %></td>
             <td style="font-weight:700;color:#fff"><%= log.username || '-' %></td>
             <td><span class="badge"><%= log.action || '-' %></span></td>
             <td><%= log.product_name || '-' %></td>
-            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><%= (log.details || '-').substring(0, 60) %></td>
+            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><%= String(log.details || '-').substring(0, 60) %></td>
             <td style="font-size:.7rem;color:var(--text-dim)"><%= log.created_at ? new Date(log.created_at).toLocaleDateString('ar-SA') : '-' %></td>
           <% } else if (cat === 'games') { %>
-            <td><%= (page - 1) * 30 + i + 1 %></td>
             <td style="font-weight:700;color:#fff"><%= log.user_id || '-' %></td>
             <td><span class="badge"><%= log.game_type || '-' %></span></td>
             <td style="color:#22c55e"><%= log.pts_given || 0 %></td>
             <td style="color:#3b82f6"><%= log.xp_given || 0 %></td>
             <td style="font-size:.7rem;color:var(--text-dim)"><%= log.rewarded_at ? new Date(log.rewarded_at).toLocaleDateString('ar-SA') : '-' %></td>
           <% } else if (cat === 'activity') { %>
-            <td><%= (page - 1) * 30 + i + 1 %></td>
             <td style="font-weight:700;color:#fff"><%= log.user_id || '-' %></td>
             <td><span class="badge"><%= log.action || '-' %></span></td>
-            <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><%= (log.details || '-').substring(0, 80) %></td>
+            <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><%= String(log.details || '-').substring(0, 80) %></td>
             <td style="font-size:.7rem;color:var(--text-dim)"><%= log.created_at ? new Date(log.created_at).toLocaleDateString('ar-SA') : '-' %></td>
+          <% } else { %>
+            <td colspan="5">-</td>
           <% } %>
         </tr>
-        <% }); %>
-      <% } else { %>
-        <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-dim)">لا توجد سجلات</td></tr>
+        <% } %>
       <% } %>
     </tbody>
   </table>
 
-  <!-- Pagination -->
   <% if (totalPages > 1) { %>
   <div style="display:flex;justify-content:center;gap:6px;margin-top:1.5rem;flex-wrap:wrap">
     <% if (page > 1) { %>

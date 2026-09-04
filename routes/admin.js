@@ -186,56 +186,73 @@ router.get('/company', isAdmin, async (req, res) => {
 
 // Logs
 router.get('/logs', isAdmin, async (req, res) => {
+  const cat = String(req.query.cat || 'admin');
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = 30;
+  const offset = (page - 1) * limit;
+
+  const validCats = ['admin', 'bot', 'products', 'games', 'activity'];
+  const useCat = validCats.includes(cat) ? cat : 'admin';
+
+  let logs = [];
+  let total = 0;
+
   try {
-    const cat = req.query.cat || 'admin';
-    const page = parseInt(req.query.page) || 1;
-    const limit = 30;
-    const offset = (page - 1) * limit;
-
-    let logs = [];
-    let total = 0;
-
-    if (cat === 'admin') {
-      const [countR] = await db.execute('SELECT COUNT(*) as c FROM admin_logs');
-      total = countR[0].c;
-      const [rows] = await db.execute('SELECT * FROM admin_logs ORDER BY created_at DESC LIMIT ? OFFSET ?', [String(limit), String(offset)]);
-      logs = rows;
-    } else if (cat === 'bot') {
-      const [countR] = await db.execute('SELECT COUNT(*) as c FROM bot_logs');
-      total = countR[0].c;
-      const [rows] = await db.execute('SELECT * FROM bot_logs ORDER BY created_at DESC LIMIT ? OFFSET ?', [String(limit), String(offset)]);
-      logs = rows;
-    } else if (cat === 'products') {
-      const [countR] = await db.execute('SELECT COUNT(*) as c FROM product_logs');
-      total = countR[0].c;
-      const [rows] = await db.execute('SELECT * FROM product_logs ORDER BY created_at DESC LIMIT ? OFFSET ?', [String(limit), String(offset)]);
-      logs = rows;
-    } else if (cat === 'games') {
-      const [countR] = await db.execute('SELECT COUNT(*) as c FROM game_reward_log');
-      total = countR[0].c;
-      const [rows] = await db.execute('SELECT * FROM game_reward_log ORDER BY rewarded_at DESC LIMIT ? OFFSET ?', [String(limit), String(offset)]);
-      logs = rows;
-    } else if (cat === 'activity') {
-      const [countR] = await db.execute('SELECT COUNT(*) as c FROM user_activity_log');
-      total = countR[0].c;
-      const [rows] = await db.execute('SELECT * FROM user_activity_log ORDER BY created_at DESC LIMIT ? OFFSET ?', [String(limit), String(offset)]);
-      logs = rows;
+    if (useCat === 'admin') {
+      const [c] = await db.query('SELECT COUNT(*) as c FROM admin_logs');
+      total = c[0].c;
+      const [r] = await db.query('SELECT * FROM admin_logs ORDER BY created_at DESC LIMIT ' + limit + ' OFFSET ' + offset);
+      logs = r;
     }
+  } catch(e) { console.error('logs/admin:', e.message); }
 
-    const totalPages = Math.ceil(total / limit);
+  try {
+    if (useCat === 'bot') {
+      const [c] = await db.query('SELECT COUNT(*) as c FROM bot_logs');
+      total = c[0].c;
+      const [r] = await db.query('SELECT * FROM bot_logs ORDER BY created_at DESC LIMIT ' + limit + ' OFFSET ' + offset);
+      logs = r;
+    }
+  } catch(e) { console.error('logs/bot:', e.message); }
 
-    res.render('admin/logs', {
-      title: 'السجلات',
-      logs, cat, total, page, totalPages,
-      currentPath: req.path
-    });
-  } catch(err) {
-    console.error('Logs error:', err.message);
-    res.render('admin/logs', {
-      title: 'السجلات',
-      logs: [], cat: 'admin', total: 0, page: 1, totalPages: 0
-    });
-  }
+  try {
+    if (useCat === 'products') {
+      const [c] = await db.query('SELECT COUNT(*) as c FROM product_logs');
+      total = c[0].c;
+      const [r] = await db.query('SELECT * FROM product_logs ORDER BY created_at DESC LIMIT ' + limit + ' OFFSET ' + offset);
+      logs = r;
+    }
+  } catch(e) { console.error('logs/products:', e.message); }
+
+  try {
+    if (useCat === 'games') {
+      const [c] = await db.query('SELECT COUNT(*) as c FROM game_reward_log');
+      total = c[0].c;
+      const [r] = await db.query('SELECT * FROM game_reward_log ORDER BY rewarded_at DESC LIMIT ' + limit + ' OFFSET ' + offset);
+      logs = r;
+    }
+  } catch(e) { console.error('logs/games:', e.message); }
+
+  try {
+    if (useCat === 'activity') {
+      const [c] = await db.query('SELECT COUNT(*) as c FROM user_activity_log');
+      total = c[0].c;
+      const [r] = await db.query('SELECT * FROM user_activity_log ORDER BY created_at DESC LIMIT ' + limit + ' OFFSET ' + offset);
+      logs = r;
+    }
+  } catch(e) { console.error('logs/activity:', e.message); }
+
+  const totalPages = Math.ceil(total / limit) || 1;
+
+  res.render('admin/logs', {
+    title: 'السجلات',
+    logs: logs || [],
+    cat: useCat,
+    total: total || 0,
+    page: page,
+    totalPages: totalPages,
+    currentPath: req.path
+  });
 });
 
 module.exports = router;
