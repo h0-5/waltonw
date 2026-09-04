@@ -233,9 +233,7 @@ router.get('/logs', isAdmin, async (req, res) => {
     console.error('Logs error:', err.message);
     res.render('admin/logs', {
       title: 'السجلات',
-      logs: [], cat: 'admin', total: 0, page: 1, totalPages: 0,
-      currentPath: req.path,
-      settings: {}
+      logs: [], cat: 'admin', total: 0, page: 1, totalPages: 0
     });
   }
 });
