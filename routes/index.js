@@ -248,7 +248,7 @@ router.get('/applications/form/:type', isAuthenticated, async (req, res) => {
       return res.redirect('/applications');
     }
     const appData = appSetting[0];
-    const questions = await db.query('SELECT * FROM application_questions WHERE application_type = ? ORDER BY order_index ASC, sort_order ASC', [type]);
+    const [questions] = await db.query('SELECT * FROM application_questions WHERE application_type = ? ORDER BY order_index ASC, sort_order ASC', [type]);
     
     const [pendingApp] = await db.query(
       "SELECT id FROM submitted_applications WHERE user_id = ? AND application_type = ? AND status IN ('pending','waiting_join') LIMIT 1",
