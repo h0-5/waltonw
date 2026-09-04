@@ -2,8 +2,8 @@
 <link rel="stylesheet" href="/css/applications-page.css">
 <%- include('../partials/navbar') %>
 
-<div class="cy-apps-page" dir="rtl">
-    <!-- Hero -->
+<div class="cy-apps-page">
+    <!-- Hero Section -->
     <div class="cy-apps-hero">
         <div class="cy-apps-hero-icon">
             <div class="hex-ring"></div>
@@ -11,99 +11,146 @@
             <i class="fas fa-file-signature"></i>
         </div>
         <h1 class="page-heading">التقديمات</h1>
-        <p class="cy-apps-hero-sub">اختر التقديم المناسب لك وكن جزءاً من عائلة والتون</p>
+        <p class="cy-apps-hero-sub">اختر التقديم المناسب لك من القائمة أدناه، وكن جزءاً من مجتمعنا المتميز</p>
         <div class="cy-apps-hero-line"></div>
-    </div>
-
-    <div class="cy-apps-main">
-        <!-- Stats -->
-        <div class="apps-stats">
-            <div class="apps-stat-card">
-                <div class="apps-stat-icon"><i class="fas fa-door-open"></i></div>
-                <div class="apps-stat-val"><%= applications.filter(function(a){ return a.status === 'open'; }).length %></div>
-                <div class="apps-stat-label">متاح للتقديم</div>
+        <div class="hero-metrics">
+            <div class="metric">
+                <div class="metric-val"><%= applications.filter(function(a){ return a.status === 'open'; }).length %></div>
+                <div class="metric-label">تقديم مفتوح</div>
             </div>
-            <div class="apps-stat-card">
-                <div class="apps-stat-icon"><i class="fas fa-layer-group"></i></div>
-                <div class="apps-stat-val"><%= applications.length %></div>
-                <div class="apps-stat-label">إجمالي التقديمات</div>
+            <div class="metric">
+                <div class="metric-val"><%= applications.length %></div>
+                <div class="metric-label">إجمالي التقديمات</div>
             </div>
         </div>
+    </div>
 
-        <!-- Applications Grid -->
-        <div class="apps-grid">
+    <!-- Main Content -->
+    <div class="cy-apps-main">
+        <div class="sec-head reveal">
+            <h2 class="sec-title">
+                <span class="bar"></span>
+                التقديمات المتاحة
+            </h2>
+            <span class="sec-badge"><%= applications.filter(function(a){ return a.status === 'open'; }).length %> مفتوح</span>
+        </div>
+
+        <div class="deck">
             <% if (applications.length > 0) { %>
-                <% applications.forEach(function(app, i) { %>
-                <div class="apps-card" style="--delay: <%= i * 0.1 %>s">
-                    <div class="apps-card-glow"></div>
-                    
-                    <!-- Status Badge -->
-                    <div class="apps-card-status <%= app.status %>">
-                        <span class="apps-dot"></span>
-                        <%= app.status === 'open' ? 'مفتوح' : 'مغلق' %>
+                <% applications.forEach(function(app, ai) { %>
+                <article class="card reveal stagger-<%= (ai % 6) + 1 %>">
+                    <div class="holo-border"></div>
+                    <div class="top-shine"></div>
+                    <div class="inner-light"></div>
+
+                    <div class="status <%= app.status === 'open' ? 'open' : 'closed' %>">
+                        <span class="dot"></span>
+                        <%= app.status === 'open' ? 'مفتوح للتقديم' : 'مغلق حالياً' %>
                     </div>
 
-                    <!-- Card Content -->
-                    <div class="apps-card-body">
-                        <div class="apps-card-img">
-                            <% if (app.image) { %>
-                                <img src="<%= app.image %>" alt="<%= app.title || app.application_type %>" loading="lazy">
-                            <% } else { %>
-                                <div class="apps-card-img-placeholder">
-                                    <i class="fas fa-<%= app.application_type === 'Join Family' ? 'users' : 'user-shield' %>"></i>
-                                </div>
-                            <% } %>
+                    <div class="card-head">
+                        <div class="icon-box">
+                            <div class="icon">
+                                <% if (app.image) { %>
+                                    <img loading="lazy" src="<%= app.image %>" alt="<%= app.title || app.application_type %>">
+                                <% } else { %>
+                                    <div class="fallback">
+                                        <i class="fas fa-<%= app.application_type === 'Join Family' ? 'users' : 'user-shield' %>"></i>
+                                    </div>
+                                <% } %>
+                            </div>
                         </div>
+                        <div class="title-wrap">
+                            <h3><%= app.title || app.application_type %></h3>
+                            <span class="tag">
+                                <i class="fas fa-<%= app.application_type === 'Join Family' ? 'users' : 'user-shield' %>"></i>
+                                <%= app.application_type === 'Join Family' ? 'عضوية' : 'إدارة' %>
+                            </span>
+                        </div>
+                    </div>
 
-                        <h3 class="apps-card-title"><%= app.title || app.application_type %></h3>
-                        
+                    <div class="card-body">
                         <% if (app.description) { %>
-                        <p class="apps-card-desc"><%= app.description %></p>
+                        <p class="desc"><%= app.description %></p>
                         <% } %>
 
                         <% if (app.requirements) { %>
-                        <div class="apps-card-reqs">
-                            <div class="apps-reqs-title"><i class="fas fa-clipboard-check"></i> المتطلبات</div>
-                            <% var reqs = app.requirements.split(/\r?\n/).filter(function(r){ return r.trim(); }); %>
-                            <% reqs.forEach(function(req) { %>
-                            <div class="apps-req-item">
-                                <i class="fas fa-check-circle"></i>
-                                <span><%= req.trim() %></span>
+                        <div class="reqs">
+                            <div class="reqs-title">
+                                <i class="fas fa-shield-alt"></i>
+                                المتطلبات الأساسية
                             </div>
-                            <% }); %>
+                            <ul>
+                                <% app.requirements.split(/\r?\n/).filter(function(r){ return r.trim(); }).forEach(function(req) { %>
+                                <li>
+                                    <span class="check"><i class="fas fa-check"></i></span>
+                                    <span><%= req.trim() %></span>
+                                </li>
+                                <% }); %>
+                            </ul>
                         </div>
                         <% } %>
-                    </div>
 
-                    <!-- Action -->
-                    <div class="apps-card-footer">
-                        <% if (app.status === 'open') { %>
-                            <% if (typeof user !== 'undefined' && user) { %>
-                            <a href="/applications/form/<%= app.id %>" class="apps-apply-btn">
-                                <i class="fas fa-paper-plane"></i> قدّم الآن
-                            </a>
+                        <div class="actions">
+                            <% if (app.status === 'open') { %>
+                                <% if (typeof user !== 'undefined' && user) { %>
+                                <a href="/applications/form/<%= app.id %>" class="btn">
+                                    <span class="shimmer"></span>
+                                    <i class="fas fa-paper-plane"></i>
+                                    تقديم الطلب الآن
+                                </a>
+                                <% } else { %>
+                                <a href="/auth/discord" class="btn btn-login">
+                                    <span class="shimmer"></span>
+                                    <i class="fas fa-sign-in-alt"></i>
+                                    تسجيل الدخول للتقديم
+                                </a>
+                                <% } %>
                             <% } else { %>
-                            <a href="/auth/discord" class="apps-apply-btn discord">
-                                <i class="fab fa-discord"></i> سجّل دخول أولاً
-                            </a>
-                            <% } %>
-                        <% } else { %>
-                            <button class="apps-apply-btn disabled" disabled>
-                                <i class="fas fa-lock"></i> مغلق حالياً
+                            <button disabled class="btn-off">
+                                <i class="fas fa-lock"></i>
+                                غير متاح حالياً
                             </button>
-                        <% } %>
+                            <% } %>
+                        </div>
                     </div>
-                </div>
+                </article>
                 <% }); %>
             <% } else { %>
-            <div class="apps-empty">
-                <div class="apps-empty-icon"><i class="fas fa-inbox"></i></div>
-                <h3>لا توجد تقديمات متاحة</h3>
-                <p>تابعنا للحصول على فرص جديدة قريباً</p>
+            <div style="text-align: center; padding: 3rem; background: rgba(10,9,16,0.7); border-radius: 24px; border: 1px solid rgba(var(--ac-rgb),0.08); grid-column: 1/-1;">
+                <i class="fas fa-inbox" style="font-size: 3rem; color: rgba(var(--ac-rgb),0.4); margin-bottom: 1rem; display: block;"></i>
+                <p style="color: var(--text-dim);">لا توجد تقديمات متاحة حالياً</p>
             </div>
             <% } %>
         </div>
+
+        <!-- Tip Card -->
+        <div class="tip-sec reveal">
+            <div class="tip-card">
+                <div class="tip-inner">
+                    <div class="tip-icon">
+                        <i class="fas fa-lightbulb"></i>
+                    </div>
+                    <h3>نصائح هامة للتقديم</h3>
+                    <p>تأكد من قراءة المتطلبات جيدًا قبل التقديم. اكتب معلومات دقيقة وصادقة، فجميع الطلبات تخضع للمراجعة الدقيقة من قبل فريق الإدارة.</p>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+<script>
+// Scroll Reveal
+(function(){
+    var els = document.querySelectorAll('.reveal');
+    if (!els.length) return;
+    var io = new IntersectionObserver(function(entries){
+        entries.forEach(function(e){
+            if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+        });
+    }, { threshold: 0.12 });
+    els.forEach(function(el){ io.observe(el); });
+})();
+</script>
 
 <%- include('../partials/footer') %>

@@ -1,46 +1,44 @@
 <%
   var _ftSettings = typeof settings !== 'undefined' ? settings : {};
 %>
-<footer class="wf-footer">
-    <div class="ft-grid"></div>
+<footer class="wf-footer compact-footer">
     <div class="ft-glow-top"></div>
-    <div class="ft-orb-l"></div>
-    <div class="ft-orb-r"></div>
-    <div class="ft-orb-c"></div>
     <div class="ft-inner">
-        <!-- Right: Logo + Brand -->
-        <div class="ft-right">
-            <div class="ft-logo-ring"><img src="<%= _ftSettings.site_logo_url || '/images/walton-logo.svg' %>" alt="WF"></div>
-            <div>
-                <div class="ft-brand-name">Walton Family</div>
-                <div class="ft-brand-tag">Community</div>
-                <div class="ft-socials">
-                    <a href="<%= _ftSettings.discord_server_url || '#' %>" target="_blank" class="ft-social"><i class="fab fa-discord"></i></a>
-                </div>
+        <!-- Right: Brand -->
+        <div class="ft-brand-col">
+            <div class="ft-brand-logo">
+                <img src="<%= _ftSettings.site_logo_url || '/images/walton-logo.svg' %>" alt="WF">
+            </div>
+            <div class="ft-brand-name">Walton Family</div>
+            <p class="ft-brand-desc">مجتمع والتون فاميلي — أكثر من مجرد عائلة</p>
+        </div>
+
+        <!-- Middle: Links -->
+        <div class="ft-links-col">
+            <div class="ft-links-group">
+                <h4 class="ft-col-title">القائمة</h4>
+                <a href="/" class="ft-link">الرئيسية</a>
+                <a href="/applications" class="ft-link">التقديمات</a>
+                <a href="/rules" class="ft-link">القوانين</a>
+                <a href="/store" class="ft-link">المتجر</a>
+            </div>
+            <div class="ft-links-group">
+                <h4 class="ft-col-title">الدعم الفني</h4>
+                <a href="/support" class="ft-link">مركز المساعدة</a>
+                <a href="/about" class="ft-link">من نحن</a>
+                <a href="<%= _ftSettings.discord_server_url || '#' %>" target="_blank" class="ft-link">ديسكورد الدعم</a>
             </div>
         </div>
-        <!-- Left: Links -->
-        <div class="ft-left">
-            <a href="/" class="ft-link">الرئيسية</a>
-            <a href="/store" class="ft-link">المتجر</a>
-            <a href="/games" class="ft-link">الألعاب</a>
-            <a href="/rules" class="ft-link">القوانين</a>
-            <a href="/applications" class="ft-link">التقديمات</a>
-            <a href="/about" class="ft-link">من نحن</a>
-        </div>
     </div>
-    <!-- Bottom -->
+
+    <!-- Bottom Bar -->
     <div class="ft-bottom">
-        <div class="ft-cr">
+        <div class="ft-bottom-center">
             <i class="fas fa-lock ft-cr-lock"></i>
-            <span>جميع الحقوق محفوظة لشركة Walton Family &copy; <%= new Date().getFullYear() %></span>
+            <span>والتون فاميلي &copy; <%= new Date().getFullYear() %>. جميع الحقوق محفوظة.</span>
         </div>
-        <div class="ft-made">
-            <span class="ft-dev-sep">&middot;</span>
-            <span class="ft-dev-name">KHARBOSH</span>
-            <span class="ft-dev-sep">&middot;</span>
-            <span class="ft-dev-name">h05</span>
-            <span class="ft-made-label">Dev Team</span>
+        <div class="ft-bottom-left">
+            <span>تم التطوير بواسطة <strong>KHARBOSH · h05</strong></span>
         </div>
     </div>
 </footer>

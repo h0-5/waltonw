@@ -5,134 +5,181 @@
     .hide-mobile { display: none !important; }
     #expandChatBtn { display: none !important; }
     body.chat-open { overflow: hidden !important; }
-    .ft-inner { flex-direction: column !important; align-items: center !important; gap: 1.5rem; }
-    .ft-left { justify-content: center !important; flex-wrap: wrap; }
 }
 @media (min-width: 769px) {
     #backToTicketBtn { display: none !important; }
 }
 
+/* ── Compact Footer ── */
 .wf-footer {
     position: relative;
     overflow: hidden;
     margin-top: 3rem;
-    background: linear-gradient(180deg, transparent 0%, rgba(10,5,15,0.99) 4%, #080408 100%);
+    background: linear-gradient(180deg, transparent 0%, rgba(8, 4, 8, 0.98) 6%, #050305 100%);
 }
-.ft-grid {
-    position: absolute; inset: 0; pointer-events: none;
-    background-image: linear-gradient(rgba(var(--ac-rgb),0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(var(--ac-rgb),0.03) 1px, transparent 1px);
-    background-size: 55px 55px;
-    mask-image: linear-gradient(180deg, transparent, black 20%, black 80%, transparent);
-}
-.ft-glow-top {
-    position: absolute; top: 0; left: 0; right: 0; height: 1px;
-    background: linear-gradient(90deg, transparent 0%, rgba(var(--ac-rgb),0.9) 25%, rgba(var(--ac-rgb),0.7) 50%, rgba(var(--ac-rgb),0.9) 75%, transparent 100%);
-    box-shadow: 0 0 60px 6px rgba(var(--ac-rgb),0.2), 0 0 120px 12px rgba(var(--ac-rgb),0.08);
-}
-.ft-orb-l { position: absolute; bottom: -80px; left: -80px; width: 400px; height: 400px; border-radius: 50%; background: radial-gradient(circle, rgba(var(--ac-rgb),0.1), transparent 65%); pointer-events: none; }
-.ft-orb-r { position: absolute; top: -20px; right: -60px; width: 350px; height: 350px; border-radius: 50%; background: radial-gradient(circle, rgba(var(--ac-rgb),0.08), transparent 65%); pointer-events: none; }
-.ft-orb-c { position: absolute; top: 40%; left: 50%; transform: translate(-50%,-50%); width: 600px; height: 300px; border-radius: 50%; background: radial-gradient(ellipse, rgba(var(--ac-rgb),0.04), transparent 70%); pointer-events: none; }
 
-/* Inner Layout */
+.ft-glow-top {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(var(--ac-rgb), 0.9) 25%, rgba(var(--ac-rgb), 0.7) 50%, rgba(var(--ac-rgb), 0.9) 75%, transparent 100%);
+    box-shadow: 0 0 60px 6px rgba(var(--ac-rgb), 0.2), 0 0 120px 12px rgba(var(--ac-rgb), 0.08);
+}
+
 .ft-inner {
-    position: relative; z-index: 1;
-    max-width: 1000px; margin: 0 auto;
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
     padding: 2rem 2rem 0;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     direction: rtl;
+    gap: 2rem;
 }
 
-/* Right: Logo + Brand */
-.ft-right {
+/* Brand Column */
+.ft-brand-col {
+    flex: 1.2;
+}
+
+.ft-brand-logo {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    flex-direction: row-reverse;
+    margin-bottom: 0.4rem;
 }
 
-.ft-logo-ring {
-    position: relative; width: 52px; height: 52px; flex-shrink: 0;
+.ft-brand-logo img {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: contain;
+    border: 2px solid rgba(var(--ac-rgb), 0.3);
+    box-shadow: 0 0 20px rgba(var(--ac-rgb), 0.15);
 }
-.ft-logo-ring::before {
-    content: ''; position: absolute; inset: -2px; border-radius: 50%;
-    background: conic-gradient(from 0deg, var(--ac), rgba(var(--ac-rgb),0.5), var(--ac), rgba(var(--ac-rgb),0.3), var(--ac));
-    animation: ftSpin 5s linear infinite;
-}
-.ft-logo-ring::after { content: ''; position: absolute; inset: 2px; border-radius: 50%; background: #080408; }
-.ft-logo-ring img { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: contain; border-radius: 50%; }
-@keyframes ftSpin { to { transform: rotate(360deg); } }
 
 .ft-brand-name {
-    font-size: 1.1rem; font-weight: 900;
+    font-size: 1.1rem;
+    font-weight: 900;
     background: linear-gradient(90deg, var(--ac), #fff);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-    line-height: 1.2;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.2rem;
 }
-.ft-brand-tag {
-    font-size: .55rem; font-weight: 700; color: rgba(255,255,255,.3);
-    letter-spacing: .15em; text-transform: uppercase; margin-top: 1px;
-}
-.ft-socials { display: flex; gap: .35rem; margin-top: .4rem; }
-.ft-social {
-    width: 28px; height: 28px; border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);
-    color: rgba(255,255,255,.5); transition: all .3s; font-size: .75rem;
-    text-decoration: none;
-}
-.ft-social:hover { background: rgba(var(--ac-rgb),.15); border-color: rgba(var(--ac-rgb),.4); color: var(--ac); transform: translateY(-2px); }
 
-/* Left: Links */
-.ft-left {
+.ft-brand-desc {
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 0.75rem;
+    line-height: 1.5;
+    margin-bottom: 0.75rem;
+}
+
+/* Links Columns */
+.ft-links-col {
     display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-    justify-content: flex-start;
+    gap: 4rem;
 }
+
+.ft-links-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.ft-col-title {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 0.5rem;
+}
+
 .ft-link {
-    color: rgba(255,255,255,.4);
-    font-size: .75rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.78rem;
     text-decoration: none;
-    transition: color .25s;
-    font-weight: 600;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    font-weight: 500;
+    position: relative;
+    display: inline-block;
+    transform: translateY(0);
 }
-.ft-link:hover { color: var(--ac); }
 
-/* Bottom */
+.ft-link::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    right: 0;
+    width: 0;
+    height: 1.5px;
+    background: var(--ac);
+    transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 0 8px rgba(var(--ac-rgb), 0.4);
+}
+
+.ft-link:hover {
+    color: #fff;
+    transform: translateY(-2px);
+    text-shadow: 0 0 12px rgba(var(--ac-rgb), 0.3);
+}
+
+.ft-link:hover::after {
+    width: 100%;
+}
+
+/* Bottom Bar */
 .ft-bottom {
-    position: relative; z-index: 1;
-    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     gap: 2rem;
-    padding: .9rem 2rem;
-    max-width: 1000px; margin: 1.5rem auto 0;
-    border-top: 1px solid rgba(var(--ac-rgb),.08);
+    padding: 0.9rem 2rem;
+    max-width: 1100px;
+    margin: 1.5rem auto 0;
+    border-top: 1px solid rgba(var(--ac-rgb), 0.08);
     flex-wrap: wrap;
 }
 
-/* Copyright */
-.ft-cr {
-    display: flex; align-items: center; gap: .4rem;
-    color: rgba(255,255,255,.25); font-size: .7rem; font-weight: 600;
+.ft-bottom-center,
+.ft-bottom-left {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.3);
 }
-.ft-cr-lock { font-size: .6rem; color: rgba(var(--ac-rgb),.4); }
 
-/* Dev Team */
-.ft-made {
-    display: flex; align-items: center; gap: .3rem;
+.ft-cr-lock {
+    font-size: 0.6rem;
+    color: rgba(var(--ac-rgb), 0.4);
 }
-.ft-dev-sep { color: rgba(var(--ac-rgb),.25); font-size: .6rem; }
-.ft-dev-name {
-    font-size: .65rem; font-weight: 900;
-    background: linear-gradient(90deg, var(--ac), rgba(var(--ac-rgb),0.6), var(--ac));
-    background-size: 200% auto;
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-    animation: devShimmer 2.5s linear infinite;
+
+.ft-bottom-left strong {
+    font-weight: 800;
+    background: linear-gradient(90deg, var(--ac), rgba(var(--ac-rgb), 0.6));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
-.ft-made-label {
-    font-size: .6rem; font-weight: 700;
-    color: rgba(255,255,255,.25);
-    margin-right: .15rem;
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .ft-inner {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 1.5rem;
+    }
+    .ft-links-col {
+        justify-content: center;
+    }
+    .ft-bottom {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
 }
-@keyframes devShimmer { 0% { background-position: 0% center; } 100% { background-position: 200% center; } }
