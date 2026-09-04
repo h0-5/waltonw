@@ -1,0 +1,244 @@
+<%- include('layout') %>
+
+<style>
+  .app-filter-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:1.2rem}
+  .app-filter-bar select,.app-filter-bar input{padding:.5rem .8rem;background:rgba(255,255,255,.05);border:1px solid rgba(var(--ac-rgb),.15);border-radius:8px;color:#fff;font-size:.85rem;font-family:inherit}
+  .app-filter-bar select option{background:#1a1525;color:#fff}
+  .status-pill{padding:.2rem .7rem;border-radius:20px;font-size:.72rem;font-weight:700;display:inline-block}
+  .st-pending{background:rgba(234,179,8,.15);color:#eab308}
+  .st-approved{background:rgba(34,197,94,.15);color:#22c55e}
+  .st-rejected{background:rgba(239,68,68,.15);color:#f87171}
+  .st-waiting_join{background:rgba(59,130,246,.15);color:#3b82f6}
+  .act-btn{padding:.35rem .8rem;border-radius:8px;border:none;font-size:.75rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
+  .act-btn.approve{background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)}
+  .act-btn.approve:hover{background:rgba(34,197,94,.25)}
+  .act-btn.reject{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.25)}
+  .act-btn.reject:hover{background:rgba(239,68,68,.2)}
+  .act-btn.delete{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.2)}
+  .act-btn.view{background:rgba(var(--ac-rgb),.1);color:var(--ac);border:1px solid rgba(var(--ac-rgb),.3)}
+  .act-btn.view:hover{background:rgba(var(--ac-rgb),.2)}
+  .actions-cell{display:flex;gap:4px;flex-wrap:wrap}
+  .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:1000;display:none;align-items:center;justify-content:center;padding:1rem}
+  .modal-overlay.show{display:flex}
+  .modal-box{background:#1a1525;border:1px solid rgba(var(--ac-rgb),.2);border-radius:16px;padding:1.5rem;max-width:600px;width:100%;max-height:80vh;overflow-y:auto}
+  .modal-box h3{color:#fff;margin-bottom:1rem;font-size:1.1rem}
+  .modal-close{background:none;border:none;color:var(--text-dim);font-size:1.2rem;cursor:pointer;float:left}
+  .answer-row{padding:.6rem 0;border-bottom:1px solid rgba(255,255,255,.05)}
+  .answer-row:last-child{border-bottom:none}
+  .answer-q{font-size:.75rem;color:var(--text-dim);margin-bottom:.2rem}
+  .answer-a{font-size:.9rem;color:#fff;font-weight:600}
+  .answer-a img{max-width:200px;border-radius:8px;margin-top:.4rem}
+  .reject-textarea{width:100%;min-height:80px;background:rgba(255,255,255,.05);border:1px solid rgba(239,68,68,.2);border-radius:8px;color:#fff;padding:.6rem;font-family:inherit;margin:.8rem 0}
+  .stat-card-sm{background:rgba(var(--ac-rgb),.05);border:1px solid rgba(var(--ac-rgb),.12);border-radius:12px;padding:1rem;text-align:center;min-width:100px;flex:1}
+  .stat-card-sm .num{font-size:1.5rem;font-weight:900;color:var(--ac)}
+  .stat-card-sm .lbl{font-size:.7rem;color:var(--text-dim)}
+  .stats-row{display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap}
+  .tbl-wrap{overflow-x:auto}
+</style>
+
+<div class="admin-card">
+  <h3 style="margin:0 0 1rem;border:none;padding:0"><i class="fas fa-file-alt"></i> الطلبات المقدمة</h3>
+
+  <div class="stats-row" id="statsRow">
+    <div class="stat-card-sm"><div class="num" id="statTotal">0</div><div class="lbl">إجمالي</div></div>
+    <div class="stat-card-sm"><div class="num" id="statPending" style="color:#eab308">0</div><div class="lbl">معلق</div></div>
+    <div class="stat-card-sm"><div class="num" id="statApproved" style="color:#22c55e">0</div><div class="lbl">مقبول</div></div>
+    <div class="stat-card-sm"><div class="num" id="statRejected" style="color:#f87171">0</div><div class="lbl">مرفوض</div></div>
+  </div>
+
+  <div class="app-filter-bar">
+    <select id="filterStatus" onchange="filterApps()">
+      <option value="">الكل</option>
+      <option value="pending" selected>معلق</option>
+      <option value="waiting_join">بانتظار الانضمام</option>
+      <option value="approved">مقبول</option>
+      <option value="rejected">مرفوض</option>
+    </select>
+    <select id="filterType" onchange="filterApps()">
+      <option value="">جميع الأنواع</option>
+      <% types.forEach(function(t) { %>
+      <option value="<%= t.application_type %>"><%= t.title || t.application_type %></option>
+      <% }); %>
+    </select>
+    <input type="text" id="filterSearch" placeholder="بحث بالاسم أو ID..." oninput="filterApps()">
+  </div>
+
+  <div class="tbl-wrap">
+    <table class="admin-table" id="appsTable">
+      <thead>
+        <tr>
+          <th>#</th><th>المستخدم</th><th>التقديم</th><th>الحالة</th><th>التاريخ</th><th>إجراءات</th>
+        </tr>
+      </thead>
+      <tbody id="appsBody"></tbody>
+    </table>
+  </div>
+  <div id="emptyMsg" style="text-align:center;padding:2rem;color:var(--text-dim);display:none">لا توجد طلبات</div>
+</div>
+
+<!-- View Modal -->
+<div class="modal-overlay" id="viewModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('viewModal')">&times;</button>
+    <h3><i class="fas fa-eye"></i> تفاصيل الطلب #<span id="viewId"></span></h3>
+    <div id="viewContent"></div>
+    <div id="viewNotes" style="margin-top:1rem;display:none">
+      <strong style="color:#eab308">ملاحظات المراجعة:</strong>
+      <p style="color:var(--text-dim);margin-top:.3rem" id="viewNotesText"></p>
+    </div>
+  </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal-overlay" id="rejectModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('rejectModal')">&times;</button>
+    <h3><i class="fas fa-times-circle" style="color:#f87171"></i> رفض الطلب #<span id="rejectId"></span></h3>
+    <p style="color:var(--text-dim);margin-bottom:.5rem">سبب الرفض:</p>
+    <textarea class="reject-textarea" id="rejectNotes" placeholder="اكتب سبب الرفض..."></textarea>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="act-btn reject" onclick="confirmReject()" style="padding:.6rem 1.5rem">رفض</button>
+      <button class="act-btn view" onclick="closeModal('rejectModal')" style="padding:.6rem 1.5rem">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let allApps = <%- JSON.stringify(applications) %>;
+let allQuestions = <%- JSON.stringify(questionsMap) %>;
+let typeNames = {};
+<% types.forEach(function(t) { %>
+typeNames['<%= t.application_type %>'] = '<%= (t.title || t.application_type).replace(/'/g, "\\'") %>';
+<% }); %>
+
+function filterApps() {
+  const status = document.getElementById('filterStatus').value;
+  const type = document.getElementById('filterType').value;
+  const search = document.getElementById('filterSearch').value.toLowerCase();
+  const filtered = allApps.filter(a => {
+    if (status && a.status !== status) return false;
+    if (type && a.application_type !== type) return false;
+    if (search) {
+      const name = (a.username || '').toLowerCase();
+      const id = String(a.user_id);
+      if (!name.includes(search) && !id.includes(search)) return false;
+    }
+    return true;
+  });
+  renderApps(filtered);
+}
+
+function renderApps(apps) {
+  const tbody = document.getElementById('appsBody');
+  const empty = document.getElementById('emptyMsg');
+  if (!apps.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  const st = { pending: 'معلق', approved: 'مقبول', rejected: 'مرفوض', waiting_join: 'بانتظار الانضمام' };
+  tbody.innerHTML = apps.map(a => {
+    const date = a.submitted_at ? new Date(a.submitted_at).toLocaleDateString('ar-SA') : '-';
+    return '<tr>'
+      + '<td>' + a.id + '</td>'
+      + '<td style="font-weight:600;color:#fff">' + esc(a.username || 'مستخدم #' + a.user_id) + '</td>'
+      + '<td>' + esc(typeNames[a.application_type] || a.application_type) + '</td>'
+      + '<td><span class="status-pill st-' + a.status + '">' + (st[a.status] || a.status) + '</span></td>'
+      + '<td style="font-size:.75rem;color:var(--text-dim)">' + date + '</td>'
+      + '<td><div class="actions-cell">'
+      + '<button class="act-btn view" onclick="viewApp(' + a.id + ')" title="عرض"><i class="fas fa-eye"></i></button>'
+      + (a.status === 'pending' ? '<button class="act-btn approve" onclick="approveApp(' + a.id + ')" title="قبول"><i class="fas fa-check"></i></button>' : '')
+      + (a.status === 'pending' ? '<button class="act-btn reject" onclick="rejectApp(' + a.id + ')" title="رفض"><i class="fas fa-times"></i></button>' : '')
+      + '<button class="act-btn delete" onclick="deleteApp(' + a.id + ')" title="حذف"><i class="fas fa-trash"></i></button>'
+      + '</div></td></tr>';
+  }).join('');
+
+  document.getElementById('statTotal').textContent = allApps.length;
+  document.getElementById('statPending').textContent = allApps.filter(a => a.status === 'pending').length;
+  document.getElementById('statApproved').textContent = allApps.filter(a => a.status === 'approved').length;
+  document.getElementById('statRejected').textContent = allApps.filter(a => a.status === 'rejected').length;
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function viewApp(id) {
+  const app = allApps.find(a => a.id === id);
+  if (!app) return;
+  document.getElementById('viewId').textContent = id;
+  let answers = {};
+  try { answers = typeof app.answers === 'string' ? JSON.parse(app.answers) : (app.answers || {}); } catch(e) {}
+  const qs = allQuestions[app.application_type] || [];
+  let html = '';
+  html += '<div class="answer-row"><div class="answer-q">المستخدم</div><div class="answer-a">' + esc(app.username || ' #' + app.user_id) + '</div></div>';
+  html += '<div class="answer-row"><div class="answer-q">نوع التقديم</div><div class="answer-a">' + esc(typeNames[app.application_type] || app.application_type) + '</div></div>';
+  html += '<div class="answer-row"><div class="answer-q">الحالة</div><div class="answer-a"><span class="status-pill st-' + app.status + '">' + app.status + '</span></div></div>';
+  qs.forEach(function(q) {
+    const val = answers[q.id] || answers[String(q.id)] || '-';
+    html += '<div class="answer-row"><div class="answer-q">' + esc(q.question) + '</div><div class="answer-a">';
+    if (q.type === 'image' && val && val !== '-') {
+      html += '<img src="' + esc(val) + '" alt="uploaded">';
+    } else {
+      html += esc(String(val));
+    }
+    html += '</div></div>';
+  });
+  document.getElementById('viewContent').innerHTML = html;
+  if (app.review_notes) {
+    document.getElementById('viewNotes').style.display = 'block';
+    document.getElementById('viewNotesText').textContent = app.review_notes;
+  } else {
+    document.getElementById('viewNotes').style.display = 'none';
+  }
+  document.getElementById('viewModal').classList.add('show');
+}
+
+function rejectApp(id) {
+  document.getElementById('rejectId').textContent = id;
+  document.getElementById('rejectNotes').value = '';
+  document.getElementById('rejectModal').classList.add('show');
+}
+
+async function confirmReject() {
+  const id = document.getElementById('rejectId').textContent;
+  const notes = document.getElementById('rejectNotes').value.trim();
+  await apiAction('/api/admin/applications/' + id + '/reject', { notes: notes });
+}
+
+async function approveApp(id) {
+  if (!confirm('تأكيد قبول هذا الطلب؟')) return;
+  await apiAction('/api/admin/applications/' + id + '/approve', {});
+}
+
+async function deleteApp(id) {
+  if (!confirm('تأكيد حذف هذا الطلب؟ لا يمكن التراجع')) return;
+  await apiAction('/api/admin/applications/' + id + '/delete', {});
+}
+
+async function apiAction(url, body) {
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (data.success) {
+      location.reload();
+    } else {
+      alert(data.error || 'حدث خطأ');
+    }
+  } catch(e) {
+    alert('حدث خطأ في الاتصال');
+  }
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('show'); });
+});
+
+filterApps();
+</script>
+
+<%- include('admin_footer') %>

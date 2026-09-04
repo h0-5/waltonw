@@ -1,0 +1,379 @@
+<%- include('layout') %>
+
+<style>
+  .mg-tabs{display:flex;gap:6px;margin-bottom:1.5rem;flex-wrap:wrap}
+  .mg-tab{padding:.5rem 1.2rem;border-radius:8px;border:1px solid rgba(var(--ac-rgb),.15);background:transparent;color:var(--text-dim);font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
+  .mg-tab.active,.mg-tab:hover{background:rgba(var(--ac-rgb),.15);color:var(--ac);border-color:rgba(var(--ac-rgb),.3)}
+  .mg-panel{display:none}
+  .mg-panel.active{display:block}
+  .type-card{background:rgba(var(--ac-rgb),.04);border:1px solid rgba(var(--ac-rgb),.12);border-radius:12px;padding:1.2rem;margin-bottom:1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+  .type-card .type-info{flex:1;min-width:200px}
+  .type-card .type-info h4{color:#fff;margin-bottom:.2rem}
+  .type-card .type-info p{font-size:.8rem;color:var(--text-dim)}
+  .type-actions{display:flex;gap:6px;align-items:center}
+  .status-toggle{padding:.3rem .8rem;border-radius:20px;border:none;font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit}
+  .status-open{background:rgba(34,197,94,.15);color:#22c55e}
+  .status-closed{background:rgba(239,68,68,.15);color:#f87171}
+  .small-btn{padding:.3rem .7rem;border-radius:8px;border:none;font-size:.75rem;cursor:pointer;font-family:inherit}
+  .small-btn.edit{background:rgba(var(--ac-rgb),.1);color:var(--ac)}
+  .small-btn.del{background:rgba(239,68,68,.1);color:#f87171}
+  .q-card{background:rgba(var(--ac-rgb),.04);border:1px solid rgba(var(--ac-rgb),.1);border-radius:10px;padding:1rem;margin-bottom:.8rem}
+  .q-card .q-head{display:flex;justify-content:space-between;align-items:center;gap:.5rem}
+  .q-card .q-head span{font-size:.8rem;color:var(--text-dim)}
+  .q-card .q-text{color:#fff;font-weight:600;margin-top:.4rem}
+  .q-card .q-meta{font-size:.75rem;color:var(--text-dim);margin-top:.3rem}
+  .form-group{margin-bottom:1rem}
+  .form-group label{display:block;font-size:.85rem;color:var(--text-dim);margin-bottom:.3rem;font-weight:600}
+  .form-input,.form-textarea,.form-select{width:100%;padding:.6rem .8rem;background:rgba(255,255,255,.05);border:1px solid rgba(var(--ac-rgb),.15);border-radius:8px;color:#fff;font-family:inherit;font-size:.85rem}
+  .form-textarea{min-height:80px;resize:vertical}
+  .form-input:focus,.form-textarea:focus,.form-select:focus{outline:none;border-color:var(--ac)}
+  .form-select option{background:#1a1525;color:#fff}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  .save-btn{padding:.6rem 1.5rem;background:var(--ac);color:#fff;border:none;border-radius:8px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s}
+  .save-btn:hover{opacity:.9;transform:translateY(-1px)}
+  .cancel-btn{padding:.6rem 1.5rem;background:rgba(255,255,255,.05);color:var(--text-dim);border:1px solid rgba(var(--ac-rgb),.15);border-radius:8px;font-family:inherit;cursor:pointer}
+  .edit-form{background:rgba(var(--ac-rgb),.06);border:1px solid rgba(var(--ac-rgb),.15);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem}
+  .edit-form h4{color:#fff;margin-bottom:1rem}
+  .inline-actions{display:flex;gap:6px;margin-top:1rem}
+</style>
+
+<div class="admin-card">
+  <h3 style="margin:0 0 1rem;border:none;padding:0"><i class="fas fa-cogs"></i> إدارة نظام التقديمات</h3>
+
+  <div class="mg-tabs">
+    <button class="mg-tab active" onclick="showTab('types')">أنواع التقديم</button>
+    <button class="mg-tab" onclick="showTab('questions')">الأسئلة</button>
+    <button class="mg-tab" onclick="showTab('settings')">الإعدادات</button>
+  </div>
+
+  <!-- Types Panel -->
+  <div class="mg-panel active" id="panelTypes">
+    <div style="margin-bottom:1rem;text-align:left">
+      <button class="save-btn" onclick="showTypeForm()"><i class="fas fa-plus"></i> إضافة نوع جديد</button>
+    </div>
+    <div id="typeFormArea"></div>
+    <div id="typesList">
+      <% types.forEach(function(t) { %>
+      <div class="type-card" id="type-<%= t.id %>">
+        <div class="type-info">
+          <h4><%= t.title || t.application_type %></h4>
+          <p><%= t.description ? t.description.substring(0, 100) : 'بدون وصف' %></p>
+        </div>
+        <div class="type-actions">
+          <button class="status-toggle <%= t.status === 'open' ? 'status-open' : 'status-closed' %>" onclick="toggleTypeStatus('<%= t.application_type %>', '<%= t.status %>')">
+            <%= t.status === 'open' ? 'مفتوح' : 'مغلق' %>
+          </button>
+          <button class="small-btn edit" onclick="editType(<%= t.id %>)"><i class="fas fa-edit"></i></button>
+          <button class="small-btn del" onclick="deleteType('<%= t.application_type %>', <%= t.id %>)"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+      <% }); %>
+    </div>
+  </div>
+
+  <!-- Questions Panel -->
+  <div class="mg-panel" id="panelQuestions">
+    <div class="form-group">
+      <label>اختر نوع التقديم</label>
+      <select class="form-select" id="qTypeSelect" onchange="loadQuestions()">
+        <option value="">-- اختر --</option>
+        <% types.forEach(function(t) { %>
+        <option value="<%= t.application_type %>"><%= t.title || t.application_type %></option>
+        <% }); %>
+      </select>
+    </div>
+    <div id="qFormArea" style="display:none">
+      <div class="edit-form">
+        <h4><i class="fas fa-plus-circle"></i> إضافة سؤال جديد</h4>
+        <div class="form-group">
+          <label>نص السؤال</label>
+          <input type="text" class="form-input" id="qText" placeholder="مثال: ما اسمك؟">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>نوع الإجابة</label>
+            <select class="form-select" id="qType">
+              <option value="text">نص قصير</option>
+              <option value="textarea">نص طويل</option>
+              <option value="number">رقم</option>
+              <option value="select">قائمة منسدلة</option>
+              <option value="radio">اختيار واحد</option>
+              <option value="multiple_choice">اختيار متعدد</option>
+              <option value="true_false">صح / خطأ</option>
+              <option value="server_name">اسم سيرفر</option>
+              <option value="image">صورة</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>مطلوب؟</label>
+            <select class="form-select" id="qRequired">
+              <option value="1">نعم</option>
+              <option value="0">لا</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" id="qOptionsGroup" style="display:none">
+          <label>الخيارات (سطر لكل خيار)</label>
+          <textarea class="form-textarea" id="qOptions" placeholder="خيار 1&#10;خيار 2&#10;خيار 3"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>ترتيب العرض</label>
+            <input type="number" class="form-input" id="qOrder" value="0">
+          </div>
+          <div class="form-group">
+            <label>حد أقصى اختيارات (اختيار متعدد فقط)</label>
+            <input type="number" class="form-input" id="qMaxSel" placeholder="بدون حد">
+          </div>
+        </div>
+        <div class="inline-actions">
+          <button class="save-btn" onclick="saveQuestion()"><i class="fas fa-save"></i> حفظ السؤال</button>
+        </div>
+      </div>
+    </div>
+    <div id="questionsList"></div>
+  </div>
+
+  <!-- Settings Panel -->
+  <div class="mg-panel" id="panelSettings">
+    <div class="form-group">
+      <label>اختر نوع التقديم</label>
+      <select class="form-select" id="sTypeSelect" onchange="loadSettings()">
+        <option value="">-- اختر --</option>
+        <% types.forEach(function(t) { %>
+        <option value="<%= t.application_type %>"><%= t.title || t.application_type %></option>
+        <% }); %>
+      </select>
+    </div>
+    <div id="settingsForm" style="display:none">
+      <div class="edit-form">
+        <h4><i class="fas fa-cog"></i> إعدادات التقديم</h4>
+        <div class="form-row">
+          <div class="form-group">
+            <label>العنوان</label>
+            <input type="text" class="form-input" id="sTitle">
+          </div>
+          <div class="form-group">
+            <label>الحالة</label>
+            <select class="form-select" id="sStatus">
+              <option value="open">مفتوح</option>
+              <option value="closed">مغلق</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>الوصف</label>
+          <textarea class="form-textarea" id="sDesc"></textarea>
+        </div>
+        <div class="form-group">
+          <label>المتطلبات (سطر لكل متطلب)</label>
+          <textarea class="form-textarea" id="sReqs"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>رابط الصورة</label>
+            <input type="text" class="form-input" id="sImage">
+          </div>
+          <div class="form-group">
+            <label>دور الموقع عند القبول</label>
+            <input type="text" class="form-input" id="sSiteRole">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Discord Role ID (1)</label>
+            <input type="text" class="form-input" id="sDiscordRole1">
+          </div>
+          <div class="form-group">
+            <label>Discord Role ID (2)</label>
+            <input type="text" class="form-input" id="sDiscordRole2">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Discord Role ID (3)</label>
+            <input type="text" class="form-input" id="sDiscordRole3">
+          </div>
+          <div class="form-group">
+            <label>Discord Role المطلوب للمقدم</label>
+            <input type="text" class="form-input" id="sRequiredRole">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>ساعات التهدئة بعد الرفض</label>
+            <input type="number" class="form-input" id="sCooldown" value="0">
+          </div>
+          <div class="form-group">
+            <label>إشعارات مفعلة</label>
+            <select class="form-select" id="sNotify">
+              <option value="1">نعم</option>
+              <option value="0">لا</option>
+            </select>
+          </div>
+        </div>
+        <div class="inline-actions">
+          <button class="save-btn" onclick="saveSettings()"><i class="fas fa-save"></i> حفظ الإعدادات</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showTab(name) {
+  document.querySelectorAll('.mg-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.mg-panel').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('panel' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
+}
+
+// Types
+function showTypeForm(editData) {
+  const area = document.getElementById('typeFormArea');
+  const d = editData || {};
+  area.innerHTML = '<div class="edit-form">'
+    + '<h4>' + (d.id ? 'تعديل' : 'إضافة') + ' نوع التقديم</h4>'
+    + '<div class="form-row">'
+    + '<div class="form-group"><label>النوع (slug إنجليزي)</label><input type="text" class="form-input" id="tSlug" value="' + (d.application_type||'') + '" ' + (d.id?'readonly':'') + '></div>'
+    + '<div class="form-group"><label>العنوان</label><input type="text" class="form-input" id="tTitle" value="' + (d.title||'') + '"></div>'
+    + '</div>'
+    + '<div class="form-group"><label>الوصف</label><textarea class="form-textarea" id="tDesc">' + (d.description||'') + '</textarea></div>'
+    + '<div class="form-group"><label>المتطلبات (سطر لكل متطلب)</label><textarea class="form-textarea" id="tReqs">' + (d.requirements||'') + '</textarea></div>'
+    + '<div class="form-row">'
+    + '<div class="form-group"><label>رابط الصورة</label><input type="text" class="form-input" id="tImage" value="' + (d.image||'') + '"></div>'
+    + '<div class="form-group"><label>الحالة</label><select class="form-select" id="tStatus"><option value="open"' + (d.status==='open'?' selected':'') + '>مفتوح</option><option value="closed"' + (d.status!=='open'?' selected':'') + '>مغلق</option></select></div>'
+    + '</div>'
+    + '<div class="inline-actions">'
+    + '<button class="save-btn" onclick="saveType(' + (d.id||'null') + ')"><i class="fas fa-save"></i> حفظ</button>'
+    + '<button class="cancel-btn" onclick="document.getElementById(\'typeFormArea\').innerHTML=\'\'">إلغاء</button>'
+    + '</div></div>';
+  area.scrollIntoView({ behavior: 'smooth' });
+}
+
+async function editType(id) {
+  const types = <%- JSON.stringify(types) %>;
+  const t = types.find(x => x.id === id);
+  if (t) showTypeForm(t);
+}
+
+async function saveType(id) {
+  const data = {
+    application_type: document.getElementById('tSlug').value.trim(),
+    title: document.getElementById('tTitle').value.trim(),
+    description: document.getElementById('tDesc').value.trim(),
+    requirements: document.getElementById('tReqs').value.trim(),
+    image: document.getElementById('tImage').value.trim(),
+    status: document.getElementById('tStatus').value
+  };
+  if (!data.application_type) return alert('النوع مطلوب');
+  const url = id ? '/api/admin/applications/types/' + id : '/api/admin/applications/types';
+  const method = id ? 'PUT' : 'POST';
+  const res = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+  const r = await res.json();
+  if (r.success) location.reload(); else alert(r.error || 'خطأ');
+}
+
+async function toggleTypeStatus(type, current) {
+  const newStatus = current === 'open' ? 'closed' : 'open';
+  const res = await fetch('/api/admin/applications/types/status', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ application_type: type, status: newStatus }) });
+  const r = await res.json();
+  if (r.success) location.reload(); else alert(r.error || 'خطأ');
+}
+
+async function deleteType(type, id) {
+  if (!confirm('حذف نوع "' + type + '"؟ سيتم حذف جميع الأسئلة المرتبطة')) return;
+  const res = await fetch('/api/admin/applications/types/' + id, { method:'DELETE' });
+  const r = await res.json();
+  if (r.success) location.reload(); else alert(r.error || 'خطأ');
+}
+
+// Questions
+async function loadQuestions() {
+  const type = document.getElementById('qTypeSelect').value;
+  if (!type) { document.getElementById('qFormArea').style.display='none'; document.getElementById('questionsList').innerHTML=''; return; }
+  document.getElementById('qFormArea').style.display='block';
+  const res = await fetch('/api/admin/applications/questions/' + encodeURIComponent(type));
+  const qs = await res.json();
+  const list = document.getElementById('questionsList');
+  if (!qs.length) { list.innerHTML='<p style="color:var(--text-dim);text-align:center;padding:1rem">لا توجد أسئلة</p>'; return; }
+  list.innerHTML = qs.map(q =>
+    '<div class="q-card"><div class="q-head"><span class="status-pill st-' + (q.required ? 'approved' : 'pending') + '">' + (q.required ? 'مطلوب' : 'اختياري') + '</span><div class="inline-actions"><button class="small-btn del" onclick="deleteQuestion(' + q.id + ')"><i class="fas fa-trash"></i></button></div></div><div class="q-text">' + esc(q.question) + '</div><div class="q-meta">النوع: ' + q.type + ' | الترتيب: ' + (q.order_index || q.sort_order || 0) + '</div></div>'
+  ).join('');
+}
+
+document.getElementById('qType').addEventListener('change', function() {
+  const show = ['select','radio','multiple_choice'].includes(this.value);
+  document.getElementById('qOptionsGroup').style.display = show ? 'block' : 'none';
+});
+
+async function saveQuestion() {
+  const data = {
+    application_type: document.getElementById('qTypeSelect').value,
+    question: document.getElementById('qText').value.trim(),
+    type: document.getElementById('qType').value,
+    required: parseInt(document.getElementById('qRequired').value),
+    options: document.getElementById('qOptions').value.trim(),
+    order_index: parseInt(document.getElementById('qOrder').value) || 0,
+    max_selections: parseInt(document.getElementById('qMaxSel').value) || null
+  };
+  if (!data.question) return alert('نص السؤال مطلوب');
+  const res = await fetch('/api/admin/applications/questions', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+  const r = await res.json();
+  if (r.success) { document.getElementById('qText').value=''; loadQuestions(); } else alert(r.error || 'خطأ');
+}
+
+async function deleteQuestion(id) {
+  if (!confirm('حذف هذا السؤال؟')) return;
+  const res = await fetch('/api/admin/applications/questions/' + id, { method:'DELETE' });
+  const r = await res.json();
+  if (r.success) loadQuestions(); else alert(r.error || 'خطأ');
+}
+
+// Settings
+let settingsData = {};
+async function loadSettings() {
+  const type = document.getElementById('sTypeSelect').value;
+  if (!type) { document.getElementById('settingsForm').style.display='none'; return; }
+  const res = await fetch('/api/admin/applications/settings/' + encodeURIComponent(type));
+  settingsData = await res.json();
+  document.getElementById('settingsForm').style.display='block';
+  document.getElementById('sTitle').value = settingsData.title || '';
+  document.getElementById('sStatus').value = settingsData.status || 'open';
+  document.getElementById('sDesc').value = settingsData.description || '';
+  document.getElementById('sReqs').value = settingsData.requirements || '';
+  document.getElementById('sImage').value = settingsData.image || '';
+  document.getElementById('sSiteRole').value = settingsData.site_role || '';
+  document.getElementById('sDiscordRole1').value = settingsData.discord_role_id || '';
+  document.getElementById('sDiscordRole2').value = settingsData.discord_role_id_2 || '';
+  document.getElementById('sDiscordRole3').value = settingsData.discord_role_id_3 || '';
+  document.getElementById('sRequiredRole').value = settingsData.required_discord_role_id || '';
+  document.getElementById('sCooldown').value = settingsData.rejection_cooldown_hours || 0;
+  document.getElementById('sNotify').value = settingsData.notify_enabled != null ? settingsData.notify_enabled : 1;
+}
+
+async function saveSettings() {
+  const data = {
+    title: document.getElementById('sTitle').value.trim(),
+    status: document.getElementById('sStatus').value,
+    description: document.getElementById('sDesc').value.trim(),
+    requirements: document.getElementById('sReqs').value.trim(),
+    image: document.getElementById('sImage').value.trim(),
+    site_role: document.getElementById('sSiteRole').value.trim(),
+    discord_role_id: document.getElementById('sDiscordRole1').value.trim(),
+    discord_role_id_2: document.getElementById('sDiscordRole2').value.trim(),
+    discord_role_id_3: document.getElementById('sDiscordRole3').value.trim(),
+    required_discord_role_id: document.getElementById('sRequiredRole').value.trim(),
+    rejection_cooldown_hours: parseInt(document.getElementById('sCooldown').value) || 0,
+    notify_enabled: parseInt(document.getElementById('sNotify').value)
+  };
+  const type = document.getElementById('sTypeSelect').value;
+  const res = await fetch('/api/admin/applications/settings/' + encodeURIComponent(type), { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+  const r = await res.json();
+  if (r.success) alert('تم الحفظ'); else alert(r.error || 'خطأ');
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+</script>
+
+<%- include('admin_footer') %>

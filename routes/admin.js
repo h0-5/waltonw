@@ -70,13 +70,36 @@ router.get('/tickets', isAdmin, async (req, res) => {
   }
 });
 
-// Applications
+// Applications - Submissions View
 router.get('/applications', isAdmin, async (req, res) => {
   try {
-    const [applications] = await db.execute('SELECT * FROM submitted_applications ORDER BY id DESC');
-    res.render('admin/applications', { title: 'إدارة الطلبات', applications, currentPath: req.path });
+    const [applications] = await db.query(`
+      SELECT sa.*, u.username 
+      FROM submitted_applications sa 
+      LEFT JOIN users u ON sa.user_id = u.id 
+      ORDER BY sa.id DESC
+    `);
+    const [types] = await db.query('SELECT application_type, title FROM application_settings');
+    const questionsMap = {};
+    for (const t of types) {
+      const [qs] = await db.query('SELECT id, question, type, options FROM application_questions WHERE application_type = ?', [t.application_type]);
+      questionsMap[t.application_type] = qs;
+    }
+    res.render('admin/applications', { title: 'الطلبات المقدمة', applications, types, questionsMap, currentPath: req.path });
   } catch(err) {
-    res.render('admin/applications', { title: 'إدارة الطلبات', applications: [], currentPath: req.path });
+    console.error('Admin applications error:', err.message);
+    res.render('admin/applications', { title: 'الطلبات المقدمة', applications: [], types: [], questionsMap: {}, currentPath: req.path });
+  }
+});
+
+// Applications - Manage Types & Questions
+router.get('/manage-apps', isAdmin, async (req, res) => {
+  try {
+    const [types] = await db.query('SELECT * FROM application_settings ORDER BY id ASC');
+    res.render('admin/manage-apps', { title: 'إدارة نظام التقديمات', types, currentPath: req.path });
+  } catch(err) {
+    console.error('Manage apps error:', err.message);
+    res.render('admin/manage-apps', { title: 'إدارة نظام التقديمات', types: [], currentPath: req.path });
   }
 });
 

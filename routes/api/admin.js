@@ -270,4 +270,228 @@ router.post('/service-request', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ═══════════════════════════════════════════
+// Application Management APIs
+// ═══════════════════════════════════════════
+const { isAdmin } = require('../../middleware/auth');
+const path = require('path');
+const fs = require('fs');
+
+// Approve application
+router.post('/applications/:id/approve', isAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (!id || id <= 0) return res.status(400).json({ error: 'رقم غير صحيح' });
+    const [app] = await db.query('SELECT * FROM submitted_applications WHERE id = ? LIMIT 1', [id]);
+    if (!app || !app.length) return res.status(404).json({ error: 'الطلب غير موجود' });
+    if (app[0].status !== 'pending') return res.status(400).json({ error: 'يمكن قبول الطلبات المعلقة فقط' });
+
+    await db.query(
+      "UPDATE submitted_applications SET status = 'waiting_join', reviewed_by = ?, reviewed_at = NOW(), review_notes = ? WHERE id = ?",
+      [req.user.id, req.body.notes || null, id]
+    );
+
+    const [typeSetting] = await db.query('SELECT site_role FROM application_settings WHERE application_type = ?', [app[0].application_type]);
+    if (typeSetting && typeSetting.length && typeSetting[0].site_role) {
+      await db.query('UPDATE users SET role = ? WHERE id = ?', [typeSetting[0].site_role, app[0].user_id]);
+    }
+
+    await db.query(
+      "INSERT INTO admin_logs (user_id, username, action, target_type, target_id, details, created_at) VALUES (?, ?, 'approve_application', 'application', ?, ?, NOW())",
+      [req.user.id, req.user.username, id, 'Application #' + id + ' approved (waiting_join)']
+    );
+
+    res.json({ success: true });
+  } catch(e) {
+    console.error('Approve app error:', e.message);
+    res.status(500).json({ error: 'حدث خطأ' });
+  }
+});
+
+// Reject application
+router.post('/applications/:id/reject', isAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (!id || id <= 0) return res.status(400).json({ error: 'رقم غير صحيح' });
+    const [app] = await db.query('SELECT * FROM submitted_applications WHERE id = ? LIMIT 1', [id]);
+    if (!app || !app.length) return res.status(404).json({ error: 'الطلب غير موجود' });
+    if (app[0].status !== 'pending') return res.status(400).json({ error: 'يمكن رفض الطلبات المعلقة فقط' });
+
+    const notes = typeof req.body.notes === 'string' ? req.body.notes.substring(0, 1000) : '';
+    let cooldownUntil = null;
+    const [typeSetting] = await db.query('SELECT rejection_cooldown_hours FROM application_settings WHERE application_type = ?', [app[0].application_type]);
+    if (typeSetting && typeSetting.length && typeSetting[0].rejection_cooldown_hours > 0) {
+      const hours = typeSetting[0].rejection_cooldown_hours;
+      cooldownUntil = new Date(Date.now() + hours * 3600000).toISOString().slice(0, 19).replace('T', ' ');
+    }
+
+    await db.query(
+      "UPDATE submitted_applications SET status = 'rejected', reviewed_by = ?, reviewed_at = NOW(), review_notes = ?, cooldown_until = ? WHERE id = ?",
+      [req.user.id, notes || null, cooldownUntil, id]
+    );
+
+    await db.query(
+      "INSERT INTO admin_logs (user_id, username, action, target_type, target_id, details, created_at) VALUES (?, ?, 'reject_application', 'application', ?, ?, NOW())",
+      [req.user.id, req.user.username, id, 'Application #' + id + ' rejected' + (notes ? ': ' + notes.substring(0, 100) : '')]
+    );
+
+    res.json({ success: true });
+  } catch(e) {
+    console.error('Reject app error:', e.message);
+    res.status(500).json({ error: 'حدث خطأ' });
+  }
+});
+
+// Delete application
+router.post('/applications/:id/delete', isAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (!id || id <= 0) return res.status(400).json({ error: 'رقم غير صحيح' });
+    const [app] = await db.query('SELECT id FROM submitted_applications WHERE id = ? LIMIT 1', [id]);
+    if (!app || !app.length) return res.status(404).json({ error: 'الطلب غير موجود' });
+
+    await db.query('DELETE FROM submitted_applications WHERE id = ?', [id]);
+    await db.query(
+      "INSERT INTO admin_logs (user_id, username, action, target_type, target_id, details, created_at) VALUES (?, ?, 'delete_application', 'application', ?, ?, NOW())",
+      [req.user.id, req.user.username, id, 'Application #' + id + ' deleted']
+    );
+
+    res.json({ success: true });
+  } catch(e) {
+    console.error('Delete app error:', e.message);
+    res.status(500).json({ error: 'حدث خطأ' });
+  }
+});
+
+// Get questions for type
+router.get('/applications/questions/:type', isAdmin, async (req, res) => {
+  try {
+    const type = req.params.type;
+    const [qs] = await db.query('SELECT * FROM application_questions WHERE application_type = ? ORDER BY order_index ASC, sort_order ASC', [type]);
+    res.json(qs);
+  } catch(e) { res.json([]); }
+});
+
+// Add question
+router.post('/applications/questions', isAdmin, async (req, res) => {
+  try {
+    const { application_type, question, type, required, options, order_index, max_selections } = req.body;
+    if (!application_type || !question) return res.status(400).json({ error: 'البيانات ناقصة' });
+    const validTypes = ['text','textarea','number','select','radio','multiple_choice','true_false','server_name','image'];
+    const qType = validTypes.includes(type) ? type : 'text';
+    const opts = typeof options === 'string' ? options.substring(0, 5000) : '';
+    const maxSel = (qType === 'multiple_choice' && max_selections) ? parseInt(max_selections) : null;
+    await db.query(
+      'INSERT INTO application_questions (application_type, question, type, required, options, order_index, sort_order, max_selections) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [application_type, question.substring(0, 500), qType, required ? 1 : 0, opts, parseInt(order_index) || 0, parseInt(order_index) || 0, maxSel]
+    );
+    res.json({ success: true });
+  } catch(e) {
+    console.error('Add question error:', e.message);
+    res.status(500).json({ error: 'حدث خطأ' });
+  }
+});
+
+// Delete question
+router.delete('/applications/questions/:id', isAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (!id) return res.status(400).json({ error: 'رقم غير صحيح' });
+    await db.query('DELETE FROM application_questions WHERE id = ?', [id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: 'حدث خطأ' }); }
+});
+
+// Get settings for type
+router.get('/applications/settings/:type', isAdmin, async (req, res) => {
+  try {
+    const [s] = await db.query('SELECT * FROM application_settings WHERE application_type = ? LIMIT 1', [req.params.type]);
+    res.json(s && s.length ? s[0] : {});
+  } catch(e) { res.json({}); }
+});
+
+// Update settings for type
+router.put('/applications/settings/:type', isAdmin, async (req, res) => {
+  try {
+    const type = req.params.type;
+    const { title, status, description, requirements, image, site_role, discord_role_id, discord_role_id_2, discord_role_id_3, required_discord_role_id, rejection_cooldown_hours, notify_enabled } = req.body;
+    const sets = [];
+    const vals = [];
+    if (title !== undefined) { sets.push('title = ?'); vals.push(title.substring(0, 255)); }
+    if (status !== undefined) { sets.push('status = ?'); vals.push(['open','closed'].includes(status) ? status : 'closed'); }
+    if (description !== undefined) { sets.push('description = ?'); vals.push(description.substring(0, 5000)); }
+    if (requirements !== undefined) { sets.push('requirements = ?'); vals.push(requirements.substring(0, 5000)); }
+    if (image !== undefined) { sets.push('image = ?'); vals.push(image.substring(0, 255)); }
+    if (site_role !== undefined) { sets.push('site_role = ?'); vals.push(site_role.substring(0, 50)); }
+    if (discord_role_id !== undefined) { sets.push('discord_role_id = ?'); vals.push(discord_role_id.substring(0, 50)); }
+    if (discord_role_id_2 !== undefined) { sets.push('discord_role_id_2 = ?'); vals.push(discord_role_id_2.substring(0, 50)); }
+    if (discord_role_id_3 !== undefined) { sets.push('discord_role_id_3 = ?'); vals.push(discord_role_id_3.substring(0, 50)); }
+    if (required_discord_role_id !== undefined) { sets.push('required_discord_role_id = ?'); vals.push(required_discord_role_id.substring(0, 50)); }
+    if (rejection_cooldown_hours !== undefined) { sets.push('rejection_cooldown_hours = ?'); vals.push(parseInt(rejection_cooldown_hours) || 0); }
+    if (notify_enabled !== undefined) { sets.push('notify_enabled = ?'); vals.push(parseInt(notify_enabled) ? 1 : 0); }
+    sets.push('updated_at = NOW()');
+    vals.push(type);
+    await db.query('UPDATE application_settings SET ' + sets.join(', ') + ' WHERE application_type = ?', vals);
+    res.json({ success: true });
+  } catch(e) {
+    console.error('Update settings error:', e.message);
+    res.status(500).json({ error: 'حدث خطأ' });
+  }
+});
+
+// Add type
+router.post('/applications/types', isAdmin, async (req, res) => {
+  try {
+    const { application_type, title, description, requirements, image, status } = req.body;
+    if (!application_type || !/^[a-zA-Z0-9_\-]+$/.test(application_type)) {
+      return res.status(400).json({ error: 'النوع يجب أن يحتوي على أحرف إنجليزية وأرقام فقط' });
+    }
+    const [exists] = await db.query('SELECT id FROM application_settings WHERE application_type = ?', [application_type]);
+    if (exists && exists.length) return res.status(400).json({ error: 'هذا النوع موجود بالفعل' });
+    await db.query(
+      'INSERT INTO application_settings (application_type, title, description, requirements, image, status) VALUES (?, ?, ?, ?, ?, ?)',
+      [application_type, (title||'').substring(0,255), (description||'').substring(0,5000), (requirements||'').substring(0,5000), (image||'').substring(0,255), status === 'open' ? 'open' : 'closed']
+    );
+    res.json({ success: true });
+  } catch(e) {
+    console.error('Add type error:', e.message);
+    res.status(500).json({ error: 'حدث خطأ' });
+  }
+});
+
+// Update type
+router.put('/applications/types/:id', isAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { title, description, requirements, image, status } = req.body;
+    await db.query(
+      'UPDATE application_settings SET title = ?, description = ?, requirements = ?, image = ?, status = ?, updated_at = NOW() WHERE id = ?',
+      [(title||'').substring(0,255), (description||'').substring(0,5000), (requirements||'').substring(0,5000), (image||'').substring(0,255), status === 'open' ? 'open' : 'closed', id]
+    );
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: 'حدث خطأ' }); }
+});
+
+// Toggle type status
+router.post('/applications/types/status', isAdmin, async (req, res) => {
+  try {
+    const { application_type, status } = req.body;
+    const s = ['open','closed'].includes(status) ? status : 'closed';
+    await db.query('UPDATE application_settings SET status = ?, updated_at = NOW() WHERE application_type = ?', [s, application_type]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: 'حدث خطأ' }); }
+});
+
+// Delete type
+router.delete('/applications/types/:id', isAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const [type] = await db.query('SELECT application_type FROM application_settings WHERE id = ?', [id]);
+    if (!type || !type.length) return res.status(404).json({ error: 'غير موجود' });
+    await db.query('DELETE FROM application_questions WHERE application_type = ?', [type[0].application_type]);
+    await db.query('DELETE FROM application_settings WHERE id = ?', [id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: 'حدث خطأ' }); }
+});
+
 module.exports = router;

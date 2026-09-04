@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
+const path = require('path');
+const fs = require('fs');
 const { isAuthenticated } = require('../middleware/auth');
 
 // Helper to safely query
@@ -225,9 +227,148 @@ router.get('/community', isAuthenticated, async (req, res) => {
 
 // Applications
 router.get('/applications', isAuthenticated, async (req, res) => {
-  const settings = await getSettings();
-  const applications = await safeQuery('SELECT * FROM application_settings ORDER BY id ASC');
-  res.render('pages/applications', { title: 'الطلبات', applications, settings });
+  try {
+    const settings = await getSettings();
+    const applications = await safeQuery('SELECT * FROM application_settings ORDER BY id ASC');
+    const userApps = await safeQuery('SELECT application_type, status FROM submitted_applications WHERE user_id = ? ORDER BY id DESC', [req.user.id]);
+    res.render('pages/applications', { title: 'الطلبات', applications, userApps, settings });
+  } catch(e) {
+    res.render('pages/applications', { title: 'الطلبات', applications: [], userApps: [], settings: {} });
+  }
+});
+
+// Application Form
+router.get('/applications/form/:type', isAuthenticated, async (req, res) => {
+  try {
+    const type = req.params.type;
+    const settings = await getSettings();
+    const [appSetting] = await db.query('SELECT * FROM application_settings WHERE application_type = ? LIMIT 1', [type]);
+    if (!appSetting || appSetting.status !== 'open') {
+      return res.redirect('/applications');
+    }
+    const questions = await db.query('SELECT * FROM application_questions WHERE application_type = ? ORDER BY order_index ASC, sort_order ASC', [type]);
+    
+    const [pendingApp] = await db.query(
+      "SELECT id FROM submitted_applications WHERE user_id = ? AND application_type = ? AND status IN ('pending','waiting_join') LIMIT 1",
+      [req.user.id, type]
+    );
+    
+    const [rejectedApp] = await db.query(
+      "SELECT cooldown_until FROM submitted_applications WHERE user_id = ? AND application_type = ? AND status = 'rejected' AND cooldown_until IS NOT NULL ORDER BY id DESC LIMIT 1",
+      [req.user.id, type]
+    );
+    
+    let inCooldown = false;
+    if (rejectedApp && rejectedApp.cooldown_until) {
+      inCooldown = new Date(rejectedApp.cooldown_until) > new Date();
+    }
+
+    const [userSubmitted] = await db.query(
+      "SELECT id, status FROM submitted_applications WHERE user_id = ? AND application_type = ? ORDER BY id DESC LIMIT 5",
+      [req.user.id, type]
+    );
+
+    res.render('pages/application-form', {
+      title: 'تقديم - ' + (appSetting.title || type),
+      appSetting: appSetting[0],
+      questions: questions,
+      pendingApp: pendingApp ? pendingApp.id : null,
+      inCooldown,
+      cooldownUntil: rejectedApp ? rejectedApp.cooldown_until : null,
+      userSubmitted,
+      settings
+    });
+  } catch(e) {
+    console.error('Application form error:', e.message);
+    res.redirect('/applications');
+  }
+});
+
+// Submit Application API
+router.post('/api/applications/submit', isAuthenticated, async (req, res) => {
+  try {
+    const { type, answers, answers_multiple, answers_img_url } = req.body;
+    if (!type) return res.status(400).json({ error: 'نوع التقديم مطلوب' });
+
+    const [appSetting] = await db.query('SELECT * FROM application_settings WHERE application_type = ? AND status = "open" LIMIT 1', [type]);
+    if (!appSetting || !appSetting.length) return res.status(400).json({ error: 'التقديم غير متاح' });
+
+    const [pendingApp] = await db.query(
+      "SELECT id FROM submitted_applications WHERE user_id = ? AND application_type = ? AND status IN ('pending','waiting_join') LIMIT 1",
+      [req.user.id, type]
+    );
+    if (pendingApp && pendingApp.length) return res.status(400).json({ error: 'لديك طلب معلق بالفعل' });
+
+    const [rejectedApp] = await db.query(
+      "SELECT cooldown_until FROM submitted_applications WHERE user_id = ? AND application_type = ? AND status = 'rejected' AND cooldown_until IS NOT NULL ORDER BY id DESC LIMIT 1",
+      [req.user.id, type]
+    );
+    if (rejectedApp && rejectedApp.cooldown_until && new Date(rejectedApp.cooldown_until) > new Date()) {
+      return res.status(400).json({ error: 'يجب الانتظار حتى انتهاء فترة التهدئة' });
+    }
+
+    const questions = await db.query('SELECT * FROM application_questions WHERE application_type = ? ORDER BY order_index ASC', [type]);
+    const answersData = {};
+    const submitAnswers = typeof answers === 'object' ? answers : {};
+
+    for (const q of questions) {
+      if (q.type === 'multiple_choice') {
+        const multiKey = 'answers_multiple_' + q.id;
+        const multiAns = answers_multiple && answers_multiple[q.id] ? answers_multiple[q.id] : (req.body[multiKey] || []);
+        if (Array.isArray(multiAns) && multiAns.length > 0) {
+          answersData[q.id] = multiAns.filter(a => typeof a === 'string' && a.length <= 200).join(', ');
+        }
+        if (q.required && (!multiAns || !multiAns.length)) {
+          return res.status(400).json({ error: 'يرجى الإجابة على جميع الأسئلة المطلوبة' });
+        }
+      } else if (q.type === 'image') {
+        const imgUrl = answers_img_url && answers_img_url[q.id] ? answers_img_url[q.id] : '';
+        if (imgUrl) {
+          if (!/^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)/i.test(imgUrl)) {
+            return res.status(400).json({ error: 'رابط الصورة غير صحيح' });
+          }
+          answersData[q.id] = imgUrl;
+        } else {
+          const file = req.files && req.files['answers_img_' + q.id] ? req.files['answers_img_' + q.id] : null;
+          if (file) {
+            const allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (!allowedExts.includes(ext)) {
+              return res.status(400).json({ error: 'نوع الملف غير مسموح به' });
+            }
+            if (file.size > 5 * 1024 * 1024) {
+              return res.status(400).json({ error: 'حجم الملف يتجاوز 5 ميجا' });
+            }
+            const filename = Date.now() + '_' + Math.random().toString(36).substr(2, 9) + '.' + ext;
+            const uploadDir = path.join(__dirname, '..', 'public', 'uploads', 'applications');
+            if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+            await file.mv(path.join(uploadDir, filename));
+            answersData[q.id] = '/uploads/applications/' + filename;
+          } else if (q.required) {
+            return res.status(400).json({ error: 'يرجى رفع صورة للسؤال المطلوب' });
+          }
+        }
+      } else {
+        const val = submitAnswers[q.id] || submitAnswers[String(q.id)] || '';
+        if (typeof val === 'string') {
+          answersData[q.id] = val.substring(0, 2000);
+        }
+        if (q.required && !val) {
+          return res.status(400).json({ error: 'يرجى الإجابة على جميع الأسئلة المطلوبة' });
+        }
+      }
+    }
+
+    await db.query(
+      'INSERT INTO submitted_applications (user_id, application_type, answers, status, submitted_at) VALUES (?, ?, ?, "pending", NOW())',
+      [req.user.id, type, JSON.stringify(answersData)]
+    );
+
+    res.json({ success: true, message: 'تم إرسال طلبك بنجاح' });
+  } catch(e) {
+    console.error('Submit application error:', e.message);
+    res.status(500).json({ error: 'حدث خطأ أثناء إرسال الطلب' });
+  }
 });
 
 // Support

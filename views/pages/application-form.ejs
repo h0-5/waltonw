@@ -1,0 +1,215 @@
+<%- include('../partials/header') %>
+<link rel="stylesheet" href="/css/applications-page.css">
+<%- include('../partials/navbar') %>
+
+<style>
+  .app-form-page{max-width:720px;margin:2rem auto;padding:0 1rem}
+  .app-form-header{background:rgba(var(--ac-rgb),.06);border:1px solid rgba(var(--ac-rgb),.15);border-radius:16px;padding:2rem;text-align:center;margin-bottom:2rem}
+  .app-form-header h2{font-size:1.6rem;font-weight:800;color:#fff;margin-bottom:.5rem}
+  .app-form-header p{color:var(--text-dim);font-size:.9rem}
+  .app-form-card{background:rgba(var(--ac-rgb),.04);border:1px solid rgba(var(--ac-rgb),.12);border-radius:16px;padding:2rem;margin-bottom:1.5rem}
+  .q-group{margin-bottom:1.5rem}
+  .q-label{display:block;font-weight:700;color:#fff;margin-bottom:.5rem;font-size:.95rem}
+  .q-label .req{color:#ef4444;margin-inline-start:4px}
+  .q-type-hint{font-size:.75rem;color:var(--text-dim);margin-bottom:.4rem}
+  .q-input,.q-textarea,.q-select{width:100%;padding:.7rem 1rem;background:rgba(255,255,255,.05);border:1px solid rgba(var(--ac-rgb),.15);border-radius:10px;color:#fff;font-family:inherit;font-size:.9rem;transition:border-color .2s}
+  .q-input:focus,.q-textarea:focus,.q-select:focus{outline:none;border-color:var(--ac)}
+  .q-textarea{min-height:100px;resize:vertical}
+  .q-select option{background:#1a1525;color:#fff}
+  .q-radio-group,.q-check-group{display:flex;flex-direction:column;gap:.5rem}
+  .q-radio,.q-check{display:flex;align-items:center;gap:.6rem;padding:.6rem 1rem;background:rgba(255,255,255,.03);border:1px solid rgba(var(--ac-rgb),.1);border-radius:10px;cursor:pointer;transition:all .2s}
+  .q-radio:hover,.q-check:hover{border-color:rgba(var(--ac-rgb),.3);background:rgba(var(--ac-rgb),.05)}
+  .q-radio input,.q-check input{accent-color:var(--ac)}
+  .q-radio label,.q-check label{cursor:pointer;color:#fff;font-size:.9rem;flex:1}
+  .img-upload-zone{border:2px dashed rgba(var(--ac-rgb),.2);border-radius:12px;padding:2rem;text-align:center;color:var(--text-dim);cursor:pointer;transition:all .2s}
+  .img-upload-zone:hover{border-color:var(--ac);background:rgba(var(--ac-rgb),.03)}
+  .img-upload-zone input[type=file]{display:none}
+  .img-url-input{margin-top:.8rem}
+  .submit-btn{width:100%;padding:1rem;background:linear-gradient(135deg,var(--ac),#a855f7);color:#fff;border:none;border-radius:12px;font-size:1.1rem;font-weight:700;font-family:inherit;cursor:pointer;transition:transform .2s,box-shadow .2s}
+  .submit-btn:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(var(--ac-rgb),.4)}
+  .submit-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+  .block-msg{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:1.5rem;text-align:center;color:#f87171;margin-bottom:1.5rem}
+  .block-msg i{font-size:2rem;margin-bottom:.5rem;display:block}
+  .pending-msg{background:rgba(234,179,8,.1);border:1px solid rgba(234,179,8,.3);border-radius:12px;padding:1.5rem;text-align:center;color:#eab308;margin-bottom:1.5rem}
+  .pending-msg i{font-size:2rem;margin-bottom:.5rem;display:block}
+  .cooldown-msg{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:12px;padding:1.5rem;text-align:center;color:#f87171;margin-bottom:1.5rem}
+  .cooldown-msg i{font-size:2rem;margin-bottom:.5rem;display:block}
+  .user-history{margin-bottom:1.5rem}
+  .user-history h4{font-size:.9rem;color:var(--text-dim);margin-bottom:.8rem}
+  .history-item{display:flex;align-items:center;gap:.8rem;padding:.6rem 1rem;background:rgba(255,255,255,.03);border:1px solid rgba(var(--ac-rgb),.08);border-radius:10px;margin-bottom:.5rem;font-size:.8rem}
+  .history-item .status-badge{padding:.2rem .6rem;border-radius:20px;font-size:.7rem;font-weight:700}
+  .status-pending{background:rgba(234,179,8,.15);color:#eab308}
+  .status-approved{background:rgba(34,197,94,.15);color:#22c55e}
+  .status-rejected{background:rgba(239,68,68,.15);color:#f87171}
+  .status-waiting_join{background:rgba(59,130,246,.15);color:#3b82f6}
+  .spinner{display:inline-block;width:20px;height:20px;border:3px solid rgba(255,255,255,.3);border-radius:50%;border-top-color:#fff;animation:spin .6s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+
+<div class="app-form-page">
+  <div class="app-form-header">
+    <h2><i class="fas fa-file-signature"></i> تقديم طلب</h2>
+    <p><%= appSetting.title || appSetting.application_type %></p>
+  </div>
+
+  <% if (inCooldown) { %>
+  <div class="cooldown-msg">
+    <i class="fas fa-clock"></i>
+    <strong> فترة التهدئة نشطة</strong>
+    <p>يجب الانتظار حتى <%= new Date(cooldownUntil).toLocaleDateString('ar-SA') %> قبل تقديم طلب جديد</p>
+  </div>
+  <% } %>
+
+  <% if (pendingApp) { %>
+  <div class="pending-msg">
+    <i class="fas fa-hourglass-half"></i>
+    <strong> لديك طلب معلق</strong>
+    <p>يتم مراجعة طلبك حالياً. يرجى الانتظار.</p>
+  </div>
+  <% } %>
+
+  <% if (appSetting.description) { %>
+  <div class="app-form-card">
+    <p style="color:var(--text-dim);line-height:1.8"><%= appSetting.description %></p>
+  </div>
+  <% } %>
+
+  <% if (userSubmitted && userSubmitted.length > 0) { %>
+  <div class="user-history">
+    <h4><i class="fas fa-history"></i> سجل تقديماتك</h4>
+    <% userSubmitted.forEach(function(s) { %>
+    <div class="history-item">
+      <span class="status-badge status-<%= s.status %>"><%= s.status === 'pending' ? 'معلق' : s.status === 'approved' ? 'مقبول' : s.status === 'rejected' ? 'مرفوض' : s.status === 'waiting_join' ? 'بانتظار الانضمام' : s.status %></span>
+      <span>#<%= s.id %></span>
+    </div>
+    <% }); %>
+  </div>
+  <% } %>
+
+  <% if (!inCooldown && !pendingApp) { %>
+  <form id="appForm" class="app-form-card" enctype="multipart/form-data">
+    <input type="hidden" name="type" value="<%= appSetting.application_type %>">
+
+    <% questions.forEach(function(q) { %>
+    <div class="q-group">
+      <label class="q-label">
+        <%= q.question %>
+        <% if (q.required) { %><span class="req">*</span><% } %>
+      </label>
+
+      <% if (q.type === 'text') { %>
+        <input type="text" name="answers[<%= q.id %>]" class="q-input" maxlength="200" <%= q.required ? 'required' : '' %>>
+
+      <% } else if (q.type === 'textarea') { %>
+        <textarea name="answers[<%= q.id %>]" class="q-textarea" maxlength="2000" <%= q.required ? 'required' : '' %>></textarea>
+
+      <% } else if (q.type === 'number') { %>
+        <input type="number" name="answers[<%= q.id %>]" class="q-input" <%= q.required ? 'required' : '' %>>
+
+      <% } else if (q.type === 'select' || q.type === 'dropdown') { %>
+        <select name="answers[<%= q.id %>]" class="q-select" <%= q.required ? 'required' : '' %>>
+          <option value="">-- اختر --</option>
+          <% (q.options || '').split(/\r?\n/).forEach(function(opt) { if(opt.trim()) { %>
+          <option value="<%= opt.trim() %>"><%= opt.trim() %></option>
+          <% } }); %>
+        </select>
+
+      <% } else if (q.type === 'radio' || q.type === 'single_choice') { %>
+        <div class="q-radio-group">
+          <% (q.options || '').split(/\r?\n/).forEach(function(opt) { if(opt.trim()) { %>
+          <label class="q-radio">
+            <input type="radio" name="answers[<%= q.id %>]" value="<%= opt.trim() %>" <%= q.required ? 'required' : '' %>>
+            <label><%= opt.trim() %></label>
+          </label>
+          <% } }); %>
+        </div>
+
+      <% } else if (q.type === 'multiple_choice' || q.type === 'checkbox') { %>
+        <div class="q-check-group">
+          <% (q.options || '').split(/\r?\n/).forEach(function(opt) { if(opt.trim()) { %>
+          <label class="q-check">
+            <input type="checkbox" name="answers_multiple[<%= q.id %>][]" value="<%= opt.trim() %>">
+            <label><%= opt.trim() %></label>
+          </label>
+          <% } }); %>
+        </div>
+        <% if (q.max_selections) { %><div class="q-type-hint">حد أقصى <%= q.max_selections %> اختيارات</div><% } %>
+
+      <% } else if (q.type === 'true_false') { %>
+        <div class="q-radio-group">
+          <label class="q-radio">
+            <input type="radio" name="answers[<%= q.id %>]" value="صح" <%= q.required ? 'required' : '' %>>
+            <label>صح</label>
+          </label>
+          <label class="q-radio">
+            <input type="radio" name="answers[<%= q.id %>]" value="خطأ" <%= q.required ? 'required' : '' %>>
+            <label>خطأ</label>
+          </label>
+        </div>
+
+      <% } else if (q.type === 'server_name') { %>
+        <input type="text" name="answers[<%= q.id %>]" class="q-input" placeholder="اسم السيرفر" maxlength="100" <%= q.required ? 'required' : '' %>>
+
+      <% } else if (q.type === 'image') { %>
+        <div class="img-upload-zone" onclick="this.querySelector('input').click()">
+          <i class="fas fa-cloud-upload-alt" style="font-size:2rem;margin-bottom:.5rem;display:block;color:var(--ac)"></i>
+          <p>اضغط لرفع صورة (JPG, PNG, GIF, WEBP)</p>
+          <input type="file" name="answers_img_<%= q.id %>" accept=".jpg,.jpeg,.png,.gif,.webp">
+        </div>
+        <div class="img-url-input">
+          <input type="url" name="answers_img_url[<%= q.id %>]" class="q-input" placeholder="أو الصق رابط الصورة هنا">
+        </div>
+
+      <% } else { %>
+        <input type="text" name="answers[<%= q.id %>]" class="q-input" maxlength="2000" <%= q.required ? 'required' : '' %>>
+      <% } %>
+    </div>
+    <% }); %>
+
+    <button type="submit" class="submit-btn" id="submitBtn">
+      <i class="fas fa-paper-plane"></i> إرسال الطلب
+    </button>
+  </form>
+  <% } %>
+
+  <div id="successMsg" style="display:none;text-align:center;padding:2rem">
+    <i class="fas fa-check-circle" style="font-size:3rem;color:#22c55e;margin-bottom:1rem;display:block"></i>
+    <h3 style="color:#fff;margin-bottom:.5rem">تم إرسال طلبك بنجاح!</h3>
+    <p style="color:var(--text-dim)">سيتم مراجعة طلبك من قبل الإدارة</p>
+    <a href="/applications" style="display:inline-block;margin-top:1rem;padding:.6rem 1.5rem;background:var(--ac);color:#fff;border-radius:10px;text-decoration:none;font-weight:700">العودة للتقديمات</a>
+  </div>
+</div>
+
+<script>
+document.getElementById('appForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> جاري الإرسال...';
+
+  const form = this;
+  const formData = new FormData(form);
+
+  try {
+    const res = await fetch('/api/applications/submit', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('appForm').style.display = 'none';
+      document.getElementById('successMsg').style.display = 'block';
+    } else {
+      alert(data.error || 'حدث خطأ');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-paper-plane"></i> إرسال الطلب';
+    }
+  } catch(err) {
+    alert('حدث خطأ في الاتصال');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i> إرسال الطلب';
+  }
+});
+</script>
+
+<%- include('../partials/footer') %>
