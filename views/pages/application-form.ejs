@@ -293,16 +293,15 @@
 
     var hasError = false;
 
+    var firstTextInput = form.querySelector('input[type="text"][name^="answers["], textarea[name^="answers["]');
+
     form.querySelectorAll('input[type="text"][name^="answers["], textarea[name^="answers["]').forEach(function(el) {
+      if (el !== firstTextInput) return;
       var nameMatch = el.name.match(/answers\[(\d+)\]/);
       if (!nameMatch) return;
       var qid = nameMatch[1];
       var val = el.value.trim();
       if (!val) return;
-
-      var allInputs = form.querySelectorAll('input[type="text"][name^="answers["], textarea[name^="answers["]');
-      var firstInput = allInputs[0];
-      if (el !== firstInput) return;
 
       var lowerVal = val.toLowerCase();
       if (lowerVal.indexOf('walton') === -1) {
