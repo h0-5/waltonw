@@ -4,7 +4,7 @@
 
 .cy-page-hero {
     position: relative;
-    padding: 5rem 1.5rem 3rem;
+    padding: 2.5rem 1rem 1.2rem;
     text-align: center;
     overflow: hidden;
     background: linear-gradient(180deg, rgba(var(--ac-rgb), 0.08) 0%, rgba(var(--ac-rgb), 0.02) 50%, transparent 100%);
@@ -49,9 +49,9 @@
 
 /* ── 3D Logo ── */
 .cy-page-hero-logo {
-    width: 100px;
-    height: 100px;
-    margin: 0 auto 1.5rem;
+    width: 50px;
+    height: 50px;
+    margin: 0 auto 0.6rem;
     position: relative;
     display: flex;
     align-items: center;
@@ -67,19 +67,19 @@
 }
 
 .cy-logo-ring-1 {
-    inset: -12px;
+    inset: -6px;
     animation: ringPulse 4s ease-in-out infinite;
 }
 
 .cy-logo-ring-2 {
-    inset: -6px;
+    inset: -3px;
     border-style: dashed;
     animation: ringSpin 12s linear infinite;
     opacity: 0.6;
 }
 
 .cy-logo-ring-3 {
-    inset: -2px;
+    inset: 0px;
     animation: ringPulse 4s ease-in-out infinite 1s;
     opacity: 0.4;
 }
@@ -95,8 +95,8 @@
 }
 
 .cy-logo-core {
-    width: 64px;
-    height: 64px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     background: rgba(var(--ac-rgb), 0.08);
     border: 2px solid rgba(var(--ac-rgb), 0.3);
@@ -110,8 +110,8 @@
 }
 
 .cy-logo-core img {
-    width: 40px;
-    height: 40px;
+    width: 22px;
+    height: 22px;
     object-fit: contain;
 }
 
@@ -130,9 +130,9 @@
 
 /* ── Title ── */
 .cy-page-hero-title {
-    font-size: clamp(1.8rem, 5vw, 2.8rem);
+    font-size: clamp(1.2rem, 3vw, 1.6rem);
     font-weight: 900;
-    margin: 0 0 0.5rem;
+    margin: 0 0 0.3rem;
     background: linear-gradient(135deg, #fff 10%, rgba(var(--ac-rgb), 0.7) 50%, var(--ac) 90%);
     background-size: 200% auto;
     -webkit-background-clip: text;
@@ -150,17 +150,17 @@
 
 .cy-page-hero-desc {
     color: var(--text-dim, rgba(240,240,245,0.5));
-    font-size: 0.9rem;
-    margin: 0 0 1rem;
-    max-width: 450px;
+    font-size: 0.8rem;
+    margin: 0 0 0.8rem;
+    max-width: 400px;
     margin-left: auto;
     margin-right: auto;
 }
 
 .cy-page-hero-line {
-    width: 80px;
+    width: 60px;
     height: 2px;
-    margin: 0 auto 1.2rem;
+    margin: 0 auto 1rem;
     background: linear-gradient(90deg, transparent, var(--ac), transparent);
     border-radius: 2px;
     position: relative;
@@ -220,19 +220,19 @@
 /* ── Responsive ── */
 @media (max-width: 768px) {
     .cy-page-hero {
-        padding: 4rem 1rem 2rem;
+        padding: 3rem 1rem 1.5rem;
     }
     .cy-page-hero-logo {
-        width: 80px;
-        height: 80px;
+        width: 56px;
+        height: 56px;
     }
     .cy-logo-core {
-        width: 52px;
-        height: 52px;
+        width: 40px;
+        height: 40px;
     }
     .cy-logo-core img {
-        width: 32px;
-        height: 32px;
+        width: 24px;
+        height: 24px;
     }
     .cy-page-hero-stats {
         padding: 0.5rem 0.8rem;

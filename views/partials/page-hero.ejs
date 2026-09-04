@@ -3,8 +3,9 @@
   var _pageIcon = typeof pageIcon !== 'undefined' ? pageIcon : 'fas fa-circle';
   var _pageDesc = typeof pageDesc !== 'undefined' ? pageDesc : '';
   var _pageStats = typeof pageStats !== 'undefined' ? pageStats : null;
+  var _pageBg = typeof pageBg !== 'undefined' ? pageBg : '';
 %>
-<div class="cy-page-hero">
+<div class="cy-page-hero<%= _pageBg ? ' has-bg' : '' %>"<%= _pageBg ? ' style="background-image:url(' + _pageBg + ');background-size:cover;background-position:center"' : '' %>>
     <div class="cy-page-hero-bg"></div>
     <div class="cy-page-hero-particles" id="heroParticles"></div>
     
