@@ -137,24 +137,37 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.9rem 2rem;
+    gap: 0.6rem;
+    padding: 0.9rem 2rem 1.2rem;
     max-width: 1100px;
     margin: 1.5rem auto 0;
     border-top: 1px solid rgba(var(--ac-rgb), 0.08);
 }
 
-.ft-bottom-center {
-    display: flex;
+.ft-bottom-cr-badge {
+    display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.3);
+    padding: 0.3rem 0.9rem;
+    border-radius: 20px;
+    background: rgba(var(--ac-rgb), 0.06);
+    border: 1px solid rgba(var(--ac-rgb), 0.2);
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 0.65rem;
+    font-weight: 600;
+    box-shadow: 0 0 15px rgba(var(--ac-rgb), 0.08), inset 0 0 10px rgba(var(--ac-rgb), 0.03);
+    transition: all 0.3s;
+}
+
+.ft-bottom-cr-badge:hover {
+    border-color: rgba(var(--ac-rgb), 0.4);
+    box-shadow: 0 0 25px rgba(var(--ac-rgb), 0.15), inset 0 0 15px rgba(var(--ac-rgb), 0.05);
+    color: rgba(255, 255, 255, 0.6);
 }
 
 .ft-cr-lock {
-    font-size: 0.6rem;
-    color: rgba(var(--ac-rgb), 0.4);
+    font-size: 0.55rem;
+    color: rgba(var(--ac-rgb), 0.5);
 }
 
 .ft-bottom-dev {
