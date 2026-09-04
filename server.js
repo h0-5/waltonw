@@ -118,12 +118,14 @@ app.use((req, res) => {
   res.status(404).render('pages/404', { title: '404 - الصفحة غير موجودة' });
 });
 
-// Error handler
+// Error handler — never show code to users
 app.use((err, req, res, next) => {
+  console.error('[ERROR]', new Date().toISOString(), err.message);
   console.error(err.stack);
-  res.status(500).render('pages/error', {
-    title: 'خطأ في الخادم',
-    error: process.env.NODE_ENV === 'development' ? err.message : 'حدث خطأ غير متوقع'
+  const statusCode = err.status || 500;
+  res.status(statusCode).render('pages/error', {
+    title: statusCode === 404 ? 'الصفحة غير موجودة' : 'خطأ في الخادم',
+    error: statusCode === 404 ? 'الصفحة التي تبحث عنها غير موجودة' : 'حدث خطأ غير متوقع، يرجى المحاولة لاحقاً'
   });
 });
 

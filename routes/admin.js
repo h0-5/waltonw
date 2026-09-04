@@ -198,27 +198,27 @@ router.get('/logs', isAdmin, async (req, res) => {
     if (cat === 'admin') {
       const [countR] = await db.execute('SELECT COUNT(*) as c FROM admin_logs');
       total = countR[0].c;
-      const [rows] = await db.execute('SELECT * FROM admin_logs ORDER BY created_at DESC LIMIT ? OFFSET ?', [limit, offset]);
+      const [rows] = await db.execute('SELECT * FROM admin_logs ORDER BY created_at DESC LIMIT ? OFFSET ?', [String(limit), String(offset)]);
       logs = rows;
     } else if (cat === 'bot') {
       const [countR] = await db.execute('SELECT COUNT(*) as c FROM bot_logs');
       total = countR[0].c;
-      const [rows] = await db.execute('SELECT * FROM bot_logs ORDER BY created_at DESC LIMIT ? OFFSET ?', [limit, offset]);
+      const [rows] = await db.execute('SELECT * FROM bot_logs ORDER BY created_at DESC LIMIT ? OFFSET ?', [String(limit), String(offset)]);
       logs = rows;
     } else if (cat === 'products') {
       const [countR] = await db.execute('SELECT COUNT(*) as c FROM product_logs');
       total = countR[0].c;
-      const [rows] = await db.execute('SELECT * FROM product_logs ORDER BY created_at DESC LIMIT ? OFFSET ?', [limit, offset]);
+      const [rows] = await db.execute('SELECT * FROM product_logs ORDER BY created_at DESC LIMIT ? OFFSET ?', [String(limit), String(offset)]);
       logs = rows;
     } else if (cat === 'games') {
       const [countR] = await db.execute('SELECT COUNT(*) as c FROM game_reward_log');
       total = countR[0].c;
-      const [rows] = await db.execute('SELECT * FROM game_reward_log ORDER BY rewarded_at DESC LIMIT ? OFFSET ?', [limit, offset]);
+      const [rows] = await db.execute('SELECT * FROM game_reward_log ORDER BY rewarded_at DESC LIMIT ? OFFSET ?', [String(limit), String(offset)]);
       logs = rows;
     } else if (cat === 'activity') {
       const [countR] = await db.execute('SELECT COUNT(*) as c FROM user_activity_log');
       total = countR[0].c;
-      const [rows] = await db.execute('SELECT * FROM user_activity_log ORDER BY created_at DESC LIMIT ? OFFSET ?', [limit, offset]);
+      const [rows] = await db.execute('SELECT * FROM user_activity_log ORDER BY created_at DESC LIMIT ? OFFSET ?', [String(limit), String(offset)]);
       logs = rows;
     }
 
@@ -230,10 +230,12 @@ router.get('/logs', isAdmin, async (req, res) => {
       currentPath: req.path
     });
   } catch(err) {
+    console.error('Logs error:', err.message);
     res.render('admin/logs', {
       title: 'السجلات',
       logs: [], cat: 'admin', total: 0, page: 1, totalPages: 0,
-      currentPath: req.path
+      currentPath: req.path,
+      settings: {}
     });
   }
 });
