@@ -177,6 +177,40 @@ router.get('/store/products', isAuthenticated, async (req, res) => {
   });
 });
 
+// Products (Marketplace)
+router.get('/products', isAuthenticated, async (req, res) => {
+  const settings = await getSettings();
+  const categories = await safeQuery('SELECT * FROM categories ORDER BY sort_order ASC, id ASC');
+  
+  let sql = "SELECT p.*, c.name as cat_name, u.username as seller_name FROM products p LEFT JOIN categories c ON p.category_id = c.id LEFT JOIN users u ON p.seller_id = u.id WHERE p.status = 'approved'";
+  const params = [];
+
+  if (req.query.cat) {
+    sql += ' AND p.category_id = ?';
+    params.push(req.query.cat);
+  }
+  if (req.query.search) {
+    sql += ' AND p.name LIKE ?';
+    params.push('%' + req.query.search + '%');
+  }
+  sql += ' ORDER BY p.created_at DESC';
+
+  const products = await safeQuery(sql, params);
+
+  let userPoints = 0;
+  if (req.user && req.user.discord_id) {
+    const pts = await safeQuery('SELECT points FROM bot_points WHERE discord_id = ?', [req.user.discord_id]);
+    userPoints = pts.length > 0 ? pts[0].points : 0;
+  }
+
+  res.render('pages/products', {
+    title: 'المنتجات',
+    products, categories, userPoints, settings,
+    search: req.query.search || '',
+    cat: req.query.cat || ''
+  });
+});
+
 // Games
 router.get('/games', isAuthenticated, async (req, res) => {
   const settings = await getSettings();
