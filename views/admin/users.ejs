@@ -46,7 +46,7 @@
                   <button class="admin-btn small" onclick="editUser(<%= u.id %>, '<%= u.username %>', '<%= u.email || '' %>')"><i class="fas fa-edit"></i></button>
                   <button class="admin-btn small" onclick="changeRole(<%= u.id %>, '<%= u.role %>')"><i class="fas fa-user-shield"></i></button>
                   <% if (u.is_banned) { %>
-                    <button class="admin-btn success small" onclick="unbanUser(<%= u.id %>%)"><i class="fas fa-unlock"></i></button>
+                    <button class="admin-btn success small" onclick="unbanUser(<%= u.id %>)"><i class="fas fa-unlock"></i></button>
                   <% } else { %>
                     <button class="admin-btn danger small" onclick="banUser(<%= u.id %>)"><i class="fas fa-ban"></i></button>
                   <% } %>

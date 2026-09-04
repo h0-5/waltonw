@@ -1,137 +1,131 @@
 <%- include('layout') %>
-<script>document.getElementById('pageTitle').textContent = 'إدارة المنتجات';</script>
-
-<div class="admin-content">
-  <div class="content-header">
-    <h2><i class="fas fa-box"></i> إدارة المنتجات</h2>
-    <button class="add-btn" onclick="document.getElementById('addProductModal').classList.add('show')">
-      <i class="fas fa-plus"></i> إضافة منتج
-    </button>
+<div class="admin-card" style="margin-bottom:20px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+    <h3 style="margin:0;border:none;padding:0"><i class="fas fa-box"></i> إدارة المنتجات</h3>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input type="text" id="searchProducts" placeholder="بحث..." onkeyup="filterProducts()" style="padding:6px 12px;border-radius:8px;background:rgba(255,255,255,.05);border:1px solid rgba(var(--ac-rgb),.15);color:#fff;font-size:.8rem;width:180px">
+      <button onclick="document.getElementById('addModal').style.display='flex'" class="admin-btn primary"><i class="fas fa-plus"></i> إضافة منتج</button>
+    </div>
   </div>
-
-  <div class="table-container">
-    <table class="admin-table" id="productsTable">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>الصورة</th>
-          <th>الاسم</th>
-          <th>التصنيف</th>
-          <th>السعر</th>
-          <th>المخزون</th>
-          <th>الحالة</th>
-          <th>إجراءات</th>
+  <table class="admin-table">
+    <thead><tr><th>#</th><th>الصورة</th><th>الاسم</th><th>التصنيف</th><th>السعر</th><th>المخزون</th><th>إجراءات</th></tr></thead>
+    <tbody id="productsBody">
+      <% if (products.length > 0) { %>
+        <% products.forEach(function(p, i) { %>
+        <tr data-name="<%= p.name %>">
+          <td><%= i + 1 %></td>
+          <td>
+            <% if (p.image) { %>
+              <img src="<%= p.image %>" style="width:40px;height:40px;border-radius:8px;object-fit:cover;border:1px solid rgba(var(--ac-rgb),.15)">
+            <% } else { %>
+              <div style="width:40px;height:40px;border-radius:8px;background:rgba(var(--ac-rgb),.08);display:flex;align-items:center;justify-content:center;color:rgba(var(--ac-rgb),.3)"><i class="fas fa-box"></i></div>
+            <% } %>
+          </td>
+          <td style="font-weight:700;color:#fff"><%= p.name %></td>
+          <td><span class="badge"><%= p.category_type === 'bot_item' ? 'عنصر بوت' : (p.category_type === 'purchase' ? 'شراء' : (p.category_type === 'random_box' ? 'صندوق' : p.category_type)) %></span></td>
+          <td>
+            <% if (p.price_points > 0) { %><span style="color:#fbbf24"><%= p.price_points %> نقطة</span><% } %>
+            <% if (p.price_money > 0) { %><span style="color:#34d399">$<%= p.price_money %></span><% } %>
+          </td>
+          <td><span class="badge <%= p.stock > 0 ? '' : 'badge-danger' %>"><%= p.stock > 0 ? p.stock : 'نفد' %></span></td>
+          <td>
+            <button onclick="editProduct(<%= p.id %>, '<%= p.name %>', '<%= p.description || '' %>', '<%= p.category_type %>', <%= p.price_points || 0 %>, <%= p.price_money || 0 %>, <%= p.stock || 0 %>)" class="admin-btn small"><i class="fas fa-edit"></i></button>
+            <button onclick="deleteProduct(<%= p.id %>)" class="admin-btn danger small"><i class="fas fa-trash"></i></button>
+          </td>
         </tr>
-      </thead>
-      <tbody>
-        <% if (products && products.length > 0) { %>
-          <% products.forEach(p => { %>
-            <tr>
-              <td><%= p.id %></td>
-              <td>
-                <% if (p.image) { %>
-                  <img src="<%= p.image %>" alt="img" class="table-img">
-                <% } else { %>
-                  <div class="no-img"><i class="fas fa-box"></i></div>
-                <% } %>
-              </td>
-              <td><%= p.name %></td>
-              <td><span class="category-badge"><%= p.category_type || 'عام' %></span></td>
-              <td>
-                <% if (p.price_points) { %><%= p.price_points %> نقطة<% } %>
-                <% if (p.price_money) { %>$<%= p.price_money %><% } %>
-              </td>
-              <td><%= p.stock || 0 %></td>
-              <td>
-                <span class="status-badge <%= p.is_active ? 'active' : 'inactive' %>">
-                  <%= p.is_active ? 'نشط' : 'معطل' %>
-                </span>
-              </td>
-              <td>
-                <div class="action-btns">
-                  <button class="action-btn edit" onclick="editProduct(<%= p.id %>)"><i class="fas fa-edit"></i></button>
-                  <button class="action-btn delete" onclick="deleteProduct(<%= p.id %>)"><i class="fas fa-trash"></i></button>
-                </div>
-              </td>
-            </tr>
-          <% }) %>
-        <% } else { %>
-          <tr><td colspan="8" class="empty-row">لا يوجد منتجات</td></tr>
-        <% } %>
-      </tbody>
-    </table>
+        <% }); %>
+      <% } else { %>
+        <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-dim)">لا يوجد منتجات</td></tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+
+<!-- Add Modal -->
+<div id="addModal" class="admin-modal" style="display:none">
+  <div class="modal-content">
+    <h3>إضافة منتج جديد</h3>
+    <form id="addForm">
+      <div class="form-group"><label>اسم المنتج</label><input type="text" name="name" required></div>
+      <div class="form-group"><label>الوصف</label><textarea name="description" rows="3"></textarea></div>
+      <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label>التصنيف</label><select name="category_type"><option value="bot_item">عنصر بوت</option><option value="purchase">شراء</option><option value="random_box">صندوق عشوائي</option></select></div>
+        <div class="form-group"><label>رابط الصورة</label><input type="text" name="image" placeholder="https://..."></div>
+      </div>
+      <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div class="form-group"><label>السعر (نقاط)</label><input type="number" name="price_points" min="0" value="0"></div>
+        <div class="form-group"><label>السعر ($)</label><input type="number" name="price_money" step="0.01" min="0" value="0"></div>
+        <div class="form-group"><label>المخزون (-1=لا نهائي)</label><input type="number" name="stock" value="-1"></div>
+      </div>
+      <div class="modal-actions"><button type="button" onclick="closeModal('addModal')" class="admin-btn">إلغاء</button><button type="submit" class="admin-btn primary">حفظ</button></div>
+    </form>
   </div>
 </div>
 
-<!-- Add Product Modal -->
-<div class="modal" id="addProductModal">
+<!-- Edit Modal -->
+<div id="editModal" class="admin-modal" style="display:none">
   <div class="modal-content">
-    <div class="modal-header">
-      <h2>إضافة منتج جديد</h2>
-      <button class="modal-close" onclick="closeModal('addProductModal')">&times;</button>
-    </div>
-    <form id="addProductForm" class="modal-body">
-      <div class="form-row">
-        <div class="form-group">
-          <label>اسم المنتج</label>
-          <input type="text" name="name" required>
-        </div>
-        <div class="form-group">
-          <label>التصنيف</label>
-          <select name="category_type">
-            <option value="bot_item">عنصر بوت</option>
-            <option value="purchase">شراء</option>
-            <option value="random_box">صندوق عشوائي</option>
-          </select>
-        </div>
+    <h3>تعديل المنتج</h3>
+    <form id="editForm">
+      <input type="hidden" name="product_id" id="edit_id">
+      <div class="form-group"><label>اسم المنتج</label><input type="text" name="name" id="edit_name" required></div>
+      <div class="form-group"><label>الوصف</label><textarea name="description" id="edit_desc" rows="3"></textarea></div>
+      <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label>التصنيف</label><select name="category_type" id="edit_cat"><option value="bot_item">عنصر بوت</option><option value="purchase">شراء</option><option value="random_box">صندوق عشوائي</option></select></div>
+        <div class="form-group"><label>رابط الصورة</label><input type="text" name="image" id="edit_image"></div>
       </div>
-      <div class="form-group">
-        <label>الوصف</label>
-        <textarea name="description" rows="3"></textarea>
+      <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div class="form-group"><label>السعر (نقاط)</label><input type="number" name="price_points" id="edit_points" min="0"></div>
+        <div class="form-group"><label>السعر ($)</label><input type="number" name="price_money" id="edit_money" step="0.01" min="0"></div>
+        <div class="form-group"><label>المخزون</label><input type="number" name="stock" id="edit_stock"></div>
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>السعر (نقاط)</label>
-          <input type="number" name="price_points" min="0">
-        </div>
-        <div class="form-group">
-          <label>السعر ($)</label>
-          <input type="number" name="price_money" step="0.01" min="0">
-        </div>
-        <div class="form-group">
-          <label>المخزون</label>
-          <input type="number" name="stock" min="0" value="0">
-        </div>
-      </div>
-      <button type="submit" class="submit-btn"><i class="fas fa-plus"></i> إضافة</button>
+      <div class="modal-actions"><button type="button" onclick="closeModal('editModal')" class="admin-btn">إلغاء</button><button type="submit" class="admin-btn primary">تحديث</button></div>
     </form>
   </div>
 </div>
 
 <script>
-function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-function deleteProduct(id) {
-  if (confirm('هل أنت متأكد من حذف هذا المنتج؟')) {
-    fetch('/api/admin/products/delete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ product_id: id })
-    }).then(() => location.reload());
-  }
+function filterProducts() {
+  var q = document.getElementById('searchProducts').value.toLowerCase();
+  document.querySelectorAll('#productsBody tr').forEach(function(r) {
+    r.style.display = r.dataset.name && r.dataset.name.toLowerCase().includes(q) ? '' : 'none';
+  });
 }
 
-document.getElementById('addProductForm').addEventListener('submit', async function(e) {
+function editProduct(id, name, desc, cat, points, money, stock) {
+  document.getElementById('edit_id').value = id;
+  document.getElementById('edit_name').value = name;
+  document.getElementById('edit_desc').value = desc;
+  document.getElementById('edit_cat').value = cat;
+  document.getElementById('edit_points').value = points;
+  document.getElementById('edit_money').value = money;
+  document.getElementById('edit_stock').value = stock;
+  document.getElementById('editModal').style.display = 'flex';
+}
+
+function deleteProduct(id) {
+  if (!confirm('هل أنت متأكد من حذف هذا المنتج؟')) return;
+  fetch('/api/admin/products/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ product_id: id }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { if (d.success) location.reload(); else alert(d.error || 'خطأ'); });
+}
+
+document.getElementById('addForm').addEventListener('submit', async function(e) {
   e.preventDefault();
-  const formData = new FormData(this);
-  const data = Object.fromEntries(formData);
-  await fetch('/api/admin/products/add', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  });
-  location.reload();
+  var data = Object.fromEntries(new FormData(this));
+  var r = await fetch('/api/admin/products/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+  var d = await r.json();
+  if (d.success) location.reload(); else alert(d.error || 'خطأ');
+});
+
+document.getElementById('editForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  var data = Object.fromEntries(new FormData(this));
+  var r = await fetch('/api/admin/products/edit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+  var d = await r.json();
+  if (d.success) location.reload(); else alert(d.error || 'خطأ');
 });
 </script>
-
 <%- include('admin_footer') %>

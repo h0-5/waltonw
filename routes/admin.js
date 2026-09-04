@@ -23,7 +23,7 @@ router.get('/', isAdmin, async (req, res) => {
 // Users Management
 router.get('/users', isAdmin, async (req, res) => {
   try {
-    const [users] = await db.execute('SELECT * FROM users ORDER BY id DESC');
+    const [users] = await db.execute("SELECT * FROM users ORDER BY FIELD(role, 'owner','developer','founder','vice_founder','chairman','present_member','vice_president','leadership','family_member','admin','moderator','support','member','trial','user') ASC, id DESC");
     res.render('admin/users', { title: 'إدارة المستخدمين', users, currentPath: req.path });
   } catch(err) {
     res.render('admin/users', { title: 'إدارة المستخدمين', users: [], currentPath: req.path });

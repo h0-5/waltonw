@@ -2,28 +2,9 @@
 <link rel="stylesheet" href="/css/applications-page.css">
 <%- include('../partials/navbar') %>
 
+<%- include('../partials/page-hero', { pageTitle: 'التقديمات', pageIcon: 'fas fa-file-signature', pageDesc: 'اختر التقديم المناسب لك وكن جزءاً من عائلة والتون', pageStats: [{ value: applications.filter(function(a){ return a.status === 'open'; }).length, label: 'متاح' }, { value: applications.length, label: 'إجمالي' }] }) %>
+
 <div class="cy-apps-page">
-    <!-- Hero Section -->
-    <div class="cy-apps-hero">
-        <div class="cy-apps-hero-icon">
-            <div class="hex-ring"></div>
-            <div class="hex-ring-inner"></div>
-            <i class="fas fa-file-signature"></i>
-        </div>
-        <h1 class="page-heading">التقديمات</h1>
-        <p class="cy-apps-hero-sub">اختر التقديم المناسب لك من القائمة أدناه، وكن جزءاً من مجتمعنا المتميز</p>
-        <div class="cy-apps-hero-line"></div>
-        <div class="hero-metrics">
-            <div class="metric">
-                <div class="metric-val"><%= applications.filter(function(a){ return a.status === 'open'; }).length %></div>
-                <div class="metric-label">تقديم مفتوح</div>
-            </div>
-            <div class="metric">
-                <div class="metric-val"><%= applications.length %></div>
-                <div class="metric-label">إجمالي التقديمات</div>
-            </div>
-        </div>
-    </div>
 
     <!-- Main Content -->
     <div class="cy-apps-main">

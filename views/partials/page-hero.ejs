@@ -1,0 +1,75 @@
+<%
+  var _pageTitle = typeof pageTitle !== 'undefined' ? pageTitle : '';
+  var _pageIcon = typeof pageIcon !== 'undefined' ? pageIcon : 'fas fa-circle';
+  var _pageDesc = typeof pageDesc !== 'undefined' ? pageDesc : '';
+  var _pageStats = typeof pageStats !== 'undefined' ? pageStats : null;
+%>
+<div class="cy-page-hero">
+    <div class="cy-page-hero-bg"></div>
+    <div class="cy-page-hero-particles" id="heroParticles"></div>
+    
+    <div class="cy-page-hero-content">
+        <!-- 3D Logo -->
+        <div class="cy-page-hero-logo" id="pageLogo">
+            <div class="cy-logo-ring cy-logo-ring-1"></div>
+            <div class="cy-logo-ring cy-logo-ring-2"></div>
+            <div class="cy-logo-ring cy-logo-ring-3"></div>
+            <div class="cy-logo-core">
+                <img src="<%= (typeof settings !== 'undefined' && settings.site_logo_url) ? settings.site_logo_url : '/images/walton-logo.svg' %>" alt="WF" onerror="this.style.display='none';this.parentElement.querySelector('.cy-logo-fallback').style.display='flex';">
+                <div class="cy-logo-fallback" style="display:none"><i class="fas fa-<%= _pageIcon.replace('fas fa-', '') %>"></i></div>
+            </div>
+        </div>
+
+        <!-- Title -->
+        <h1 class="cy-page-hero-title"><%= _pageTitle %></h1>
+        <% if (_pageDesc) { %>
+        <p class="cy-page-hero-desc"><%= _pageDesc %></p>
+        <% } %>
+        <div class="cy-page-hero-line"></div>
+
+        <!-- Stats (optional) -->
+        <% if (_pageStats && _pageStats.length > 0) { %>
+        <div class="cy-page-hero-stats">
+            <% _pageStats.forEach(function(s) { %>
+            <div class="cy-page-hero-stat">
+                <div class="cy-page-hero-stat-val"><%= s.value %></div>
+                <div class="cy-page-hero-stat-label"><%= s.label %></div>
+            </div>
+            <% }); %>
+        </div>
+        <% } %>
+    </div>
+</div>
+
+<script>
+(function(){
+    // Create floating particles
+    var container = document.getElementById('heroParticles');
+    if (!container) return;
+    var count = window.innerWidth < 768 ? 10 : 20;
+    for (var i = 0; i < count; i++) {
+        var p = document.createElement('div');
+        p.className = 'cy-hero-particle';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.animationDuration = (6 + Math.random() * 10) + 's';
+        p.style.animationDelay = Math.random() * 5 + 's';
+        p.style.width = p.style.height = (2 + Math.random() * 3) + 'px';
+        container.appendChild(p);
+    }
+
+    // 3D tilt on logo
+    var logo = document.getElementById('pageLogo');
+    if (!logo) return;
+    document.addEventListener('mousemove', function(e) {
+        var rect = logo.getBoundingClientRect();
+        var cx = rect.left + rect.width / 2;
+        var cy = rect.top + rect.height / 2;
+        var rx = (e.clientY - cy) / 25;
+        var ry = (cx - e.clientX) / 25;
+        logo.style.transform = 'perspective(600px) rotateX(' + rx + 'deg) rotateY(' + ry + 'deg)';
+    });
+    logo.addEventListener('mouseleave', function() {
+        logo.style.transform = 'perspective(600px) rotateX(0deg) rotateY(0deg)';
+    });
+})();
+</script>

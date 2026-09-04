@@ -1,18 +1,9 @@
 <%- include('../partials/header') %>
 <%- include('../partials/navbar') %>
 
+<%- include('../partials/page-hero', { pageTitle: 'متجر النقاط', pageIcon: 'fas fa-coins', pageDesc: 'استبدل نقاطك بمكافآت حصرية وعناصر مميزة', pageStats: [{ value: userPoints || 0, label: 'نقاطك' }, { value: products.length, label: 'منتج' }] }) %>
+
 <div class="cy-page-bg" dir="rtl">
-    <!-- Hero Section -->
-    <div class="cy-hero">
-        <div class="cy-hero-icon">
-            <div class="hex-ring"></div>
-            <div class="hex-ring-inner"></div>
-            <i class="fas fa-coins"></i>
-        </div>
-        <h1>متجر النقاط</h1>
-        <p class="cy-hero-sub">استبدل نقاطك بمكافآت حصرية وعناصر مميزة</p>
-        <div class="cy-hero-line"></div>
-    </div>
 
     <!-- Tabs -->
     <div class="cy-tabs">
@@ -42,16 +33,16 @@
                             <i class="fas fa-chevron-down"></i>
                         </button>
                         <div id="fsCatMenu" class="cy-cat-dropdown">
-                            <a href="/store" class="cat-active">
+                            <a href="/store" class="<%= (!cat || cat === '') ? 'cat-active' : '' %>">
                                 <i class="fas fa-th-large" style="width:14px;font-size:.7rem"></i> الكل
                             </a>
-                            <a href="/store?cat=bot_item">
+                            <a href="/store?cat=bot_item" class="<%= cat === 'bot_item' ? 'cat-active' : '' %>">
                                 <i class="fas fa-tag" style="width:14px;font-size:.7rem"></i> منتجات البوت
                             </a>
-                            <a href="/store?cat=purchase">
+                            <a href="/store?cat=purchase" class="<%= cat === 'purchase' ? 'cat-active' : '' %>">
                                 <i class="fas fa-tag" style="width:14px;font-size:.7rem"></i> شراء منتج
                             </a>
-                            <a href="/store?cat=random_box">
+                            <a href="/store?cat=random_box" class="<%= cat === 'random_box' ? 'cat-active' : '' %>">
                                 <i class="fas fa-tag" style="width:14px;font-size:.7rem"></i> صناديق عشوائية
                             </a>
                         </div>

@@ -1,0 +1,243 @@
+/* ═══════════════════════════════════════════════════════════════
+   3D PAGE HERO — Animated Logo + Particles
+   ═══════════════════════════════════════════════════════════════ */
+
+.cy-page-hero {
+    position: relative;
+    padding: 5rem 1.5rem 3rem;
+    text-align: center;
+    overflow: hidden;
+    background: linear-gradient(180deg, rgba(var(--ac-rgb), 0.08) 0%, rgba(var(--ac-rgb), 0.02) 50%, transparent 100%);
+}
+
+.cy-page-hero-bg {
+    position: absolute;
+    inset: 0;
+    background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(var(--ac-rgb), 0.025) 39px, rgba(var(--ac-rgb), 0.025) 40px),
+        repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(var(--ac-rgb), 0.025) 39px, rgba(var(--ac-rgb), 0.025) 40px);
+    pointer-events: none;
+}
+
+.cy-page-hero-particles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.cy-hero-particle {
+    position: absolute;
+    bottom: -10px;
+    border-radius: 50%;
+    background: var(--ac);
+    opacity: 0.15;
+    animation: heroFloatUp linear infinite;
+}
+
+@keyframes heroFloatUp {
+    0% { transform: translateY(0) scale(1); opacity: 0; }
+    10% { opacity: 0.2; }
+    90% { opacity: 0.1; }
+    100% { transform: translateY(-400px) scale(0.3); opacity: 0; }
+}
+
+.cy-page-hero-content {
+    position: relative;
+    z-index: 2;
+}
+
+/* ── 3D Logo ── */
+.cy-page-hero-logo {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 1.5rem;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s ease-out;
+    transform-style: preserve-3d;
+}
+
+.cy-logo-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1.5px solid rgba(var(--ac-rgb), 0.2);
+}
+
+.cy-logo-ring-1 {
+    inset: -12px;
+    animation: ringPulse 4s ease-in-out infinite;
+}
+
+.cy-logo-ring-2 {
+    inset: -6px;
+    border-style: dashed;
+    animation: ringSpin 12s linear infinite;
+    opacity: 0.6;
+}
+
+.cy-logo-ring-3 {
+    inset: -2px;
+    animation: ringPulse 4s ease-in-out infinite 1s;
+    opacity: 0.4;
+}
+
+@keyframes ringPulse {
+    0%, 100% { transform: scale(1); opacity: 0.3; border-color: rgba(var(--ac-rgb), 0.15); }
+    50% { transform: scale(1.05); opacity: 0.6; border-color: rgba(var(--ac-rgb), 0.35); }
+}
+
+@keyframes ringSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.cy-logo-core {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(var(--ac-rgb), 0.08);
+    border: 2px solid rgba(var(--ac-rgb), 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 0 30px rgba(var(--ac-rgb), 0.15), inset 0 0 20px rgba(var(--ac-rgb), 0.05);
+    transition: box-shadow 0.3s, border-color 0.3s;
+}
+
+.cy-logo-core img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+}
+
+.cy-logo-fallback {
+    font-size: 1.4rem;
+    color: var(--ac);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cy-page-hero-logo:hover .cy-logo-core {
+    box-shadow: 0 0 50px rgba(var(--ac-rgb), 0.25), inset 0 0 30px rgba(var(--ac-rgb), 0.08);
+    border-color: rgba(var(--ac-rgb), 0.5);
+}
+
+/* ── Title ── */
+.cy-page-hero-title {
+    font-size: clamp(1.8rem, 5vw, 2.8rem);
+    font-weight: 900;
+    margin: 0 0 0.5rem;
+    background: linear-gradient(135deg, #fff 10%, rgba(var(--ac-rgb), 0.7) 50%, var(--ac) 90%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: heroTitleShine 6s ease-in-out infinite;
+    filter: drop-shadow(0 0 15px rgba(var(--ac-rgb), 0.15));
+}
+
+@keyframes heroTitleShine {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.cy-page-hero-desc {
+    color: var(--text-dim, rgba(240,240,245,0.5));
+    font-size: 0.9rem;
+    margin: 0 0 1rem;
+    max-width: 450px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.cy-page-hero-line {
+    width: 80px;
+    height: 2px;
+    margin: 0 auto 1.2rem;
+    background: linear-gradient(90deg, transparent, var(--ac), transparent);
+    border-radius: 2px;
+    position: relative;
+}
+
+.cy-page-hero-line::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    background: linear-gradient(90deg, transparent, var(--ac), transparent);
+    filter: blur(8px);
+    opacity: 0.3;
+}
+
+/* ── Stats ── */
+.cy-page-hero-stats {
+    display: inline-flex;
+    background: rgba(10, 9, 16, 0.6);
+    border: 1px solid rgba(var(--ac-rgb), 0.12);
+    border-radius: 14px;
+    padding: 0.6rem 1.2rem;
+    backdrop-filter: blur(8px);
+}
+
+.cy-page-hero-stat {
+    text-align: center;
+    padding: 0 1rem;
+    position: relative;
+}
+
+.cy-page-hero-stat:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1px;
+    height: 20px;
+    background: rgba(var(--ac-rgb), 0.15);
+}
+
+.cy-page-hero-stat-val {
+    font-family: 'Space Grotesk', monospace;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--ac);
+    text-shadow: 0 0 20px rgba(var(--ac-rgb), 0.3);
+    line-height: 1;
+}
+
+.cy-page-hero-stat-label {
+    font-size: 0.6rem;
+    color: rgba(240, 240, 245, 0.3);
+    margin-top: 0.15rem;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .cy-page-hero {
+        padding: 4rem 1rem 2rem;
+    }
+    .cy-page-hero-logo {
+        width: 80px;
+        height: 80px;
+    }
+    .cy-logo-core {
+        width: 52px;
+        height: 52px;
+    }
+    .cy-logo-core img {
+        width: 32px;
+        height: 32px;
+    }
+    .cy-page-hero-stats {
+        padding: 0.5rem 0.8rem;
+    }
+    .cy-page-hero-stat {
+        padding: 0 0.6rem;
+    }
+}

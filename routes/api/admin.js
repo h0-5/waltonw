@@ -55,6 +55,17 @@ router.post('/products/delete', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+router.post('/products/edit', async (req, res) => {
+  const { product_id, name, description, category_type, price_points, price_money, stock, image } = req.body;
+  try {
+    await db.execute(
+      'UPDATE fs_products SET name=?, description=?, category_type=?, price_points=?, price_money=?, stock=?, image=? WHERE id=?',
+      [name, description, category_type, price_points || 0, price_money || 0, stock || 0, image || null, product_id]
+    );
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // Admin Settings API
 router.post('/settings', async (req, res) => {
   try {

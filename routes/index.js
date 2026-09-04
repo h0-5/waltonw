@@ -130,9 +130,21 @@ router.get('/rules', isAuthenticated, async (req, res) => {
 // Store
 router.get('/store', isAuthenticated, async (req, res) => {
   const settings = await getSettings();
-  let products = await safeQuery('SELECT * FROM fs_products ORDER BY id ASC');
+  let sql = 'SELECT * FROM fs_products WHERE 1=1';
+  const params = [];
+
+  if (req.query.search) {
+    sql += ' AND name LIKE ?';
+    params.push('%' + req.query.search + '%');
+  }
+  if (req.query.cat) {
+    sql += ' AND category_type = ?';
+    params.push(req.query.cat);
+  }
+  sql += ' ORDER BY id ASC';
+
+  let products = await safeQuery(sql, params);
   
-  // Get user points if logged in
   let userPoints = 0;
   if (req.user && req.user.discord_id) {
     const pts = await safeQuery('SELECT points FROM bot_points WHERE discord_id = ?', [req.user.discord_id]);
@@ -141,7 +153,27 @@ router.get('/store', isAuthenticated, async (req, res) => {
 
   res.render('pages/store', {
     title: 'المتجر',
-    products, userPoints, settings
+    products, userPoints, settings,
+    search: req.query.search || '',
+    cat: req.query.cat || ''
+  });
+});
+
+// Store Products (Public Store tab)
+router.get('/store/products', isAuthenticated, async (req, res) => {
+  const settings = await getSettings();
+  let products = await safeQuery('SELECT * FROM fs_products WHERE category_type = ? ORDER BY id ASC', ['purchase']);
+  
+  let userPoints = 0;
+  if (req.user && req.user.discord_id) {
+    const pts = await safeQuery('SELECT points FROM bot_points WHERE discord_id = ?', [req.user.discord_id]);
+    userPoints = pts.length > 0 ? pts[0].points : 0;
+  }
+
+  res.render('pages/store', {
+    title: 'المتجر العام',
+    products, userPoints, settings,
+    search: '', cat: 'purchase'
   });
 });
 
