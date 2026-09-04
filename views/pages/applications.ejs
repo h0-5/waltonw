@@ -94,7 +94,7 @@
                         <div class="actions">
                             <% if (app.status === 'open') { %>
                                 <% if (typeof user !== 'undefined' && user) { %>
-                                <a href="/applications/form/<%= app.id %>" class="btn">
+                                <a href="/applications/form/<%= encodeURIComponent(app.application_type) %>" class="btn">
                                     <span class="shimmer"></span>
                                     <i class="fas fa-paper-plane"></i>
                                     تقديم الطلب الآن
