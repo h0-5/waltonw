@@ -322,14 +322,6 @@ router.post('/api/applications/submit', isAuthenticated, async (req, res) => {
   try {
     const { type, answers, answers_multiple, answers_img_url } = req.body;
     if (!type) return res.status(400).json({ error: 'نوع التقديم مطلوب' });
-
-    const [appSetting] = await db.query('SELECT * FROM application_settings WHERE application_type = ? AND status = "open" LIMIT 1', [type]);
-    if (!appSetting || !appSetting.length) return res.status(400).json({ error: 'التقديم غير متاح' });
-    const appData = appSetting[0];
-
-    const [pendingApp] = await db.query(
-      "SELECT id FROM submitted_applications WHERE user_id = ? AND application_type = ? AND status IN ('pending','waiting_join') LIMIT 1",
-      [req.user.id, type]
     );
     if (pendingApp && pendingApp.length) return res.status(400).json({ error: 'لديك طلب معلق بالفعل' });
 
@@ -360,18 +352,33 @@ router.post('/api/applications/submit', isAuthenticated, async (req, res) => {
     const answersData = {};
     const submitAnswers = typeof answers === 'object' ? answers : {};
 
+    // Parse answers - express-fileupload may not parse nested bracket notation
+    // so also check flat keys like req.body['answers[123]']
+    const rawAnswers = answers || {};
+    const rawMulti = answers_multiple || {};
+    const rawImgUrl = answers_img_url || {};
+
     for (const q of questions) {
       if (q.type === 'multiple_choice') {
-        const multiKey = 'answers_multiple_' + q.id;
-        const multiAns = answers_multiple && answers_multiple[q.id] ? answers_multiple[q.id] : (req.body[multiKey] || []);
-        if (Array.isArray(multiAns) && multiAns.length > 0) {
+        let multiAns = rawMulti[q.id] || rawMulti[String(q.id)] || [];
+        if (!Array.isArray(multiAns)) multiAns = [multiAns];
+        // Also check flat key
+        const flatKey = 'answers_multiple[' + q.id + '][]';
+        const flatVal = req.body[flatKey];
+        if (!multiAns.length && flatVal) {
+          multiAns = Array.isArray(flatVal) ? flatVal : [flatVal];
+        }
+        if (multiAns.length > 0) {
           answersData[q.id] = multiAns.filter(a => typeof a === 'string' && a.length <= 200).join(', ');
         }
         if (q.required && (!multiAns || !multiAns.length)) {
           return res.status(400).json({ error: 'يرجى الإجابة على جميع الأسئلة المطلوبة' });
         }
       } else if (q.type === 'image') {
-        const imgUrl = answers_img_url && answers_img_url[q.id] ? answers_img_url[q.id] : '';
+        let imgUrl = rawImgUrl[q.id] || rawImgUrl[String(q.id)] || '';
+        if (!imgUrl) {
+          imgUrl = req.body['answers_img_url[' + q.id + ']'] || '';
+        }
         if (imgUrl) {
           if (!/^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)/i.test(imgUrl)) {
             return res.status(400).json({ error: 'رابط الصورة غير صحيح' });
@@ -398,12 +405,20 @@ router.post('/api/applications/submit', isAuthenticated, async (req, res) => {
           }
         }
       } else {
-        const val = submitAnswers[q.id] || submitAnswers[String(q.id)] || '';
+        let val = rawAnswers[q.id] || rawAnswers[String(q.id)] || '';
+        if (!val) {
+          val = req.body['answers[' + q.id + ']'] || '';
+        }
         if (typeof val === 'string') {
           answersData[q.id] = val.substring(0, 2000);
         }
         if (q.required && !val) {
           return res.status(400).json({ error: 'يرجى الإجابة على جميع الأسئلة المطلوبة' });
+        }
+        if (q.keyword && val && typeof val === 'string') {
+          if (!val.toLowerCase().includes(q.keyword.toLowerCase())) {
+            return res.status(400).json({ error: 'الجواب لازم يحتوي على كلمة "' + q.keyword + '"' });
+          }
         }
       }
     }

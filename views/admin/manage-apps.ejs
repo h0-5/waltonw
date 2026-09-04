@@ -126,6 +126,10 @@
             <input type="number" class="form-input" id="qMaxSel" placeholder="بدون حد">
           </div>
         </div>
+        <div class="form-group">
+          <label>كلمة مفتاحية (الجواب لازم يحتوي عليها — اختياري)</label>
+          <input type="text" class="form-input" id="qKeyword" placeholder="مثال: WALTON — لو أضفتها، الجواب لازم يحتوي على هالكلمة">
+        </div>
         <div class="inline-actions">
           <button class="save-btn" onclick="saveQuestion()"><i class="fas fa-save"></i> حفظ السؤال</button>
         </div>
@@ -298,7 +302,7 @@ async function loadQuestions() {
   const list = document.getElementById('questionsList');
   if (!qs.length) { list.innerHTML='<p style="color:var(--text-dim);text-align:center;padding:1rem">لا توجد أسئلة</p>'; return; }
   list.innerHTML = qs.map(q =>
-    '<div class="q-card"><div class="q-head"><span class="status-pill st-' + (q.required ? 'approved' : 'pending') + '">' + (q.required ? 'مطلوب' : 'اختياري') + '</span><div class="inline-actions"><button class="small-btn del" onclick="deleteQuestion(' + q.id + ')"><i class="fas fa-trash"></i></button></div></div><div class="q-text">' + esc(q.question) + '</div><div class="q-meta">النوع: ' + q.type + ' | الترتيب: ' + (q.order_index || q.sort_order || 0) + '</div></div>'
+    '<div class="q-card"><div class="q-head"><span class="status-pill st-' + (q.required ? 'approved' : 'pending') + '">' + (q.required ? 'مطلوب' : 'اختياري') + '</span>' + (q.keyword ? '<span style="background:rgba(234,179,8,.15);color:#eab308;padding:2px 8px;border-radius:12px;font-size:.7rem;font-weight:700;margin-inline-start:4px">مفتاح: ' + esc(q.keyword) + '</span>' : '') + '<div class="inline-actions"><button class="small-btn del" onclick="deleteQuestion(' + q.id + ')"><i class="fas fa-trash"></i></button></div></div><div class="q-text">' + esc(q.question) + '</div><div class="q-meta">النوع: ' + q.type + ' | الترتيب: ' + (q.order_index || q.sort_order || 0) + '</div></div>'
   ).join('');
 }
 
@@ -315,12 +319,13 @@ async function saveQuestion() {
     required: parseInt(document.getElementById('qRequired').value),
     options: document.getElementById('qOptions').value.trim(),
     order_index: parseInt(document.getElementById('qOrder').value) || 0,
-    max_selections: parseInt(document.getElementById('qMaxSel').value) || null
+    max_selections: parseInt(document.getElementById('qMaxSel').value) || null,
+    keyword: document.getElementById('qKeyword').value.trim() || null
   };
   if (!data.question) return alert('نص السؤال مطلوب');
   const res = await fetch('/api/admin/applications/questions', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
   const r = await res.json();
-  if (r.success) { document.getElementById('qText').value=''; loadQuestions(); } else alert(r.error || 'خطأ');
+  if (r.success) { document.getElementById('qText').value=''; document.getElementById('qKeyword').value=''; loadQuestions(); } else alert(r.error || 'خطأ');
 }
 
 async function deleteQuestion(id) {

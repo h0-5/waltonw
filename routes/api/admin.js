@@ -381,9 +381,10 @@ router.post('/applications/questions', isAdmin, async (req, res) => {
     const qType = validTypes.includes(type) ? type : 'text';
     const opts = typeof options === 'string' ? options.substring(0, 5000) : '';
     const maxSel = (qType === 'multiple_choice' && max_selections) ? parseInt(max_selections) : null;
+    const keywordVal = (typeof keyword === 'string' && keyword.trim()) ? keyword.trim().substring(0, 200) : null;
     await db.query(
-      'INSERT INTO application_questions (application_type, question, type, required, options, order_index, sort_order, max_selections) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [application_type, question.substring(0, 500), qType, required ? 1 : 0, opts, parseInt(order_index) || 0, parseInt(order_index) || 0, maxSel]
+      'INSERT INTO application_questions (application_type, question, type, required, options, order_index, sort_order, max_selections, keyword) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [application_type, question.substring(0, 500), qType, required ? 1 : 0, opts, parseInt(order_index) || 0, parseInt(order_index) || 0, maxSel, keywordVal]
     );
     res.json({ success: true });
   } catch(e) {

@@ -104,10 +104,10 @@
           </label>
 
           <% if (q.type === 'text') { %>
-            <input type="text" name="answers[<%= q.id %>]" class="cy-input" maxlength="200" data-qid="<%= q.id %>" <%= q.required ? 'required' : '' %>>
+            <input type="text" name="answers[<%= q.id %>]" class="cy-input" maxlength="200" data-qid="<%= q.id %>" data-keyword="<%= q.keyword || '' %>" <%= q.required ? 'required' : '' %>>
 
           <% } else if (q.type === 'textarea') { %>
-            <textarea name="answers[<%= q.id %>]" class="cy-textarea" maxlength="2000" data-qid="<%= q.id %>" <%= q.required ? 'required' : '' %>></textarea>
+            <textarea name="answers[<%= q.id %>]" class="cy-textarea" maxlength="2000" data-qid="<%= q.id %>" data-keyword="<%= q.keyword || '' %>" <%= q.required ? 'required' : '' %>></textarea>
 
           <% } else if (q.type === 'number') { %>
             <input type="number" name="answers[<%= q.id %>]" class="cy-input" data-qid="<%= q.id %>" <%= q.required ? 'required' : '' %>>
@@ -293,19 +293,19 @@
 
     var hasError = false;
 
-    var firstTextInput = form.querySelector('input[type="text"][name^="answers["], textarea[name^="answers["]');
-
     form.querySelectorAll('input[type="text"][name^="answers["], textarea[name^="answers["]').forEach(function(el) {
-      if (el !== firstTextInput) return;
       var nameMatch = el.name.match(/answers\[(\d+)\]/);
       if (!nameMatch) return;
       var qid = nameMatch[1];
       var val = el.value.trim();
       if (!val) return;
 
+      var keyword = el.getAttribute('data-keyword');
+      if (!keyword) return;
+
       var lowerVal = val.toLowerCase();
-      if (lowerVal.indexOf('walton') === -1) {
-        showError(qid, 'يجب أن يحتوي الجواب على كلمة "WALTON"');
+      if (lowerVal.indexOf(keyword.toLowerCase()) === -1) {
+        showError(qid, 'يجب أن يحتوي الجواب على كلمة "' + keyword + '"');
         el.classList.add('cy-error');
         hasError = true;
       } else {
