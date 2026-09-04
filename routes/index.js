@@ -185,9 +185,9 @@ router.get('/products', isAuthenticated, async (req, res) => {
   let sql = "SELECT p.*, c.name as cat_name, u.username as seller_name FROM products p LEFT JOIN categories c ON p.category_id = c.id LEFT JOIN users u ON p.seller_id = u.id WHERE p.status = 'approved'";
   const params = [];
 
-  if (req.query.cat) {
+  if (req.query.cat || req.query.category) {
     sql += ' AND p.category_id = ?';
-    params.push(req.query.cat);
+    params.push(req.query.cat || req.query.category);
   }
   if (req.query.search) {
     sql += ' AND p.name LIKE ?';

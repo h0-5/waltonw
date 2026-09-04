@@ -1,0 +1,155 @@
+<%- include('../partials/header') %>
+<link rel="stylesheet" href="/css/products.css">
+<%- include('../partials/navbar') %>
+
+<% var currentCat = typeof cat !== 'undefined' ? cat : ''; %>
+<div class="cy-page-bg" dir="rtl">
+    <!-- Hero -->
+    <div class="cy-hero">
+        <div class="cy-hero-icon">
+            <div class="hex-ring"></div>
+            <div class="hex-ring-inner"></div>
+            <i class="fas fa-store"></i>
+        </div>
+        <h1>المتجر العام</h1>
+        <p class="cy-hero-sub">تصفح منتجات عائلة والتون</p>
+        <div class="cy-hero-line"></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="cy-tabs">
+        <a href="/store" class="cy-tab">
+            <i class="fas fa-coins"></i>متجر النقاط
+        </a>
+        <a href="/products" class="cy-tab cy-tab-active">
+            <i class="fas fa-store"></i>المتجر العام
+        </a>
+    </div>
+
+    <!-- Main Content -->
+    <div class="cy-main">
+        <!-- Header Bar -->
+        <div class="cy-header-bar">
+            <h2><i class="fas fa-store"></i> المتجر العام</h2>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="mb-6">
+            <form method="GET" action="/products">
+                <div class="cy-search-bar">
+                    <input type="text" name="search" placeholder="ابحث عن منتج..." value="<%= search %>" class="cy-search-input">
+                    <button type="submit" class="cy-search-btn"><i class="fas fa-search"></i> بحث</button>
+                    <div style="position:relative">
+                        <button type="button" onclick="toggleCatMenu()" id="catMenuBtn" class="cy-cat-btn">
+                            <i class="fas fa-th-large"></i>
+                            <span><%= currentCat ? (categories.find(function(c){ return c.id == currentCat }) || {}).name || 'الفئات' : 'الفئات' %></span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div id="catMenu" class="cy-cat-dropdown">
+                            <a href="/products<%= search ? '?search=' + search : '' %>" class="<%= !currentCat ? 'cat-active' : '' %>">
+                                <i class="fas fa-th-large" style="width:14px;font-size:.7rem"></i> الكل
+                            </a>
+                            <% categories.forEach(function(c) { %>
+                            <a href="/products?category=<%= c.id %><%= search ? '&search=' + search : '' %>" class="<%= currentCat == c.id ? 'cat-active' : '' %>">
+                                <i class="fas fa-tag" style="width:14px;font-size:.7rem"></i> <%= c.name %>
+                            </a>
+                            <% }); %>
+                        </div>
+                    </div>
+                    <% if (user) { %>
+                    <div class="cy-points-badge">
+                        <i class="fas fa-coins"></i>
+                        <span><%= userPoints ? userPoints.toLocaleString() : '0' %> نقطة</span>
+                    </div>
+                    <% } %>
+                </div>
+            </form>
+        </div>
+
+        <!-- Category Pills -->
+        <% if (categories.length > 0) { %>
+        <div class="cy-cat-pills">
+            <a href="/products<%= search ? '?search=' + search : '' %>" class="cy-cat-pill <%= !currentCat ? 'cy-cat-pill-active' : '' %>">
+                <i class="fas fa-border-all"></i>الكل
+            </a>
+            <% categories.forEach(function(c) { %>
+            <a href="/products?category=<%= c.id %><%= search ? '&search=' + search : '' %>" class="cy-cat-pill <%= currentCat == c.id ? 'cy-cat-pill-active' : '' %>">
+                <i class="fas fa-tag"></i><%= c.name %>
+            </a>
+            <% }); %>
+        </div>
+        <% } %>
+
+        <!-- Product Grid -->
+        <div class="cy-product-grid">
+            <% if (products.length > 0) { %>
+                <% products.forEach(function(p) { %>
+                <div class="cy-product-card">
+                    <div class="corner-tl"></div>
+                    <div class="corner-br"></div>
+                    <div class="cy-card-img-wrap">
+                        <% if (p.image || p.image_url) { %>
+                        <img src="<%= p.image || p.image_url %>" alt="<%= p.name %>" loading="lazy" onerror="this.style.display='none';this.parentElement.querySelector('.cy-card-placeholder').style.display='flex'">
+                        <div class="cy-card-placeholder" style="display:none"><i class="fas fa-box"></i></div>
+                        <% } else { %>
+                        <div class="cy-card-placeholder"><i class="fas fa-box"></i></div>
+                        <% } %>
+                    </div>
+                    <div class="cy-card-body">
+                        <h3 class="cy-card-name"><%= p.name %></h3>
+                        <% if (p.description) { %>
+                        <p class="cy-card-desc"><%= p.description.substring(0, 100) %></p>
+                        <% } %>
+                        <div class="cy-card-meta">
+                            <% if (p.cat_name) { %>
+                            <span class="cy-card-cat"><i class="fas fa-tag"></i> <%= p.cat_name %></span>
+                            <% } %>
+                            <% if (p.seller_name) { %>
+                            <span class="cy-card-seller"><i class="fas fa-user"></i> <%= p.seller_name %></span>
+                            <% } %>
+                        </div>
+                        <div class="cy-card-footer">
+                            <div class="cy-card-price">
+                                <span class="cy-price-val"><%= Number(p.price).toLocaleString() %></span>
+                                <span class="cy-price-curr"><%= p.currency || 'WT' %></span>
+                            </div>
+                            <% if (p.stock_quantity > 0) { %>
+                            <div class="cy-stock-bar">
+                                <div class="cy-stock-fill <%= p.stock_quantity <= 10 ? 'stock-low' : '' %>" style="width:<%= Math.min(p.stock_quantity, 100) %>%"></div>
+                            </div>
+                            <span class="cy-stock-text <%= p.stock_quantity <= 10 ? 'stock-low-text' : '' %>"><%= p.stock_quantity %> متوفر</span>
+                            <% } else { %>
+                            <span class="cy-stock-text stock-zero-text">نفد</span>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+                <% }); %>
+            <% } else { %>
+            <div class="cy-empty" style="grid-column:1/-1">
+                <div class="cy-empty-card">
+                    <div class="cy-empty-icon"><i class="fas fa-store"></i></div>
+                    <h3 class="cy-empty-title">لا توجد منتجات متاحة</h3>
+                    <p class="cy-empty-desc">لم يتم إضافة أي منتجات للمتجر العام بعد</p>
+                </div>
+            </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleCatMenu() {
+    var menu = document.getElementById('catMenu');
+    menu.classList.toggle('cy-cat-dropdown-open');
+}
+document.addEventListener('click', function(e) {
+    var menu = document.getElementById('catMenu');
+    var btn = document.getElementById('catMenuBtn');
+    if (menu && btn && !menu.contains(e.target) && !btn.contains(e.target)) {
+        menu.classList.remove('cy-cat-dropdown-open');
+    }
+});
+</script>
+
+<%- include('../partials/footer') %>
