@@ -60,6 +60,28 @@
   </div>
   <% } %>
 
+  <% if (discordError) { %>
+  <div class="block-msg">
+    <i class="fab fa-discord"></i>
+    <strong>حسابك غير مرتبط بديسكورد</strong>
+    <p>يجب تسجيل الدخول عبر ديسكورد أولاً لتقديم طلب</p>
+    <a href="/auth/discord" style="display:inline-block;margin-top:.8rem;padding:.5rem 1.2rem;background:#5865F2;color:#fff;border-radius:8px;text-decoration:none;font-weight:700"><i class="fab fa-discord"></i> ربط حساب ديسكورد</a>
+  </div>
+  <% } else if (hasBlacklistRole) { %>
+  <div class="block-msg">
+    <i class="fas fa-ban"></i>
+    <strong>أنت مدرج في القائمة السوداء</strong>
+    <p>لا يمكنك التقديم بسبب انتهاك سياسات المجتمع</p>
+  </div>
+  <% } else if (!hasRequiredRole) { %>
+  <div class="block-msg">
+    <i class="fas fa-shield-alt"></i>
+    <strong>ليس لديك الرول المطلوب</strong>
+    <p>يجب أن تحمل الرول المطلوب في سيرفر ديسكورد لتقديم هذا الطلب</p>
+    <p style="margin-top:.5rem;font-size:.8rem;opacity:.7">رول مطلوب: <%= appData.required_discord_role_id %></p>
+  </div>
+  <% } %>
+
   <% if (pendingApp) { %>
   <div class="pending-msg">
     <i class="fas fa-hourglass-half"></i>
@@ -86,7 +108,7 @@
   </div>
   <% } %>
 
-  <% if (!inCooldown && !pendingApp) { %>
+  <% if (!inCooldown && !pendingApp && !discordError && !hasBlacklistRole && hasRequiredRole) { %>
   <form id="appForm" class="app-form-card" enctype="multipart/form-data">
     <input type="hidden" name="type" value="<%= appSetting.application_type %>">
 

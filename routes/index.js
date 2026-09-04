@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../config/database');
 const path = require('path');
 const fs = require('fs');
+const { checkDiscordRole, getDiscordMemberRoles } = require('../utils/discord');
 const { isAuthenticated } = require('../middleware/auth');
 
 // Helper to safely query
@@ -243,9 +244,10 @@ router.get('/applications/form/:type', isAuthenticated, async (req, res) => {
     const type = req.params.type;
     const settings = await getSettings();
     const [appSetting] = await db.query('SELECT * FROM application_settings WHERE application_type = ? LIMIT 1', [type]);
-    if (!appSetting || appSetting.status !== 'open') {
+    if (!appSetting || !appSetting.length || appSetting[0].status !== 'open') {
       return res.redirect('/applications');
     }
+    const appData = appSetting[0];
     const questions = await db.query('SELECT * FROM application_questions WHERE application_type = ? ORDER BY order_index ASC, sort_order ASC', [type]);
     
     const [pendingApp] = await db.query(
@@ -259,8 +261,8 @@ router.get('/applications/form/:type', isAuthenticated, async (req, res) => {
     );
     
     let inCooldown = false;
-    if (rejectedApp && rejectedApp.cooldown_until) {
-      inCooldown = new Date(rejectedApp.cooldown_until) > new Date();
+    if (rejectedApp && rejectedApp.length && rejectedApp[0].cooldown_until) {
+      inCooldown = new Date(rejectedApp[0].cooldown_until) > new Date();
     }
 
     const [userSubmitted] = await db.query(
@@ -268,14 +270,37 @@ router.get('/applications/form/:type', isAuthenticated, async (req, res) => {
       [req.user.id, type]
     );
 
+    // Discord role check
+    let hasRequiredRole = true;
+    let hasBlacklistRole = false;
+    let discordError = false;
+    const requiredRoleId = appData.required_discord_role_id || '';
+    const blacklistRoleId = '1477685263722479627';
+
+    const [userRow] = await db.query('SELECT discord_id FROM users WHERE id = ? LIMIT 1', [req.user.id]);
+    const discordId = userRow && userRow.length ? userRow[0].discord_id : '';
+
+    if (discordId) {
+      if (requiredRoleId) {
+        hasRequiredRole = await checkDiscordRole(discordId, requiredRoleId);
+      }
+      hasBlacklistRole = await checkDiscordRole(discordId, blacklistRoleId);
+    } else {
+      discordError = true;
+    }
+
     res.render('pages/application-form', {
-      title: 'تقديم - ' + (appSetting.title || type),
-      appSetting: appSetting[0],
+      title: 'تقديم - ' + (appData.title || type),
+      appSetting: appData,
       questions: questions,
-      pendingApp: pendingApp ? pendingApp.id : null,
+      pendingApp: pendingApp && pendingApp.length ? pendingApp[0].id : null,
       inCooldown,
-      cooldownUntil: rejectedApp ? rejectedApp.cooldown_until : null,
+      cooldownUntil: rejectedApp && rejectedApp.length ? rejectedApp[0].cooldown_until : null,
       userSubmitted,
+      hasRequiredRole,
+      hasBlacklistRole,
+      discordError,
+      discordId,
       settings
     });
   } catch(e) {
@@ -292,6 +317,7 @@ router.post('/api/applications/submit', isAuthenticated, async (req, res) => {
 
     const [appSetting] = await db.query('SELECT * FROM application_settings WHERE application_type = ? AND status = "open" LIMIT 1', [type]);
     if (!appSetting || !appSetting.length) return res.status(400).json({ error: 'التقديم غير متاح' });
+    const appData = appSetting[0];
 
     const [pendingApp] = await db.query(
       "SELECT id FROM submitted_applications WHERE user_id = ? AND application_type = ? AND status IN ('pending','waiting_join') LIMIT 1",
@@ -303,8 +329,22 @@ router.post('/api/applications/submit', isAuthenticated, async (req, res) => {
       "SELECT cooldown_until FROM submitted_applications WHERE user_id = ? AND application_type = ? AND status = 'rejected' AND cooldown_until IS NOT NULL ORDER BY id DESC LIMIT 1",
       [req.user.id, type]
     );
-    if (rejectedApp && rejectedApp.cooldown_until && new Date(rejectedApp.cooldown_until) > new Date()) {
+    if (rejectedApp && rejectedApp.length && rejectedApp[0].cooldown_until && new Date(rejectedApp[0].cooldown_until) > new Date()) {
       return res.status(400).json({ error: 'يجب الانتظار حتى انتهاء فترة التهدئة' });
+    }
+
+    // Discord role checks (server-side security)
+    const [userRow] = await db.query('SELECT discord_id FROM users WHERE id = ? LIMIT 1', [req.user.id]);
+    const discordId = userRow && userRow.length ? userRow[0].discord_id : '';
+    if (!discordId) return res.status(400).json({ error: 'يجب ربط حساب ديسكورد أولاً' });
+
+    const blacklistRoleId = '1477685263722479627';
+    const isBlacklisted = await checkDiscordRole(discordId, blacklistRoleId);
+    if (isBlacklisted) return res.status(400).json({ error: 'أنت مدرج في القائمة السوداء' });
+
+    if (appData.required_discord_role_id) {
+      const hasRole = await checkDiscordRole(discordId, appData.required_discord_role_id);
+      if (!hasRole) return res.status(400).json({ error: 'ليس لديك الرول المطلوب في ديسكورد' });
     }
 
     const questions = await db.query('SELECT * FROM application_questions WHERE application_type = ? ORDER BY order_index ASC', [type]);
