@@ -184,4 +184,58 @@ router.get('/company', isAdmin, async (req, res) => {
   }
 });
 
+// Logs
+router.get('/logs', isAdmin, async (req, res) => {
+  try {
+    const cat = req.query.cat || 'admin';
+    const page = parseInt(req.query.page) || 1;
+    const limit = 30;
+    const offset = (page - 1) * limit;
+
+    let logs = [];
+    let total = 0;
+
+    if (cat === 'admin') {
+      const [countR] = await db.execute('SELECT COUNT(*) as c FROM admin_logs');
+      total = countR[0].c;
+      const [rows] = await db.execute('SELECT * FROM admin_logs ORDER BY created_at DESC LIMIT ? OFFSET ?', [limit, offset]);
+      logs = rows;
+    } else if (cat === 'bot') {
+      const [countR] = await db.execute('SELECT COUNT(*) as c FROM bot_logs');
+      total = countR[0].c;
+      const [rows] = await db.execute('SELECT * FROM bot_logs ORDER BY created_at DESC LIMIT ? OFFSET ?', [limit, offset]);
+      logs = rows;
+    } else if (cat === 'products') {
+      const [countR] = await db.execute('SELECT COUNT(*) as c FROM product_logs');
+      total = countR[0].c;
+      const [rows] = await db.execute('SELECT * FROM product_logs ORDER BY created_at DESC LIMIT ? OFFSET ?', [limit, offset]);
+      logs = rows;
+    } else if (cat === 'games') {
+      const [countR] = await db.execute('SELECT COUNT(*) as c FROM game_reward_log');
+      total = countR[0].c;
+      const [rows] = await db.execute('SELECT * FROM game_reward_log ORDER BY rewarded_at DESC LIMIT ? OFFSET ?', [limit, offset]);
+      logs = rows;
+    } else if (cat === 'activity') {
+      const [countR] = await db.execute('SELECT COUNT(*) as c FROM user_activity_log');
+      total = countR[0].c;
+      const [rows] = await db.execute('SELECT * FROM user_activity_log ORDER BY created_at DESC LIMIT ? OFFSET ?', [limit, offset]);
+      logs = rows;
+    }
+
+    const totalPages = Math.ceil(total / limit);
+
+    res.render('admin/logs', {
+      title: 'السجلات',
+      logs, cat, total, page, totalPages,
+      currentPath: req.path
+    });
+  } catch(err) {
+    res.render('admin/logs', {
+      title: 'السجلات',
+      logs: [], cat: 'admin', total: 0, page: 1, totalPages: 0,
+      currentPath: req.path
+    });
+  }
+});
+
 module.exports = router;
