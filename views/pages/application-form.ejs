@@ -20,8 +20,7 @@
     <!-- Alerts -->
     <% if (inCooldown) { %>
     <div class="cy-alert cy-alert-danger">
-      <div class="corner-tl"></div>
-      <div class="corner-br"></div>
+      <div class="corner-tl"></div><div class="corner-br"></div>
       <i class="fas fa-clock alert-icon"></i>
       <strong>فترة التهدئة نشطة</strong>
       <p>يجب الانتظار حتى <%= new Date(cooldownUntil).toLocaleDateString('ar-SA') %> قبل تقديم طلب جديد</p>
@@ -30,27 +29,22 @@
 
     <% if (discordError) { %>
     <div class="cy-alert cy-alert-danger">
-      <div class="corner-tl"></div>
-      <div class="corner-br"></div>
+      <div class="corner-tl"></div><div class="corner-br"></div>
       <i class="fab fa-discord alert-icon"></i>
       <strong>حسابك غير مرتبط بديسكورد</strong>
       <p>يجب تسجيل الدخول عبر ديسكورد أولاً لتقديم طلب</p>
-      <a href="/auth/discord" class="cy-discord-btn">
-        <i class="fab fa-discord"></i> ربط حساب ديسكورد
-      </a>
+      <a href="/auth/discord" class="cy-discord-btn"><i class="fab fa-discord"></i> ربط حساب ديسكورد</a>
     </div>
     <% } else if (hasBlacklistRole) { %>
     <div class="cy-alert cy-alert-danger">
-      <div class="corner-tl"></div>
-      <div class="corner-br"></div>
+      <div class="corner-tl"></div><div class="corner-br"></div>
       <i class="fas fa-ban alert-icon"></i>
       <strong>أنت مدرج في القائمة السوداء</strong>
       <p>لا يمكنك التقديم بسبب انتهاك سياسات المجتمع</p>
     </div>
     <% } else if (!hasRequiredRole) { %>
     <div class="cy-alert cy-alert-danger">
-      <div class="corner-tl"></div>
-      <div class="corner-br"></div>
+      <div class="corner-tl"></div><div class="corner-br"></div>
       <i class="fas fa-shield-alt alert-icon"></i>
       <strong><%= appSetting.role_required_text || 'يجب أن تحمل الرول المطلوب' %></strong>
       <p><%= appSetting.role_missing_text || 'يجب أن تكون عضو في سيرفر العائلة لتقديم هذا الطلب' %></p>
@@ -62,8 +56,7 @@
 
     <% if (pendingApp) { %>
     <div class="cy-alert cy-alert-warning">
-      <div class="corner-tl"></div>
-      <div class="corner-br"></div>
+      <div class="corner-tl"></div><div class="corner-br"></div>
       <i class="fas fa-hourglass-half alert-icon"></i>
       <strong>لديك طلب معلق</strong>
       <p>يتم مراجعة طلبك حالياً. يرجى الانتظار.</p>
@@ -72,8 +65,7 @@
 
     <% if (appSetting.description) { %>
     <div class="cy-form-card">
-      <div class="corner-tl"></div>
-      <div class="corner-br"></div>
+      <div class="corner-tl"></div><div class="corner-br"></div>
       <div class="cy-form-card-head">
         <div class="icon"><i class="fas fa-info-circle"></i></div>
         <h3>معلومات التقديم</h3>
@@ -84,6 +76,112 @@
     </div>
     <% } %>
 
+    <!-- Form -->
+    <% if (!inCooldown && !pendingApp && !discordError && !hasBlacklistRole && hasRequiredRole) { %>
+
+    <!-- Progress Bar -->
+    <div class="cy-progress-wrap" id="progressWrap">
+      <div class="cy-progress-info">
+        <span class="cy-progress-label"><i class="fas fa-tasks"></i> تقدم الإجابة</span>
+        <span class="cy-progress-count" id="progressCount">0 / <%= questions.length %></span>
+      </div>
+      <div class="cy-progress-bar">
+        <div class="cy-progress-fill" id="progressFill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <form id="appForm">
+      <input type="hidden" name="type" value="<%= appSetting.application_type %>">
+
+      <% questions.forEach(function(q, qi) { %>
+      <div class="cy-form-card">
+        <div class="corner-tl"></div><div class="corner-br"></div>
+        <div class="cy-q-group">
+          <label class="cy-q-label">
+            <span class="num"><%= qi + 1 %></span>
+            <%= q.question %>
+            <% if (q.required) { %><span class="req">*</span><% } %>
+          </label>
+
+          <% if (q.type === 'text') { %>
+            <input type="text" name="answers[<%= q.id %>]" class="cy-input" maxlength="200" data-qid="<%= q.id %>" <%= q.required ? 'required' : '' %>>
+
+          <% } else if (q.type === 'textarea') { %>
+            <textarea name="answers[<%= q.id %>]" class="cy-textarea" maxlength="2000" data-qid="<%= q.id %>" <%= q.required ? 'required' : '' %>></textarea>
+
+          <% } else if (q.type === 'number') { %>
+            <input type="number" name="answers[<%= q.id %>]" class="cy-input" data-qid="<%= q.id %>" <%= q.required ? 'required' : '' %>>
+
+          <% } else if (q.type === 'select' || q.type === 'dropdown') { %>
+            <select name="answers[<%= q.id %>]" class="cy-select" data-qid="<%= q.id %>" <%= q.required ? 'required' : '' %>>
+              <option value="">-- اختر --</option>
+              <% (q.options || '').split(/\r?\n/).forEach(function(opt) { if(opt.trim()) { %>
+              <option value="<%= opt.trim() %>"><%= opt.trim() %></option>
+              <% } }); %>
+            </select>
+
+          <% } else if (q.type === 'radio' || q.type === 'single_choice') { %>
+            <div class="cy-radio-group">
+              <% (q.options || '').split(/\r?\n/).forEach(function(opt) { if(opt.trim()) { %>
+              <label class="cy-radio">
+                <input type="radio" name="answers[<%= q.id %>]" value="<%= opt.trim() %>" data-qid="<%= q.id %>" <%= q.required ? 'required' : '' %>>
+                <label><%= opt.trim() %></label>
+              </label>
+              <% } }); %>
+            </div>
+
+          <% } else if (q.type === 'multiple_choice' || q.type === 'checkbox') { %>
+            <div class="cy-check-group">
+              <% (q.options || '').split(/\r?\n/).forEach(function(opt) { if(opt.trim()) { %>
+              <label class="cy-check">
+                <input type="checkbox" name="answers_multiple[<%= q.id %>][]" value="<%= opt.trim() %>" data-qid="<%= q.id %>">
+                <label><%= opt.trim() %></label>
+              </label>
+              <% } }); %>
+            </div>
+            <% if (q.max_selections) { %><div class="cy-q-hint">حد أقصى <%= q.max_selections %> اختيارات</div><% } %>
+
+          <% } else if (q.type === 'true_false') { %>
+            <div class="cy-radio-group">
+              <label class="cy-radio">
+                <input type="radio" name="answers[<%= q.id %>]" value="صح" data-qid="<%= q.id %>" <%= q.required ? 'required' : '' %>>
+                <label>صح</label>
+              </label>
+              <label class="cy-radio">
+                <input type="radio" name="answers[<%= q.id %>]" value="خطأ" data-qid="<%= q.id %>" <%= q.required ? 'required' : '' %>>
+                <label>خطأ</label>
+              </label>
+            </div>
+
+          <% } else if (q.type === 'server_name') { %>
+            <input type="text" name="answers[<%= q.id %>]" class="cy-input" placeholder="اسم السيرفر" maxlength="100" data-qid="<%= q.id %>" <%= q.required ? 'required' : '' %>>
+
+          <% } else if (q.type === 'image') { %>
+            <div class="cy-upload-zone" onclick="this.querySelector('input').click()">
+              <i class="fas fa-cloud-upload-alt upload-icon"></i>
+              <p>اضغط لرفع صورة (JPG, PNG, GIF, WEBP)</p>
+              <input type="file" name="answers_img_<%= q.id %>" accept=".jpg,.jpeg,.png,.gif,.webp" data-qid="<%= q.id %>">
+            </div>
+            <div style="margin-top:0.8rem">
+              <input type="url" name="answers_img_url[<%= q.id %>]" class="cy-input" placeholder="أو الصق رابط الصورة هنا" data-qid="<%= q.id %>">
+            </div>
+
+          <% } else { %>
+            <input type="text" name="answers[<%= q.id %>]" class="cy-input" maxlength="2000" data-qid="<%= q.id %>" <%= q.required ? 'required' : '' %>>
+          <% } %>
+
+          <!-- Per-question validation message -->
+          <div class="cy-q-error" id="qerr-<%= q.id %>" style="display:none"></div>
+        </div>
+      </div>
+      <% }); %>
+
+      <button type="submit" class="cy-submit-btn" id="submitBtn">
+        <i class="fas fa-paper-plane"></i> إرسال الطلب
+      </button>
+    </form>
+
+    <!-- History (below form) -->
     <% if (userSubmitted && userSubmitted.length > 0) { %>
     <div class="cy-history">
       <h4><i class="fas fa-history"></i> سجل تقديماتك</h4>
@@ -99,109 +197,16 @@
     </div>
     <% } %>
 
-    <!-- Form -->
-    <% if (!inCooldown && !pendingApp && !discordError && !hasBlacklistRole && hasRequiredRole) { %>
-    <form id="appForm">
-      <input type="hidden" name="type" value="<%= appSetting.application_type %>">
-
-      <% questions.forEach(function(q, qi) { %>
-      <div class="cy-form-card">
-        <div class="corner-tl"></div>
-        <div class="corner-br"></div>
-        <div class="cy-q-group">
-          <label class="cy-q-label">
-            <span class="num"><%= qi + 1 %></span>
-            <%= q.question %>
-            <% if (q.required) { %><span class="req">*</span><% } %>
-          </label>
-
-          <% if (q.type === 'text') { %>
-            <input type="text" name="answers[<%= q.id %>]" class="cy-input" maxlength="200" <%= q.required ? 'required' : '' %>>
-
-          <% } else if (q.type === 'textarea') { %>
-            <textarea name="answers[<%= q.id %>]" class="cy-textarea" maxlength="2000" <%= q.required ? 'required' : '' %>></textarea>
-
-          <% } else if (q.type === 'number') { %>
-            <input type="number" name="answers[<%= q.id %>]" class="cy-input" <%= q.required ? 'required' : '' %>>
-
-          <% } else if (q.type === 'select' || q.type === 'dropdown') { %>
-            <select name="answers[<%= q.id %>]" class="cy-select" <%= q.required ? 'required' : '' %>>
-              <option value="">-- اختر --</option>
-              <% (q.options || '').split(/\r?\n/).forEach(function(opt) { if(opt.trim()) { %>
-              <option value="<%= opt.trim() %>"><%= opt.trim() %></option>
-              <% } }); %>
-            </select>
-
-          <% } else if (q.type === 'radio' || q.type === 'single_choice') { %>
-            <div class="cy-radio-group">
-              <% (q.options || '').split(/\r?\n/).forEach(function(opt) { if(opt.trim()) { %>
-              <label class="cy-radio">
-                <input type="radio" name="answers[<%= q.id %>]" value="<%= opt.trim() %>" <%= q.required ? 'required' : '' %>>
-                <label><%= opt.trim() %></label>
-              </label>
-              <% } }); %>
-            </div>
-
-          <% } else if (q.type === 'multiple_choice' || q.type === 'checkbox') { %>
-            <div class="cy-check-group">
-              <% (q.options || '').split(/\r?\n/).forEach(function(opt) { if(opt.trim()) { %>
-              <label class="cy-check">
-                <input type="checkbox" name="answers_multiple[<%= q.id %>][]" value="<%= opt.trim() %>">
-                <label><%= opt.trim() %></label>
-              </label>
-              <% } }); %>
-            </div>
-            <% if (q.max_selections) { %><div class="cy-q-hint">حد أقصى <%= q.max_selections %> اختيارات</div><% } %>
-
-          <% } else if (q.type === 'true_false') { %>
-            <div class="cy-radio-group">
-              <label class="cy-radio">
-                <input type="radio" name="answers[<%= q.id %>]" value="صح" <%= q.required ? 'required' : '' %>>
-                <label>صح</label>
-              </label>
-              <label class="cy-radio">
-                <input type="radio" name="answers[<%= q.id %>]" value="خطأ" <%= q.required ? 'required' : '' %>>
-                <label>خطأ</label>
-              </label>
-            </div>
-
-          <% } else if (q.type === 'server_name') { %>
-            <input type="text" name="answers[<%= q.id %>]" class="cy-input" placeholder="اسم السيرفر" maxlength="100" <%= q.required ? 'required' : '' %>>
-
-          <% } else if (q.type === 'image') { %>
-            <div class="cy-upload-zone" onclick="this.querySelector('input').click()">
-              <i class="fas fa-cloud-upload-alt upload-icon"></i>
-              <p>اضغط لرفع صورة (JPG, PNG, GIF, WEBP)</p>
-              <input type="file" name="answers_img_<%= q.id %>" accept=".jpg,.jpeg,.png,.gif,.webp">
-            </div>
-            <div style="margin-top:0.8rem">
-              <input type="url" name="answers_img_url[<%= q.id %>]" class="cy-input" placeholder="أو الصق رابط الصورة هنا">
-            </div>
-
-          <% } else { %>
-            <input type="text" name="answers[<%= q.id %>]" class="cy-input" maxlength="2000" <%= q.required ? 'required' : '' %>>
-          <% } %>
-        </div>
-      </div>
-      <% }); %>
-
-      <button type="submit" class="cy-submit-btn" id="submitBtn">
-        <i class="fas fa-paper-plane"></i> إرسال الطلب
-      </button>
-    </form>
     <% } %>
 
     <!-- Success -->
     <div id="successMsg" class="cy-form-card" style="display:none">
-      <div class="corner-tl"></div>
-      <div class="corner-br"></div>
+      <div class="corner-tl"></div><div class="corner-br"></div>
       <div class="cy-success">
         <i class="fas fa-check-circle"></i>
         <h3>تم إرسال طلبك بنجاح!</h3>
         <p>سيتم مراجعة طلبك من قبل الإدارة</p>
-        <a href="/applications" class="back-btn">
-          <i class="fas fa-arrow-right"></i> العودة للتقديمات
-        </a>
+        <a href="/applications" class="back-btn"><i class="fas fa-arrow-right"></i> العودة للتقديمات</a>
       </div>
     </div>
 
@@ -209,36 +214,138 @@
 </div>
 
 <script>
-document.getElementById('appForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  const btn = document.getElementById('submitBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="cy-spinner"></span> جاري الإرسال...';
+(function() {
+  var form = document.getElementById('appForm');
+  if (!form) return;
 
-  const form = this;
-  const formData = new FormData(form);
+  var totalQ = <%= questions.length %>;
+  var answered = {};
+  var progressFill = document.getElementById('progressFill');
+  var progressCount = document.getElementById('progressCount');
 
-  try {
-    const res = await fetch('/api/applications/submit', {
-      method: 'POST',
-      body: formData
-    });
-    const data = await res.json();
-    if (data.success) {
-      form.style.display = 'none';
-      document.getElementById('successMsg').style.display = 'block';
-      document.getElementById('successMsg').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  function updateProgress() {
+    var count = Object.keys(answered).filter(function(k){ return answered[k]; }).length;
+    var pct = totalQ > 0 ? Math.round((count / totalQ) * 100) : 0;
+    progressFill.style.width = pct + '%';
+    progressCount.textContent = count + ' / ' + totalQ;
+    if (pct >= 100) {
+      progressFill.classList.add('cy-progress-done');
     } else {
-      alert(data.error || 'حدث خطأ');
+      progressFill.classList.remove('cy-progress-done');
+    }
+  }
+
+  function markAnswered(qid, val) {
+    var hasVal = (typeof val === 'string') ? val.trim().length > 0 : (Array.isArray(val) ? val.length > 0 : !!val);
+    answered[qid] = hasVal;
+    updateProgress();
+  }
+
+  form.querySelectorAll('[data-qid]').forEach(function(el) {
+    var qid = el.getAttribute('data-qid');
+    var tag = el.tagName.toLowerCase();
+    var type = (el.type || '').toLowerCase();
+
+    if (tag === 'input' && type === 'checkbox') {
+      el.addEventListener('change', function() {
+        var checks = form.querySelectorAll('[name="answers_multiple[' + qid + '][]"]');
+        var any = false;
+        checks.forEach(function(c){ if(c.checked) any = true; });
+        markAnswered(qid, any ? 'x' : '');
+      });
+    } else if (tag === 'input' && type === 'radio') {
+      el.addEventListener('change', function() {
+        markAnswered(qid, el.checked ? el.value : '');
+      });
+    } else if (tag === 'select') {
+      el.addEventListener('change', function() {
+        markAnswered(qid, el.value);
+      });
+    } else if (tag === 'input' && type === 'file') {
+      el.addEventListener('change', function() {
+        markAnswered(qid, el.files && el.files.length ? 'x' : '');
+      });
+    } else {
+      el.addEventListener('input', function() {
+        markAnswered(qid, el.value);
+      });
+    }
+  });
+
+  function showError(qid, msg) {
+    var el = document.getElementById('qerr-' + qid);
+    if (el) {
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+  }
+
+  function clearErrors() {
+    form.querySelectorAll('.cy-q-error').forEach(function(el) {
+      el.style.display = 'none';
+      el.textContent = '';
+    });
+  }
+
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    clearErrors();
+
+    var hasError = false;
+
+    form.querySelectorAll('input[type="text"][name^="answers["], textarea[name^="answers["]').forEach(function(el) {
+      var nameMatch = el.name.match(/answers\[(\d+)\]/);
+      if (!nameMatch) return;
+      var qid = nameMatch[1];
+      var val = el.value.trim();
+      if (!val) return;
+
+      var lowerVal = val.toLowerCase();
+      if (lowerVal.indexOf('walton') === -1) {
+        showError(qid, 'يجب أن يحتوي الجواب على كلمة "WALTON"');
+        el.classList.add('cy-error');
+        hasError = true;
+      } else {
+        el.classList.remove('cy-error');
+      }
+    });
+
+    if (hasError) {
+      var firstErr = form.querySelector('.cy-q-error[style*="display: block"], .cy-q-error[style*="display:block"]');
+      if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    var btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="cy-spinner"></span> جاري الإرسال...';
+
+    var formData = new FormData(form);
+
+    try {
+      var res = await fetch('/api/applications/submit', {
+        method: 'POST',
+        body: formData
+      });
+      var data = await res.json();
+      if (data.success) {
+        form.style.display = 'none';
+        var pw = document.getElementById('progressWrap');
+        if (pw) pw.style.display = 'none';
+        document.getElementById('successMsg').style.display = 'block';
+        document.getElementById('successMsg').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        alert(data.error || 'حدث خطأ');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> إرسال الطلب';
+      }
+    } catch(err) {
+      alert('حدث خطأ في الاتصال');
       btn.disabled = false;
       btn.innerHTML = '<i class="fas fa-paper-plane"></i> إرسال الطلب';
     }
-  } catch(err) {
-    alert('حدث خطأ في الاتصال');
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fas fa-paper-plane"></i> إرسال الطلب';
-  }
-});
+  });
+})();
 </script>
 
 <%- include('../partials/footer') %>
