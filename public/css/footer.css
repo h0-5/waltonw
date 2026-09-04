@@ -5,6 +5,8 @@
     .hide-mobile { display: none !important; }
     #expandChatBtn { display: none !important; }
     body.chat-open { overflow: hidden !important; }
+    .ft-inner { flex-direction: column !important; align-items: center !important; gap: 1.5rem; }
+    .ft-left { justify-content: center !important; flex-wrap: wrap; }
 }
 @media (min-width: 769px) {
     #backToTicketBtn { display: none !important; }
@@ -31,17 +33,27 @@
 .ft-orb-r { position: absolute; top: -20px; right: -60px; width: 350px; height: 350px; border-radius: 50%; background: radial-gradient(circle, rgba(var(--ac-rgb),0.08), transparent 65%); pointer-events: none; }
 .ft-orb-c { position: absolute; top: 40%; left: 50%; transform: translate(-50%,-50%); width: 600px; height: 300px; border-radius: 50%; background: radial-gradient(ellipse, rgba(var(--ac-rgb),0.04), transparent 70%); pointer-events: none; }
 
+/* Inner Layout */
 .ft-inner {
     position: relative; z-index: 1;
-    max-width: 900px; margin: 0 auto;
-    padding: 2rem 1.5rem 0;
-    display: flex; align-items: center; justify-content: space-between;
+    max-width: 1000px; margin: 0 auto;
+    padding: 2rem 2rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    direction: rtl;
+}
+
+/* Right: Logo + Brand */
+.ft-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
     flex-direction: row-reverse;
 }
 
-/* Brand */
 .ft-logo-ring {
-    position: relative; width: 44px; height: 44px; flex-shrink: 0;
+    position: relative; width: 52px; height: 52px; flex-shrink: 0;
 }
 .ft-logo-ring::before {
     content: ''; position: absolute; inset: -2px; border-radius: 50%;
@@ -53,67 +65,74 @@
 @keyframes ftSpin { to { transform: rotate(360deg); } }
 
 .ft-brand-name {
-    font-size: 1rem; font-weight: 900;
+    font-size: 1.1rem; font-weight: 900;
     background: linear-gradient(90deg, var(--ac), #fff);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    line-height: 1.2;
 }
-.ft-brand-tag { font-size: .55rem; font-weight: 700; color: rgba(255,255,255,.3); letter-spacing: .15em; text-transform: uppercase; margin-top: -2px; }
-.ft-desc { display: none; }
-.ft-socials { display: flex; gap: .4rem; margin-top: .4rem; }
+.ft-brand-tag {
+    font-size: .55rem; font-weight: 700; color: rgba(255,255,255,.3);
+    letter-spacing: .15em; text-transform: uppercase; margin-top: 1px;
+}
+.ft-socials { display: flex; gap: .35rem; margin-top: .4rem; }
 .ft-social {
-    width: 30px; height: 30px; border-radius: 8px;
+    width: 28px; height: 28px; border-radius: 8px;
     display: flex; align-items: center; justify-content: center;
-    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.06);
-    color: rgba(255,255,255,.5); transition: all .3s; font-size: .8rem;
+    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);
+    color: rgba(255,255,255,.5); transition: all .3s; font-size: .75rem;
+    text-decoration: none;
 }
 .ft-social:hover { background: rgba(var(--ac-rgb),.15); border-color: rgba(var(--ac-rgb),.4); color: var(--ac); transform: translateY(-2px); }
 
-/* Links */
-.ft-links-wrap { display: flex; gap: 2rem; }
-.ft-col-title { font-size: .65rem; font-weight: 800; color: var(--ac); letter-spacing: .1em; text-transform: uppercase; margin-bottom: .5rem; }
-.ft-link {
-    display: flex; align-items: center; gap: .3rem;
-    color: rgba(255,255,255,.4); font-size: .75rem; text-decoration: none;
-    transition: all .25s; padding: .15rem 0;
+/* Left: Links */
+.ft-left {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: flex-start;
 }
-.ft-link i { font-size: .45rem; transition: transform .25s; color: var(--ac); opacity: .4; }
+.ft-link {
+    color: rgba(255,255,255,.4);
+    font-size: .75rem;
+    text-decoration: none;
+    transition: color .25s;
+    font-weight: 600;
+}
 .ft-link:hover { color: var(--ac); }
-.ft-link:hover i { transform: translateX(-3px); opacity: 1; }
-
-/* Divider */
-.ft-divider { display: none; }
 
 /* Bottom */
 .ft-bottom {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: .75rem 1.5rem; max-width: 900px; margin: 0 auto;
+    position: relative; z-index: 1;
+    display: flex; align-items: center; justify-content: center;
+    gap: 2rem;
+    padding: .9rem 2rem;
+    max-width: 1000px; margin: 1.5rem auto 0;
     border-top: 1px solid rgba(var(--ac-rgb),.08);
+    flex-wrap: wrap;
 }
-.ft-cr { display: flex; align-items: center; gap: .3rem; color: rgba(255,255,255,.2); font-size: .6rem; }
-.ft-cr-sym { color: rgba(var(--ac-rgb),.4); }
-.ft-cr-year { font-weight: 800; color: rgba(255,255,255,.3); }
-.ft-cr-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--ac); opacity: .3; }
-.ft-cr-brand { font-weight: 900; color: rgba(255,255,255,.35); }
-.ft-cr-sep { margin: 0 .1rem; color: rgba(255,255,255,.1); }
-.ft-cr-rights { color: rgba(255,255,255,.2); }
-.ft-cr-lock { font-size: .5rem; color: rgba(var(--ac-rgb),.2); margin-left: .2rem; }
 
-.ft-made { display: flex; align-items: center; gap: .3rem; color: rgba(255,255,255,.15); font-size: .55rem; }
-.ft-made-icon { font-size: .45rem; color: rgba(var(--ac-rgb),.3); }
-.ft-made-text { color: rgba(255,255,255,.2); }
-.ft-dev-sep { color: rgba(var(--ac-rgb),.2); font-size: .6rem; }
+/* Copyright */
+.ft-cr {
+    display: flex; align-items: center; gap: .4rem;
+    color: rgba(255,255,255,.25); font-size: .7rem; font-weight: 600;
+}
+.ft-cr-lock { font-size: .6rem; color: rgba(var(--ac-rgb),.4); }
+
+/* Dev Team */
+.ft-made {
+    display: flex; align-items: center; gap: .3rem;
+}
+.ft-dev-sep { color: rgba(var(--ac-rgb),.25); font-size: .6rem; }
 .ft-dev-name {
-    font-size: .6rem; font-weight: 900;
+    font-size: .65rem; font-weight: 900;
     background: linear-gradient(90deg, var(--ac), rgba(var(--ac-rgb),0.6), var(--ac));
     background-size: 200% auto;
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     animation: devShimmer 2.5s linear infinite;
 }
-.ft-dev-special {
-    font-size: .6rem; font-weight: 900;
-    background: linear-gradient(90deg, var(--ac), rgba(var(--ac-rgb),0.6), var(--ac));
-    background-size: 200% auto;
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-    animation: devShimmer 2.5s linear infinite;
+.ft-made-label {
+    font-size: .6rem; font-weight: 700;
+    color: rgba(255,255,255,.25);
+    margin-right: .15rem;
 }
 @keyframes devShimmer { 0% { background-position: 0% center; } 100% { background-position: 200% center; } }

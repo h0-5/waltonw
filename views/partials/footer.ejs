@@ -8,46 +8,39 @@
     <div class="ft-orb-r"></div>
     <div class="ft-orb-c"></div>
     <div class="ft-inner">
-        <!-- Brand -->
-        <div style="text-align:right">
-            <div style="display:flex;align-items:center;gap:.6rem;justify-content:flex-end">
-                <div>
-                    <div class="ft-brand-name">Walton Family</div>
-                    <div class="ft-brand-tag">Community</div>
+        <!-- Right: Logo + Brand -->
+        <div class="ft-right">
+            <div class="ft-logo-ring"><img src="<%= _ftSettings.site_logo_url || '/images/walton-logo.svg' %>" alt="WF"></div>
+            <div>
+                <div class="ft-brand-name">Walton Family</div>
+                <div class="ft-brand-tag">Community</div>
+                <div class="ft-socials">
+                    <a href="<%= _ftSettings.discord_server_url || '#' %>" target="_blank" class="ft-social"><i class="fab fa-discord"></i></a>
                 </div>
-                <div class="ft-logo-ring"><img src="<%= _ftSettings.site_logo_url || '/images/walton-logo.svg' %>" alt="WF"></div>
-            </div>
-            <div class="ft-socials" style="justify-content:flex-end">
-                <a href="<%= _ftSettings.discord_server_url || '#' %>" target="_blank" class="ft-social discord"><i class="fab fa-discord"></i></a>
             </div>
         </div>
-        <!-- Links -->
-        <div class="ft-links-wrap" style="text-align:right">
-            <div>
-                <h4 class="ft-col-title">روابط</h4>
-                <a href="/" class="ft-link"><i class="fas fa-chevron-left"></i>الرئيسية</a>
-                <a href="/store" class="ft-link"><i class="fas fa-chevron-left"></i>المتجر</a>
-                <a href="/games" class="ft-link"><i class="fas fa-chevron-left"></i>الألعاب</a>
-            </div>
-            <div>
-                <h4 class="ft-col-title">المزيد</h4>
-                <a href="/rules" class="ft-link"><i class="fas fa-chevron-left"></i>القوانين</a>
-                <a href="/applications" class="ft-link"><i class="fas fa-chevron-left"></i>التقديمات</a>
-                <a href="/about" class="ft-link"><i class="fas fa-chevron-left"></i>من نحن</a>
-            </div>
+        <!-- Left: Links -->
+        <div class="ft-left">
+            <a href="/" class="ft-link">الرئيسية</a>
+            <a href="/store" class="ft-link">المتجر</a>
+            <a href="/games" class="ft-link">الألعاب</a>
+            <a href="/rules" class="ft-link">القوانين</a>
+            <a href="/applications" class="ft-link">التقديمات</a>
+            <a href="/about" class="ft-link">من نحن</a>
         </div>
     </div>
+    <!-- Bottom -->
     <div class="ft-bottom">
         <div class="ft-cr">
-            <span class="ft-cr-sym">&copy;</span>
-            <span class="ft-cr-year"><%= new Date().getFullYear() %></span>
-            <span class="ft-cr-brand"> Walton Family</span>
+            <i class="fas fa-lock ft-cr-lock"></i>
+            <span>جميع الحقوق محفوظة لشركة Walton Family &copy; <%= new Date().getFullYear() %></span>
         </div>
         <div class="ft-made">
-            <i class="fas fa-code ft-made-icon"></i>
+            <span class="ft-dev-sep">&middot;</span>
             <span class="ft-dev-name">KHARBOSH</span>
             <span class="ft-dev-sep">&middot;</span>
             <span class="ft-dev-name">h05</span>
+            <span class="ft-made-label">Dev Team</span>
         </div>
     </div>
 </footer>
