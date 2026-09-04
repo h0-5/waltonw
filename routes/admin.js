@@ -161,4 +161,27 @@ router.get('/about', isAdmin, async (req, res) => {
   }
 });
 
+// Properties Management
+router.get('/properties', isAdmin, async (req, res) => {
+  try {
+    const [properties] = await db.execute('SELECT * FROM properties ORDER BY sort_order ASC, id ASC');
+    res.render('admin/properties', { title: 'إدارة الممتلكات', properties, currentPath: req.path });
+  } catch(err) {
+    res.render('admin/properties', { title: 'إدارة الممتلكات', properties: [], currentPath: req.path });
+  }
+});
+
+// Company Management
+router.get('/company', isAdmin, async (req, res) => {
+  try {
+    const [items] = await db.execute('SELECT * FROM company_items ORDER BY sort_order ASC');
+    const [questions] = await db.execute('SELECT * FROM service_questions ORDER BY sort_order ASC');
+    const [packages] = await db.execute('SELECT * FROM service_packages ORDER BY sort_order ASC');
+    const [requests] = await db.execute('SELECT sr.*, u.username, ci.title as service_title FROM service_requests sr LEFT JOIN users u ON sr.user_id = u.id LEFT JOIN company_items ci ON sr.service_id = ci.id ORDER BY sr.id DESC');
+    res.render('admin/company', { title: 'إدارة الشركة', items, questions, packages, requests, currentPath: req.path });
+  } catch(err) {
+    res.render('admin/company', { title: 'إدارة الشركة', items: [], questions: [], packages: [], requests: [], currentPath: req.path });
+  }
+});
+
 module.exports = router;

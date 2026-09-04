@@ -1,0 +1,99 @@
+<%- include('layout') %>
+<div class="admin-card" style="margin-bottom:20px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <h3 style="margin:0;border:none;padding:0"><i class="fas fa-briefcase"></i> إدارة الشركة</h3>
+    <button onclick="showAddItem()" class="admin-btn primary"><i class="fas fa-plus"></i> إضافة عنصر</button>
+  </div>
+  <table class="admin-table">
+    <thead><tr><th>#</th><th>العنوان</th><th>التصنيف</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+    <tbody>
+      <% if (items.length > 0) { %>
+        <% items.forEach(function(item, i) { %>
+        <tr>
+          <td><%= i + 1 %></td>
+          <td><%= item.title %></td>
+          <td><span class="badge"><%= item.category === 'info' ? 'معلومات' : 'أنشطة' %></span></td>
+          <td><span class="badge"><%= item.service_status || '—' %></span></td>
+          <td><button onclick="deleteItem(<%= item.id %>)" class="admin-btn danger small"><i class="fas fa-trash"></i></button></td>
+        </tr>
+        <% }); %>
+      <% } else { %>
+        <tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-dim)">لا توجد عناصر</td></tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+
+<div class="admin-card">
+  <h3 style="margin-bottom:20px"><i class="fas fa-clipboard-list"></i> طلبات الخدمة</h3>
+  <table class="admin-table">
+    <thead><tr><th>#</th><th>المستخدم</th><th>الخدمة</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+    <tbody>
+      <% if (requests.length > 0) { %>
+        <% requests.forEach(function(r, i) { %>
+        <tr>
+          <td><%= i + 1 %></td>
+          <td><%= r.username %></td>
+          <td><%= r.service_title %></td>
+          <td><span class="badge"><%= r.status %></span></td>
+          <td style="display:flex;gap:4px">
+            <% if (r.status === 'pending') { %>
+              <button onclick="approveReq(<%= r.id %>)" class="admin-btn success small"><i class="fas fa-check"></i></button>
+              <button onclick="rejectReq(<%= r.id %>)" class="admin-btn danger small"><i class="fas fa-times"></i></button>
+            <% } %>
+          </td>
+        </tr>
+        <% }); %>
+      <% } else { %>
+        <tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-dim)">لا توجد طلبات</td></tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+
+<div id="addModal" class="admin-modal" style="display:none">
+  <div class="modal-content">
+    <h3>إضافة عنصر</h3>
+    <form id="addForm" enctype="multipart/form-data">
+      <div class="form-group"><label>العنوان</label><input type="text" name="title" required></div>
+      <div class="form-group"><label>الوصف</label><textarea name="description" rows="3"></textarea></div>
+      <div class="form-group"><label>التصنيف</label><select name="category"><option value="info">معلومات</option><option value="activities">أنشطة</option></select></div>
+      <div class="form-group"><label>حالة الخدمة</label><select name="service_status"><option value="">بدون</option><option value="available">متوفر</option><option value="ended">منتهي</option><option value="coming_soon">قريباً</option></select></div>
+      <div class="form-group"><label>رابط الفيديو (اختياري)</label><input type="text" name="video_url"></div>
+      <div class="form-group"><label>الصورة</label><input type="file" name="image_file" accept="image/*"></div>
+      <div class="modal-actions">
+        <button type="button" onclick="closeModal()" class="admin-btn">إلغاء</button>
+        <button type="submit" class="admin-btn primary">حفظ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function showAddItem() { document.getElementById('addModal').style.display = 'flex'; }
+function closeModal() { document.getElementById('addModal').style.display = 'none'; }
+document.getElementById('addForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const res = await fetch('/api/admin/company/items', { method: 'POST', body: fd });
+  const data = await res.json();
+  if (data.success) location.reload(); else alert(data.error || 'خطأ');
+});
+async function deleteItem(id) {
+  if (!confirm('هل أنت متأكد؟')) return;
+  const res = await fetch('/api/admin/company/items/' + id, { method: 'DELETE' });
+  const data = await res.json();
+  if (data.success) location.reload();
+}
+async function approveReq(id) {
+  const res = await fetch('/api/admin/company/requests/' + id + '/approve', { method: 'POST' });
+  const data = await res.json();
+  if (data.success) location.reload();
+}
+async function rejectReq(id) {
+  const res = await fetch('/api/admin/company/requests/' + id + '/reject', { method: 'POST' });
+  const data = await res.json();
+  if (data.success) location.reload();
+}
+</script>
+<%- include('admin_footer') %>

@@ -24,6 +24,8 @@
     <a href="/applications" class="nav-link<%= _nbPath === '/applications' ? ' active' : '' %>"><i class="fas fa-file-alt"></i>التقديمات</a>
     <a href="/store" class="nav-link<%= _nbPath === '/store' ? ' active' : '' %>"><i class="fas fa-store"></i>المتجر</a>
     <a href="/games" class="nav-link<%= _nbPath === '/games' ? ' active' : '' %>"><i class="fas fa-gamepad" style="color:var(--ac)"></i>الألعاب</a>
+    <a href="/properties" class="nav-link<%= _nbPath === '/properties' ? ' active' : '' %>"><i class="fas fa-building"></i>الممتلكات</a>
+    <a href="/company" class="nav-link<%= _nbPath === '/company' ? ' active' : '' %>"><i class="fas fa-briefcase"></i>الشركة</a>
     <a href="/community" class="nav-link<%= _nbPath === '/community' ? ' active' : '' %>"><i class="fas fa-comments"></i>المجتمع</a>
     <a href="/about" class="nav-link<%= _nbPath === '/about' ? ' active' : '' %>"><i class="fas fa-info-circle"></i>من نحن</a>
     <% if (_nbUser && ['owner', 'developer', 'founder', 'moderator', 'support', 'admin'].includes(_nbUser.role)) { %>
@@ -86,6 +88,8 @@
   <a href="/applications" class="nav-link<%= _nbPath === '/applications' ? ' active' : '' %>"><i class="fas fa-file-alt"></i>التقديمات</a>
   <a href="/store" class="nav-link<%= _nbPath === '/store' ? ' active' : '' %>"><i class="fas fa-store"></i>المتجر</a>
   <a href="/games" class="nav-link<%= _nbPath === '/games' ? ' active' : '' %>" style="color:var(--ac)"><i class="fas fa-gamepad" style="color:var(--ac)"></i>الألعاب</a>
+  <a href="/properties" class="nav-link<%= _nbPath === '/properties' ? ' active' : '' %>"><i class="fas fa-building"></i>الممتلكات</a>
+  <a href="/company" class="nav-link<%= _nbPath === '/company' ? ' active' : '' %>"><i class="fas fa-briefcase"></i>الشركة</a>
   <a href="/community" class="nav-link<%= _nbPath === '/community' ? ' active' : '' %>"><i class="fas fa-comments"></i>المجتمع</a>
   <a href="/about" class="nav-link<%= _nbPath === '/about' ? ' active' : '' %>"><i class="fas fa-info-circle"></i>من نحن</a>
   <% if (!_nbUser) { %>

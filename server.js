@@ -27,6 +27,8 @@ app.use('/api/', limiter);
 // Body parsing
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+const fileUpload = require('express-fileupload');
+app.use(fileUpload({ limits: { fileSize: 5 * 1024 * 1024 } }));
 
 // Session
 app.use(session(sessionConfig));

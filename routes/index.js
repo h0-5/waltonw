@@ -252,4 +252,28 @@ router.get('/games/find_link', async (req, res) => { const s = await getSettings
 router.get('/games/crossword', async (req, res) => { const s = await getSettings(); res.render('games/rps', { title: 'أحجية الكلمات', settings: s }); });
 router.get('/games/aviator', async (req, res) => { const s = await getSettings(); res.render('games/rps', { title: 'Aviator', settings: s }); });
 
+// Properties
+router.get('/properties', async (req, res) => {
+  const all = await safeQuery('SELECT * FROM properties ORDER BY sort_order ASC, id ASC');
+  const palaces = all.filter(p => p.category === 'palaces');
+  const vehicles = all.filter(p => p.category === 'vehicles');
+  res.render('pages/properties', { title: 'الممتلكات', palaces, vehicles });
+});
+
+// Company
+router.get('/company', async (req, res) => {
+  const infoItems = await safeQuery("SELECT * FROM company_items WHERE category = 'info' ORDER BY sort_order ASC");
+  const activityItems = await safeQuery("SELECT * FROM company_items WHERE category = 'activities' ORDER BY sort_order ASC");
+  
+  const servicesQuestions = {};
+  const servicesPackages = {};
+  for (const item of activityItems) {
+    if (item.service_status) {
+      servicesQuestions[item.id] = await safeQuery("SELECT * FROM service_questions WHERE service_id = ? ORDER BY sort_order ASC", [item.id]);
+      servicesPackages[item.id] = await safeQuery("SELECT * FROM service_packages WHERE service_id = ? ORDER BY sort_order ASC", [item.id]);
+    }
+  }
+  res.render('pages/company', { title: 'الشركة', infoItems, activityItems, servicesQuestions, servicesPackages });
+});
+
 module.exports = router;

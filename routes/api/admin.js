@@ -172,4 +172,91 @@ router.post('/about', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// Properties API
+router.post('/properties', async (req, res) => {
+  try {
+    const { title, category, sort_order, image_url } = req.body;
+    let image = image_url || '';
+    if (req.files && req.files.image_file) {
+      const file = req.files.image_file;
+      const ext = file.name.split('.').pop();
+      const fname = 'prop_' + Date.now() + '.' + ext;
+      const uploadDir = require('path').join(__dirname, '../../public/uploads/properties');
+      require('fs').mkdirSync(uploadDir, { recursive: true });
+      await file.mv(uploadDir + '/' + fname);
+      image = '/uploads/properties/' + fname;
+    }
+    await db.execute('INSERT INTO properties (title, image, category, sort_order) VALUES (?, ?, ?, ?)',
+      [title, image, category || 'palaces', sort_order || 0]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.delete('/properties/:id', async (req, res) => {
+  try {
+    const [rows] = await db.execute('SELECT image FROM properties WHERE id = ?', [req.params.id]);
+    if (rows.length && rows[0].image && rows[0].image.startsWith('/uploads/')) {
+      const fp = require('path').join(__dirname, '../../public', rows[0].image);
+      require('fs').unlinkSync(fp);
+    }
+    await db.execute('DELETE FROM properties WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Company Items API
+router.post('/company/items', async (req, res) => {
+  try {
+    const { title, description, category, video_url, service_status } = req.body;
+    let image = '';
+    if (req.files && req.files.image_file) {
+      const file = req.files.image_file;
+      const ext = file.name.split('.').pop();
+      const fname = 'co_' + Date.now() + '.' + ext;
+      const uploadDir = require('path').join(__dirname, '../../public/uploads/company');
+      require('fs').mkdirSync(uploadDir, { recursive: true });
+      await file.mv(uploadDir + '/' + fname);
+      image = '/uploads/company/' + fname;
+    }
+    await db.execute('INSERT INTO company_items (title, description, image, video_url, category, service_status, sort_order) VALUES (?, ?, ?, ?, ?, ?, 0)',
+      [title, description || '', image, video_url || '', category || 'info', service_status || null]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.delete('/company/items/:id', async (req, res) => {
+  try {
+    await db.execute('DELETE FROM service_questions WHERE service_id = ?', [req.params.id]);
+    await db.execute('DELETE FROM service_packages WHERE service_id = ?', [req.params.id]);
+    await db.execute('DELETE FROM company_items WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Company Service Request Actions
+router.post('/company/requests/:id/approve', async (req, res) => {
+  try {
+    await db.execute("UPDATE service_requests SET status = 'approved', reviewed_at = NOW() WHERE id = ?", [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.post('/company/requests/:id/reject', async (req, res) => {
+  try {
+    await db.execute("UPDATE service_requests SET status = 'rejected', reviewed_at = NOW() WHERE id = ?", [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Service Request from user
+router.post('/service-request', async (req, res) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'يجب تسجيل الدخول' });
+    const { service_id, package_id } = req.body;
+    await db.execute('INSERT INTO service_requests (service_id, user_id, answers, status, total_price, package_id) VALUES (?, ?, ?, ?, ?, ?)',
+      [service_id, req.user.id, JSON.stringify([]), 'pending', 0, package_id || 0]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 module.exports = router;
