@@ -1,8 +1,9 @@
 <%- include('../partials/header') %>
+<link rel="stylesheet" href="/css/applications-page.css">
 <%- include('../partials/navbar') %>
 
-<div class="cy-apps-page">
-    <!-- Hero Section -->
+<div class="cy-apps-page" dir="rtl">
+    <!-- Hero -->
     <div class="cy-apps-hero">
         <div class="cy-apps-hero-icon">
             <div class="hex-ring"></div>
@@ -10,89 +11,95 @@
             <i class="fas fa-file-signature"></i>
         </div>
         <h1 class="page-heading">التقديمات</h1>
-        <p class="cy-apps-hero-sub">اختر التقديم المناسب لك من القائمة أدناه، وكن جزءاً من مجتمعنا المتميز</p>
+        <p class="cy-apps-hero-sub">اختر التقديم المناسب لك وكن جزءاً من عائلة والتون</p>
         <div class="cy-apps-hero-line"></div>
-        <div class="hero-metrics">
-            <div class="metric">
-                <div class="metric-val" id="openCount"><%= typeof applications !== 'undefined' ? applications.filter(function(a){ return a.status === 'open'; }).length : 0 %></div>
-                <div class="metric-label">تقديم مفتوح</div>
-            </div>
-            <div class="metric">
-                <div class="metric-val" id="totalCount"><%= typeof applications !== 'undefined' ? applications.length : 0 %></div>
-                <div class="metric-label">إجمالي التقديمات</div>
-            </div>
-        </div>
     </div>
 
-    <!-- Main Content -->
     <div class="cy-apps-main">
-        <div class="sec-head reveal">
-            <h2 class="sec-title">
-                <span class="bar"></span>
-                التقديمات المتاحة
-            </h2>
-            <span class="sec-badge" id="countBadge"><%= typeof applications !== 'undefined' ? applications.filter(function(a){ return a.status === 'open'; }).length : 0 %> مفتوح</span>
+        <!-- Stats -->
+        <div class="apps-stats">
+            <div class="apps-stat-card">
+                <div class="apps-stat-icon"><i class="fas fa-door-open"></i></div>
+                <div class="apps-stat-val"><%= applications.filter(function(a){ return a.status === 'open'; }).length %></div>
+                <div class="apps-stat-label">متاح للتقديم</div>
+            </div>
+            <div class="apps-stat-card">
+                <div class="apps-stat-icon"><i class="fas fa-layer-group"></i></div>
+                <div class="apps-stat-val"><%= applications.length %></div>
+                <div class="apps-stat-label">إجمالي التقديمات</div>
+            </div>
         </div>
 
-        <div class="deck">
-            <% if (typeof applications !== 'undefined' && applications && applications.length > 0) { %>
-                <% applications.forEach(function(app, ai) { %>
-                <article class="card reveal stagger-<%= (ai % 6) + 1 %>">
-                    <div class="holo-border"></div>
-                    <div class="top-shine"></div>
-                    <div class="inner-light"></div>
-
-                    <div class="status <%= app.status === 'open' ? 'open' : 'closed' %>">
-                        <span class="dot"></span>
-                        <%= app.status === 'open' ? 'مفتوح للتقديم' : 'مغلق حالياً' %>
+        <!-- Applications Grid -->
+        <div class="apps-grid">
+            <% if (applications.length > 0) { %>
+                <% applications.forEach(function(app, i) { %>
+                <div class="apps-card" style="--delay: <%= i * 0.1 %>s">
+                    <div class="apps-card-glow"></div>
+                    
+                    <!-- Status Badge -->
+                    <div class="apps-card-status <%= app.status %>">
+                        <span class="apps-dot"></span>
+                        <%= app.status === 'open' ? 'مفتوح' : 'مغلق' %>
                     </div>
 
-                    <div class="card-head">
-                        <div class="icon-box">
-                            <div class="icon">
-                                <% if (app.image) { %>
-                                    <img loading="lazy" src="<%= app.image %>" alt="<%= app.title || app.application_type %>">
-                                <% } else { %>
-                                    <div class="fallback">
-                                        <i class="fas fa-<%= app.application_type === 'leader' ? 'crown' : (app.application_type === 'member' ? 'users' : (app.application_type === 'support' ? 'headset' : 'file-alt')) %>"></i>
-                                    </div>
-                                <% } %>
+                    <!-- Card Content -->
+                    <div class="apps-card-body">
+                        <div class="apps-card-img">
+                            <% if (app.image) { %>
+                                <img src="<%= app.image %>" alt="<%= app.title || app.application_type %>" loading="lazy">
+                            <% } else { %>
+                                <div class="apps-card-img-placeholder">
+                                    <i class="fas fa-<%= app.application_type === 'Join Family' ? 'users' : 'user-shield' %>"></i>
+                                </div>
+                            <% } %>
+                        </div>
+
+                        <h3 class="apps-card-title"><%= app.title || app.application_type %></h3>
+                        
+                        <% if (app.description) { %>
+                        <p class="apps-card-desc"><%= app.description %></p>
+                        <% } %>
+
+                        <% if (app.requirements) { %>
+                        <div class="apps-card-reqs">
+                            <div class="apps-reqs-title"><i class="fas fa-clipboard-check"></i> المتطلبات</div>
+                            <% var reqs = app.requirements.split(/\r?\n/).filter(function(r){ return r.trim(); }); %>
+                            <% reqs.forEach(function(req) { %>
+                            <div class="apps-req-item">
+                                <i class="fas fa-check-circle"></i>
+                                <span><%= req.trim() %></span>
                             </div>
+                            <% }); %>
                         </div>
-                        <div>
-                            <h3 class="card-title"><%= app.title || app.application_type %></h3>
-                            <span class="card-type"><%= app.application_type === 'leader' ? 'قيادة' : (app.application_type === 'member' ? 'عضوية' : (app.application_type === 'support' ? 'دعم فني' : app.application_type)) %></span>
-                        </div>
+                        <% } %>
                     </div>
 
-                    <% if (app.description) { %>
-                    <p class="card-desc"><%= app.description.substring(0, 150) %></p>
-                    <% } %>
-
-                    <div class="card-actions">
+                    <!-- Action -->
+                    <div class="apps-card-footer">
                         <% if (app.status === 'open') { %>
-                            <% if (user) { %>
-                            <a href="/applications/form/<%= app.application_type %>" class="apply-btn">
+                            <% if (typeof user !== 'undefined' && user) { %>
+                            <a href="/applications/form/<%= app.id %>" class="apps-apply-btn">
                                 <i class="fas fa-paper-plane"></i> قدّم الآن
                             </a>
                             <% } else { %>
-                            <a href="/auth/discord" class="apply-btn">
+                            <a href="/auth/discord" class="apps-apply-btn discord">
                                 <i class="fab fa-discord"></i> سجّل دخول أولاً
                             </a>
                             <% } %>
                         <% } else { %>
-                            <button class="apply-btn disabled" disabled>
+                            <button class="apps-apply-btn disabled" disabled>
                                 <i class="fas fa-lock"></i> مغلق حالياً
                             </button>
                         <% } %>
                     </div>
-                </article>
+                </div>
                 <% }); %>
             <% } else { %>
-            <div class="empty-state">
-                <div class="empty-state-icon"><i class="fas fa-inbox"></i></div>
-                <h3>لا توجد طلبات متاحة حالياً</h3>
-                <p>تابعنا للحصول على فرص جديدة</p>
+            <div class="apps-empty">
+                <div class="apps-empty-icon"><i class="fas fa-inbox"></i></div>
+                <h3>لا توجد تقديمات متاحة</h3>
+                <p>تابعنا للحصول على فرص جديدة قريباً</p>
             </div>
             <% } %>
         </div>
@@ -100,6 +107,3 @@
 </div>
 
 <%- include('../partials/footer') %>
-<script src="/js/main.js"></script>
-</body>
-</html>
