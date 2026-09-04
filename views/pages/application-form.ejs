@@ -300,6 +300,10 @@
       var val = el.value.trim();
       if (!val) return;
 
+      var allInputs = form.querySelectorAll('input[type="text"][name^="answers["], textarea[name^="answers["]');
+      var firstInput = allInputs[0];
+      if (el !== firstInput) return;
+
       var lowerVal = val.toLowerCase();
       if (lowerVal.indexOf('walton') === -1) {
         showError(qid, 'يجب أن يحتوي الجواب على كلمة "WALTON"');
