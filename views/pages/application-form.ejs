@@ -76,9 +76,12 @@
   <% } else if (!hasRequiredRole) { %>
   <div class="block-msg">
     <i class="fas fa-shield-alt"></i>
-    <strong>ليس لديك الرول المطلوب</strong>
-    <p>يجب أن تحمل الرول المطلوب في سيرفر ديسكورد لتقديم هذا الطلب</p>
-    <p style="margin-top:.5rem;font-size:.8rem;opacity:.7">رول مطلوب: <%= appSetting.required_discord_role_id %></p>
+    <strong><%= appSetting.role_required_text || 'يجب أن تحمل الرول المطلوب' %></strong>
+    <p><%= appSetting.role_missing_text || 'يجب أن تحمل الرول المطلوب في سيرفر ديسكورد لتقديم هذا الطلب' %></p>
+    <a href="<%= settings.discord_server_url || 'https://discord.gg/bBWWpGfY45' %>" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.5rem;margin-top:.8rem;padding:.5rem 1.2rem;background:#5865F2;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;transition:transform .2s,box-shadow .2s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(88,101,242,.4)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <i class="fab fa-discord" style="font-size:1.1rem"></i>
+      دخول سيرفر العائلة
+    </a>
   </div>
   <% } %>
 
