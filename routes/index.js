@@ -322,6 +322,14 @@ router.post('/api/applications/submit', isAuthenticated, async (req, res) => {
   try {
     const { type, answers, answers_multiple, answers_img_url } = req.body;
     if (!type) return res.status(400).json({ error: 'نوع التقديم مطلوب' });
+
+    const [appSetting] = await db.query('SELECT * FROM application_settings WHERE application_type = ? AND status = "open" LIMIT 1', [type]);
+    if (!appSetting || !appSetting.length) return res.status(400).json({ error: 'التقديم غير متاح' });
+    const appData = appSetting[0];
+
+    const [pendingApp] = await db.query(
+      "SELECT id FROM submitted_applications WHERE user_id = ? AND application_type = ? AND status IN ('pending','waiting_join') LIMIT 1",
+      [req.user.id, type]
     );
     if (pendingApp && pendingApp.length) return res.status(400).json({ error: 'لديك طلب معلق بالفعل' });
 
