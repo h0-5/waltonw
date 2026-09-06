@@ -4,15 +4,35 @@ require('dotenv').config();
 async function migrate() {
   console.log('Starting database migration...\n');
 
-  const conn = await mysql.createConnection({
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT) || 3306,
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASS || '',
-    database: process.env.DB_NAME || 'walton_family',
-    charset: 'utf8mb4',
-    multipleStatements: true
-  });
+  let connConfig;
+
+  const urlEnv = process.env.DATABASE_URL || process.env.MYSQL_URL || process.env.MYSQL_PUBLIC_URL;
+  if (urlEnv) {
+    const url = new URL(urlEnv);
+    connConfig = {
+      host: url.hostname,
+      port: parseInt(url.port) || 3306,
+      user: url.username,
+      password: url.password,
+      database: url.pathname.replace(/^\//, ''),
+      charset: 'utf8mb4',
+      multipleStatements: true
+    };
+    console.log('Connecting via URL...');
+  } else {
+    connConfig = {
+      host: process.env.DB_HOST || process.env.MYSQLHOST || 'localhost',
+      port: parseInt(process.env.DB_PORT || process.env.MYSQLPORT || '3306'),
+      user: process.env.DB_USER || process.env.MYSQLUSER || 'root',
+      password: process.env.DB_PASS || process.env.MYSQLPASSWORD || '',
+      database: process.env.DB_NAME || process.env.MYSQLDATABASE || 'walton_family',
+      charset: 'utf8mb4',
+      multipleStatements: true
+    };
+    console.log('Connecting via HOST vars...');
+  }
+
+  const conn = await mysql.createConnection(connConfig);
 
   const tables = [
     `CREATE TABLE IF NOT EXISTS users (
