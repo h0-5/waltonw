@@ -1,3 +1,4 @@
+// Passport Discord OAuth2 — safe init
 const passport = require('passport');
 const db = require('./database');
 
