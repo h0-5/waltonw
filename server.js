@@ -28,7 +28,7 @@ async function migrate() {
   for (const sql of tables) {
     const name = sql.match(/CREATE TABLE IF NOT EXISTS (\w+)/)[1];
     try {
-      await db.execute(sql);
+      await db.query(sql);
       console.log(`✅ ${name}`);
     } catch (err) {
       console.error(`❌ ${name}: ${err.message}`);
