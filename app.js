@@ -11,6 +11,8 @@ const db = require('./config/database');
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 app.use(cors({ origin: process.env.SITE_URL || 'http://localhost:3000', credentials: true }));
