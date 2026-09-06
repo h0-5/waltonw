@@ -25,7 +25,7 @@ async function getSettings() {
 }
 
 // Home
-router.get('/', isAuthenticated, async (req, res) => {
+router.get('/', async (req, res) => {
   const settings = await getSettings();
   const news = await safeQuery('SELECT * FROM news WHERE is_hidden = 0 ORDER BY created_at DESC LIMIT 10');
   const memberCount = await safeQuery('SELECT COUNT(*) as c FROM users');
@@ -44,7 +44,7 @@ router.get('/', isAuthenticated, async (req, res) => {
 });
 
 // About
-router.get('/about', isAuthenticated, async (req, res) => {
+router.get('/about', async (req, res) => {
   const settings = await getSettings();
   const aboutRows = await safeQuery('SELECT content_key, content_value FROM about_us_content');
   const about = {};
@@ -123,7 +123,7 @@ router.get('/about', isAuthenticated, async (req, res) => {
 });
 
 // Rules
-router.get('/rules', isAuthenticated, async (req, res) => {
+router.get('/rules', async (req, res) => {
   const settings = await getSettings();
   const rules = await safeQuery('SELECT * FROM rules ORDER BY sort_order ASC');
   const categories = await safeQuery('SELECT * FROM rule_categories ORDER BY sort_order ASC');
@@ -131,7 +131,7 @@ router.get('/rules', isAuthenticated, async (req, res) => {
 });
 
 // Store
-router.get('/store', isAuthenticated, async (req, res) => {
+router.get('/store', async (req, res) => {
   const settings = await getSettings();
   let sql = 'SELECT * FROM fs_products WHERE 1=1';
   const params = [];
@@ -163,7 +163,7 @@ router.get('/store', isAuthenticated, async (req, res) => {
 });
 
 // Store Products (Public Store tab)
-router.get('/store/products', isAuthenticated, async (req, res) => {
+router.get('/store/products', async (req, res) => {
   const settings = await getSettings();
   let products = await safeQuery('SELECT * FROM fs_products WHERE category_type = ? ORDER BY id ASC', ['purchase']);
   
@@ -181,7 +181,7 @@ router.get('/store/products', isAuthenticated, async (req, res) => {
 });
 
 // Products (Marketplace)
-router.get('/products', isAuthenticated, async (req, res) => {
+router.get('/products', async (req, res) => {
   const settings = await getSettings();
   const categories = await safeQuery('SELECT * FROM categories ORDER BY sort_order ASC, id ASC');
   
@@ -215,19 +215,19 @@ router.get('/products', isAuthenticated, async (req, res) => {
 });
 
 // Games
-router.get('/games', isAuthenticated, async (req, res) => {
+router.get('/games', async (req, res) => {
   const settings = await getSettings();
   res.render('pages/games', { title: 'الألعاب', settings });
 });
 
 // Community
-router.get('/community', isAuthenticated, async (req, res) => {
+router.get('/community', async (req, res) => {
   const settings = await getSettings();
   res.render('pages/community', { title: 'المجتمع', settings });
 });
 
 // Applications
-router.get('/applications', isAuthenticated, async (req, res) => {
+router.get('/applications', async (req, res) => {
   try {
     const settings = await getSettings();
     const applications = await safeQuery('SELECT * FROM application_settings ORDER BY id ASC');
@@ -239,7 +239,7 @@ router.get('/applications', isAuthenticated, async (req, res) => {
 });
 
 // Application Form
-router.get('/applications/form/:type', isAuthenticated, async (req, res) => {
+router.get('/applications/form/:type', async (req, res) => {
   try {
     const type = req.params.type;
     const settings = await getSettings();
@@ -318,7 +318,7 @@ router.get('/applications/form/:type', isAuthenticated, async (req, res) => {
 });
 
 // Submit Application API
-router.post('/api/applications/submit', isAuthenticated, async (req, res) => {
+router.post('/api/applications/submit', async (req, res) => {
   try {
     const { type, answers, answers_multiple, answers_img_url } = req.body;
     if (!type) return res.status(400).json({ error: 'نوع التقديم مطلوب' });
@@ -444,13 +444,13 @@ router.post('/api/applications/submit', isAuthenticated, async (req, res) => {
 });
 
 // Support
-router.get('/support', isAuthenticated, async (req, res) => {
+router.get('/support', async (req, res) => {
   const settings = await getSettings();
   res.render('pages/support', { title: 'الدعم الفني', settings });
 });
 
 // Profile
-router.get('/profile', isAuthenticated, async (req, res) => {
+router.get('/profile', async (req, res) => {
   const settings = await getSettings();
   
   // Get user points
@@ -474,33 +474,33 @@ router.get('/profile', isAuthenticated, async (req, res) => {
 });
 
 // Cart
-router.get('/cart', isAuthenticated, async (req, res) => {
+router.get('/cart', async (req, res) => {
   const settings = await getSettings();
   res.render('pages/cart', { title: 'سلة المشتريات', cartItems: [], total: 0, settings });
 });
 
 // Contact
-router.get('/contact', isAuthenticated, async (req, res) => {
+router.get('/contact', async (req, res) => {
   const settings = await getSettings();
   const discordUrl = settings.discord_server_url || 'https://discord.gg/rcj6FuekX6';
   res.render('pages/contact', { title: 'تواصل معنا', discordUrl, settings });
 });
 
 // Checkout
-router.get('/checkout', isAuthenticated, async (req, res) => {
+router.get('/checkout', async (req, res) => {
   const settings = await getSettings();
   res.render('pages/checkout', { title: 'إتمام الشراء', settings });
 });
 
 // Orders
-router.get('/orders', isAuthenticated, async (req, res) => {
+router.get('/orders', async (req, res) => {
   const settings = await getSettings();
   const orders = await safeQuery('SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC', [req.user.id]);
   res.render('pages/orders', { title: 'طلباتي', orders, settings });
 });
 
 // My Discounts
-router.get('/my_discounts', isAuthenticated, async (req, res) => {
+router.get('/my_discounts', async (req, res) => {
   const settings = await getSettings();
   let discounts = [];
   try {
@@ -512,19 +512,19 @@ router.get('/my_discounts', isAuthenticated, async (req, res) => {
 });
 
 // Game Pages
-router.get('/games/mafia', isAuthenticated, async (req, res) => { const s = await getSettings(); res.render('games/mafia', { title: 'مافيا', settings: s }); });
-router.get('/games/rps', isAuthenticated, async (req, res) => { const s = await getSettings(); res.render('games/rps', { title: 'حجر ورقة مقص', settings: s }); });
-router.get('/games/memory', isAuthenticated, async (req, res) => { const s = await getSettings(); res.render('games/memory', { title: 'الذاكرة', settings: s }); });
-router.get('/games/spin_wheel', isAuthenticated, async (req, res) => { const s = await getSettings(); res.render('games/spin_wheel', { title: 'عجلة الحظ', settings: s }); });
-router.get('/games/impostor', isAuthenticated, async (req, res) => { const s = await getSettings(); res.render('games/mafia', { title: 'Impostor', settings: s }); });
-router.get('/games/trivia', isAuthenticated, async (req, res) => { const s = await getSettings(); res.render('games/rps', { title: 'Trivia', settings: s }); });
-router.get('/games/uno', isAuthenticated, async (req, res) => { const s = await getSettings(); res.render('games/rps', { title: 'UNO', settings: s }); });
-router.get('/games/math_race', isAuthenticated, async (req, res) => { const s = await getSettings(); res.render('games/rps', { title: 'سباق الحساب', settings: s }); });
-router.get('/games/word_scramble', isAuthenticated, async (req, res) => { const s = await getSettings(); res.render('games/rps', { title: 'ترتيب الحروف', settings: s }); });
-router.get('/games/quick_quiz', isAuthenticated, async (req, res) => { const s = await getSettings(); res.render('games/rps', { title: 'kwiz سريع', settings: s }); });
-router.get('/games/find_link', isAuthenticated, async (req, res) => { const s = await getSettings(); res.render('games/rps', { title: 'ابحث عن الرابط', settings: s }); });
-router.get('/games/crossword', isAuthenticated, async (req, res) => { const s = await getSettings(); res.render('games/rps', { title: 'أحجية الكلمات', settings: s }); });
-router.get('/games/aviator', isAuthenticated, async (req, res) => { const s = await getSettings(); res.render('games/rps', { title: 'Aviator', settings: s }); });
+router.get('/games/mafia', async (req, res) => { const s = await getSettings(); res.render('games/mafia', { title: 'مافيا', settings: s }); });
+router.get('/games/rps', async (req, res) => { const s = await getSettings(); res.render('games/rps', { title: 'حجر ورقة مقص', settings: s }); });
+router.get('/games/memory', async (req, res) => { const s = await getSettings(); res.render('games/memory', { title: 'الذاكرة', settings: s }); });
+router.get('/games/spin_wheel', async (req, res) => { const s = await getSettings(); res.render('games/spin_wheel', { title: 'عجلة الحظ', settings: s }); });
+router.get('/games/impostor', async (req, res) => { const s = await getSettings(); res.render('games/mafia', { title: 'Impostor', settings: s }); });
+router.get('/games/trivia', async (req, res) => { const s = await getSettings(); res.render('games/rps', { title: 'Trivia', settings: s }); });
+router.get('/games/uno', async (req, res) => { const s = await getSettings(); res.render('games/rps', { title: 'UNO', settings: s }); });
+router.get('/games/math_race', async (req, res) => { const s = await getSettings(); res.render('games/rps', { title: 'سباق الحساب', settings: s }); });
+router.get('/games/word_scramble', async (req, res) => { const s = await getSettings(); res.render('games/rps', { title: 'ترتيب الحروف', settings: s }); });
+router.get('/games/quick_quiz', async (req, res) => { const s = await getSettings(); res.render('games/rps', { title: 'kwiz سريع', settings: s }); });
+router.get('/games/find_link', async (req, res) => { const s = await getSettings(); res.render('games/rps', { title: 'ابحث عن الرابط', settings: s }); });
+router.get('/games/crossword', async (req, res) => { const s = await getSettings(); res.render('games/rps', { title: 'أحجية الكلمات', settings: s }); });
+router.get('/games/aviator', async (req, res) => { const s = await getSettings(); res.render('games/rps', { title: 'Aviator', settings: s }); });
 
 // Properties
 router.get('/properties', async (req, res) => {
