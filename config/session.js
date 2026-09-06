@@ -8,9 +8,9 @@ const sessionStore = new MySQLStore({
   expiration: parseInt(process.env.SESSION_MAX_AGE) || 2592000000,
   createDatabaseTable: true,
   schema: {
-    tableName: 'user_sessions',
+    tableName: 'wf_sessions',
     columnNames: {
-      session_id: 'id',
+      session_id: 'session_id',
       expires: 'expires',
       data: 'data'
     }
@@ -23,7 +23,7 @@ const sessionConfig = {
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: false,
     httpOnly: true,
     maxAge: parseInt(process.env.SESSION_MAX_AGE) || 2592000000,
     sameSite: 'lax'
