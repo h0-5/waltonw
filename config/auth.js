@@ -1,5 +1,4 @@
 const passport = require('passport');
-const DiscordStrategy = require('passport-discord').Strategy;
 const db = require('./database');
 
 passport.serializeUser((user, done) => {
@@ -19,54 +18,66 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
-passport.use(new DiscordStrategy({
-  clientID: process.env.DISCORD_CLIENT_ID,
-  clientSecret: process.env.DISCORD_CLIENT_SECRET,
-  callbackURL: process.env.DISCORD_REDIRECT_URI,
-  scope: ['identify', 'email', 'guilds', 'guilds.members.read']
-}, async (accessToken, refreshToken, profile, done) => {
-  try {
-    const discordId = profile.id;
-    const username = profile.username;
-    const avatar = profile.avatar ? 
-      `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png` : 
-      `https://cdn.discordapp.com/embed/avatars/${parseInt(profile.discriminator) % 5}.png`;
-    const email = profile.email || null;
+const discordClientId = process.env.DISCORD_CLIENT_ID;
+const discordClientSecret = process.env.DISCORD_CLIENT_SECRET;
+const discordRedirectUri = process.env.DISCORD_REDIRECT_URI;
 
-    let [existingUser] = await db.execute('SELECT * FROM users WHERE discord_id = ?', [discordId]);
+if (discordClientId && discordClientSecret && discordRedirectUri) {
+  const DiscordStrategy = require('passport-discord').Strategy;
 
-    if (existingUser.length > 0) {
-      await db.execute(
-        'UPDATE users SET username = ?, profile_picture = ?, last_login = NOW() WHERE discord_id = ?',
-        [username, avatar, discordId]
-      );
-      [existingUser] = await db.execute('SELECT * FROM users WHERE discord_id = ?', [discordId]);
-      return done(null, existingUser[0]);
-    }
-
-    const [result] = await db.execute(
-      'INSERT INTO users (discord_id, username, profile_picture, email, role, created_at, last_login) VALUES (?, ?, ?, ?, ?, NOW(), NOW())',
-      [discordId, username, avatar, email, 'user']
-    );
-
-    const [newUser] = await db.execute('SELECT * FROM users WHERE id = ?', [result.insertId]);
-    
+  passport.use(new DiscordStrategy({
+    clientID: discordClientId,
+    clientSecret: discordClientSecret,
+    callbackURL: discordRedirectUri,
+    scope: ['identify', 'email', 'guilds', 'guilds.members.read']
+  }, async (accessToken, refreshToken, profile, done) => {
     try {
-      const webhookUrl = process.env.WH_NEW_ACCOUNT;
-      if (webhookUrl) {
-        const axios = require('axios');
-        await axios.post(webhookUrl, {
-          content: `🆕 **حساب جديد**\n**الاسم:** ${username}\n**Discord ID:** ${discordId}\n**البريد:** ${email || 'غير محدد'}`
-        });
-      }
-    } catch (webhookErr) {
-      console.error('Webhook error:', webhookErr.message);
-    }
+      const discordId = profile.id;
+      const username = profile.username;
+      const avatar = profile.avatar ?
+        `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png` :
+        `https://cdn.discordapp.com/embed/avatars/${parseInt(profile.discriminator) % 5}.png`;
+      const email = profile.email || null;
 
-    return done(null, newUser[0]);
-  } catch (err) {
-    return done(err, null);
-  }
-}));
+      let [existingUser] = await db.execute('SELECT * FROM users WHERE discord_id = ?', [discordId]);
+
+      if (existingUser.length > 0) {
+        await db.execute(
+          'UPDATE users SET username = ?, profile_picture = ?, last_login = NOW() WHERE discord_id = ?',
+          [username, avatar, discordId]
+        );
+        [existingUser] = await db.execute('SELECT * FROM users WHERE discord_id = ?', [discordId]);
+        return done(null, existingUser[0]);
+      }
+
+      const [result] = await db.execute(
+        'INSERT INTO users (discord_id, username, profile_picture, email, role, created_at, last_login) VALUES (?, ?, ?, ?, ?, NOW(), NOW())',
+        [discordId, username, avatar, email, 'user']
+      );
+
+      const [newUser] = await db.execute('SELECT * FROM users WHERE id = ?', [result.insertId]);
+
+      try {
+        const webhookUrl = process.env.WH_NEW_ACCOUNT;
+        if (webhookUrl) {
+          const axios = require('axios');
+          await axios.post(webhookUrl, {
+            content: `🆕 **حساب جديد**\n**الاسم:** ${username}\n**Discord ID:** ${discordId}\n**البريد:** ${email || 'غير محدد'}`
+          });
+        }
+      } catch (webhookErr) {
+        console.error('Webhook error:', webhookErr.message);
+      }
+
+      return done(null, newUser[0]);
+    } catch (err) {
+      return done(err, null);
+    }
+  }));
+
+  console.log('✅ Discord OAuth2 strategy loaded');
+} else {
+  console.warn('⚠️  Discord OAuth2 not configured — DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, or DISCORD_REDIRECT_URI missing');
+}
 
 module.exports = passport;
