@@ -203,7 +203,7 @@
 .rules-outer {
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 20px;
+    border-radius: 14px;
     padding: clamp(1.5rem, 3vw, 2.5rem);
     position: relative;
     backdrop-filter: blur(20px);
@@ -456,7 +456,7 @@
     padding: 4rem 2rem;
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 20px;
+    border-radius: 14px;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
 }
@@ -465,7 +465,7 @@
     width: 80px; height: 80px;
     background: rgba(var(--accent-rgb),0.08);
     border: 1px solid rgba(var(--accent-rgb),0.15);
-    border-radius: 20px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;

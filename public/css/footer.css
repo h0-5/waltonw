@@ -201,6 +201,14 @@
         text-align: center;
         gap: 1.5rem;
     }
+    .ft-brand-col {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .ft-brand-logo {
+        justify-content: center;
+    }
     .ft-links-col {
         justify-content: center;
     }

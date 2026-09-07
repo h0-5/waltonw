@@ -23,15 +23,16 @@ body {
     padding: 2rem 1.5rem 4rem;
 }
 
-/* ==================== Hero Section ==================== */
+/* ==================== Hero Section ====================
+   مطابق لشريط الهيرو الموحد في باقي الصفحات:
+   شريط كامل العرض بنفس الحشوة والتدرج البنفسجي */
 .games-hero {
     text-align: center;
-    padding: 2.5rem 1rem 2rem;
+    padding: 3.5rem 1.5rem 2.5rem;
     position: relative;
     overflow: hidden;
-    background: linear-gradient(135deg, rgba(var(--ac-rgb),0.05), rgba(0,0,0,0.2));
-    border-radius: 32px;
-    margin-bottom: 2rem;
+    background: linear-gradient(180deg, rgba(var(--ac-rgb),0.15) 0%, rgba(var(--ac-rgb),0.05) 40%, transparent 100%);
+    margin: -2rem -1.5rem 2rem;
 }
 
 .games-hero-glow {
@@ -77,7 +78,7 @@ body {
 }
 
 .games-hero-title {
-    font-size: clamp(1.8rem, 5vw, 2.8rem);
+    font-size: clamp(2.2rem, 6vw, 3.2rem);
     font-weight: 900;
     background: linear-gradient(90deg, #fff, rgba(var(--ac-rgb),0.8), var(--ac), rgba(var(--ac-rgb),0.8), #fff);
     background-size: 200% auto;

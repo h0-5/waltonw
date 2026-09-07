@@ -3,6 +3,10 @@
    Uses same CSS vars as main.css
    ========================================== */
 
+/* حواجز العرض: لا تمرير أفقي للصفحة أبداً على أي حجم */
+html, body { overflow-x: hidden; max-width: 100vw; }
+.admin-main { min-width: 0; }
+
 /* Layout */
 .admin-layout { display: flex; min-height: 100vh; }
 .admin-sidebar {
@@ -286,9 +290,18 @@
 /* Responsive */
 @media (max-width: 768px) {
   .admin-sidebar {
-    width: 70px; transform: translateX(100%);
+    width: 70px; transform: translateX(100%); visibility: hidden;
   }
-  .admin-sidebar.show { transform: translateX(0); width: 260px; }
+  .admin-sidebar.show { transform: translateX(0); width: 260px; visibility: visible; }
+
+  /* صفحة الرتب: لوحة 280px تلتف لعمود واحد بدل ما تكسر العرض */
+  .admin-content > div[style*="display:flex"][style*="gap:1.5rem"],
+  .admin-content [style*="min-height:80vh"] {
+    display: block !important; min-height: 0 !important;
+  }
+  .admin-content [style*="width:280px"] {
+    width: 100% !important; max-height: none !important; margin-bottom: 1rem;
+  }
   .admin-sidebar .logo-text, .admin-sidebar .nav-item span { display: none; }
   .admin-sidebar.show .logo-text, .admin-sidebar.show .nav-item span { display: inline; }
   .admin-main { margin-right: 0; }
