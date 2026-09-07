@@ -181,9 +181,51 @@ router.get('/roles', isAdmin, async (req, res) => {
       });
     } catch(e) {}
 
-    res.render('admin/roles', { title: 'إدارة الصلاحيات', roles, permissions, pagePerms, elemPerms, punishData, currentPath: req.path });
+    // Unified permissions
+    let unifiedPerms = {};
+    try {
+      const [up] = await db.execute('SELECT role_id, permission_key, enabled FROM role_role_permissions');
+      up.forEach(p => {
+        if (!unifiedPerms[p.role_id]) unifiedPerms[p.role_id] = {};
+        unifiedPerms[p.role_id][p.permission_key] = p.enabled;
+      });
+    } catch(e) {}
+
+    // Side roles
+    let sideRoles = [];
+    try {
+      const [sr] = await db.execute('SELECT * FROM side_roles ORDER BY sort_order ASC');
+      sideRoles = sr;
+    } catch(e) {}
+
+    // User side roles mapping
+    let userSideRoles = {};
+    try {
+      const [usr] = await db.execute('SELECT user_id, side_role_id FROM user_side_roles');
+      usr.forEach(r => {
+        if (!userSideRoles[r.user_id]) userSideRoles[r.user_id] = [];
+        userSideRoles[r.user_id].push(r.side_role_id);
+      });
+    } catch(e) {}
+
+    // Import permissions config
+    const { PERMISSION_GROUPS } = require('../config/permissions');
+
+    res.render('admin/roles', {
+      title: 'إدارة الصلاحيات',
+      roles, permissions, pagePerms, elemPerms, punishData,
+      unifiedPerms, sideRoles, userSideRoles,
+      PERMISSION_GROUPS,
+      currentPath: req.path
+    });
   } catch(err) {
-    res.render('admin/roles', { title: 'إدارة الصلاحيات', roles: [], permissions: {}, pagePerms: {}, elemPerms: {}, punishData: {}, currentPath: req.path });
+    res.render('admin/roles', {
+      title: 'إدارة الصلاحيات',
+      roles: [], permissions: {}, pagePerms: {}, elemPerms: {}, punishData: {},
+      unifiedPerms: {}, sideRoles: [], userSideRoles: {},
+      PERMISSION_GROUPS: {},
+      currentPath: req.path
+    });
   }
 });
 

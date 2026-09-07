@@ -2,30 +2,32 @@
 
 <div class="admin-content">
   <div style="display:flex;gap:1.5rem;min-height:80vh">
-    <!-- Sidebar: Role Hierarchy -->
+    <!-- Sidebar: Role List -->
     <div style="width:280px;flex-shrink:0;background:rgba(12,8,22,0.6);border:1px solid rgba(var(--ac-rgb),0.15);border-radius:16px;padding:1.2rem;overflow-y:auto;max-height:85vh">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-        <h3 style="font-size:1rem;font-weight:800;color:var(--ac)"><i class="fas fa-layer-group"></i> الهرم</h3>
+        <h3 style="font-size:1rem;font-weight:800;color:var(--ac)"><i class="fas fa-layer-group"></i> الرتب</h3>
         <button class="admin-btn small primary" onclick="openAddRole()"><i class="fas fa-plus"></i></button>
       </div>
-
-      <div id="roleHierarchy">
+      <input type="text" id="roleSearch" placeholder="بحث عن رتبة..." oninput="filterRoles()" style="width:100%;padding:8px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(var(--ac-rgb),0.2);border-radius:8px;color:#fff;font-family:inherit;font-size:0.8rem;margin-bottom:0.75rem">
+      <div id="roleList">
         <% if (typeof roles !== 'undefined' && roles && roles.length) { %>
           <% roles.sort((a,b) => b.level - a.level).forEach(function(r, i) { %>
-            <div class="hierarchy-item <%= i === 0 ? 'selected' : '' %>" onclick="selectRole(<%= r.id %>)" data-id="<%= r.id %>">
-              <div class="hierarchy-level" style="margin-right:<%= i * 12 %>px">
-                <div class="hierarchy-dot" style="background:<%= r.color %>"></div>
-                <div class="hierarchy-info">
-                  <div class="hierarchy-name"><%= r.display_name || r.name %></div>
-                  <div class="hierarchy-meta">
-                    <span>Lv.<%= r.level %></span>
-                    <% if (r.is_admin_role) { %><span class="badge-admin">admin</span><% } %>
-                    <% if (r.is_protected) { %><span class="badge-protected"><i class="fas fa-lock"></i></span><% } %>
+            <div class="role-list-item <%= i === 0 ? 'selected' : '' %>" onclick="selectRole(<%= r.id %>)" data-id="<%= r.id %>" data-name="<%= (r.display_name || r.name).toLowerCase() %>" draggable="true" data-sort="<%= r.sort_order || 0 %>">
+              <div style="display:flex;align-items:center;gap:10px;flex:1">
+                <div class="drag-handle" title="اسحب للترتيب"><i class="fas fa-grip-vertical"></i></div>
+                <div style="width:12px;height:12px;border-radius:50%;background:<%= r.color %>;flex-shrink:0"></div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-weight:700;font-size:0.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                    <% if (r.emoji) { %><span class="role-emoji-badge"><%= r.emoji %></span><% } %><%= r.display_name || r.name %>
+                  </div>
+                  <div style="font-size:0.7rem;color:rgba(255,255,255,0.35)">Lv.<%= r.level %> • <%= r.name %>
+                    <% if (r.is_admin_role) { %><span class="badge-admin-sm">admin</span><% } %>
+                    <% if (r.is_staff) { %><span class="badge-staff-sm">staff</span><% } %>
                   </div>
                 </div>
               </div>
               <% if (!r.is_default && !r.is_protected) { %>
-                <button class="hierarchy-delete" onclick="event.stopPropagation();deleteRole(<%= r.id %>)"><i class="fas fa-trash"></i></button>
+                <button class="role-delete-btn" onclick="event.stopPropagation();deleteRole(<%= r.id %>)" title="حذف"><i class="fas fa-trash"></i></button>
               <% } %>
             </div>
           <% }); %>
@@ -33,56 +35,64 @@
       </div>
     </div>
 
-    <!-- Main: Role Editor -->
-    <div style="flex:1;overflow-y:auto;max-height:85vh" id="roleEditorPanel">
+    <!-- Main: Editor -->
+    <div style="flex:1;overflow-y:auto;max-height:85vh" id="editorPanel">
       <% if (typeof roles !== 'undefined' && roles && roles.length) { %>
         <% var r = roles[0]; %>
         <div id="roleEditor" data-role-id="<%= r.id %>">
-          <!-- Header -->
+          <!-- Header with live badge preview -->
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid rgba(var(--ac-rgb),0.1)">
-            <div style="display:flex;align-items:center;gap:12px">
-              <div style="width:40px;height:40px;border-radius:50%;background:<%= r.color %>"></div>
-              <div>
-                <h2 style="font-size:1.3rem;font-weight:900"><%= r.display_name || r.name %></h2>
-                <span style="font-size:0.8rem;color:rgba(255,255,255,0.4)">Level <%= r.level %> • <%= r.name %></span>
+            <div style="display:flex;align-items:center;gap:14px">
+              <div id="rolePreviewBadge" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;background:<%= r.color %>20;border:1px solid <%= r.color %>40;font-weight:800;font-size:0.95rem;color:<%= r.color %>">
+                <% if (r.emoji) { %><span><%= r.emoji %></span><% } %><i class="fas <%= r.icon || 'fa-user' %>"></i> <%= r.display_name || r.name %>
               </div>
+              <span style="font-size:0.8rem;color:rgba(255,255,255,0.4)">Level <%= r.level %> • <%= r.name %></span>
             </div>
-            <button class="admin-btn primary" onclick="saveRole()"><i class="fas fa-save"></i> حفظ</button>
+            <button class="admin-btn primary" onclick="saveAll()"><i class="fas fa-save"></i> حفظ الكل</button>
           </div>
 
           <!-- Tabs -->
           <div class="role-tabs">
-            <button class="role-tab active" onclick="switchTab('settings')"><i class="fas fa-gear"></i> الإعدادات</button>
-            <button class="role-tab" onclick="switchTab('pages')"><i class="fas fa-file"></i> صفحات</button>
-            <button class="role-tab" onclick="switchTab('elements')"><i class="fas fa-puzzle-piece"></i> عناصر</button>
-            <button class="role-tab" onclick="switchTab('punishments')"><i class="fas fa-gavel"></i> عقوبات</button>
-            <button class="role-tab" onclick="switchTab('hierarchy')"><i class="fas fa-sitemap"></i> الهرم</button>
-            <button class="role-tab" onclick="switchTab('members')"><i class="fas fa-users"></i> الأعضاء</button>
+            <button class="role-tab active" onclick="switchTab('roles')"><i class="fas fa-shield-halved"></i> الرتب</button>
+            <button class="role-tab" onclick="switchTab('admin-perms')"><i class="fas fa-lock"></i> صلاحيات الإدارة</button>
+            <button class="role-tab" onclick="switchTab('site-perms')"><i class="fas fa-globe"></i> صلاحيات الموقع</button>
+            <button class="role-tab" onclick="switchTab('side-roles')"><i class="fas fa-tags"></i> الأدوار الجانبية</button>
           </div>
 
-          <!-- Settings Tab -->
-          <div class="tab-content active" id="tab-settings">
+          <!-- Tab: Role Settings -->
+          <div class="tab-content active" id="tab-roles">
             <div class="settings-section">
               <h3><i class="fas fa-info-circle"></i> معلومات الرتبة</h3>
               <div class="form-grid">
                 <div class="form-group">
-                  <label>اسم الرتبة (إنجليزي)</label>
-                  <input type="text" id="r_name" value="<%= r.name %>">
+                  <label>الاسم (إنجليزي)</label>
+                  <input type="text" id="r_name" value="<%= r.name %>" oninput="updatePreview()">
                 </div>
                 <div class="form-group">
                   <label>اسم العرض (عربي)</label>
-                  <input type="text" id="r_display_name" value="<%= r.display_name || '' %>">
+                  <input type="text" id="r_display_name" value="<%= r.display_name || '' %>" oninput="updatePreview()">
                 </div>
                 <div class="form-group">
                   <label>اللون</label>
-                  <input type="color" id="r_color" value="<%= r.color || '#ffffff' %>">
+                  <input type="color" id="r_color" value="<%= r.color || '#ffffff' %>" oninput="updatePreview()">
                 </div>
                 <div class="form-group">
                   <label>الأيقونة (Font Awesome)</label>
-                  <input type="text" id="r_icon" value="<%= r.icon || '' %>" placeholder="fa-shield-halved">
+                  <div style="display:flex;gap:6px;align-items:center">
+                    <i id="iconPreview" class="fas <%= r.icon || 'fa-user' %>" style="font-size:1.2rem;color:var(--ac)"></i>
+                    <input type="text" id="r_icon" value="<%= r.icon || '' %>" placeholder="fa-shield-halved" oninput="updateIconPreview()" style="flex:1">
+                  </div>
                 </div>
                 <div class="form-group">
-                  <label>المستوى (0-100، الأعلى = أقوى)</label>
+                  <label>الإيموجي</label>
+                  <div style="display:flex;gap:6px;align-items:center">
+                    <span id="emojiPreview" style="font-size:1.3rem"><%= r.emoji || '' %></span>
+                    <input type="text" id="r_emoji" value="<%= r.emoji || '' %>" placeholder="🎯" maxlength="10" oninput="updatePreview()" style="flex:1">
+                    <button class="admin-btn small" onclick="openEmojiPicker()" title="اختر إيموجي"><i class="fas fa-smile"></i></button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>المستوى (0-100)</label>
                   <input type="number" id="r_level" value="<%= r.level %>" min="0" max="100">
                 </div>
                 <div class="form-group" style="grid-column:1/-1">
@@ -95,158 +105,78 @@
             <div class="settings-section">
               <h3><i class="fas fa-shield-halved"></i> خيارات الرتبة</h3>
               <div class="toggle-grid">
-                <label class="toggle-item">
-                  <input type="checkbox" id="r_is_admin" <%= r.is_admin_role ? 'checked' : '' %>>
-                  <span class="toggle-switch"></span>
-                  <span>رتبة إدارية</span>
-                </label>
-                <label class="toggle-item">
-                  <input type="checkbox" id="r_is_protected" <%= r.is_protected ? 'checked' : '' %>>
-                  <span class="toggle-switch"></span>
-                  <span>محمية (لا يمكن حذفها)</span>
-                </label>
-                <label class="toggle-item">
-                  <input type="checkbox" id="r_is_default" <%= r.is_default ? 'checked' : '' %>>
-                  <span class="toggle-switch"></span>
-                  <span>رتبة افتراضية للأعضاء الجدد</span>
-                </label>
+                <label class="toggle-item"><input type="checkbox" id="r_is_admin" <%= r.is_admin_role ? 'checked' : '' %>><span class="toggle-switch"></span><span>رتبة إدارية</span></label>
+                <label class="toggle-item"><input type="checkbox" id="r_is_protected" <%= r.is_protected ? 'checked' : '' %>><span class="toggle-switch"></span><span>محمية (لا يمكن حذفها)</span></label>
+                <label class="toggle-item"><input type="checkbox" id="r_is_default" <%= r.is_default ? 'checked' : '' %>><span class="toggle-switch"></span><span>رتبة افتراضية للأعضاء الجدد</span></label>
+                <label class="toggle-item"><input type="checkbox" id="r_is_staff" <%= r.is_staff ? 'checked' : '' %>><span class="toggle-switch"></span><span>Staff (تظهر في قائمة الفريق)</span></label>
+                <label class="toggle-item"><input type="checkbox" id="h_can_assign" <%= r.can_assign_roles ? 'checked' : '' %>><span class="toggle-switch"></span><span>يمكنه تعيين رتب</span></label>
+              </div>
+              <div class="form-group" style="margin-top:1rem;max-width:300px">
+                <label>أقصى مستوى للرتبة المسموح بتعيينها</label>
+                <input type="number" id="h_max_assign_level" value="<%= r.max_role_level || 0 %>" min="0" max="<%= r.level %>">
               </div>
             </div>
-          </div>
 
-          <!-- Pages Tab -->
-          <div class="tab-content" id="tab-pages">
+            <!-- Hierarchy preview -->
             <div class="settings-section">
-              <h3><i class="fas fa-file"></i> صلاحيات الصفحات</h3>
-              <p style="color:rgba(255,255,255,0.4);font-size:0.85rem;margin-bottom:1rem">حدد الصلاحيات التفصيلية لكل صفحة</p>
-              <div class="pages-grid" id="pagesGrid"></div>
-            </div>
-          </div>
-
-          <!-- Elements Tab -->
-          <div class="tab-content" id="tab-elements">
-            <div class="settings-section">
-              <h3><i class="fas fa-puzzle-piece"></i> صلاحيات العناصر</h3>
-              <p style="color:rgba(255,255,255,0.4);font-size:0.85rem;margin-bottom:1rem">تحكم دقيق في الأزرار والقسمات والµโคمنتس</p>
-
-              <div class="element-section">
-                <h4><i class="fas fa-tachometer-alt"></i> لوحة التحكم</h4>
-                <div class="elements-list">
-                  <label class="element-item"><input type="checkbox" data-page="admin" data-element="dashboard_view" checked><span>عرض لوحة التحكم</span></label>
-                  <label class="element-item"><input type="checkbox" data-page="admin" data-element="users_manage"><span>إدارة المستخدمين</span></label>
-                  <label class="element-item"><input type="checkbox" data-page="admin" data-element="products_manage"><span>إدارة المنتجات</span></label>
-                  <label class="element-item"><input type="checkbox" data-page="admin" data-element="orders_manage"><span>إدارة الطلبات</span></label>
-                  <label class="element-item"><input type="checkbox" data-page="admin" data-element="news_manage"><span>إدارة الأخبار</span></label>
-                  <label class="element-item"><input type="checkbox" data-page="admin" data-element="tickets_manage"><span>إدارة التذاكر</span></label>
-                  <label class="element-item"><input type="checkbox" data-page="admin" data-element="settings_manage"><span>إدارة الإعدادات</span></label>
-                  <label class="element-item"><input type="checkbox" data-page="admin" data-element="roles_manage"><span>إدارة الرتب</span></label>
-                  <label class="element-item"><input type="checkbox" data-page="admin" data-element="logs_view"><span>عرض السجلات</span></label>
-                  <label class="element-item"><input type="checkbox" data-page="admin" data-element="broadcast_send"><span>إرسال البث</span></label>
-                </div>
-              </div>
-
-              <div class="element-section">
-                <h4><i class="fas fa-home"></i> الموقع</h4>
-                <div class="elements-list">
-                  <label class="element-item"><input type="checkbox" data-page="store" data-element="buy"><span>شراء من المتجر</span></label>
-                  <label class="element-item"><input type="checkbox" data-page="store" data-element="view_prices"><span>عرض الأسعار</span></label>
-                  <label class="element-item"><input type="checkbox" data-page="community" data-element="send_message"><span>إرسال رسائل</span></label>
-                  <label class="element-item"><input type="checkbox" data-page="community" data-element="view_chat"><span>عرض الشات</span></label>
-                  <label class="element-item"><input type="checkbox" data-page="applications" data-element="submit"><span>تقديم طلب</span></label>
-                  <label class="element-item"><input type="checkbox" data-page="support" data-element="submit_ticket"><span>إرسال تذكرة</span></label>
-                  <label class="element-item"><input type="checkbox" data-page="profile" data-element="edit"><span>تعديل الملف الشخصي</span></label>
-                  <label class="element-item"><input type="checkbox" data-page="games" data-element="play"><span>اللعب</span></label>
-                </div>
+              <h3><i class="fas fa-sitemap"></i> الهيكل الحالي</h3>
+              <div class="hierarchy-tree">
+                <% if (typeof roles !== 'undefined' && roles) { %>
+                  <% roles.sort((a,b) => b.level - a.level).forEach(function(role, idx) { %>
+                    <div class="tree-node" style="padding-left:<%= idx * 20 %>px">
+                      <div class="tree-dot" style="background:<%= role.color %>"></div>
+                      <span class="tree-name"><% if (role.emoji) { %><%= role.emoji %> <% } %><%= role.display_name || role.name %></span>
+                      <span class="tree-level">Lv.<%= role.level %></span>
+                      <% if (role.id === r.id) { %><span class="badge-current">حالي</span><% } %>
+                    </div>
+                  <% }); %>
+                <% } %>
               </div>
             </div>
-          </div>
 
-          <!-- Punishments Tab -->
-          <div class="tab-content" id="tab-punishments">
-            <div class="settings-section">
-              <h3><i class="fas fa-gavel"></i> صلاحيات العقوبات</h3>
-              <p style="color:rgba(255,255,255,0.4);font-size:0.85rem;margin-bottom:1rem">ما الذي يمكن لهذه الرتبة فعله مع الأعضاء</p>
-              <div class="punish-grid" id="punishGrid">
-                <label class="toggle-item">
-                  <input type="checkbox" id="p_can_ban">
-                  <span class="toggle-switch"></span>
-                  <span><i class="fas fa-ban" style="color:#ef4444"></i> حظر</span>
-                </label>
-                <label class="toggle-item">
-                  <input type="checkbox" id="p_can_mute">
-                  <span class="toggle-switch"></span>
-                  <span><i class="fas fa-microphone-slash" style="color:#f97316"></i> كتم</span>
-                </label>
-                <label class="toggle-item">
-                  <input type="checkbox" id="p_can_warn">
-                  <span class="toggle-switch"></span>
-                  <span><i class="fas fa-exclamation-triangle" style="color:#eab308"></i> تحذير</span>
-                </label>
-                <label class="toggle-item">
-                  <input type="checkbox" id="p_can_kick">
-                  <span class="toggle-switch"></span>
-                  <span><i class="fas fa-right-from-bracket" style="color:#22c55e"></i> طرد</span>
-                </label>
-                <div class="form-group" style="margin-top:1rem">
-                  <label>الحد الأقصى لمستوى المحظورين которые يمكن حظرهم</label>
-                  <input type="number" id="p_max_ban_level" value="0" min="0" max="100">
-                  <small style="color:rgba(255,255,255,0.3)">0 = لا يمكن حظر أحد</small>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Hierarchy Tab -->
-          <div class="tab-content" id="tab-hierarchy">
-            <div class="settings-section">
-              <h3><i class="fas fa-sitemap"></i> إعدادات الهيكلية</h3>
-              <div class="form-grid">
-                <label class="toggle-item">
-                  <input type="checkbox" id="h_can_assign" <%= r.can_assign_roles ? 'checked' : '' %>>
-                  <span class="toggle-switch"></span>
-                  <span>يمكنه تعيين رتب لأعضاء آخرين</span>
-                </label>
-                <div class="form-group" style="margin-top:1rem">
-                  <label>أقصى مستوى للرتبة المسموح بتعيينها (0-<%= r.level %>)</label>
-                  <input type="number" id="h_max_assign_level" value="<%= r.max_role_level || 0 %>" min="0" max="<%= r.level %>">
-                  <small style="color:rgba(255,255,255,0.3)">لا يمكن تعيين رتبة بنفس المستوى أو أعلى</small>
-                </div>
-              </div>
-
-              <div style="margin-top:1.5rem">
-                <h4 style="margin-bottom:0.75rem">هيكل الرتب الحالي</h4>
-                <div class="hierarchy-tree" id="hierarchyTree">
-                  <% if (typeof roles !== 'undefined' && roles) { %>
-                    <% roles.sort((a,b) => b.level - a.level).forEach(function(role, idx) { %>
-                      <div class="tree-node" style="padding-left:<%= idx * 20 %>px">
-                        <div class="tree-line"></div>
-                        <div class="tree-dot" style="background:<%= role.color %>"></div>
-                        <span class="tree-name"><%= role.display_name || role.name %></span>
-                        <span class="tree-level">Lv.<%= role.level %></span>
-                        <% if (role.id === r.id) { %><span class="badge-current">حالي</span><% } %>
-                      </div>
-                    <% }); %>
-                  <% } %>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Members Tab -->
-          <div class="tab-content" id="tab-members">
+            <!-- Members -->
             <div class="settings-section">
               <h3><i class="fas fa-users"></i> الأعضاء بهذه الرتبة</h3>
-              <div id="roleMembersList">
-                <p style="color:rgba(255,255,255,0.4)">جاري التحميل...</p>
+              <div id="roleMembersList"><p style="color:rgba(255,255,255,0.4)">جاري التحميل...</p></div>
+              <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.05);display:flex;gap:0.5rem">
+                <input type="text" id="assignUserId" placeholder="ID المستخدم" style="flex:1;padding:8px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(var(--ac-rgb),0.2);border-radius:8px;color:#fff;font-family:inherit">
+                <input type="text" id="assignReason" placeholder="السبب" style="flex:2;padding:8px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(var(--ac-rgb),0.2);border-radius:8px;color:#fff;font-family:inherit">
+                <button class="admin-btn primary small" onclick="assignRole()"><i class="fas fa-user-plus"></i></button>
               </div>
-              <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.05)">
-                <h4 style="margin-bottom:0.5rem;font-size:0.9rem">تعيين عضو لهذه الرتبة</h4>
-                <div style="display:flex;gap:0.5rem">
-                  <input type="text" id="assignUserId" placeholder="ID المستخدم" style="flex:1;padding:8px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(var(--ac-rgb),0.2);border-radius:8px;color:#fff;font-family:inherit">
-                  <input type="text" id="assignReason" placeholder="السبب" style="flex:2;padding:8px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(var(--ac-rgb),0.2);border-radius:8px;color:#fff;font-family:inherit">
-                  <button class="admin-btn primary small" onclick="assignRole()"><i class="fas fa-user-plus"></i> تعيين</button>
-                </div>
+            </div>
+          </div>
+
+          <!-- Tab: Admin Permissions -->
+          <div class="tab-content" id="tab-admin-perms">
+            <div class="settings-section">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+                <h3 style="margin-bottom:0"><i class="fas fa-lock"></i> صلاحيات الإدارة</h3>
+                <input type="text" id="adminPermSearch" placeholder="🔍 بحث عن صلاحية..." oninput="filterPerms('admin')" style="padding:6px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(var(--ac-rgb),0.2);border-radius:8px;color:#fff;font-family:inherit;font-size:0.8rem;width:220px">
               </div>
+              <div id="adminPermsContainer"></div>
+            </div>
+          </div>
+
+          <!-- Tab: Site Permissions -->
+          <div class="tab-content" id="tab-site-perms">
+            <div class="settings-section">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+                <h3 style="margin-bottom:0"><i class="fas fa-globe"></i> صلاحيات الموقع</h3>
+                <input type="text" id="sitePermSearch" placeholder="🔍 بحث عن صلاحية..." oninput="filterPerms('site')" style="padding:6px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(var(--ac-rgb),0.2);border-radius:8px;color:#fff;font-family:inherit;font-size:0.8rem;width:220px">
+              </div>
+              <div id="sitePermsContainer"></div>
+            </div>
+          </div>
+
+          <!-- Tab: Side Roles -->
+          <div class="tab-content" id="tab-side-roles">
+            <div class="settings-section">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+                <h3 style="margin-bottom:0"><i class="fas fa-tags"></i> الأدوار الجانبية</h3>
+                <button class="admin-btn small primary" onclick="openAddSideRole()"><i class="fas fa-plus"></i> دور جديد</button>
+              </div>
+              <p style="color:rgba(255,255,255,0.4);font-size:0.85rem;margin-bottom:1rem">الأدوار الجانبية هي tags إضافية تُضاف للمستخدمين بجانب رتبتهم الأساسية</p>
+              <div id="sideRolesList"></div>
             </div>
           </div>
         </div>
@@ -266,324 +196,473 @@
   <div class="admin-modal-content">
     <div class="admin-modal-header">
       <h3>رتبة جديدة</h3>
-      <button class="admin-btn" onclick="closeAddRole()"><i class="fas fa-times"></i></button>
+      <button class="admin-btn" onclick="closeModal('addRoleModal')"><i class="fas fa-times"></i></button>
     </div>
     <div class="form-grid">
       <div class="form-group"><label>الاسم (إنجليزي)</label><input type="text" id="new_name"></div>
       <div class="form-group"><label>اسم العرض (عربي)</label><input type="text" id="new_display_name"></div>
       <div class="form-group"><label>اللون</label><input type="color" id="new_color" value="#780ecf"></div>
-      <div class="form-group"><label>الأيقونة</label><input type="text" id="new_icon" value="fa-user" placeholder="fa-shield-halved"></div>
+      <div class="form-group"><label>الأيقونة</label><input type="text" id="new_icon" value="fa-user"></div>
+      <div class="form-group"><label>الإيموجي</label><input type="text" id="new_emoji" placeholder="🎯" maxlength="10"></div>
       <div class="form-group"><label>المستوى (0-100)</label><input type="number" id="new_level" value="0" min="0" max="100"></div>
       <div class="form-group" style="grid-column:1/-1"><label>الوصف</label><input type="text" id="new_description" placeholder="وصف الرتبة..."></div>
     </div>
     <div class="admin-modal-footer">
-      <button class="admin-btn" onclick="closeAddRole()">إلغاء</button>
+      <button class="admin-btn" onclick="closeModal('addRoleModal')">إلغاء</button>
       <button class="admin-btn primary" onclick="createRole()"><i class="fas fa-plus"></i> إنشاء</button>
     </div>
   </div>
 </div>
 
+<!-- Add Side Role Modal -->
+<div id="addSideRoleModal" class="admin-modal" style="display:none">
+  <div class="admin-modal-content">
+    <div class="admin-modal-header">
+      <h3>دور جانبي جديد</h3>
+      <button class="admin-btn" onclick="closeModal('addSideRoleModal')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group"><label>الاسم (إنجليزي)</label><input type="text" id="sr_name"></div>
+      <div class="form-group"><label>اسم العرض (عربي)</label><input type="text" id="sr_display_name"></div>
+      <div class="form-group"><label>اللون</label><input type="color" id="sr_color" value="#780ecf"></div>
+      <div class="form-group"><label>الأيقونة</label><input type="text" id="sr_icon" value="fa-tag"></div>
+      <div class="form-group"><label>الإيموجي</label><input type="text" id="sr_emoji" placeholder="🏷️" maxlength="10"></div>
+    </div>
+    <div class="admin-modal-footer">
+      <button class="admin-btn" onclick="closeModal('addSideRoleModal')">إلغاء</button>
+      <button class="admin-btn primary" onclick="createSideRole()"><i class="fas fa-plus"></i> إنشاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Emoji Picker Modal -->
+<div id="emojiPickerModal" class="admin-modal" style="display:none">
+  <div class="admin-modal-content" style="max-width:360px">
+    <div class="admin-modal-header">
+      <h3>اختر إيموجي</h3>
+      <button class="admin-btn" onclick="closeModal('emojiPickerModal')"><i class="fas fa-times"></i></button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;max-height:300px;overflow-y:auto;padding:0.5rem">
+      <% const emojis = ['🎯','👑','⚔️','🛡️','🎮','🏆','⭐','💎','🔥','💜','🎨','🎭','🦊','🐺','🦁','🐉','⚡','🌟','💫','🎪','🎭','🎯','🎲','🧩','🎰','🗿','👤','👥','💬','📝','🔑','🏠','🌍','💎','🗡️','🏹','🔮','🧿','ControlItem','👤','🏆','🎖️','🏅','☮️','☯️','💜','💙','💚','💛','🧡','❤️','🖤','🤍','💜','🏴','🚩','⚜️','🔱','🔯','暹','♒','♓','♈','♉','♊','♋','♌','♍','♎','♏','♐','♑']; %>
+      <% emojis.forEach(function(e) { %>
+        <button onclick="pickEmoji('<%= e %>')" style="font-size:1.4rem;padding:6px;background:none;border:1px solid rgba(255,255,255,0.06);border-radius:6px;cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor='var(--ac)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.06)'"><%= e %></button>
+      <% }); %>
+    </div>
+  </div>
+</div>
+
 <style>
-.role-tabs { display: flex; gap: 0.25rem; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(var(--ac-rgb),0.1); padding-bottom: 0; overflow-x: auto; }
-.role-tab { padding: 10px 18px; background: none; border: none; color: rgba(255,255,255,0.5); font-family: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.3s; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
-.role-tab:hover { color: rgba(255,255,255,0.8); }
-.role-tab.active { color: var(--ac); border-bottom-color: var(--ac); }
-.tab-content { display: none; }
-.tab-content.active { display: block; }
+.role-tabs{display:flex;gap:0.25rem;margin-bottom:1.5rem;border-bottom:1px solid rgba(var(--ac-rgb),0.1);padding-bottom:0;overflow-x:auto}
+.role-tab{padding:10px 18px;background:none;border:none;color:rgba(255,255,255,0.5);font-family:inherit;font-size:0.85rem;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.3s;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.role-tab:hover{color:rgba(255,255,255,0.8)}
+.role-tab.active{color:var(--ac);border-bottom-color:var(--ac)}
+.tab-content{display:none}.tab-content.active{display:block}
+.settings-section{background:rgba(255,255,255,0.02);border:1px solid rgba(var(--ac-rgb),0.1);border-radius:14px;padding:1.5rem;margin-bottom:1.2rem}
+.settings-section h3{font-size:1rem;font-weight:800;margin-bottom:1rem;color:var(--ac);display:flex;align-items:center;gap:8px}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem}
+.toggle-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:0.75rem}
+.toggle-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;cursor:pointer;transition:all 0.3s}
+.toggle-item:hover{border-color:rgba(var(--ac-rgb),0.3)}
+.toggle-item input{display:none}
+.toggle-switch{width:36px;height:20px;background:rgba(255,255,255,0.15);border-radius:10px;position:relative;transition:background 0.3s;flex-shrink:0}
+.toggle-switch::after{content:'';position:absolute;width:16px;height:16px;background:#fff;border-radius:50%;top:2px;right:2px;transition:transform 0.3s}
+.toggle-item input:checked~.toggle-switch{background:var(--ac)}
+.toggle-item input:checked~.toggle-switch::after{transform:translateX(-16px)}
 
-.settings-section { background: rgba(255,255,255,0.02); border: 1px solid rgba(var(--ac-rgb),0.1); border-radius: 14px; padding: 1.5rem; margin-bottom: 1.2rem; }
-.settings-section h3 { font-size: 1rem; font-weight: 800; margin-bottom: 1rem; color: var(--ac); display: flex; align-items: center; gap: 8px; }
-.settings-section h4 { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.75rem; color: rgba(255,255,255,0.7); }
+/* Role list */
+.role-list-item{display:flex;align-items:center;padding:10px 12px;border-radius:10px;cursor:pointer;transition:all 0.3s;border:1px solid transparent;margin-bottom:2px}
+.role-list-item:hover{background:rgba(var(--ac-rgb),0.06)}
+.role-list-item.selected{background:rgba(var(--ac-rgb),0.1);border-color:rgba(var(--ac-rgb),0.3)}
+.role-list-item[draggable="true"]{cursor:grab}
+.role-list-item.dragging{opacity:0.5;background:rgba(var(--ac-rgb),0.15)}
+.drag-handle{color:rgba(255,255,255,0.2);cursor:grab;font-size:0.8rem}
+.drag-handle:hover{color:rgba(255,255,255,0.5)}
+.role-delete-btn{opacity:0;transition:opacity 0.3s;background:none;border:none;color:#ef4444;cursor:pointer;padding:4px 8px;border-radius:6px;font-size:0.8rem}
+.role-list-item:hover .role-delete-btn{opacity:1}
+.role-emoji-badge{margin-left:4px}
 
-.form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
-.toggle-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 0.75rem; }
-.toggle-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; cursor: pointer; transition: all 0.3s; }
-.toggle-item:hover { border-color: rgba(var(--ac-rgb),0.3); }
-.toggle-item input { display: none; }
-.toggle-switch { width: 36px; height: 20px; background: rgba(255,255,255,0.15); border-radius: 10px; position: relative; transition: background 0.3s; flex-shrink: 0; }
-.toggle-switch::after { content: ''; position: absolute; width: 16px; height: 16px; background: #fff; border-radius: 50%; top: 2px; right: 2px; transition: transform 0.3s; }
-.toggle-item input:checked ~ .toggle-switch { background: var(--ac); }
-.toggle-item input:checked ~ .toggle-switch::after { transform: translateX(-16px); }
+/* Permission groups */
+.perm-group{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:12px;margin-bottom:0.75rem;overflow:hidden}
+.perm-group-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;transition:background 0.2s}
+.perm-group-header:hover{background:rgba(255,255,255,0.03)}
+.perm-group-header h4{font-size:0.9rem;font-weight:700;display:flex;align-items:center;gap:8px;margin:0;color:rgba(255,255,255,0.8)}
+.perm-group-header .group-count{font-size:0.7rem;color:rgba(255,255,255,0.3);background:rgba(255,255,255,0.05);padding:2px 8px;border-radius:10px}
+.perm-group-body{padding:0 16px 12px;display:none}
+.perm-group.open .perm-group-body{display:block}
+.perm-group-arrow{transition:transform 0.3s;color:rgba(255,255,255,0.3)}
+.perm-group.open .perm-group-arrow{transform:rotate(90deg)}
+.perm-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px;transition:background 0.2s}
+.perm-row:hover{background:rgba(255,255,255,0.03)}
+.perm-label{font-size:0.85rem;font-weight:600;color:rgba(255,255,255,0.7)}
+.perm-desc{font-size:0.75rem;color:rgba(255,255,255,0.3)}
+.group-toggle-all{font-size:0.7rem;padding:4px 10px;border-radius:6px;border:1px solid rgba(var(--ac-rgb),0.3);background:rgba(var(--ac-rgb),0.1);color:var(--ac);cursor:pointer;font-family:inherit;font-weight:600;transition:all 0.2s}
+.group-toggle-all:hover{background:rgba(var(--ac-rgb),0.2)}
 
-.pages-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
-.page-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 1rem; }
-.page-card h4 { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 8px; color: var(--ac); }
-.page-perms { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-.perm-chip { padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); transition: all 0.3s; user-select: none; }
-.perm-chip.active { background: rgba(var(--ac-rgb),0.2); border-color: var(--ac); color: var(--ac); }
-.perm-chip:hover { border-color: rgba(var(--ac-rgb),0.4); }
+/* Side roles */
+.side-role-card{display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:10px;margin-bottom:0.5rem;transition:all 0.3s}
+.side-role-card:hover{border-color:rgba(var(--ac-rgb),0.2)}
+.side-role-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;font-size:0.8rem;font-weight:700}
+.side-role-actions{margin-right:auto;display:flex;gap:6px}
 
-.element-section { margin-bottom: 1.5rem; }
-.elements-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.5rem; }
-.element-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; cursor: pointer; transition: all 0.3s; font-size: 0.85rem; }
-.element-item:hover { border-color: rgba(var(--ac-rgb),0.3); }
-.element-item input:checked ~ span { color: var(--ac); font-weight: 600; }
-
-.punish-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 0.75rem; }
-
-.hierarchy-tree { display: flex; flex-direction: column; gap: 0.25rem; }
-.tree-node { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 8px; transition: background 0.2s; }
-.tree-node:hover { background: rgba(255,255,255,0.03); }
-.tree-line { width: 20px; height: 1px; background: rgba(255,255,255,0.1); flex-shrink: 0; }
-.tree-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.tree-name { font-weight: 600; font-size: 0.85rem; }
-.tree-level { font-size: 0.7rem; color: rgba(255,255,255,0.3); margin-right: auto; }
-.badge-admin { padding: 1px 6px; background: rgba(239,68,68,0.2); color: #ef4444; border-radius: 4px; font-size: 0.65rem; font-weight: 700; }
-.badge-protected { padding: 1px 6px; background: rgba(234,179,8,0.2); color: #eab308; border-radius: 4px; font-size: 0.65rem; }
-.badge-current { padding: 1px 6px; background: rgba(var(--ac-rgb),0.2); color: var(--ac); border-radius: 4px; font-size: 0.65rem; font-weight: 700; }
-
-.hierarchy-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: 10px; cursor: pointer; transition: all 0.3s; border: 1px solid transparent; margin-bottom: 2px; }
-.hierarchy-item:hover { background: rgba(var(--ac-rgb),0.06); }
-.hierarchy-item.selected { background: rgba(var(--ac-rgb),0.1); border-color: rgba(var(--ac-rgb),0.3); }
-.hierarchy-level { display: flex; align-items: center; gap: 10px; flex: 1; }
-.hierarchy-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
-.hierarchy-name { font-weight: 700; font-size: 0.85rem; }
-.hierarchy-meta { display: flex; gap: 4px; align-items: center; font-size: 0.7rem; color: rgba(255,255,255,0.4); }
-.hierarchy-delete { opacity: 0; transition: opacity 0.3s; background: none; border: none; color: #ef4444; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
-.hierarchy-item:hover .hierarchy-delete { opacity: 1; }
-
-.member-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 10px; transition: background 0.2s; }
-.member-item:hover { background: rgba(255,255,255,0.03); }
-.member-item img { width: 32px; height: 32px; border-radius: 50%; }
-.member-info { flex: 1; }
-.member-name { font-weight: 700; font-size: 0.85rem; }
-.member-id { font-size: 0.7rem; color: rgba(255,255,255,0.3); }
+/* Badges */
+.badge-admin-sm{padding:1px 5px;background:rgba(239,68,68,0.2);color:#ef4444;border-radius:4px;font-size:0.6rem;font-weight:700;margin-right:4px}
+.badge-staff-sm{padding:1px 5px;background:rgba(59,130,246,0.2);color:#3b82f6;border-radius:4px;font-size:0.6rem;font-weight:700;margin-right:4px}
+.badge-current{padding:1px 6px;background:rgba(var(--ac-rgb),0.2);color:var(--ac);border-radius:4px;font-size:0.65rem;font-weight:700}
+.hierarchy-tree{display:flex;flex-direction:column;gap:0.25rem}
+.tree-node{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;transition:background 0.2s}
+.tree-node:hover{background:rgba(255,255,255,0.03)}
+.tree-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.tree-name{font-weight:600;font-size:0.85rem}
+.tree-level{font-size:0.7rem;color:rgba(255,255,255,0.3);margin-right:auto}
+.member-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;transition:background 0.2s}
+.member-item:hover{background:rgba(255,255,255,0.03)}
+.member-item img{width:32px;height:32px;border-radius:50%}
+.member-info{flex:1}.member-name{font-weight:700;font-size:0.85rem}.member-id{font-size:0.7rem;color:rgba(255,255,255,0.3)}
 </style>
 
 <script>
-const ALL_PAGES = [
-  { id: 'home', name: 'الرئيسية', icon: 'fa-home' },
-  { id: 'about', name: 'من نحن', icon: 'fa-users' },
-  { id: 'rules', name: 'القواعد', icon: 'fa-gavel' },
-  { id: 'store', name: 'المتجر', icon: 'fa-store' },
-  { id: 'games', name: 'الألعاب', icon: 'fa-gamepad' },
-  { id: 'community', name: 'المجتمع', icon: 'fa-comments' },
-  { id: 'applications', name: 'الطلبات', icon: 'fa-file-alt' },
-  { id: 'support', name: 'الدعم الفني', icon: 'fa-headset' },
-  { id: 'profile', name: 'الملف الشخصي', icon: 'fa-user' },
-  { id: 'cart', name: 'السلة', icon: 'fa-shopping-cart' },
-  { id: 'orders', name: 'الطلبات', icon: 'fa-box' },
-  { id: 'checkout', name: 'الدفع', icon: 'fa-credit-card' },
-  { id: 'contact', name: 'تواصل معنا', icon: 'fa-envelope' },
-  { id: 'admin', name: 'لوحة التحكم', icon: 'fa-tachometer-alt' },
-  { id: 'admin_users', name: 'إدارة المستخدمين', icon: 'fa-users-cog' },
-  { id: 'admin_products', name: 'إدارة المنتجات', icon: 'fa-box-open' },
-  { id: 'admin_orders', name: 'إدارة الطلبات', icon: 'fa-truck' },
-  { id: 'admin_news', name: 'إدارة الأخبار', icon: 'fa-newspaper' },
-  { id: 'admin_tickets', name: 'إدارة التذاكر', icon: 'fa-ticket' },
-  { id: 'admin_settings', name: 'الإعدادات', icon: 'fa-cog' },
-  { id: 'admin_roles', name: 'إدارة الصلاحيات', icon: 'fa-shield-halved' },
-  { id: 'admin_logs', name: 'السجلات', icon: 'fa-history' },
-  { id: 'admin_discounts', name: 'أكواد الخصم', icon: 'fa-tag' },
-  { id: 'admin_rules', name: 'القوانين', icon: 'fa-gavel' },
-  { id: 'admin_broadcast', name: 'البث', icon: 'fa-bullhorn' },
-  { id: 'admin_banned', name: 'المحظورين', icon: 'fa-ban' },
-];
-
+const PERMISSION_GROUPS = <%- JSON.stringify(PERMISSION_GROUPS || {}) %>;
 let roles = <%- JSON.stringify(roles || []) %>;
-let pagePerms = <%- JSON.stringify(pagePerms || {}) %>;
-let elemPerms = <%- JSON.stringify(elemPerms || {}) %>;
-let punishData = <%- JSON.stringify(punishData || {}) %>;
+let unifiedPerms = <%- JSON.stringify(unifiedPerms || {}) %>;
+let sideRoles = <%- JSON.stringify(sideRoles || []) %>;
 let selectedRoleId = roles.length ? roles[0].id : null;
+let permState = {}; // { roleId: { perm_key: 1/0 } }
 
+// Initialize permState from server data
+roles.forEach(r => {
+  permState[r.id] = {};
+  const saved = unifiedPerms[r.id] || {};
+  // If role has no permissions saved, default owner/admin to all enabled
+  if (Object.keys(saved).length === 0 && r.is_admin_role) {
+    for (const [gKey, group] of Object.entries(PERMISSION_GROUPS)) {
+      for (const pKey of Object.keys(group.permissions)) {
+        permState[r.id][pKey] = 1;
+      }
+    }
+  } else {
+    permState[r.id] = { ...saved };
+  }
+});
+
+// Tab switching
 function switchTab(tab) {
   document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   event.target.closest('.role-tab').classList.add('active');
   document.getElementById('tab-' + tab).classList.add('active');
-
-  if (tab === 'members' && selectedRoleId) loadMembers(selectedRoleId);
-  if (tab === 'pages') renderPagesGrid();
-  if (tab === 'elements') loadElemPerms();
-  if (tab === 'punishments') loadPunishments();
-  if (tab === 'hierarchy') document.getElementById('h_max_assign_level').max = document.getElementById('r_level').value;
+  if (tab === 'admin-perms') renderPermGroup('admin');
+  if (tab === 'site-perms') renderPermGroup('site');
+  if (tab === 'side-roles') renderSideRoles();
+  if (tab === 'roles' && selectedRoleId) loadMembers(selectedRoleId);
 }
 
-function renderPagesGrid() {
-  const grid = document.getElementById('pagesGrid');
-  if (!grid) return;
-  const rp = pagePerms[selectedRoleId] || {};
-  grid.innerHTML = ALL_PAGES.map(p => {
-    const perm = rp[p.id] || {};
-    const perms = ['can_view', 'can_create', 'can_edit', 'can_delete', 'can_manage', 'can_export', 'can_broadcast'];
-    const labels = { can_view: 'عرض', can_create: 'إنشاء', can_edit: 'تعديل', can_delete: 'حذف', can_manage: 'إدارة', can_export: 'تصدير', can_broadcast: 'بث' };
-    return `
-      <div class="page-card">
-        <h4><i class="fas ${p.icon}"></i> ${p.name}</h4>
-        <div class="page-perms">
-          ${perms.map(pr => `<span class="perm-chip ${perm[pr] ? 'active' : ''}" data-page="${p.id}" data-perm="${pr}" onclick="togglePagePerm(this)">${labels[pr]}</span>`).join('')}
+// Render permission groups
+function renderPermGroup(type) {
+  const container = document.getElementById(type === 'admin' ? 'adminPermsContainer' : 'sitePermsContainer');
+  if (!container) return;
+  const state = permState[selectedRoleId] || {};
+  let html = '';
+  for (const [gKey, group] of Object.entries(PERMISSION_GROUPS)) {
+    if ((type === 'admin' && !group.is_site) || (type === 'site' && group.is_site)) {
+      const permKeys = Object.keys(group.permissions);
+      const enabledCount = permKeys.filter(k => state[k]).length;
+      html += `<div class="perm-group" data-group="${gKey}">
+        <div class="perm-group-header" onclick="toggleGroup('${gKey}')">
+          <h4><i class="fas ${group.icon}"></i> ${group.label} <span class="group-count">${enabledCount}/${permKeys.length}</span></h4>
+          <div style="display:flex;align-items:center;gap:8px">
+            <button class="group-toggle-all" onclick="event.stopPropagation();toggleGroupAll('${gKey}',${type === 'admin' ? 'false' : 'true'})">تحديد الكل</button>
+            <i class="fas fa-chevron-right perm-group-arrow"></i>
+          </div>
         </div>
-      </div>
-    `;
-  }).join('');
+        <div class="perm-group-body">
+          ${permKeys.map(pKey => {
+            const perm = group.permissions[pKey];
+            return `<div class="perm-row" data-key="${pKey}">
+              <div><div class="perm-label">${perm.label}</div><div class="perm-desc">${perm.desc}</div></div>
+              <label class="toggle-item" style="margin:0;padding:6px 10px;border:none;background:none">
+                <input type="checkbox" ${state[pKey] ? 'checked' : ''} onchange="togglePerm('${pKey}',this.checked)">
+                <span class="toggle-switch"></span>
+              </label>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+    }
+  }
+  container.innerHTML = html;
 }
 
-function togglePagePerm(el) {
-  el.classList.toggle('active');
+function toggleGroup(gKey) {
+  const el = document.querySelector(`.perm-group[data-group="${gKey}"]`);
+  if (el) el.classList.toggle('open');
 }
 
-function loadElemPerms() {
-  const ep = elemPerms[selectedRoleId] || {};
-  document.querySelectorAll('.element-item input[type=checkbox]').forEach(cb => {
-    const key = cb.dataset.page + ':' + cb.dataset.element;
-    cb.checked = !!ep[key];
+function toggleGroupAll(gKey) {
+  if (!permState[selectedRoleId]) permState[selectedRoleId] = {};
+  const group = PERMISSION_GROUPS[gKey];
+  if (!group) return;
+  const permKeys = Object.keys(group.permissions);
+  const allEnabled = permKeys.every(k => permState[selectedRoleId][k]);
+  permKeys.forEach(k => { permState[selectedRoleId][k] = allEnabled ? 0 : 1; });
+  renderPermGroup(document.getElementById('adminPermsContainer')?.closest('.tab-content')?.id === 'tab-admin-perms' ? 'admin' : 'site');
+}
+
+function togglePerm(key, enabled) {
+  if (!permState[selectedRoleId]) permState[selectedRoleId] = {};
+  permState[selectedRoleId][key] = enabled ? 1 : 0;
+  // Update group count
+  for (const [gKey, group] of Object.entries(PERMISSION_GROUPS)) {
+    if (group.permissions[key]) {
+      const el = document.querySelector(`.perm-group[data-group="${gKey}"] .group-count`);
+      if (el) {
+        const permKeys = Object.keys(group.permissions);
+        const count = permKeys.filter(k => permState[selectedRoleId][k]).length;
+        el.textContent = count + '/' + permKeys.length;
+      }
+      break;
+    }
+  }
+}
+
+function filterPerms(type) {
+  const searchId = type === 'admin' ? 'adminPermSearch' : 'sitePermSearch';
+  const q = document.getElementById(searchId)?.value?.toLowerCase() || '';
+  const container = document.getElementById(type === 'admin' ? 'adminPermsContainer' : 'sitePermsContainer');
+  container.querySelectorAll('.perm-row').forEach(row => {
+    const text = row.textContent.toLowerCase();
+    row.style.display = text.includes(q) ? '' : 'none';
+  });
+  container.querySelectorAll('.perm-group').forEach(g => {
+    const visibleRows = g.querySelectorAll('.perm-row:not([style*="display: none"])');
+    g.style.display = visibleRows.length ? '' : 'none';
   });
 }
 
-function loadPunishments() {
-  const p = punishData[selectedRoleId] || {};
-  document.getElementById('p_can_ban').checked = !!p.can_ban;
-  document.getElementById('p_can_mute').checked = !!p.can_mute;
-  document.getElementById('p_can_warn').checked = !!p.can_warn;
-  document.getElementById('p_can_kick').checked = !!p.can_kick;
-  document.getElementById('p_max_ban_level').value = p.max_ban_level || 0;
-}
-
-async function loadMembers(roleId) {
-  try {
-    const res = await fetch('/api/admin/roles/' + roleId + '/members');
-    const data = await res.json();
-    const list = document.getElementById('roleMembersList');
-    if (data.members && data.members.length) {
-      list.innerHTML = data.members.map(m => `
-        <div class="member-item">
-          <img src="${m.profile_picture || '/images/default-avatar.png'}" alt="">
-          <div class="member-info">
-            <div class="member-name">${m.username}</div>
-            <div class="member-id">#${m.id} • ${m.discord_id || 'N/A'}</div>
-          </div>
-          <span style="font-size:0.7rem;color:rgba(255,255,255,0.3)">${m.created_at ? new Date(m.created_at).toLocaleDateString('ar-EG') : ''}</span>
-        </div>
-      `).join('');
-    } else {
-      list.innerHTML = '<div style="text-align:center;padding:2rem;color:rgba(255,255,255,0.3)">لا يوجد أعضاء بهذه الرتبة</div>';
-    }
-  } catch(e) {}
-}
-
+// Role selection
 function selectRole(id) {
   selectedRoleId = id;
-  document.querySelectorAll('.hierarchy-item').forEach(el => el.classList.toggle('selected', el.dataset.id == id));
+  document.querySelectorAll('.role-list-item').forEach(el => el.classList.toggle('selected', el.dataset.id == id));
   const role = roles.find(r => r.id === id);
   if (!role) return;
-
   document.getElementById('roleEditor').dataset.roleId = id;
   document.getElementById('r_name').value = role.name;
   document.getElementById('r_display_name').value = role.display_name || '';
   document.getElementById('r_color').value = role.color || '#ffffff';
   document.getElementById('r_icon').value = role.icon || '';
+  document.getElementById('r_emoji').value = role.emoji || '';
   document.getElementById('r_level').value = role.level;
   document.getElementById('r_description').value = role.description || '';
   document.getElementById('r_is_admin').checked = !!role.is_admin_role;
   document.getElementById('r_is_protected').checked = !!role.is_protected;
   document.getElementById('r_is_default').checked = !!role.is_default;
+  document.getElementById('r_is_staff').checked = !!role.is_staff;
   document.getElementById('h_can_assign').checked = !!role.can_assign_roles;
   document.getElementById('h_max_assign_level').value = role.max_role_level || 0;
+  updatePreview();
+  // Re-render current tab
+  const activeTab = document.querySelector('.role-tab.active')?.textContent || '';
+  if (activeTab.includes('الإدارة')) renderPermGroup('admin');
+  else if (activeTab.includes('الموقع')) renderPermGroup('site');
+  else if (activeTab.includes('الجانبية')) renderSideRoles();
+  else if (activeTab.includes('الأعضاء')) loadMembers(id);
+}
 
-  // Reload current tab content
-  const activeTab = document.querySelector('.role-tab.active');
-  if (activeTab) {
-    const tabName = activeTab.textContent.includes('صفحات') ? 'pages' : activeTab.textContent.includes('عناصر') ? 'elements' : activeTab.textContent.includes('عقوبات') ? 'punishments' : activeTab.textContent.includes('أعضاء') ? 'members' : 'settings';
-    if (tabName === 'pages') renderPagesGrid();
-    if (tabName === 'elements') loadElemPerms();
-    if (tabName === 'punishments') loadPunishments();
-    if (tabName === 'members') loadMembers(id);
+function updatePreview() {
+  const color = document.getElementById('r_color').value;
+  const name = document.getElementById('r_display_name').value || document.getElementById('r_name').value;
+  const emoji = document.getElementById('r_emoji').value;
+  const icon = document.getElementById('r_icon').value || 'fa-user';
+  const badge = document.getElementById('rolePreviewBadge');
+  if (badge) {
+    badge.style.background = color + '20';
+    badge.style.borderColor = color + '40';
+    badge.style.color = color;
+    badge.innerHTML = (emoji ? '<span>' + emoji + '</span>' : '') + '<i class="fas ' + icon + '"></i> ' + name;
   }
+  const emojiPrev = document.getElementById('emojiPreview');
+  if (emojiPrev) emojiPrev.textContent = emoji;
 }
 
-async function saveRole() {
-  const id = document.getElementById('roleEditor').dataset.roleId;
-  if (!id) return;
+function updateIconPreview() {
+  const icon = document.getElementById('r_icon').value || 'fa-user';
+  const prev = document.getElementById('iconPreview');
+  if (prev) { prev.className = 'fas ' + icon; }
+  updatePreview();
+}
 
-  // Gather page permissions
-  const pages = {};
-  document.querySelectorAll('.perm-chip.active').forEach(chip => {
-    const page = chip.dataset.page;
-    const perm = chip.dataset.perm;
-    if (!pages[page]) pages[page] = {};
-    pages[page][perm] = 1;
+// Emoji picker
+function openEmojiPicker() { document.getElementById('emojiPickerModal').style.display = 'flex'; }
+function pickEmoji(e) {
+  document.getElementById('r_emoji').value = e;
+  closeModal('emojiPickerModal');
+  updatePreview();
+}
+
+// Drag & drop reorder
+let draggedItem = null;
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.role-list-item[draggable]').forEach(item => {
+    item.addEventListener('dragstart', e => { draggedItem = item; item.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+    item.addEventListener('dragend', () => { draggedItem?.classList.remove('dragging'); draggedItem = null; });
+    item.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+    item.addEventListener('drop', e => {
+      e.preventDefault();
+      if (draggedItem && draggedItem !== item) {
+        const list = item.parentNode;
+        const items = [...list.children];
+        const fromIdx = items.indexOf(draggedItem);
+        const toIdx = items.indexOf(item);
+        if (fromIdx < toIdx) list.insertBefore(draggedItem, item.nextSibling);
+        else list.insertBefore(draggedItem, item);
+        saveRoleOrder();
+      }
+    });
   });
+});
 
-  // Gather element permissions
-  const elements = {};
-  document.querySelectorAll('.element-item input:checked').forEach(cb => {
-    const key = cb.dataset.page + ':' + cb.dataset.element;
-    elements[key] = 1;
+async function saveRoleOrder() {
+  const items = document.querySelectorAll('.role-list-item');
+  const order = [];
+  items.forEach((item, i) => { order.push({ id: parseInt(item.dataset.id), sort_order: i }); });
+  try { await fetch('/api/admin/roles/reorder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order }) }); } catch(e) {}
+}
+
+function filterRoles() {
+  const q = document.getElementById('roleSearch')?.value?.toLowerCase() || '';
+  document.querySelectorAll('.role-list-item').forEach(el => {
+    el.style.display = (el.dataset.name || '').includes(q) ? '' : 'none';
   });
+}
 
-  const body = {
-    name: document.getElementById('r_name').value,
-    display_name: document.getElementById('r_display_name').value,
-    color: document.getElementById('r_color').value,
-    icon: document.getElementById('r_icon').value,
-    level: parseInt(document.getElementById('r_level').value) || 0,
-    description: document.getElementById('r_description').value,
-    is_admin_role: document.getElementById('r_is_admin').checked ? 1 : 0,
-    is_protected: document.getElementById('r_is_protected').checked ? 1 : 0,
-    is_default: document.getElementById('r_is_default').checked ? 1 : 0,
-    can_assign_roles: document.getElementById('h_can_assign').checked ? 1 : 0,
-    max_role_level: parseInt(document.getElementById('h_max_assign_level').value) || 0,
-    page_permissions: pages,
-    element_permissions: elements,
-    punishments: {
-      can_ban: document.getElementById('p_can_ban').checked ? 1 : 0,
-      can_mute: document.getElementById('p_can_mute').checked ? 1 : 0,
-      can_warn: document.getElementById('p_can_warn').checked ? 1 : 0,
-      can_kick: document.getElementById('p_can_kick').checked ? 1 : 0,
-      max_ban_level: parseInt(document.getElementById('p_max_ban_level').value) || 0,
+// Members
+async function loadMembers(roleId) {
+  try {
+    const res = await fetch('/api/admin/roles/' + roleId + '/members');
+    const data = await res.json();
+    const list = document.getElementById('roleMembersList');
+    if (!list) return;
+    if (data.members?.length) {
+      list.innerHTML = data.members.map(m => `<div class="member-item"><img src="${m.profile_picture || '/images/default-avatar.png'}" alt=""><div class="member-info"><div class="member-name">${m.username}</div><div class="member-id">#${m.id}</div></div></div>`).join('');
+    } else {
+      list.innerHTML = '<div style="text-align:center;padding:1.5rem;color:rgba(255,255,255,0.3)">لا يوجد أعضاء</div>';
     }
-  };
-
-  try {
-    const res = await fetch('/api/admin/roles/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    const data = await res.json();
-    if (data.success) {
-      pagePerms[id] = pages;
-      elemPerms[id] = {};
-      for (const k in elements) elemPerms[id][k] = 1;
-      punishData[id] = body.punishments;
-      const idx = roles.findIndex(r => r.id == id);
-      if (idx >= 0) Object.assign(roles[idx], body);
-      showToast('تم الحفظ بنجاح');
-    } else showToast(data.error || 'حدث خطأ', true);
-  } catch(e) { showToast('حدث خطأ', true); }
-}
-
-async function deleteRole(id) {
-  if (!confirm('هل أنت متأكد من حذف هذه الرتبة؟')) return;
-  try {
-    const res = await fetch('/api/admin/roles/' + id, { method: 'DELETE' });
-    const data = await res.json();
-    if (data.success) location.reload();
-    else showToast(data.error || 'حدث خطأ', true);
-  } catch(e) { showToast('حدث خطأ', true); }
+  } catch(e) {}
 }
 
 async function assignRole() {
   const userId = document.getElementById('assignUserId').value.trim();
   const reason = document.getElementById('assignReason').value.trim();
-  if (!userId) return alert('أدخل ID المستخدم');
+  if (!userId) return alert('أدخل ID');
   try {
-    const res = await fetch('/api/admin/roles/' + selectedRoleId + '/assign', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: parseInt(userId), reason })
-    });
+    const res = await fetch('/api/admin/roles/' + selectedRoleId + '/assign', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: parseInt(userId), reason }) });
     const data = await res.json();
     if (data.success) { loadMembers(selectedRoleId); document.getElementById('assignUserId').value = ''; document.getElementById('assignReason').value = ''; showToast('تم التعيين'); }
-    else showToast(data.error || 'حدث خطأ', true);
-  } catch(e) { showToast('حدث خطأ', true); }
+    else showToast(data.error || 'خطأ', true);
+  } catch(e) { showToast('خطأ', true); }
 }
 
-function openAddRole() { document.getElementById('addRoleModal').style.display = 'flex'; }
-function closeAddRole() { document.getElementById('addRoleModal').style.display = 'none'; }
+// Side Roles
+function renderSideRoles() {
+  const container = document.getElementById('sideRolesList');
+  if (!container) return;
+  if (!sideRoles.length) {
+    container.innerHTML = '<div style="text-align:center;padding:2rem;color:rgba(255,255,255,0.3)">لا توجد أدوار جانبية</div>';
+    return;
+  }
+  container.innerHTML = sideRoles.map(sr => `
+    <div class="side-role-card" data-id="${sr.id}">
+      <div class="side-role-badge" style="background:${sr.color}20;color:${sr.color};border:1px solid ${sr.color}40">
+        ${sr.emoji ? '<span>' + sr.emoji + '</span>' : ''}<i class="fas ${sr.icon || 'fa-tag'}"></i> ${sr.display_name}
+      </div>
+      <span style="font-size:0.75rem;color:rgba(255,255,255,0.3)">${sr.name}</span>
+      <div class="side-role-actions">
+        <button class="admin-btn small" onclick="editSideRole(${sr.id})" title="تعديل"><i class="fas fa-edit"></i></button>
+        <button class="admin-btn small" style="color:#ef4444" onclick="deleteSideRole(${sr.id})" title="حذف"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>
+  `).join('');
+}
 
+function openAddSideRole() { document.getElementById('addSideRoleModal').style.display = 'flex'; }
+
+async function createSideRole() {
+  const body = {
+    name: document.getElementById('sr_name').value.trim(),
+    display_name: document.getElementById('sr_display_name').value.trim(),
+    color: document.getElementById('sr_color').value,
+    icon: document.getElementById('sr_icon').value,
+    emoji: document.getElementById('sr_emoji').value
+  };
+  if (!body.name || !body.display_name) return alert('أدخل الأسماء');
+  try {
+    const res = await fetch('/api/admin/side-roles', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const data = await res.json();
+    if (data.success) { sideRoles.push(data.sideRole); renderSideRoles(); closeModal('addSideRoleModal'); showToast('تم الإنشاء'); }
+    else showToast(data.error || 'خطأ', true);
+  } catch(e) { showToast('خطأ', true); }
+}
+
+async function deleteSideRole(id) {
+  if (!confirm('هل أنت متأكد؟')) return;
+  try {
+    await fetch('/api/admin/side-roles/' + id, { method: 'DELETE' });
+    sideRoles = sideRoles.filter(s => s.id !== id);
+    renderSideRoles();
+    showToast('تم الحذف');
+  } catch(e) { showToast('خطأ', true); }
+}
+
+// Save everything
+async function saveAll() {
+  const id = selectedRoleId;
+  if (!id) return;
+
+  // 1. Save role settings
+  const roleBody = {
+    name: document.getElementById('r_name').value,
+    display_name: document.getElementById('r_display_name').value,
+    color: document.getElementById('r_color').value,
+    icon: document.getElementById('r_icon').value,
+    emoji: document.getElementById('r_emoji').value,
+    level: parseInt(document.getElementById('r_level').value) || 0,
+    description: document.getElementById('r_description').value,
+    is_admin_role: document.getElementById('r_is_admin').checked ? 1 : 0,
+    is_protected: document.getElementById('r_is_protected').checked ? 1 : 0,
+    is_default: document.getElementById('r_is_default').checked ? 1 : 0,
+    is_staff: document.getElementById('r_is_staff').checked ? 1 : 0,
+    can_assign_roles: document.getElementById('h_can_assign').checked ? 1 : 0,
+    max_role_level: parseInt(document.getElementById('h_max_assign_level').value) || 0,
+  };
+
+  try {
+    const res = await fetch('/api/admin/roles/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(roleBody) });
+    const data = await res.json();
+    if (!data.success) { showToast(data.error || 'خطأ في حفظ الرتبة', true); return; }
+  } catch(e) { showToast('خطأ', true); return; }
+
+  // 2. Save unified permissions
+  try {
+    const res = await fetch('/api/admin/roles/' + id + '/all-permissions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ permissions: permState[id] || {} }) });
+    const data = await res.json();
+    if (!data.success) { showToast(data.error || 'خطأ في حفظ الصلاحيات', true); return; }
+  } catch(e) { showToast('خطأ', true); return; }
+
+  // Update local state
+  const idx = roles.findIndex(r => r.id == id);
+  if (idx >= 0) Object.assign(roles[idx], roleBody);
+  unifiedPerms[id] = { ...permState[id] };
+
+  showToast('تم الحفظ بنجاح');
+}
+
+// CRUD
 async function createRole() {
   const body = {
     name: document.getElementById('new_name').value.trim(),
     display_name: document.getElementById('new_display_name').value.trim(),
     color: document.getElementById('new_color').value,
     icon: document.getElementById('new_icon').value,
+    emoji: document.getElementById('new_emoji').value,
     level: parseInt(document.getElementById('new_level').value) || 0,
     description: document.getElementById('new_description').value
   };
@@ -592,9 +671,22 @@ async function createRole() {
     const res = await fetch('/api/admin/roles', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const data = await res.json();
     if (data.success) location.reload();
-    else showToast(data.error || 'حدث خطأ', true);
-  } catch(e) { showToast('حدث خطأ', true); }
+    else showToast(data.error || 'خطأ', true);
+  } catch(e) { showToast('خطأ', true); }
 }
+
+async function deleteRole(id) {
+  if (!confirm('هل أنت متأكد من حذف هذه الرتبة؟')) return;
+  try {
+    const res = await fetch('/api/admin/roles/' + id, { method: 'DELETE' });
+    const data = await res.json();
+    if (data.success) location.reload();
+    else showToast(data.error || 'خطأ', true);
+  } catch(e) { showToast('خطأ', true); }
+}
+
+function openAddRole() { document.getElementById('addRoleModal').style.display = 'flex'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
 function showToast(msg, isError) {
   const t = document.createElement('div');

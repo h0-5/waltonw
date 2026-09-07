@@ -104,8 +104,6 @@ const isAdmin = (req, res, next) => {
     });
 };
 
-module.exports = { isAuthenticated, isInGuild, isAdmin, REQUIRED_GUILD_ID };
-
 // Advanced permission checker
 const checkPagePermission = (page, action) => {
   return (req, res, next) => {
@@ -173,4 +171,53 @@ function denyAccess(res) {
   });
 }
 
-module.exports = { isAuthenticated, isInGuild, isAdmin, checkPagePermission, checkElementPermission, checkCanBan, REQUIRED_GUILD_ID };
+/**
+ * Unified permission checker — checks role_role_permissions table
+ * Owner always passes. Admin roles pass by default.
+ */
+const checkPermission = (permissionKey) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      req.session.returnTo = req.originalUrl;
+      return res.redirect('/auth/login');
+    }
+    if (req.user.role === 'owner') return next();
+
+    const db = require('../config/database');
+    db.execute('SELECT id, is_admin_role FROM roles WHERE name = ?', [req.user.role])
+      .then(([role]) => {
+        if (!role.length) return denyAccess(res);
+        // Admin roles bypass permission checks
+        if (role[0].is_admin_role) return next();
+        return db.execute(
+          'SELECT enabled FROM role_role_permissions WHERE role_id = ? AND permission_key = ?',
+          [role[0].id, permissionKey]
+        );
+      })
+      .then(([perm]) => {
+        if (perm && perm.length && perm[0].enabled) return next();
+        return denyAccess(res);
+      })
+      .catch(() => denyAccess(res));
+  };
+};
+
+/**
+ * Check if user has a specific permission (returns boolean)
+ */
+async function userHasPermission(userId, permissionKey) {
+  const db = require('../config/database');
+  const [user] = await db.execute('SELECT role FROM users WHERE id = ?', [userId]);
+  if (!user.length) return false;
+  if (user[0].role === 'owner') return true;
+  const [role] = await db.execute('SELECT id, is_admin_role FROM roles WHERE name = ?', [user[0].role]);
+  if (!role.length) return false;
+  if (role[0].is_admin_role) return true;
+  const [perm] = await db.execute(
+    'SELECT enabled FROM role_role_permissions WHERE role_id = ? AND permission_key = ?',
+    [role[0].id, permissionKey]
+  );
+  return perm.length > 0 && perm[0].enabled === 1;
+}
+
+module.exports = { isAuthenticated, isInGuild, isAdmin, checkPagePermission, checkElementPermission, checkCanBan, checkPermission, userHasPermission, REQUIRED_GUILD_ID };

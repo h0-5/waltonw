@@ -105,7 +105,10 @@ async function migrate() {
     `CREATE TABLE IF NOT EXISTS role_element_permissions (id INT AUTO_INCREMENT PRIMARY KEY, role_id INT, page VARCHAR(100), element_type VARCHAR(50) DEFAULT 'button', element_id VARCHAR(100), can_view TINYINT(1) DEFAULT 1, can_use TINYINT(1) DEFAULT 0, FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE, UNIQUE KEY unique_role_element (role_id, page, element_id))`,
     `CREATE TABLE IF NOT EXISTS role_page_permissions (id INT AUTO_INCREMENT PRIMARY KEY, role_id INT, page VARCHAR(100), can_view TINYINT(1) DEFAULT 0, can_create TINYINT(1) DEFAULT 0, can_edit TINYINT(1) DEFAULT 0, can_delete TINYINT(1) DEFAULT 0, can_manage TINYINT(1) DEFAULT 0, can_export TINYINT(1) DEFAULT 0, can_broadcast TINYINT(1) DEFAULT 0, FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE, UNIQUE KEY unique_role_page_p (role_id, page))`,
     `CREATE TABLE IF NOT EXISTS role_assignments (id INT AUTO_INCREMENT PRIMARY KEY, role_id INT, user_id INT, assigned_by INT, reason TEXT, assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP, expires_at DATETIME, FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE)`,
-    `CREATE TABLE IF NOT EXISTS role_punishments (id INT AUTO_INCREMENT PRIMARY KEY, role_id INT, can_ban TINYINT(1) DEFAULT 0, can_mute TINYINT(1) DEFAULT 0, can_warn TINYINT(1) DEFAULT 0, can_kick TINYINT(1) DEFAULT 0, max_ban_level INT DEFAULT 0, FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE, UNIQUE KEY unique_role_punish (role_id))`
+    `CREATE TABLE IF NOT EXISTS role_punishments (id INT AUTO_INCREMENT PRIMARY KEY, role_id INT, can_ban TINYINT(1) DEFAULT 0, can_mute TINYINT(1) DEFAULT 0, can_warn TINYINT(1) DEFAULT 0, can_kick TINYINT(1) DEFAULT 0, max_ban_level INT DEFAULT 0, FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE, UNIQUE KEY unique_role_punish (role_id))`,
+    `CREATE TABLE IF NOT EXISTS role_role_permissions (id INT AUTO_INCREMENT PRIMARY KEY, role_id INT, permission_key VARCHAR(100), enabled TINYINT(1) DEFAULT 0, FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE, UNIQUE KEY unique_role_perm (role_id, permission_key))`,
+    `CREATE TABLE IF NOT EXISTS side_roles (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(50) UNIQUE, display_name VARCHAR(100), color VARCHAR(20) DEFAULT '#780ecf', icon VARCHAR(50) DEFAULT 'fa-tag', emoji VARCHAR(20) DEFAULT '', is_active TINYINT(1) DEFAULT 1, sort_order INT DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE TABLE IF NOT EXISTS user_side_roles (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, side_role_id INT, assigned_by INT, assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (side_role_id) REFERENCES side_roles(id) ON DELETE CASCADE, UNIQUE KEY unique_user_side (user_id, side_role_id))`
   ];
 
   for (const sql of tables) {
@@ -185,6 +188,8 @@ async function migrate() {
     { table: 'roles', col: 'can_assign_roles', sql: "ALTER TABLE roles ADD COLUMN can_assign_roles TINYINT(1) DEFAULT 0" },
     { table: 'roles', col: 'max_role_level', sql: "ALTER TABLE roles ADD COLUMN max_role_level INT DEFAULT 0" },
     { table: 'roles', col: 'is_protected', sql: "ALTER TABLE roles ADD COLUMN is_protected TINYINT(1) DEFAULT 0" },
+    { table: 'roles', col: 'emoji', sql: "ALTER TABLE roles ADD COLUMN emoji VARCHAR(20) DEFAULT ''" },
+    { table: 'roles', col: 'is_staff', sql: "ALTER TABLE roles ADD COLUMN is_staff TINYINT(1) DEFAULT 0" },
     { table: 'role_punishments', col: 'can_ban', sql: "ALTER TABLE role_punishments ADD COLUMN can_ban TINYINT(1) DEFAULT 0" },
     { table: 'role_punishments', col: 'can_mute', sql: "ALTER TABLE role_punishments ADD COLUMN can_mute TINYINT(1) DEFAULT 0" },
     { table: 'role_punishments', col: 'can_warn', sql: "ALTER TABLE role_punishments ADD COLUMN can_warn TINYINT(1) DEFAULT 0" },

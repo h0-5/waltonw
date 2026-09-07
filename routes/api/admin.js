@@ -798,7 +798,170 @@ router.get('/user-permissions/:userId', async (req, res) => {
       if (pd.length) punish = pd[0];
     } catch(e) {}
 
-    res.json({ role: role[0], permissions, pagePerms, elemPerms, punish });
+    // Unified permissions
+    let unifiedPerms = {};
+    try {
+      const [up] = await db.execute('SELECT permission_key, enabled FROM role_role_permissions WHERE role_id = ?', [role[0].id]);
+      up.forEach(p => { unifiedPerms[p.permission_key] = p.enabled; });
+    } catch(e) {}
+
+    // Side roles
+    let sideRoles = [];
+    try {
+      const [sr] = await db.execute(
+        'SELECT sr.* FROM side_roles sr JOIN user_side_roles usr ON sr.id = usr.side_role_id WHERE usr.user_id = ?',
+        [req.params.userId]
+      );
+      sideRoles = sr;
+    } catch(e) {}
+
+    res.json({ role: role[0], permissions, pagePerms, elemPerms, punish, unifiedPerms, sideRoles });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== Unified Permissions API =====
+
+// Get all permissions for a role
+router.get('/roles/:id/all-permissions', async (req, res) => {
+  try {
+    const roleId = req.params.id;
+    const [perms] = await db.execute('SELECT permission_key, enabled FROM role_role_permissions WHERE role_id = ?', [roleId]);
+    const result = {};
+    perms.forEach(p => { result[p.permission_key] = p.enabled; });
+    res.json({ permissions: result });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Save all permissions for a role (bulk replace)
+router.post('/roles/:id/all-permissions', async (req, res) => {
+  try {
+    const roleId = req.params.id;
+    const { permissions } = req.body; // { perm_key: 1/0, ... }
+
+    // Check hierarchy
+    const [myRole] = await db.execute('SELECT level FROM roles WHERE name = ?', [req.user.role]);
+    const [targetRole] = await db.execute('SELECT level FROM roles WHERE id = ?', [roleId]);
+    if (targetRole.length && myRole.length && targetRole[0].level >= myRole[0].level && req.user.role !== 'owner') {
+      return res.status(403).json({ error: 'لا يمكنك تعديل صلاحيات رتبة بنفس المستوى أو أعلى' });
+    }
+
+    await db.execute('DELETE FROM role_role_permissions WHERE role_id = ?', [roleId]);
+    if (permissions && typeof permissions === 'object') {
+      for (const [key, enabled] of Object.entries(permissions)) {
+        if (key && typeof enabled === 'number') {
+          await db.execute(
+            'INSERT INTO role_role_permissions (role_id, permission_key, enabled) VALUES (?, ?, ?)',
+            [roleId, key, enabled ? 1 : 0]
+          );
+        }
+      }
+    }
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== Side Roles API =====
+
+// Get all side roles
+router.get('/side-roles', async (req, res) => {
+  try {
+    const [roles] = await db.execute('SELECT * FROM side_roles ORDER BY sort_order ASC, id ASC');
+    res.json({ sideRoles: roles });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Create side role
+router.post('/side-roles', async (req, res) => {
+  try {
+    const { name, display_name, color, icon, emoji } = req.body;
+    if (!name || !display_name) return res.status(400).json({ error: 'الاسم مطلوب' });
+    const [result] = await db.execute(
+      'INSERT INTO side_roles (name, display_name, color, icon, emoji) VALUES (?, ?, ?, ?, ?)',
+      [name, display_name, color || '#780ecf', icon || 'fa-tag', emoji || '']
+    );
+    const [role] = await db.execute('SELECT * FROM side_roles WHERE id = ?', [result.insertId]);
+    res.json({ success: true, sideRole: role[0] });
+  } catch(e) {
+    if (e.code === 'ER_DUP_ENTRY') return res.status(400).json({ error: 'اسم الدور موجود مسبقاً' });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Update side role
+router.put('/side-roles/:id', async (req, res) => {
+  try {
+    const { name, display_name, color, icon, emoji, is_active, sort_order } = req.body;
+    await db.execute(
+      'UPDATE side_roles SET name=?, display_name=?, color=?, icon=?, emoji=?, is_active=?, sort_order=? WHERE id=?',
+      [name, display_name, color || '#780ecf', icon || 'fa-tag', emoji || '', is_active !== undefined ? is_active : 1, sort_order || 0, req.params.id]
+    );
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Delete side role
+router.delete('/side-roles/:id', async (req, res) => {
+  try {
+    await db.execute('DELETE FROM user_side_roles WHERE side_role_id = ?', [req.params.id]);
+    await db.execute('DELETE FROM side_roles WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Assign side role to user
+router.post('/side-roles/:id/assign', async (req, res) => {
+  try {
+    const { user_id } = req.body;
+    if (!user_id) return res.status(400).json({ error: 'user_id مطلوب' });
+    await db.execute(
+      'INSERT IGNORE INTO user_side_roles (user_id, side_role_id, assigned_by, assigned_at) VALUES (?, ?, ?, NOW())',
+      [user_id, req.params.id, req.user.id]
+    );
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Remove side role from user
+router.post('/side-roles/:id/unassign', async (req, res) => {
+  try {
+    const { user_id } = req.body;
+    if (!user_id) return res.status(400).json({ error: 'user_id مطلوب' });
+    await db.execute('DELETE FROM user_side_roles WHERE user_id = ? AND side_role_id = ?', [user_id, req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Get users with a side role
+router.get('/side-roles/:id/members', async (req, res) => {
+  try {
+    const [members] = await db.execute(
+      'SELECT u.id, u.username, u.profile_picture FROM users u JOIN user_side_roles usr ON u.id = usr.user_id WHERE usr.side_role_id = ?',
+      [req.params.id]
+    );
+    res.json({ members });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Get side roles for a user
+router.get('/users/:id/side-roles', async (req, res) => {
+  try {
+    const [roles] = await db.execute(
+      'SELECT sr.* FROM side_roles sr JOIN user_side_roles usr ON sr.id = usr.side_role_id WHERE usr.user_id = ?',
+      [req.params.id]
+    );
+    res.json({ sideRoles: roles });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Reorder roles
+router.post('/roles/reorder', async (req, res) => {
+  try {
+    const { order } = req.body; // [{id, sort_order}]
+    if (!Array.isArray(order)) return res.status(400).json({ error: 'order مطلوب' });
+    for (const item of order) {
+      await db.execute('UPDATE roles SET sort_order = ? WHERE id = ?', [item.sort_order, item.id]);
+    }
+    res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
