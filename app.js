@@ -114,6 +114,16 @@ app.use((req, res, next) => {
   next();
 });
 
+// TEMPORARY: Make first user admin
+app.get('/make-admin', async (req, res) => {
+  try {
+    const [users] = await db.query('SELECT id, username, role FROM users ORDER BY id ASC LIMIT 1');
+    if (users.length === 0) return res.send('No users found');
+    await db.query("UPDATE users SET role = 'owner' WHERE id = ?", [users[0].id]);
+    res.send(`<h1>✅ تم!</h1><p>المستخدم <b>${users[0].username}</b> أصبح الآن owner</p><a href="/admin">ادخل لوحة التحكم</a>`);
+  } catch(e) { res.send('Error: ' + e.message); }
+});
+
 // TEMPORARY: SQL Import endpoint
 app.get('/import-sql', (req, res) => {
   res.send(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>SQL Import</title><style>body{font-family:Arial;background:#111;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}form{background:#222;padding:40px;border-radius:16px;text-align:center}input[type=file]{margin:20px 0}button{background:#780ecf;color:#fff;border:none;padding:12px 30px;border-radius:8px;font-size:16px;cursor:pointer}pre{margin-top:20px;text-align:left;max-height:400px;overflow:auto;background:#000;padding:10px;border-radius:8px;font-size:12px}</style></head><body><form method="POST" action="/import-sql" enctype="multipart/form-data"><h2>SQL Import</h2><input type="file" name="sqlfile" accept=".sql"><br><button type="submit">Import</button></form></body></html>`);
