@@ -47,37 +47,8 @@
     }
   </style>
 
-  <style>
-    .loading-bar { position:fixed; top:0; left:0; width:100%; height:3px; z-index:99999; pointer-events:none; opacity:0; transition:opacity 0.2s; }
-    .loading-bar.active { opacity:1; }
-    .loading-bar-progress { height:100%; width:0%; background:linear-gradient(90deg,var(--ac),#f97316,var(--ac)); background-size:200% 100%; animation:loadingBarShimmer 1.5s linear infinite; border-radius:0 2px 2px 0; transition:width 0.3s ease; box-shadow:0 0 10px var(--ac),0 0 5px var(--ac); }
-    @keyframes loadingBarShimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-    .loading-bar.active .loading-bar-progress { animation:loadingBarProgress 2s ease-in-out forwards,loadingBarShimmer 1.5s linear infinite; }
-    @keyframes loadingBarProgress { 0%{width:0%} 20%{width:30%} 50%{width:60%} 80%{width:85%} 100%{width:95%} }
-    .loading-bar.done .loading-bar-progress { width:100%!important; animation:none; transition:width 0.2s ease; }
-  </style>
-
-  <style>
-    .loading-bar { position:fixed; top:0; left:0; width:100%; height:3px; z-index:99999; pointer-events:none; opacity:0; transition:opacity 0.2s; }
-    .loading-bar.active { opacity:1; }
-    .loading-bar-progress { height:100%; width:0%; background:linear-gradient(90deg,var(--ac),#f97316,var(--ac)); background-size:200% 100%; animation:loadingBarShimmer 1.5s linear infinite; border-radius:0 2px 2px 0; transition:width 0.3s ease; box-shadow:0 0 10px var(--ac),0 0 5px var(--ac); }
-    @keyframes loadingBarShimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-    .loading-bar.active .loading-bar-progress { animation:loadingBarProgress 2s ease-in-out forwards,loadingBarShimmer 1.5s linear infinite; }
-    @keyframes loadingBarProgress { 0%{width:0%} 20%{width:30%} 50%{width:60%} 80%{width:85%} 100%{width:95%} }
-    .loading-bar.done .loading-bar-progress { width:100%!important; animation:none; transition:width 0.2s ease; }
-  </style>
 </head>
 <body>
-  <div id="loadingBar" class="loading-bar"><div class="loading-bar-progress"></div></div>
-  <script>
-    (function(){
-      var bar=document.getElementById('loadingBar'),progress=bar?bar.querySelector('.loading-bar-progress'):null;
-      function start(){if(!bar)return;bar.classList.add('active');bar.classList.remove('done');progress.style.width='0%';}
-      function end(){if(!bar)return;bar.classList.add('done');setTimeout(function(){bar.classList.remove('active','done');progress.style.width='0%';},400);}
-      document.addEventListener('click',function(e){var l=e.target.closest('a[href]');if(!l)return;var h=l.getAttribute('href');if(!h||h.startsWith('#')||h.startsWith('javascript:')||h.startsWith('mailto:'))return;if(l.target==='_blank')return;if(l.hasAttribute('download'))return;if(l.hostname&&l.hostname!==location.hostname)return;start();});
-      window.addEventListener('pageshow',end);setTimeout(end,8000);
-    })();
-  </script>
 <div class="admin-layout">
   <aside class="admin-sidebar" id="adminSidebar">
     <div class="sidebar-header">
