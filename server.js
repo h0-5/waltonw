@@ -54,16 +54,47 @@ async function migrate() {
   }
   console.log('✅ Migration done');
 
-  // Fix existing roles table - add missing columns
+  // Fix roles table - recreate with correct schema
   try {
-    await db.query("ALTER TABLE roles ADD COLUMN IF NOT EXISTS is_admin_role TINYINT(1) DEFAULT 0");
-    await db.query("ALTER TABLE roles ADD COLUMN IF NOT EXISTS is_default TINYINT(1) DEFAULT 0");
-    await db.query("ALTER TABLE roles ADD COLUMN IF NOT EXISTS color VARCHAR(20) DEFAULT '#ffffff'");
-    await db.query("ALTER TABLE roles ADD COLUMN IF NOT EXISTS icon VARCHAR(50) DEFAULT ''");
-    await db.query("ALTER TABLE roles ADD COLUMN IF NOT EXISTS sort_order INT DEFAULT 0");
-    await db.query("ALTER TABLE roles ADD COLUMN IF NOT EXISTS created_at DATETIME DEFAULT CURRENT_TIMESTAMP");
-    console.log('✅ roles table columns fixed');
-  } catch(e) { console.log('roles alter:', e.message); }
+    const [cols] = await db.query("SHOW COLUMNS FROM roles LIKE 'is_admin_role'");
+    if (cols.length === 0) {
+      // Table exists but missing columns - backup and recreate
+      const [existingRoles] = await db.query('SELECT * FROM roles');
+      await db.query('DROP TABLE role_permissions');
+      await db.query('DROP TABLE roles');
+      await db.query(`CREATE TABLE roles (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(50) UNIQUE,
+        display_name VARCHAR(100),
+        level INT DEFAULT 0,
+        color VARCHAR(20) DEFAULT '#ffffff',
+        icon VARCHAR(50) DEFAULT '',
+        is_admin_role TINYINT(1) DEFAULT 0,
+        is_default TINYINT(1) DEFAULT 0,
+        sort_order INT DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`);
+      await db.query(`CREATE TABLE IF NOT EXISTS role_permissions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        role_id INT,
+        page VARCHAR(100),
+        can_access TINYINT(1) DEFAULT 1,
+        can_edit TINYINT(1) DEFAULT 0,
+        can_delete TINYINT(1) DEFAULT 0,
+        can_manage TINYINT(1) DEFAULT 0,
+        FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_role_page (role_id, page)
+      )`);
+      // Re-insert old roles
+      for (const r of existingRoles) {
+        await db.query(
+          'INSERT INTO roles (name, display_name, color, icon, level, is_admin_role, is_default) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [r.name, r.display_name, r.color || '#ffffff', r.icon || '', r.level || 0, r.is_admin_role || 0, r.is_default || 0]
+        );
+      }
+      console.log('✅ roles table recreated with correct schema');
+    }
+  } catch(e) { console.log('roles fix:', e.message); }
 
   // Seed default roles
   try {
