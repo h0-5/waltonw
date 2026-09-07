@@ -1,185 +1,366 @@
 <%- include('../partials/header') %>
 <%- include('../partials/navbar') %>
+<link rel="stylesheet" href="/css/home-v3.css">
 
-<!-- Particle Background -->
-<div class="particle-bg" id="particleBg"></div>
+<div class="hw-page">
+  <!-- Aurora Background -->
+  <div class="hw-aurora">
+    <span class="hw-orb o1"></span>
+    <span class="hw-orb o2"></span>
+    <span class="hw-orb o3"></span>
+    <div class="hw-grid-lines"></div>
+  </div>
+  <div class="particle-bg" id="particleBg"></div>
 
-<!-- Floating Actions -->
-<div class="floating-actions">
-    <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="floating-btn" title="العودة للأعلى">
-        <i class="fas fa-arrow-up"></i>
-    </button>
-</div>
+  <!-- ═══ HERO ═══ -->
+  <section class="hw-hero" id="heroSection">
+    <div class="hw-hero-badge wf-reveal"><i class="fas fa-crown"></i> مجتمع والتون فاميلي الرسمي</div>
 
-<div class="custom-container">
-    <!-- Hero Section - 3D Animated -->
-    <section class="hero-section-modern" id="heroSection">
-        <div class="logo-wrapper-modern" id="heroLogo">
-            <div class="logo-inner-glow"></div>
-            <img src="<%= settings.site_logo_url || '/images/walton-logo.svg' %>" alt="Walton Family">
-        </div>
-        <h1 class="hero-title-modern">مرحباً بك في Walton Family</h1>
-        <p class="hero-sub-modern" id="heroSubText">أكثر من مجرد عائلة - مجتمع متكامل من الدعم والإبداع</p>
-        <div class="btn-group">
-            <a href="/applications" class="btn-primary-modern ripple-btn">
-                <i class="fas fa-user-plus"></i> انضم الآن
-            </a>
-            <% if (user) { %>
-            <a href="/community" class="btn-outline-modern ripple-btn">
-                <i class="fas fa-comments"></i> المجتمع
-            </a>
-            <% } else { %>
-            <a href="/store" class="btn-outline-modern ripple-btn">
-                <i class="fas fa-store"></i> المتجر
-            </a>
-            <% } %>
-        </div>
-    </section>
-
-    <!-- Stats Cards - 3D Tilt -->
-    <div class="stats-grid-modern">
-        <div class="stat-card-modern wf-reveal">
-            <i class="fas fa-headset stat-icon-modern"></i>
-            <div class="stat-content">
-                <div class="stat-number-modern stat-number"><%= stats.support %></div>
-                <div class="stat-label-modern">دعم فني</div>
-            </div>
-        </div>
-        <div class="stat-card-modern wf-reveal">
-            <i class="fas fa-users-cog stat-icon-modern"></i>
-            <div class="stat-content">
-                <div class="stat-number-modern stat-number"><%= stats.staff %></div>
-                <div class="stat-label-modern">فريق إداري</div>
-            </div>
-        </div>
-        <div class="stat-card-modern wf-reveal">
-            <i class="fas fa-users stat-icon-modern"></i>
-            <div class="stat-content">
-                <div class="stat-number-modern stat-number"><%= stats.members %></div>
-                <div class="stat-label-modern">عضو في العائلة</div>
-            </div>
-        </div>
+    <div class="hw-logo-ring wf-reveal" id="heroLogo">
+      <img src="<%= settings.site_logo_url || '/images/walton-logo.svg' %>" alt="Walton Family" fetchpriority="high">
     </div>
 
-    <!-- News Section -->
-    <section style="margin: 3rem 0;">
-        <div class="section-header wf-reveal">
-            <h2 class="section-title-modern">
-                <i class="fas fa-newspaper"></i> آخر الأخبار والمسابقات
-            </h2>
+    <h1 class="hw-title wf-reveal">مرحباً بك في <span class="hw-grad-text">Walton Family</span></h1>
+
+    <p class="hw-sub wf-reveal"><span id="hwType"></span><span class="hw-caret"></span></p>
+
+    <div class="hw-cta wf-reveal">
+      <a href="/applications" class="hw-btn hw-btn-primary"><i class="fas fa-user-plus"></i> انضم الآن</a>
+      <% if (user) { %>
+        <a href="/community" class="hw-btn hw-btn-ghost"><i class="fas fa-comments"></i> المجتمع</a>
+      <% } else { %>
+        <a href="/store" class="hw-btn hw-btn-ghost"><i class="fas fa-store"></i> المتجر</a>
+      <% } %>
+    </div>
+
+    <div class="hw-hero-meta wf-reveal">
+      <span class="hw-meta-chip"><span class="hw-dot"></span> سيرفر نشط 24/7</span>
+      <span class="hw-meta-chip"><i class="fas fa-users"></i> <%= stats.members %> عضو</span>
+      <span class="hw-meta-chip"><i class="fas fa-headset"></i> دعم <%= stats.support %></span>
+      <span class="hw-meta-chip"><i class="fas fa-shield-halved"></i> بيئة آمنة ومنظمة</span>
+    </div>
+
+    <a class="hw-scroll-hint" href="#hwStats" aria-label="انزل تحت"><span></span></a>
+  </section>
+
+  <!-- ═══ STATS BAND ═══ -->
+  <div class="hw-stats" id="hwStats">
+    <div class="hw-stat-card wf-reveal" data-tilt>
+      <div class="hw-stat-icon"><i class="fas fa-users"></i></div>
+      <div>
+        <div class="hw-stat-num" data-count="<%= stats.members %>"><%= stats.members %></div>
+        <div class="hw-stat-label">عضو في العائلة</div>
+      </div>
+    </div>
+    <div class="hw-stat-card wf-reveal" data-tilt>
+      <div class="hw-stat-icon"><i class="fas fa-users-cog"></i></div>
+      <div>
+        <div class="hw-stat-num" data-count="<%= stats.staff %>"><%= stats.staff %></div>
+        <div class="hw-stat-label">فريق إداري</div>
+      </div>
+    </div>
+    <div class="hw-stat-card wf-reveal" data-tilt>
+      <div class="hw-stat-icon"><i class="fas fa-headset"></i></div>
+      <div>
+        <div class="hw-stat-num" data-count="<%= stats.support %>"><%= stats.support %></div>
+        <div class="hw-stat-label">دعم فني متواصل</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ BENTO FEATURES ═══ -->
+  <section class="hw-section">
+    <div class="hw-sec-head wf-reveal">
+      <div class="hw-sec-kicker">Walton World</div>
+      <h2>استكشف <span class="hw-grad-text">مجتمعنا</span></h2>
+      <p>كل ما تحتاجه في مكان واحد — اختر وجهتك</p>
+    </div>
+
+    <div class="hw-bento">
+      <a href="/store" class="hw-bento-card wide wf-reveal">
+        <div class="hw-bento-icon tint-store"><i class="fas fa-store"></i></div>
+        <h3>المتجر <i class="fas fa-bolt" style="font-size:11px;color:#facc15"></i></h3>
+        <p>منتجات حصرية، عروض وأكواد خصم — تسوّق ونقاطك تكلف أقل مع مستويات الأعضاء.</p>
+        <span class="hw-bento-go">تسوّق الآن <i class="fas fa-arrow-left"></i></span>
+      </a>
+
+      <a href="/games" class="hw-bento-card wf-reveal">
+        <div class="hw-bento-icon tint-games"><i class="fas fa-gamepad"></i></div>
+        <h3>منطقة الألعاب</h3>
+        <p>ألعاب متنوعة، نقاط يومية وتحديات مع الأصدقاء.</p>
+        <span class="hw-bento-go">العب الآن <i class="fas fa-arrow-left"></i></span>
+      </a>
+
+      <a href="/applications" class="hw-bento-card wf-reveal">
+        <div class="hw-bento-icon tint-apps"><i class="fas fa-file-signature"></i></div>
+        <h3>التقديمات</h3>
+        <p>قدّم لانضمام العائلة أو لرتبة الإشراف وتابع طلبك.</p>
+        <span class="hw-bento-go">قدّم طلبك <i class="fas fa-arrow-left"></i></span>
+      </a>
+
+      <a href="/community" class="hw-bento-card wide wf-reveal">
+        <div class="hw-bento-icon tint-comm"><i class="fas fa-comments"></i></div>
+        <h3>المجتمع</h3>
+        <p>شارك لحظاتك، ناقش مواضيعك المفضلة، وكون جزء من الحياة اليومية لوالتون فاميلي — مجتمعك الحقيقي على أرض الواقع والرقمي.</p>
+        <span class="hw-bento-go">ادخل المجتمع <i class="fas fa-arrow-left"></i></span>
+      </a>
+
+      <a href="/support" class="hw-bento-card wf-reveal">
+        <div class="hw-bento-icon tint-support"><i class="fas fa-headset"></i></div>
+        <h3>الدعم الفني</h3>
+        <p>مشكلة أو استفسار؟ فريق الدعم جاهز يرد عليك بأسرع وقت.</p>
+        <span class="hw-bento-go">افتح تذكرة <i class="fas fa-arrow-left"></i></span>
+      </a>
+
+      <a href="/rules" class="hw-bento-card wf-reveal">
+        <div class="hw-bento-icon tint-rules"><i class="fas fa-gavel"></i></div>
+        <h3>القوانين</h3>
+        <p>تعرف على أنظمة المجتمع وحافظ على بيئة آمنة للجميع.</p>
+        <span class="hw-bento-go">اقرأ القوانين <i class="fas fa-arrow-left"></i></span>
+      </a>
+    </div>
+  </section>
+
+  <!-- ═══ GIVEAWAY SPOTLIGHT ═══ -->
+  <% if (typeof activeGiveaways !== 'undefined' && activeGiveaways && activeGiveaways.length) { 
+       var _gw = activeGiveaways[0]; %>
+  <div class="hw-giveaway">
+    <div class="hw-giveaway-card wf-reveal">
+      <div class="hw-giveaway-info">
+        <div class="hw-giveaway-gift"><i class="fas fa-gift"></i></div>
+        <div>
+          <h3><%= _gw.title %></h3>
+          <p><i class="fas fa-fire" style="color:#fb923c"></i> مسابقة جارية الآن — لا تفوّت الفرصة!</p>
         </div>
-        
-        <div class="news-grid-modern">
-            <% if (typeof news !== 'undefined' && news && news.length > 0) { %>
-                <% news.forEach(function(item, index) { %>
-                <div class="news-card-modern wf-reveal" style="animation-delay: <%= index * 0.1 %>s">
-                    <div class="news-card-content">
-                        <div class="news-badge <%= item.type === 'giveaway' ? 'news-badge-giveaway' : 'news-badge-info' %>">
-                            <i class="fas fa-<%= item.type === 'giveaway' ? 'gift' : 'info-circle' %>"></i>
-                            <%= item.type === 'giveaway' ? 'مسابقة' : 'خبر' %>
-                        </div>
-                        <h3 class="news-title-modern"><%= item.title %></h3>
-                        <div class="news-date-modern">
-                            <i class="fas fa-clock"></i> <%= new Date(item.created_at).toLocaleDateString('ar-SA') %>
-                        </div>
-                        <div class="news-content-modern"><%= item.content ? item.content.substring(0, 200) : '' %></div>
-                    </div>
-                    <% if (item.image) { %>
-                    <picture class="img-preloader">
-                        <img src="<%= item.image %>" alt="صورة الخبر" class="fast-img" loading="lazy" decoding="async">
-                    </picture>
-                    <% } %>
-                </div>
-                <% }); %>
-            <% } else { %>
-            <div style="text-align: center; padding: 3rem; background: rgba(18,15,30,0.7); border-radius: 24px; border: 1px solid var(--border); grid-column: 1/-1;">
-                <i class="fas fa-newspaper" style="font-size: 3rem; color: rgba(var(--ac-rgb),0.4); margin-bottom: 1rem; display: block;"></i>
-                <p style="color: var(--text-dim);">لا توجد أخبار أو مسابقات حالياً</p>
-            </div>
+      </div>
+      <% if (_gw.expires_at) { %>
+      <div class="hw-countdown" id="hwCountdown" data-expires="<%= _gw.expires_at %>">
+        <div class="hw-cd-cell"><div class="hw-cd-num" id="hwCdD">--</div><div class="hw-cd-lbl">يوم</div></div>
+        <div class="hw-cd-cell"><div class="hw-cd-num" id="hwCdH">--</div><div class="hw-cd-lbl">ساعة</div></div>
+        <div class="hw-cd-cell"><div class="hw-cd-num" id="hwCdM">--</div><div class="hw-cd-lbl">دقيقة</div></div>
+        <div class="hw-cd-cell"><div class="hw-cd-num" id="hwCdS">--</div><div class="hw-cd-lbl">ثانية</div></div>
+      </div>
+      <% } %>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- ═══ NEWS ═══ -->
+  <section class="hw-section">
+    <div class="hw-sec-head wf-reveal">
+      <div class="hw-sec-kicker">Latest News</div>
+      <h2>آخر <span class="hw-grad-text">الأخبار والمسابقات</span></h2>
+      <p>تابع جديد العائلة لحظة بلحظة</p>
+    </div>
+
+    <% if (typeof news !== 'undefined' && news && news.length > 0) { %>
+      <div class="hw-news-scroll wf-reveal" id="hwNewsScroll">
+        <% news.forEach(function(item) { %>
+          <article class="hw-news-card">
+            <% if (item.image) { %>
+              <div class="hw-news-bg"><img src="<%= item.image %>" alt="<%= item.title %>" loading="lazy" decoding="async"></div>
             <% } %>
-        </div>
-    </section>
-
-    <!-- Discord Section - Neon Glow -->
-    <section class="discord-section-modern wf-reveal">
-        <div class="discord-card-modern">
-            <i class="fab fa-discord discord-icon-modern"></i>
-            <div class="discord-online-indicator">
-                <span class="discord-online-dot"></span>
-                <span>متصل الآن</span>
+            <div class="hw-news-fade"></div>
+            <div class="hw-news-body">
+              <span class="hw-news-tag <%= item.type === 'giveaway' ? 'giveaway' : 'info' %>">
+                <i class="fas fa-<%= item.type === 'giveaway' ? 'gift' : 'info-circle' %>"></i>
+                <%= item.type === 'giveaway' ? 'مسابقة' : 'خبر' %>
+              </span>
+              <h3><%= item.title %></h3>
+              <% if (item.content) { %><p><%= item.content.substring(0, 160) %></p><% } %>
+              <div class="hw-news-date"><i class="fas fa-clock"></i> <%= new Date(item.created_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long' }) %></div>
             </div>
-            <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.5rem; color: white;">ادخل إلى Discord</h2>
-            <p style="color: var(--text-dim); margin-bottom: 1.5rem; font-size: 0.88rem;">تواصل مع المجتمع والبقاء على اطلاع بآخر الأخبار</p>
-            <a href="<%= settings.discord_server_url || '#' %>" target="_blank" class="btn-primary-modern" style="background: #5865F2; box-shadow: 0 8px 25px rgba(88,101,242,0.4); margin: 0 auto; justify-content: center;">
-                <i class="fab fa-discord"></i> انضم الآن
-            </a>
-        </div>
-    </section>
+          </article>
+        <% }); %>
+      </div>
+      <div class="hw-news-nav">
+        <button class="hw-news-arrow" id="hwNewsNext" aria-label="التالي"><i class="fas fa-chevron-right"></i></button>
+        <button class="hw-news-arrow" id="hwNewsPrev" aria-label="السابق"><i class="fas fa-chevron-left"></i></button>
+      </div>
+    <% } else { %>
+      <div class="hw-empty-news wf-reveal">
+        <i class="fas fa-newspaper"></i>
+        <p>لا توجد أخبار أو مسابقات حالياً — تابعنا قريباً!</p>
+      </div>
+    <% } %>
+  </section>
 
-    <!-- Games Section -->
-    <section class="discord-section-modern wf-reveal" style="margin-top: 1rem;">
-        <div class="discord-card-modern games-card-modern">
-            <div class="games-icons-row">
-                <span class="games-float-icon" style="animation-delay:0s">&#127920;</span>
-                <span class="games-float-icon" style="animation-delay:0.4s">&#127919;</span>
-                <span class="games-float-icon" style="animation-delay:0.8s">&#127922;</span>
-                <span class="games-float-icon" style="animation-delay:1.2s">&#127183;</span>
-                <span class="games-float-icon" style="animation-delay:1.6s">&#127942;</span>
-            </div>
-            <h2 style="font-size: 1.4rem; font-weight: 800; margin-bottom: 0.5rem; color: white;">منطقة الألعاب</h2>
-            <p style="color: var(--text-dim); margin-bottom: 1.5rem; font-size: 0.88rem;">العب واكسب نقاط يومياً — ألعاب متنوعة تنتظرك!</p>
-            <a href="/games" class="btn-primary-modern" style="margin: 0 auto; justify-content: center;">
-                <i class="fas fa-gamepad"></i> اذهب للألعاب
-            </a>
-        </div>
-    </section>
+  <!-- ═══ DISCORD ═══ -->
+  <div class="hw-discord">
+    <div class="hw-discord-card wf-reveal">
+      <div class="hw-discord-icon"><i class="fab fa-discord"></i></div>
+      <h2>ادخل إلى <span class="hw-grad-text">Discord</span></h2>
+      <p>تواصل مع المجتمع، شارك بالفعاليات، وكن على اطلاع بكل جديد أول بأول</p>
+      <a href="<%= settings.discord_server_url || '#' %>" target="_blank" rel="noopener" class="hw-btn-discord">
+        <i class="fab fa-discord"></i> انضم للسيرفر
+      </a>
+    </div>
+  </div>
+
+  <!-- ═══ GAMES STRIP ═══ -->
+  <div class="hw-games">
+    <div class="hw-games-card wf-reveal">
+      <div class="hw-games-icons">
+        <span style="animation-delay:0s">&#127918;</span>
+        <span style="animation-delay:0.3s">&#127919;</span>
+        <span style="animation-delay:0.6s">&#127922;</span>
+        <span style="animation-delay:0.9s">&#127183;</span>
+        <span style="animation-delay:1.2s">&#127942;</span>
+      </div>
+      <h2>منطقة <span class="hw-grad-text">الألعاب</span></h2>
+      <p>العب واكسب نقاط يومياً — ألعاب متنوعة تنتظرك!</p>
+      <a href="/games" class="hw-btn-games"><i class="fas fa-gamepad"></i> اذهب للألعاب</a>
+    </div>
+  </div>
 </div>
 
+<style>
+.hw-empty-news {
+  text-align: center; padding: 3rem; border-radius: 24px;
+  background: rgba(18,15,30,0.7); border: 1px solid var(--border);
+}
+.hw-empty-news i { font-size: 2.6rem; color: rgba(var(--ac-rgb),0.4); margin-bottom: 0.8rem; display: block; }
+.hw-empty-news p { color: var(--text-dim); }
+</style>
+
 <script>
-// Particle System
+/* ── Typewriter ── */
 (function() {
-    const container = document.getElementById('particleBg');
-    if (!container) return;
-    const count = window.innerWidth < 768 ? 15 : 30;
-    for (let i = 0; i < count; i++) {
-        const p = document.createElement('div');
-        p.className = 'particle';
-        p.style.left = Math.random() * 100 + '%';
-        p.style.animationDuration = (8 + Math.random() * 12) + 's';
-        p.style.animationDelay = Math.random() * 8 + 's';
-        p.style.width = p.style.height = (2 + Math.random() * 3) + 'px';
-        container.appendChild(p);
-    }
+  var el = document.getElementById('hwType');
+  if (!el) return;
+  var phrases = ['أكثر من مجرد عائلة 🤍', 'مجتمع متكامل من الدعم والإبداع', 'العب • تنافس • اربح نقاط', 'مكانك الصحيح بين الأهل'];
+  var pi = 0, ci = 0, del = false;
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced) { el.textContent = phrases[0]; return; }
+  (function tick() {
+    var cur = phrases[pi];
+    el.textContent = cur.substring(0, ci);
+    var wait;
+    if (!del && ci < cur.length) { ci++; wait = 55; }
+    else if (!del && ci === cur.length) { del = true; wait = 2100; }
+    else if (del && ci > 0) { ci--; wait = 26; }
+    else { del = false; pi = (pi + 1) % phrases.length; wait = 350; }
+    setTimeout(tick, wait);
+  })();
 })();
 
-// 3D Tilt on mouse move for stat cards
-document.querySelectorAll('.stat-card-modern').forEach(card => {
-    card.addEventListener('mousemove', e => {
-        const rect = card.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const centerX = rect.width / 2;
-        const centerY = rect.height / 2;
-        const rotateX = (y - centerY) / 15;
-        const rotateY = (centerX - x) / 15;
-        card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-8px)`;
-    });
-    card.addEventListener('mouseleave', () => {
-        card.style.transform = 'perspective(800px) rotateX(0) rotateY(0) translateY(0)';
-    });
-});
+/* ── Lean particles ── */
+(function() {
+  var container = document.getElementById('particleBg');
+  if (!container) return;
+  var count = window.innerWidth < 768 ? 10 : 22;
+  var frag = document.createDocumentFragment();
+  for (var i = 0; i < count; i++) {
+    var p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDuration = (8 + Math.random() * 12) + 's';
+    p.style.animationDelay = (Math.random() * 8) + 's';
+    p.style.width = p.style.height = (2 + Math.random() * 3) + 'px';
+    frag.appendChild(p);
+  }
+  container.appendChild(frag);
+})();
 
-// Hero parallax on scroll
-window.addEventListener('scroll', () => {
-    const hero = document.getElementById('heroSection');
-    const logo = document.getElementById('heroLogo');
-    if (!hero || !logo) return;
-    const scrollY = window.scrollY;
-    const opacity = Math.max(0, 1 - scrollY / 500);
-    const scale = Math.max(0.8, 1 - scrollY / 3000);
-    logo.style.opacity = opacity;
-    logo.style.transform = `scale(${scale})`;
-});
+/* ── Count-up numbers (numeric only) ── */
+(function() {
+  var nums = document.querySelectorAll('.hw-stat-num[data-count]');
+  if (!nums.length) return;
+  var io = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) {
+      if (!e.isIntersecting) return;
+      io.unobserve(e.target);
+      var el = e.target, raw = (el.getAttribute('data-count') || '').trim();
+      var target = parseInt(raw.replace(/[^\d]/g, ''), 10);
+      if (!raw || isNaN(target) || target === 0 || String(target) !== raw.replace(/[^\d]/g, '')) return; // non-numeric like 24/7 → keep as-is
+      var suffix = raw.indexOf('+') !== -1 ? '+' : '';
+      var t0 = null, dur = 1400;
+      function step(ts) {
+        if (!t0) t0 = ts;
+        var k = Math.min(1, (ts - t0) / dur);
+        k = 1 - Math.pow(1 - k, 3);
+        el.textContent = Math.round(target * k) + suffix;
+        if (k < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    });
+  }, { threshold: 0.4 });
+  nums.forEach(function(n) { io.observe(n); });
+})();
+
+/* ── 3D tilt (stats + mouse spotlight on bento) ── */
+(function() {
+  if (window.matchMedia('(pointer: coarse)').matches) return; // skip touch devices
+  var fine = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll('[data-tilt]').forEach(function(card) {
+    if (!fine) return;
+    card.addEventListener('mousemove', function(e) {
+      var rect = card.getBoundingClientRect();
+      var rx = (e.clientY - rect.top - rect.height / 2) / 14;
+      var ry = (rect.width / 2 - e.clientX + rect.left) / 14 * -1;
+      card.style.transform = 'perspective(800px) rotateX(' + (-rx).toFixed(2) + 'deg) rotateY(' + ry.toFixed(2) + 'deg) translateY(-6px)';
+    });
+    card.addEventListener('mouseleave', function() { card.style.transform = ''; });
+  });
+  document.querySelectorAll('.hw-bento-card').forEach(function(card) {
+    card.addEventListener('mousemove', function(e) {
+      var rect = card.getBoundingClientRect();
+      card.style.setProperty('--mx', (e.clientX - rect.left) + 'px');
+      card.style.setProperty('--my', (e.clientY - rect.top) + 'px');
+    });
+  });
+})();
+
+/* ── Giveaway countdown ── */
+(function() {
+  var cd = document.getElementById('hwCountdown');
+  if (!cd) return;
+  var raw = cd.getAttribute('data-expires');
+  var end = new Date(String(raw).replace(' ', 'T')).getTime();
+  if (isNaN(end)) return;
+  var D = document.getElementById('hwCdD'), H = document.getElementById('hwCdH'),
+      M = document.getElementById('hwCdM'), S = document.getElementById('hwCdS');
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function upd() {
+    var diff = end - Date.now();
+    if (diff <= 0) { D.textContent = H.textContent = M.textContent = S.textContent = '00'; return; }
+    D.textContent = pad(Math.floor(diff / 86400000));
+    H.textContent = pad(Math.floor(diff / 3600000) % 24);
+    M.textContent = pad(Math.floor(diff / 60000) % 60);
+    S.textContent = pad(Math.floor(diff / 1000) % 60);
+  }
+  upd();
+  setInterval(upd, 1000);
+})();
+
+/* ── News arrows ── */
+(function() {
+  var sc = document.getElementById('hwNewsScroll');
+  var next = document.getElementById('hwNewsNext'), prev = document.getElementById('hwNewsPrev');
+  if (!sc || !next || !prev) return;
+  var step = function() { return Math.min(sc.clientWidth * 0.85, 400); };
+  next.addEventListener('click', function() { sc.scrollBy({ left: -step(), behavior: 'smooth' }); });
+  prev.addEventListener('click', function() { sc.scrollBy({ left: step(), behavior: 'smooth' }); });
+})();
+
+/* ── Hero parallax (rAF-throttled) ── */
+(function() {
+  var logo = document.getElementById('heroLogo');
+  if (!logo) return;
+  var ticking = false;
+  window.addEventListener('scroll', function() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(function() {
+      var y = window.scrollY;
+      if (y < 600) {
+        logo.style.opacity = Math.max(0, 1 - y / 500);
+        logo.style.transform = 'scale(' + Math.max(0.82, 1 - y / 3000) + ')';
+      }
+      ticking = false;
+    });
+  }, { passive: true });
+})();
 </script>
 
 <%- include('../partials/footer') %>
