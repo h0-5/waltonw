@@ -5,6 +5,23 @@ const db = require('./config/database');
 const PORT = process.env.PORT || 3000;
 
 const server = http.createServer(app);
+
+// Align with Railway proxy keep-alive (prevents random 502s under load)
+server.keepAliveTimeout = 65000;
+server.headersTimeout = 66000;
+
+// Graceful shutdown — Railway sends SIGTERM on every redeploy
+async function shutdown(sig) {
+  console.log('\n' + sig + ' received — shutting down gracefully...');
+  server.close(() => {
+    db.end().catch(() => {});
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(0), 8000).unref();
+}
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
+
 const io = new Server(server, {
   cors: { origin: '*', methods: ['GET', 'POST'] }
 });
@@ -53,7 +70,6 @@ io.on('connection', (socket) => {
       }
     }
     io.emit('users:online', Array.from(onlineUsers.values()));
-    console.log('🔌 Socket disconnected:', socket.id);
   });
 });
 
@@ -237,8 +253,31 @@ async function migrate() {
   } catch(e) { console.error('Role seed error:', e.message); }
 }
 
+// Bump this when tables/ALTERs change in migrate() — '5' covers current schema
+const SCHEMA_VERSION = '5';
+
 async function start() {
-  await migrate();
+  // Skip the ~50-table migration when schema is already current:
+  // faster deploys + way less DB load on every Railway restart
+  let needMigrate = true;
+  try {
+    const [rows] = await db.query("SELECT setting_value FROM site_settings WHERE setting_key = 'schema_version'");
+    if (rows.length && rows[0].setting_value === SCHEMA_VERSION) needMigrate = false;
+  } catch (e) { /* fresh DB → run migration */ }
+
+  if (needMigrate) {
+    await migrate();
+    try {
+      await db.query(
+        "INSERT INTO site_settings (setting_key, setting_value) VALUES ('schema_version', ?) ON DUPLICATE KEY UPDATE setting_value = ?",
+        [SCHEMA_VERSION, SCHEMA_VERSION]
+      );
+      console.log('✅ schema_version saved (' + SCHEMA_VERSION + ')');
+    } catch (e) { console.log('⚠️ schema_version save failed:', e.message); }
+  } else {
+    console.log('✅ Schema up-to-date (v' + SCHEMA_VERSION + ') — skipping migration');
+  }
+
   server.listen(PORT, () => {
     console.log(`\n  Walton Family Server running on http://localhost:${PORT}\n`);
   });

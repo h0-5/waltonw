@@ -17,6 +17,13 @@ app.set('trust proxy', 1);
 // Security middleware
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 app.use(cors({ origin: process.env.SITE_URL || 'http://localhost:3000', credentials: true }));
+
+// Response compression (gzip) — big bandwidth/CPU saving on every page
+const compression = require('compression');
+app.use(compression({ level: 6, threshold: 1024 }));
+
+// EJS template compilation cache — avoids re-compiling views on every request
+app.set('view cache', true);
 app.use(securityHeaders);
 app.use(sanitizeInput);
 
@@ -41,8 +48,10 @@ app.use(session(sessionConfig));
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Static files
-app.use(express.static(path.join(__dirname, 'public')));
+// Static files — long cache for images/fonts, 1 day for css/js
+app.use('/images', express.static(path.join(__dirname, 'public/images'), { maxAge: '7d' }));
+app.use('/fonts', express.static(path.join(__dirname, 'public/fonts'), { maxAge: '30d', immutable: true }));
+app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1d' }));
 
 // Visit analytics (daily page views + unique visitors) — skips /admin /api assets bots
 const { trackVisit } = require('./middleware/analytics');
