@@ -52,14 +52,11 @@
                 <% if (r.name === 'owner') { %> <i class="fas fa-crown" style="color:#f59e0b"></i> رتبة المالك — محمية بالكامل <% } %>
               </span>
             </div>
-            <% if (r.name !== 'owner') { %>
-              <div style="display:flex;gap:8px">
-                <button class="admin-btn" onclick="resetPermissions()" title="إعادة تعيين الصلاحيات"><i class="fas fa-undo"></i> إعادة تعيين</button>
-                <button class="admin-btn primary" onclick="saveAll()"><i class="fas fa-save"></i> حفظ الكل</button>
-              </div>
-            <% } else { %>
-              <span style="padding:6px 14px;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:8px;color:#f59e0b;font-size:0.8rem;font-weight:700"><i class="fas fa-lock"></i> محمية — لا يمكن التعديل</span>
-            <% } %>
+            <div id="roleActionsBtns" style="display:<%= r.name !== 'owner' ? 'flex' : 'none' %>;gap:8px">
+              <button class="admin-btn" onclick="resetPermissions()" title="إعادة تعيين الصلاحيات"><i class="fas fa-undo"></i> إعادة تعيين</button>
+              <button class="admin-btn primary" onclick="saveAll()"><i class="fas fa-save"></i> حفظ الكل</button>
+            </div>
+            <span id="roleActionsLocked" style="display:<%= r.name === 'owner' ? 'inline-flex' : 'none' %>;padding:6px 14px;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:8px;color:#f59e0b;font-size:0.8rem;font-weight:700;align-items:center;gap:6px"><i class="fas fa-lock"></i> محمية — لا يمكن التعديل</span>
           </div>
 
           <!-- Tabs -->
@@ -74,7 +71,10 @@
           <!-- Tab: Role Settings -->
           <div class="tab-content active" id="tab-roles">
             <% if (r.name === 'owner') { %>
-            <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:12px;padding:1.5rem;margin-bottom:1.2rem">
+            <div id="ownerInfoBox" style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:12px;padding:1.5rem;margin-bottom:1.2rem">
+            <% } else { %>
+            <div id="ownerInfoBox" style="display:none;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:12px;padding:1.5rem;margin-bottom:1.2rem">
+            <% } %>
               <div style="display:flex;align-items:center;gap:10px;margin-bottom:0.75rem">
                 <i class="fas fa-crown" style="color:#f59e0b;font-size:1.2rem"></i>
                 <h3 style="color:#f59e0b;margin:0">رتبة المالك</h3>
@@ -644,6 +644,12 @@ function selectRole(id) {
   const role = roles.find(r => r.id === id);
   if (!role) return;
   document.getElementById('roleEditor').dataset.roleId = id;
+  const isOwner = role.name === 'owner';
+  document.getElementById('roleActionsBtns').style.display = isOwner ? 'none' : 'flex';
+  document.getElementById('roleActionsLocked').style.display = isOwner ? 'inline-flex' : 'none';
+  const ownerBox = document.getElementById('ownerInfoBox');
+  if (ownerBox) ownerBox.style.display = isOwner ? 'block' : 'none';
+  document.querySelectorAll('#roleEditor input[type="text"], #roleEditor input[type="color"]').forEach(inp => inp.disabled = isOwner);
   document.getElementById('r_name').value = role.name;
   document.getElementById('r_display_name').value = role.display_name || '';
   document.getElementById('r_color').value = role.color || '#ffffff';
