@@ -150,10 +150,14 @@ app.use((err, req, res, next) => {
   console.error('[ERROR]', new Date().toISOString(), err.message);
   console.error(err.stack);
   const statusCode = err.status || 500;
-  res.status(statusCode).render('pages/error', {
-    title: statusCode === 404 ? 'الصفحة غير موجودة' : 'خطأ في الخادم',
-    error: statusCode === 404 ? 'الصفحة التي تبحث عنها غير موجودة' : 'حدث خطأ غير متوقع، يرجى المحاولة لاحقاً'
-  });
+  try {
+    res.status(statusCode).render('pages/error', {
+      title: statusCode === 404 ? 'الصفحة غير موجودة' : 'خطأ في الخادم',
+      error: statusCode === 404 ? 'الصفحة التي تبحث عنها غير موجودة' : 'حدث خطأ غير متوقع، يرجى المحاولة لاحقاً'
+    });
+  } catch(e) {
+    res.status(500).send('خطأ في الخادم');
+  }
 });
 
 module.exports = app;
