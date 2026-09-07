@@ -44,6 +44,10 @@ app.use(passport.session());
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Visit analytics (daily page views + unique visitors) — skips /admin /api assets bots
+const { trackVisit } = require('./middleware/analytics');
+app.use(trackVisit);
+
 // Global settings cache (refreshes every 5 min)
 let globalSettings = {};
 let settingsLastFetch = 0;

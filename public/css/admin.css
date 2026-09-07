@@ -491,3 +491,146 @@
   .small-btn, .status-toggle { padding: 8px 10px; }
   .actions-cell, .inline-actions, .type-actions { flex-wrap: wrap; }
 }
+
+/* ==========================================
+   V3 MODERN POLISH — applies to all admin pages
+   Decoration-only overrides (no padding/size changes)
+   so existing responsive fixes stay intact.
+   ========================================== */
+
+/* ── Sidebar: glass + glow ── */
+.admin-sidebar {
+  background: linear-gradient(180deg, rgba(10, 7, 18, 0.97), rgba(6, 4, 12, 0.99));
+  border-left: 1px solid rgba(var(--ac-rgb), 0.18);
+  box-shadow: -8px 0 40px rgba(0, 0, 0, 0.45);
+}
+.admin-sidebar::before {
+  content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 1px;
+  background: linear-gradient(180deg, transparent, rgba(var(--ac-rgb), 0.55), transparent);
+  z-index: 1; pointer-events: none;
+}
+.admin-logo img { box-shadow: 0 0 14px rgba(var(--ac-rgb), 0.45); }
+.sidebar-header { border-bottom: 1px solid rgba(var(--ac-rgb), 0.12); }
+.nav-item {
+  position: relative; border: 1px solid transparent; border-radius: 12px;
+  font-weight: 500;
+}
+.nav-item i { width: 18px; text-align: center; transition: var(--transition); }
+.nav-item:hover { border-color: rgba(var(--ac-rgb), 0.25); background: rgba(var(--ac-rgb), 0.08); transform: translateX(-3px); }
+.nav-item:hover i { transform: scale(1.12); }
+.nav-item.active {
+  background: linear-gradient(90deg, rgba(var(--ac-rgb), 0.22), rgba(var(--ac-rgb), 0.08));
+  border-color: rgba(var(--ac-rgb), 0.35);
+  box-shadow: 0 4px 18px rgba(var(--ac-rgb), 0.18), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.nav-item.active::before {
+  content: ''; position: absolute; right: -12px; top: 20%; bottom: 20%; width: 3px;
+  border-radius: 3px; background: var(--ac); box-shadow: 0 0 10px rgba(var(--ac-rgb), 0.8);
+}
+.nav-item.active i { filter: drop-shadow(0 0 6px rgba(var(--ac-rgb), 0.7)); }
+.nav-section-title {
+  display: flex; align-items: center; gap: 8px;
+}
+.nav-section-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(var(--ac-rgb), 0.25), transparent); }
+.sidebar-nav::-webkit-scrollbar { width: 4px; }
+.sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+.sidebar-nav::-webkit-scrollbar-thumb { background: rgba(var(--ac-rgb), 0.3); border-radius: 4px; }
+.sidebar-nav::-webkit-scrollbar-thumb:hover { background: rgba(var(--ac-rgb), 0.55); }
+
+/* ── Header: deeper glass ── */
+.admin-header {
+  background: linear-gradient(180deg, rgba(12, 9, 22, 0.85), rgba(10, 8, 18, 0.92));
+  border-bottom: 1px solid rgba(var(--ac-rgb), 0.15);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+}
+.admin-user img { box-shadow: 0 0 12px rgba(var(--ac-rgb), 0.4); }
+
+/* ── Cards: glass + hover glow ── */
+.admin-card, .settings-card {
+  background: linear-gradient(145deg, rgba(20, 15, 34, 0.72), rgba(14, 11, 26, 0.82));
+  border: 1px solid rgba(var(--ac-rgb), 0.14);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.35s ease, box-shadow 0.35s ease, transform 0.35s ease;
+}
+.admin-card:hover, .settings-card:hover {
+  border-color: rgba(var(--ac-rgb), 0.35);
+  box-shadow: 0 10px 36px rgba(0, 0, 0, 0.4), 0 0 24px rgba(var(--ac-rgb), 0.08);
+}
+.admin-card h3 i, .settings-card h3 i { filter: drop-shadow(0 0 5px rgba(var(--ac-rgb), 0.5)); }
+
+/* ── Stat cards: gradient icons + lift ── */
+.stat-card {
+  background: linear-gradient(145deg, rgba(20, 15, 34, 0.75), rgba(14, 11, 26, 0.85));
+  border: 1px solid rgba(var(--ac-rgb), 0.14);
+  box-shadow: var(--shadow-sm);
+}
+.stat-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(var(--ac-rgb), 0.4);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45), 0 0 22px rgba(var(--ac-rgb), 0.12);
+}
+.stat-icon {
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 4px 14px rgba(0,0,0,0.3);
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+.stat-card:hover .stat-icon { transform: scale(1.08) rotate(-3deg); }
+.stat-icon.users { background: linear-gradient(135deg, rgba(59,130,246,0.28), rgba(59,130,246,0.12)); box-shadow: 0 4px 16px rgba(59,130,246,0.25); }
+.stat-icon.products { background: linear-gradient(135deg, rgba(var(--ac-rgb), 0.32), rgba(var(--ac-rgb), 0.12)); box-shadow: 0 4px 16px rgba(var(--ac-rgb), 0.3); }
+.stat-icon.orders { background: linear-gradient(135deg, rgba(34,197,94,0.28), rgba(34,197,94,0.12)); box-shadow: 0 4px 16px rgba(34,197,94,0.25); }
+.stat-icon.tickets { background: linear-gradient(135deg, rgba(234,179,8,0.28), rgba(234,179,8,0.12)); box-shadow: 0 4px 16px rgba(234,179,8,0.22); }
+
+/* ── Quick actions ── */
+.quick-action {
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(var(--ac-rgb), 0.07), rgba(var(--ac-rgb), 0.03));
+}
+.quick-action:hover {
+  background: linear-gradient(145deg, rgba(var(--ac-rgb), 0.18), rgba(var(--ac-rgb), 0.08));
+  box-shadow: 0 6px 18px rgba(var(--ac-rgb), 0.15);
+  transform: translateY(-2px);
+}
+
+/* ── Tables: gradient header + row glow ── */
+.admin-table th {
+  background: linear-gradient(180deg, rgba(var(--ac-rgb), 0.12), rgba(var(--ac-rgb), 0.04));
+  text-transform: uppercase; letter-spacing: 0.4px;
+  border-bottom: 1px solid rgba(var(--ac-rgb), 0.25);
+}
+.admin-table tr:hover { background: rgba(var(--ac-rgb), 0.05); }
+.admin-table td { border-bottom-color: rgba(255,255,255,0.04); }
+
+/* ── Buttons: gradient + glow ── */
+.add-btn, .submit-btn {
+  background: linear-gradient(135deg, var(--ac), var(--ac-light, #9b30ff));
+  box-shadow: 0 6px 18px rgba(var(--ac-rgb), 0.35);
+}
+.add-btn:hover, .submit-btn:hover {
+  box-shadow: 0 8px 26px rgba(var(--ac-rgb), 0.5);
+  transform: translateY(-2px);
+}
+.admin-btn.primary {
+  background: linear-gradient(135deg, var(--ac), var(--ac-light, #9b30ff));
+  border-color: transparent;
+  box-shadow: 0 4px 14px rgba(var(--ac-rgb), 0.3);
+}
+.admin-btn.primary:hover { box-shadow: 0 6px 20px rgba(var(--ac-rgb), 0.45); filter: none; }
+.admin-btn:hover { transform: translateY(-1px); }
+
+/* ── Modals ── */
+.modal-content, .admin-modal-content {
+  box-shadow: 0 24px 70px rgba(0,0,0,0.6), 0 0 40px rgba(var(--ac-rgb), 0.08);
+}
+
+/* ── Inputs ── */
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus,
+.admin-modal .form-group input:focus, .admin-modal .form-group textarea:focus {
+  border-color: var(--ac);
+  box-shadow: 0 0 0 3px rgba(var(--ac-rgb), 0.12);
+}
+
+/* ── Content scrollbar ── */
+.admin-main::-webkit-scrollbar { width: 8px; }
+.admin-main::-webkit-scrollbar-track { background: transparent; }
+.admin-main::-webkit-scrollbar-thumb { background: rgba(var(--ac-rgb), 0.25); border-radius: 8px; }
+.admin-main::-webkit-scrollbar-thumb:hover { background: rgba(var(--ac-rgb), 0.45); }

@@ -1,7 +1,77 @@
 <%- include('layout') %>
 
 <div class="admin-content">
-  <!-- Animated Stats Row -->
+  <!-- ═══ Visit Analytics Hero ═══ -->
+  <div class="admin-card visits-hero">
+    <div class="vh-header">
+      <h3><i class="fas fa-chart-line"></i> زيارات الموقع</h3>
+      <div class="vh-live"><span class="vh-live-dot"></span> مباشر</div>
+    </div>
+
+    <div class="vh-summary">
+      <div class="vh-big">
+        <div class="vh-big-num"><%= visits.today || 0 %></div>
+        <div class="vh-big-label">زيارة اليوم</div>
+        <% if ((visits.yesterday || 0) > 0 && (visits.today || 0) !== visits.yesterday) {
+             var _chg = Math.round(((visits.today - visits.yesterday) / visits.yesterday) * 100);
+             var _up = _chg > 0;
+        %>
+          <div class="vh-change <%= _up ? 'up' : 'down' %>">
+            <i class="fas fa-arrow-<%= _up ? 'up' : 'down' %>"></i> <%= Math.abs(_chg) %>% مقارنة بالأمس
+          </div>
+        <% } else if ((visits.yesterday || 0) === 0 && (visits.today || 0) > 0) { %>
+          <div class="vh-change up"><i class="fas fa-arrow-up"></i> بداية جديدة اليوم</div>
+        <% } else { %>
+          <div class="vh-change flat"><i class="fas fa-minus"></i> مستقر مقارنة بالأمس</div>
+        <% } %>
+      </div>
+      <div class="vh-chips">
+        <div class="vh-chip"><i class="fas fa-calendar-day"></i><div><strong><%= visits.yesterday || 0 %></strong><span>أمس</span></div></div>
+        <div class="vh-chip"><i class="fas fa-calendar-week"></i><div><strong><%= visits.week || 0 %></strong><span>آخر 7 أيام</span></div></div>
+        <div class="vh-chip"><i class="fas fa-user-friends"></i><div><strong><%= visits.uniqueToday || 0 %></strong><span>زوار فريدون اليوم</span></div></div>
+        <div class="vh-chip"><i class="fas fa-infinity"></i><div><strong><%= visits.total || 0 %></strong><span>إجمالي الزيارات</span></div></div>
+      </div>
+    </div>
+
+    <% var _vmax = 0; (visits.daily || []).forEach(function(d){ if (d.views > _vmax) _vmax = d.views; }); %>
+    <div class="vh-chart" dir="ltr">
+      <% if (_vmax > 0) { %>
+        <% (visits.daily || []).forEach(function(d, i) { 
+             var _h = Math.max(4, Math.round((d.views / _vmax) * 100));
+             var _isToday = i === 13;
+             var _lbl = d.date.slice(8, 10) + '/' + d.date.slice(5, 7);
+        %>
+          <div class="vh-bar-col" title="<%= d.date %> — <%= d.views %> زيارة">
+            <span class="vh-bar-val<%= d.views === 0 ? ' zero' : '' %>"><%= d.views %></span>
+            <div class="vh-bar<%= _isToday ? ' today' : '' %>" style="height: <%= _h %>%"></div>
+            <span class="vh-bar-lbl"><%= _lbl %></span>
+          </div>
+        <% }); %>
+      <% } else { %>
+        <div class="vh-empty">
+          <i class="fas fa-chart-bar"></i>
+          <span>لا توجد بيانات زيارات بعد — يتم التسجيل تلقائياً من الآن، ارجع بعد ساعات وبتشوف الإحصائيات</span>
+        </div>
+      <% } %>
+    </div>
+
+    <% if (visits.topPages && visits.topPages.length) { var _tpMax = visits.topPages[0].views || 1; %>
+      <div class="vh-top-title"><i class="fas fa-fire"></i> أكثر الصفحات زيارة (آخر 7 أيام)</div>
+      <div class="vh-top-grid">
+        <% visits.topPages.forEach(function(p) { %>
+          <div class="vh-top-row">
+            <div class="vh-top-head">
+              <a href="<%= p.path %>" class="vh-top-path"><%= p.path === '/' ? '/ (الرئيسية)' : p.path %></a>
+              <span class="vh-top-views"><%= p.views %></span>
+            </div>
+            <div class="vh-top-track"><div class="vh-top-fill" style="width: <%= Math.max(6, Math.round((p.views / _tpMax) * 100)) %>%"></div></div>
+          </div>
+        <% }); %>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- ═══ Animated Stats Row ═══ -->
   <div class="stats-row">
     <div class="stat-card" style="--delay:0">
       <div class="stat-icon users"><i class="fas fa-users"></i></div>
@@ -33,10 +103,10 @@
     </div>
   </div>
 
-  <!-- Secondary Stats -->
+  <!-- ═══ Secondary Stats ═══ -->
   <div class="admin-grid" style="margin-bottom:20px">
-    <div class="admin-card" style="border-image: linear-gradient(135deg, rgba(var(--ac-rgb),0.3), transparent) 1; border-width: 1px; border-style: solid;">
-      <h3><i class="fas fa-chart-line"></i> نشاط آخر 24 ساعة</h3>
+    <div class="admin-card">
+      <h3><i class="fas fa-bolt"></i> نشاط آخر 24 ساعة</h3>
       <div class="quick-actions">
         <div class="quick-action">
           <i class="fas fa-user-check" style="color:#4ade80"></i>
@@ -57,7 +127,7 @@
       </div>
     </div>
 
-    <div class="admin-card" style="border-image: linear-gradient(135deg, rgba(var(--ac-rgb),0.3), transparent) 1; border-width: 1px; border-style: solid;">
+    <div class="admin-card">
       <h3><i class="fas fa-bolt"></i> إجراءات سريعة</h3>
       <div class="quick-actions">
         <a href="/admin/users" class="quick-action"><i class="fas fa-users"></i> المستخدمين</a>
@@ -74,10 +144,10 @@
     </div>
   </div>
 
-  <!-- Bottom Row -->
+  <!-- ═══ Bottom Row ═══ -->
   <div class="admin-grid">
     <!-- Recent Activity -->
-    <div class="admin-card" style="border-image: linear-gradient(135deg, rgba(var(--ac-rgb),0.3), transparent) 1; border-width: 1px; border-style: solid;">
+    <div class="admin-card">
       <h3><i class="fas fa-history"></i> آخر النشاطات</h3>
       <% if (typeof recentActivity !== 'undefined' && recentActivity && recentActivity.length) { %>
         <div class="activity-list">
@@ -104,7 +174,7 @@
     </div>
 
     <!-- Recent Users -->
-    <div class="admin-card" style="border-image: linear-gradient(135deg, rgba(var(--ac-rgb),0.3), transparent) 1; border-width: 1px; border-style: solid;">
+    <div class="admin-card">
       <h3><i class="fas fa-user-plus"></i> أحدث الأعضاء</h3>
       <% if (typeof recentUsers !== 'undefined' && recentUsers && recentUsers.length) { %>
         <div class="recent-users-list">
@@ -160,6 +230,104 @@
 .recent-user-name { font-weight: 700; font-size: 0.9rem; }
 .recent-user-role { font-size: 0.75rem; color: rgba(255,255,255,0.4); }
 .recent-user-time { font-size: 0.7rem; color: rgba(255,255,255,0.3); }
+
+/* ── Visits Hero ── */
+.visits-hero {
+  margin-bottom: 24px;
+  background: linear-gradient(145deg, rgba(var(--ac-rgb), 0.08), var(--bg-card) 45%);
+  position: relative; overflow: hidden;
+}
+.visits-hero::before {
+  content: ''; position: absolute; top: 0; right: 0; left: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(var(--ac-rgb), 0.8), transparent);
+}
+.vh-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.vh-header h3 { margin: 0; padding: 0; border: none; font-size: 17px; }
+.vh-live {
+  display: flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 700;
+  color: #4ade80; background: rgba(74, 222, 128, 0.1); border: 1px solid rgba(74, 222, 128, 0.25);
+  padding: 5px 12px; border-radius: 50px;
+}
+.vh-live-dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; animation: vhPulse 1.6s ease infinite; }
+@keyframes vhPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(74,222,128,0.5); } 50% { box-shadow: 0 0 0 6px rgba(74,222,128,0); } }
+
+.vh-summary { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-bottom: 22px; }
+.vh-big-num {
+  font-size: 46px; font-weight: 900; line-height: 1;
+  background: linear-gradient(135deg, #fff, rgba(var(--ac-rgb), 0.9));
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.vh-big-label { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 6px; }
+.vh-change { font-size: 12px; font-weight: 700; margin-top: 8px; display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 50px; }
+.vh-change.up { color: #4ade80; background: rgba(74, 222, 128, 0.1); }
+.vh-change.down { color: #f87171; background: rgba(248, 113, 113, 0.1); }
+.vh-change.flat { color: rgba(255,255,255,0.45); background: rgba(255,255,255,0.05); }
+
+.vh-chips { display: flex; gap: 10px; flex-wrap: wrap; flex: 1; justify-content: flex-end; }
+.vh-chip {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  background: rgba(var(--ac-rgb), 0.07); border: 1px solid var(--border);
+  border-radius: 14px; transition: var(--transition);
+}
+.vh-chip:hover { border-color: rgba(var(--ac-rgb), 0.4); background: rgba(var(--ac-rgb), 0.12); }
+.vh-chip i { color: var(--ac); font-size: 15px; }
+.vh-chip strong { display: block; font-size: 17px; font-weight: 800; line-height: 1.1; }
+.vh-chip span { font-size: 10.5px; color: rgba(255,255,255,0.4); }
+
+.vh-chart {
+  display: flex; align-items: flex-end; gap: 6px; height: 170px;
+  padding: 10px 6px 0; margin-bottom: 6px;
+}
+.vh-bar-col {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: flex-end; height: 100%; gap: 5px; min-width: 0; cursor: default;
+}
+.vh-bar {
+  width: 100%; max-width: 34px; border-radius: 6px 6px 2px 2px; position: relative;
+  background: linear-gradient(180deg, rgba(var(--ac-rgb), 0.95), rgba(var(--ac-rgb), 0.25));
+  box-shadow: 0 0 12px rgba(var(--ac-rgb), 0.25);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease;
+  transform-origin: bottom; transform: scaleY(0.86);
+}
+.vh-bar-col:hover .vh-bar { transform: scaleY(1); box-shadow: 0 0 20px rgba(var(--ac-rgb), 0.55); filter: brightness(1.2); }
+.vh-bar.today {
+  background: linear-gradient(180deg, #fff 0%, rgba(var(--ac-rgb), 0.95) 60%);
+  box-shadow: 0 0 18px rgba(var(--ac-rgb), 0.6);
+}
+.vh-bar-val { font-size: 9.5px; color: rgba(255,255,255,0.55); font-weight: 700; }
+.vh-bar-val.zero { opacity: 0.35; }
+.vh-bar-lbl { font-size: 9px; color: rgba(255,255,255,0.35); font-family: 'Space Grotesk', monospace; }
+.vh-bar-col:last-child .vh-bar-lbl { color: var(--ac-light, #9b30ff); font-weight: 700; }
+
+.vh-empty {
+  height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; color: rgba(255,255,255,0.3); font-size: 13px; text-align: center; direction: rtl;
+}
+.vh-empty i { font-size: 2rem; color: rgba(var(--ac-rgb), 0.4); }
+
+.vh-top-title { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 700; margin: 18px 0 12px; color: rgba(255,255,255,0.85); }
+.vh-top-title i { color: #fb923c; }
+.vh-top-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 24px; }
+.vh-top-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+.vh-top-path { font-size: 12px; color: rgba(255,255,255,0.75); text-decoration: none; font-family: 'Space Grotesk', monospace; direction: ltr; }
+.vh-top-path:hover { color: var(--ac); }
+.vh-top-views { font-size: 12px; font-weight: 800; color: var(--ac); }
+.vh-top-track { height: 6px; background: rgba(255,255,255,0.05); border-radius: 6px; overflow: hidden; }
+.vh-top-fill {
+  height: 100%; border-radius: 6px;
+  background: linear-gradient(90deg, rgba(var(--ac-rgb), 0.9), rgba(155, 48, 255, 0.6));
+  box-shadow: 0 0 8px rgba(var(--ac-rgb), 0.4);
+}
+
+@media (max-width: 768px) {
+  .vh-chips { justify-content: flex-start; }
+  .vh-chip { flex: 1 1 40%; }
+  .vh-top-grid { grid-template-columns: 1fr; }
+  .vh-chart { height: 130px; gap: 4px; }
+  .vh-bar-val { font-size: 8px; }
+  .vh-bar-lbl { font-size: 7.5px; }
+  .vh-big-num { font-size: 36px; }
+}
 </style>
 
 <%- include('admin_footer') %>

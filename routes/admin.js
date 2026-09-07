@@ -114,6 +114,34 @@ router.get('/', checkPermission('users_view'), async (req, res) => {
     try { const [r] = await db.execute("SELECT COUNT(*) as c FROM users WHERE is_banned = 1"); stats.bannedUsers = r[0].c; } catch(e) {}
     try { const [r] = await db.execute("SELECT COUNT(*) as c FROM giveaways WHERE status='active'"); stats.activeGiveaways = r[0].c; } catch(e) {}
 
+    // ── Visit analytics (site_visits / visit_uniques) ──
+    const visits = { today: 0, yesterday: 0, week: 0, total: 0, uniqueToday: 0, daily: [], topPages: [] };
+    try {
+      const [todayRow] = await db.execute("SELECT DATE_FORMAT(CURDATE(), '%Y-%m-%d') AS d");
+      const todayStr = todayRow[0].d;
+      const [dailyRows] = await db.execute(
+        "SELECT DATE_FORMAT(visit_date, '%Y-%m-%d') AS d, SUM(views) AS v FROM site_visits WHERE visit_date >= DATE_SUB(CURDATE(), INTERVAL 13 DAY) GROUP BY visit_date"
+      );
+      const dmap = {};
+      dailyRows.forEach(r => { dmap[r.d] = Number(r.v) || 0; });
+      const t0 = new Date(todayStr + 'T00:00:00Z').getTime();
+      for (let i = 13; i >= 0; i--) {
+        const ds = new Date(t0 - i * 86400000).toISOString().slice(0, 10);
+        visits.daily.push({ date: ds, views: dmap[ds] || 0 });
+      }
+      visits.today = visits.daily[13].views;
+      visits.yesterday = visits.daily[12].views;
+      visits.week = visits.daily.slice(7).reduce((s, x) => s + x.views, 0);
+      try { const [t] = await db.execute('SELECT SUM(views) AS v FROM site_visits'); visits.total = Number(t[0].v) || 0; } catch(e) {}
+      try { const [u] = await db.execute('SELECT COUNT(*) AS c FROM visit_uniques WHERE visit_date = CURDATE()'); visits.uniqueToday = u[0].c; } catch(e) {}
+      try {
+        const [tp] = await db.execute(
+          "SELECT path, SUM(views) AS v FROM site_visits WHERE visit_date >= DATE_SUB(CURDATE(), INTERVAL 6 DAY) GROUP BY path ORDER BY v DESC LIMIT 8"
+        );
+        visits.topPages = tp.map(r => ({ path: r.path, views: Number(r.v) || 0 }));
+      } catch(e) {}
+    } catch(e) {}
+
     // Recent activity
     let recentActivity = [];
     try {
@@ -128,9 +156,9 @@ router.get('/', checkPermission('users_view'), async (req, res) => {
       recentUsers = users;
     } catch(e) {}
 
-    res.render('admin/dashboard', { title: 'لوحة التحكم', stats, recentActivity, recentUsers, currentPath: req.path });
+    res.render('admin/dashboard', { title: 'لوحة التحكم', stats, visits, recentActivity, recentUsers, currentPath: req.path });
   } catch(err) {
-    res.render('admin/dashboard', { title: 'لوحة التحكم', stats: {}, recentActivity: [], recentUsers: [], currentPath: req.path });
+    res.render('admin/dashboard', { title: 'لوحة التحكم', stats: {}, visits: { today: 0, yesterday: 0, week: 0, total: 0, uniqueToday: 0, daily: [], topPages: [] }, recentActivity: [], recentUsers: [], currentPath: req.path });
   }
 });
 
