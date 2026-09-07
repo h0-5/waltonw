@@ -1,10 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
-const path = require('path');
-const fs = require('fs');
-const { checkDiscordRole, getDiscordMemberRoles } = require('../utils/discord');
-const { isAuthenticated } = require('../middleware/auth');
+// const { isAuthenticated } = require('../middleware/auth'); // temporarily disabled for testing
 
 // Helper to safely query
 async function safeQuery(sql, params = []) {
@@ -133,21 +130,9 @@ router.get('/rules', async (req, res) => {
 // Store
 router.get('/store', async (req, res) => {
   const settings = await getSettings();
-  let sql = 'SELECT * FROM fs_products WHERE 1=1';
-  const params = [];
-
-  if (req.query.search) {
-    sql += ' AND name LIKE ?';
-    params.push('%' + req.query.search + '%');
-  }
-  if (req.query.cat) {
-    sql += ' AND category_type = ?';
-    params.push(req.query.cat);
-  }
-  sql += ' ORDER BY id ASC';
-
-  let products = await safeQuery(sql, params);
+  let products = await safeQuery('SELECT * FROM fs_products ORDER BY id ASC');
   
+  // Get user points if logged in
   let userPoints = 0;
   if (req.user && req.user.discord_id) {
     const pts = await safeQuery('SELECT points FROM bot_points WHERE discord_id = ?', [req.user.discord_id]);
@@ -156,61 +141,7 @@ router.get('/store', async (req, res) => {
 
   res.render('pages/store', {
     title: 'المتجر',
-    products, userPoints, settings,
-    search: req.query.search || '',
-    cat: req.query.cat || ''
-  });
-});
-
-// Store Products (Public Store tab)
-router.get('/store/products', async (req, res) => {
-  const settings = await getSettings();
-  let products = await safeQuery('SELECT * FROM fs_products WHERE category_type = ? ORDER BY id ASC', ['purchase']);
-  
-  let userPoints = 0;
-  if (req.user && req.user.discord_id) {
-    const pts = await safeQuery('SELECT points FROM bot_points WHERE discord_id = ?', [req.user.discord_id]);
-    userPoints = pts.length > 0 ? pts[0].points : 0;
-  }
-
-  res.render('pages/store', {
-    title: 'المتجر العام',
-    products, userPoints, settings,
-    search: '', cat: 'purchase'
-  });
-});
-
-// Products (Marketplace)
-router.get('/products', async (req, res) => {
-  const settings = await getSettings();
-  const categories = await safeQuery('SELECT * FROM categories ORDER BY sort_order ASC, id ASC');
-  
-  let sql = "SELECT p.*, c.name as cat_name, u.username as seller_name FROM products p LEFT JOIN categories c ON p.category_id = c.id LEFT JOIN users u ON p.seller_id = u.id WHERE p.status = 'approved'";
-  const params = [];
-
-  if (req.query.cat || req.query.category) {
-    sql += ' AND p.category_id = ?';
-    params.push(req.query.cat || req.query.category);
-  }
-  if (req.query.search) {
-    sql += ' AND p.name LIKE ?';
-    params.push('%' + req.query.search + '%');
-  }
-  sql += ' ORDER BY p.created_at DESC';
-
-  const products = await safeQuery(sql, params);
-
-  let userPoints = 0;
-  if (req.user && req.user.discord_id) {
-    const pts = await safeQuery('SELECT points FROM bot_points WHERE discord_id = ?', [req.user.discord_id]);
-    userPoints = pts.length > 0 ? pts[0].points : 0;
-  }
-
-  res.render('pages/products', {
-    title: 'المنتجات',
-    products, categories, userPoints, settings,
-    search: req.query.search || '',
-    cat: req.query.cat || ''
+    products, userPoints, settings
   });
 });
 
@@ -228,219 +159,9 @@ router.get('/community', async (req, res) => {
 
 // Applications
 router.get('/applications', async (req, res) => {
-  try {
-    const settings = await getSettings();
-    const applications = await safeQuery('SELECT * FROM application_settings ORDER BY id ASC');
-    const userApps = await safeQuery('SELECT application_type, status FROM submitted_applications WHERE user_id = ? ORDER BY id DESC', [req.user.id]);
-    res.render('pages/applications', { title: 'الطلبات', applications, userApps, settings });
-  } catch(e) {
-    res.render('pages/applications', { title: 'الطلبات', applications: [], userApps: [], settings: {} });
-  }
-});
-
-// Application Form
-router.get('/applications/form/:type', async (req, res) => {
-  try {
-    const type = req.params.type;
-    const settings = await getSettings();
-    const [appSetting] = await db.query('SELECT * FROM application_settings WHERE application_type = ? LIMIT 1', [type]);
-    if (!appSetting || !appSetting.length || appSetting[0].status !== 'open') {
-      return res.redirect('/applications');
-    }
-    const appData = appSetting[0];
-    const [questions] = await db.query('SELECT * FROM application_questions WHERE application_type = ? ORDER BY order_index ASC, sort_order ASC', [type]);
-    
-    const [pendingApp] = await db.query(
-      "SELECT id FROM submitted_applications WHERE user_id = ? AND application_type = ? AND status IN ('pending','waiting_join') LIMIT 1",
-      [req.user.id, type]
-    );
-    
-    const [rejectedApp] = await db.query(
-      "SELECT cooldown_until FROM submitted_applications WHERE user_id = ? AND application_type = ? AND status = 'rejected' AND cooldown_until IS NOT NULL ORDER BY id DESC LIMIT 1",
-      [req.user.id, type]
-    );
-    
-    let inCooldown = false;
-    if (rejectedApp && rejectedApp.length && rejectedApp[0].cooldown_until) {
-      inCooldown = new Date(rejectedApp[0].cooldown_until) > new Date();
-    }
-
-    const [userSubmitted] = await db.query(
-      "SELECT id, status FROM submitted_applications WHERE user_id = ? AND application_type = ? ORDER BY id DESC LIMIT 5",
-      [req.user.id, type]
-    );
-
-    // Discord role check
-    let hasRequiredRole = true;
-    let hasBlacklistRole = false;
-    let discordError = false;
-    let discordApiDown = false;
-    const requiredRoleId = appData.required_discord_role_id || '';
-    const blacklistRoleId = '1477685263722479627';
-
-    const [userRow] = await db.query('SELECT discord_id FROM users WHERE id = ? LIMIT 1', [req.user.id]);
-    const discordId = userRow && userRow.length ? userRow[0].discord_id : '';
-
-    if (discordId) {
-      if (requiredRoleId) {
-        const roleResult = await checkDiscordRole(discordId, requiredRoleId);
-        if (roleResult === null) {
-          discordApiDown = true;
-        } else {
-          hasRequiredRole = roleResult;
-        }
-      }
-      const blacklistResult = await checkDiscordRole(discordId, blacklistRoleId);
-      if (blacklistResult === true) hasBlacklistRole = true;
-    } else {
-      discordError = true;
-    }
-
-    res.render('pages/application-form', {
-      title: 'تقديم - ' + (appData.title || type),
-      appSetting: appData,
-      questions: questions,
-      pendingApp: pendingApp && pendingApp.length ? pendingApp[0].id : null,
-      inCooldown,
-      cooldownUntil: rejectedApp && rejectedApp.length ? rejectedApp[0].cooldown_until : null,
-      userSubmitted,
-      hasRequiredRole,
-      hasBlacklistRole,
-      discordError,
-      discordApiDown,
-      discordId,
-      settings
-    });
-  } catch(e) {
-    console.error('Application form error:', e.message);
-    res.redirect('/applications');
-  }
-});
-
-// Submit Application API
-router.post('/api/applications/submit', async (req, res) => {
-  try {
-    const { type, answers, answers_multiple, answers_img_url } = req.body;
-    if (!type) return res.status(400).json({ error: 'نوع التقديم مطلوب' });
-
-    const [appSetting] = await db.query('SELECT * FROM application_settings WHERE application_type = ? AND status = "open" LIMIT 1', [type]);
-    if (!appSetting || !appSetting.length) return res.status(400).json({ error: 'التقديم غير متاح' });
-    const appData = appSetting[0];
-
-    const [pendingApp] = await db.query(
-      "SELECT id FROM submitted_applications WHERE user_id = ? AND application_type = ? AND status IN ('pending','waiting_join') LIMIT 1",
-      [req.user.id, type]
-    );
-    if (pendingApp && pendingApp.length) return res.status(400).json({ error: 'لديك طلب معلق بالفعل' });
-
-    const [rejectedApp] = await db.query(
-      "SELECT cooldown_until FROM submitted_applications WHERE user_id = ? AND application_type = ? AND status = 'rejected' AND cooldown_until IS NOT NULL ORDER BY id DESC LIMIT 1",
-      [req.user.id, type]
-    );
-    if (rejectedApp && rejectedApp.length && rejectedApp[0].cooldown_until && new Date(rejectedApp[0].cooldown_until) > new Date()) {
-      return res.status(400).json({ error: 'يجب الانتظار حتى انتهاء فترة التهدئة' });
-    }
-
-    // Discord role checks (server-side security)
-    const [userRow] = await db.query('SELECT discord_id FROM users WHERE id = ? LIMIT 1', [req.user.id]);
-    const discordId = userRow && userRow.length ? userRow[0].discord_id : '';
-    if (!discordId) return res.status(400).json({ error: 'يجب ربط حساب ديسكورد أولاً' });
-
-    const blacklistRoleId = '1477685263722479627';
-    const isBlacklisted = await checkDiscordRole(discordId, blacklistRoleId);
-    if (isBlacklisted === true) return res.status(400).json({ error: 'أنت مدرج في القائمة السوداء' });
-
-    if (appData.required_discord_role_id) {
-      const hasRole = await checkDiscordRole(discordId, appData.required_discord_role_id);
-      if (hasRole === false) return res.status(400).json({ error: 'ليس لديك الرول المطلوب في ديسكورد — يجب أن تكون عضو في العائلة' });
-      if (hasRole === null) console.warn(`[Discord] API unavailable for user ${discordId} — allowing submission`);
-    }
-
-    const [questions] = await db.query('SELECT * FROM application_questions WHERE application_type = ? ORDER BY order_index ASC', [type]);
-    const answersData = {};
-    const submitAnswers = typeof answers === 'object' ? answers : {};
-
-    // Parse answers - express-fileupload may not parse nested bracket notation
-    // so also check flat keys like req.body['answers[123]']
-    const rawAnswers = answers || {};
-    const rawMulti = answers_multiple || {};
-    const rawImgUrl = answers_img_url || {};
-
-    for (const q of questions) {
-      if (q.type === 'multiple_choice') {
-        let multiAns = rawMulti[q.id] || rawMulti[String(q.id)] || [];
-        if (!Array.isArray(multiAns)) multiAns = [multiAns];
-        // Also check flat key
-        const flatKey = 'answers_multiple[' + q.id + '][]';
-        const flatVal = req.body[flatKey];
-        if (!multiAns.length && flatVal) {
-          multiAns = Array.isArray(flatVal) ? flatVal : [flatVal];
-        }
-        if (multiAns.length > 0) {
-          answersData[q.id] = multiAns.filter(a => typeof a === 'string' && a.length <= 200).join(', ');
-        }
-        if (q.required && (!multiAns || !multiAns.length)) {
-          return res.status(400).json({ error: 'يرجى الإجابة على جميع الأسئلة المطلوبة' });
-        }
-      } else if (q.type === 'image') {
-        let imgUrl = rawImgUrl[q.id] || rawImgUrl[String(q.id)] || '';
-        if (!imgUrl) {
-          imgUrl = req.body['answers_img_url[' + q.id + ']'] || '';
-        }
-        if (imgUrl) {
-          if (!/^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)/i.test(imgUrl)) {
-            return res.status(400).json({ error: 'رابط الصورة غير صحيح' });
-          }
-          answersData[q.id] = imgUrl;
-        } else {
-          const file = req.files && req.files['answers_img_' + q.id] ? req.files['answers_img_' + q.id] : null;
-          if (file) {
-            const allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-            const ext = file.name.split('.').pop().toLowerCase();
-            if (!allowedExts.includes(ext)) {
-              return res.status(400).json({ error: 'نوع الملف غير مسموح به' });
-            }
-            if (file.size > 5 * 1024 * 1024) {
-              return res.status(400).json({ error: 'حجم الملف يتجاوز 5 ميجا' });
-            }
-            const filename = Date.now() + '_' + Math.random().toString(36).substr(2, 9) + '.' + ext;
-            const uploadDir = path.join(__dirname, '..', 'public', 'uploads', 'applications');
-            if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-            await file.mv(path.join(uploadDir, filename));
-            answersData[q.id] = '/uploads/applications/' + filename;
-          } else if (q.required) {
-            return res.status(400).json({ error: 'يرجى رفع صورة للسؤال المطلوب' });
-          }
-        }
-      } else {
-        let val = rawAnswers[q.id] || rawAnswers[String(q.id)] || '';
-        if (!val) {
-          val = req.body['answers[' + q.id + ']'] || '';
-        }
-        if (typeof val === 'string') {
-          answersData[q.id] = val.substring(0, 2000);
-        }
-        if (q.required && !val) {
-          return res.status(400).json({ error: 'يرجى الإجابة على جميع الأسئلة المطلوبة' });
-        }
-        if (q.keyword && val && typeof val === 'string') {
-          if (!val.toLowerCase().includes(q.keyword.toLowerCase())) {
-            return res.status(400).json({ error: 'الجواب لازم يحتوي على كلمة "' + q.keyword + '"' });
-          }
-        }
-      }
-    }
-
-    await db.query(
-      'INSERT INTO submitted_applications (user_id, application_type, answers, status, submitted_at) VALUES (?, ?, ?, "pending", NOW())',
-      [req.user.id, type, JSON.stringify(answersData)]
-    );
-
-    res.json({ success: true, message: 'تم إرسال طلبك بنجاح' });
-  } catch(e) {
-    console.error('Submit application error:', e.message);
-    res.status(500).json({ error: 'حدث خطأ أثناء إرسال الطلب' });
-  }
+  const settings = await getSettings();
+  const applications = await safeQuery('SELECT * FROM application_settings ORDER BY id ASC');
+  res.render('pages/applications', { title: 'الطلبات', applications, settings });
 });
 
 // Support
