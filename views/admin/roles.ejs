@@ -14,7 +14,6 @@
 
     .layout { display: flex; min-height: 100vh; }
 
-    /* Sidebar */
     .sidebar {
       width: 280px; background: rgba(12,8,22,0.95); border-left: 1px solid rgba(var(--ac-rgb),0.15);
       padding: 1.5rem; position: fixed; height: 100vh; overflow-y: auto; z-index: 10;
@@ -29,17 +28,9 @@
     .role-item.active { background: rgba(var(--ac-rgb),0.12); border-color: rgba(var(--ac-rgb),0.3); }
     .role-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
     .role-name { font-size: 0.9rem; font-weight: 600; flex: 1; }
-    .role-delete { opacity: 0; transition: opacity 0.3s; color: #ef4444; cursor: pointer; }
+    .role-delete { opacity: 0; transition: opacity 0.3s; color: #ef4444; cursor: pointer; padding: 4px; }
     .role-item:hover .role-delete { opacity: 1; }
 
-    .add-role-btn {
-      width: 100%; padding: 12px; background: rgba(var(--ac-rgb),0.1); border: 2px dashed rgba(var(--ac-rgb),0.3);
-      border-radius: 12px; color: var(--ac); font-family: inherit; font-size: 0.9rem; font-weight: 700;
-      cursor: pointer; transition: all 0.3s; margin-top: 1rem;
-    }
-    .add-role-btn:hover { background: rgba(var(--ac-rgb),0.2); border-color: var(--ac); }
-
-    /* Main Content */
     .main { flex: 1; margin-right: 280px; padding: 2rem; }
 
     .header {
@@ -54,7 +45,6 @@
     }
     .save-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(var(--ac-rgb),0.4); }
 
-    /* Role Settings Card */
     .settings-card {
       background: rgba(12,8,22,0.6); border: 1px solid rgba(var(--ac-rgb),0.15);
       border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;
@@ -62,7 +52,7 @@
     .settings-card h2 { font-size: 1.1rem; font-weight: 800; margin-bottom: 1.2rem; color: var(--ac); }
 
     .form-row { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
-    .form-group { flex: 1; min-width: 200px; }
+    .form-group { flex: 1; min-width: 180px; }
     .form-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; color: rgba(255,255,255,0.6); }
     .form-group input, .form-group select {
       width: 100%; padding: 12px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(var(--ac-rgb),0.2);
@@ -71,9 +61,8 @@
     .form-group input:focus, .form-group select:focus { border-color: var(--ac); }
     .form-group input[type="color"] { height: 45px; padding: 4px; cursor: pointer; }
 
-    /* Permissions Grid */
     .permissions-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;
     }
     .perm-card {
       background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
@@ -98,7 +87,6 @@
     .perm-toggle.active .icon { background: var(--ac); border-color: var(--ac); }
     .perm-toggle .label { font-size: 0.8rem; font-weight: 600; }
 
-    /* No role selected */
     .no-role {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       height: 60vh; color: rgba(255,255,255,0.3); text-align: center;
@@ -106,7 +94,24 @@
     .no-role i { font-size: 4rem; margin-bottom: 1rem; }
     .no-role h2 { font-size: 1.3rem; margin-bottom: 0.5rem; }
 
-    /* Toast */
+    .add-role-form {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(var(--ac-rgb),0.2);
+      border-radius: 14px; padding: 1.5rem; margin-top: 1rem;
+    }
+    .add-role-form h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 1rem; color: var(--ac); }
+    .add-role-form .form-row { margin-bottom: 0.8rem; }
+    .add-role-form .btn-group { display: flex; gap: 0.5rem; margin-top: 1rem; }
+    .btn-primary {
+      padding: 10px 24px; background: var(--ac); color: #fff; border: none; border-radius: 10px;
+      font-family: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: all 0.3s;
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(var(--ac-rgb),0.4); }
+    .btn-secondary {
+      padding: 10px 24px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px; font-family: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: all 0.3s;
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+
     .toast {
       position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
       padding: 14px 28px; background: #22c55e; color: #fff; border-radius: 12px;
@@ -126,14 +131,34 @@
 </head>
 <body>
   <div class="layout">
-    <!-- Sidebar -->
     <div class="sidebar">
       <div class="sidebar-title"><i class="fas fa-shield-halved"></i> إدارة الصلاحيات</div>
       <div class="role-list" id="roleList"></div>
-      <button class="add-role-btn" onclick="addRole()"><i class="fas fa-plus"></i> إضافة رتبة جديدة</button>
+
+      <!-- Inline Add Role Form -->
+      <div class="add-role-form" id="addRoleForm" style="display:none">
+        <h3><i class="fas fa-plus"></i> رتبة جديدة</h3>
+        <div class="form-group" style="margin-bottom:0.6rem">
+          <label>الاسم بالإنجليزية</label>
+          <input type="text" id="newRoleName" placeholder="moderator">
+        </div>
+        <div class="form-group" style="margin-bottom:0.6rem">
+          <label>اسم العرض بالعربي</label>
+          <input type="text" id="newRoleDisplayName" placeholder="مشرف">
+        </div>
+        <div class="form-group" style="margin-bottom:0.6rem">
+          <label>اللون</label>
+          <input type="color" id="newRoleColor" value="#780ecf">
+        </div>
+        <div class="btn-group">
+          <button class="btn-primary" onclick="submitNewRole()"><i class="fas fa-check"></i> إضافة</button>
+          <button class="btn-secondary" onclick="toggleAddForm()"><i class="fas fa-times"></i> إلغاء</button>
+        </div>
+      </div>
+
+      <button class="add-role-btn" id="addRoleBtn" onclick="toggleAddForm()"><i class="fas fa-plus"></i> إضافة رتبة جديدة</button>
     </div>
 
-    <!-- Main -->
     <div class="main" id="mainContent">
       <div class="no-role" id="noRole">
         <i class="fas fa-shield-halved"></i>
@@ -147,17 +172,16 @@
           <button class="save-btn" onclick="savePermissions()"><i class="fas fa-save"></i> حفظ التغييرات</button>
         </div>
 
-        <!-- Role Settings -->
         <div class="settings-card">
           <h2><i class="fas fa-gear"></i> إعدادات الرتبة</h2>
           <div class="form-row">
             <div class="form-group">
               <label>اسم الرتبة (بالإنجليزية)</label>
-              <input type="text" id="roleName" placeholder="admin, moderator, ...">
+              <input type="text" id="roleName" placeholder="admin">
             </div>
             <div class="form-group">
               <label>اسم العرض (بالعربي)</label>
-              <input type="text" id="roleDisplayName" placeholder="مدير، مشرف، ...">
+              <input type="text" id="roleDisplayName" placeholder="مدير">
             </div>
           </div>
           <div class="form-row">
@@ -176,7 +200,6 @@
           </div>
         </div>
 
-        <!-- Permissions -->
         <div class="settings-card">
           <h2><i class="fas fa-key"></i> الصلاحيات لكل صفحة</h2>
           <div class="permissions-grid" id="permissionsGrid"></div>
@@ -217,13 +240,57 @@
     let permissions = <%- JSON.stringify(permissions || {}) %>;
     let selectedRoleId = null;
 
+    function toggleAddForm() {
+      const form = document.getElementById('addRoleForm');
+      const btn = document.getElementById('addRoleBtn');
+      if (form.style.display === 'none') {
+        form.style.display = 'block';
+        btn.style.display = 'none';
+        document.getElementById('newRoleName').focus();
+      } else {
+        form.style.display = 'none';
+        btn.style.display = 'flex';
+      }
+    }
+
+    async function submitNewRole() {
+      const name = document.getElementById('newRoleName').value.trim();
+      const displayName = document.getElementById('newRoleDisplayName').value.trim();
+      const color = document.getElementById('newRoleColor').value;
+
+      if (!name || !displayName) {
+        showToast('أدخل الاسم والعرض', true);
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/admin/roles', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, display_name: displayName, color, icon: 'fa-user', level: 0 })
+        });
+        const data = await res.json();
+        if (data.success) {
+          roles.push(data.role);
+          permissions[data.role.id] = {};
+          renderRoles();
+          selectRole(data.role.id);
+          toggleAddForm();
+          document.getElementById('newRoleName').value = '';
+          document.getElementById('newRoleDisplayName').value = '';
+          document.getElementById('newRoleColor').value = '#780ecf';
+          showToast('تمت إضافة الرتبة بنجاح');
+        }
+      } catch(e) { showToast('حدث خطأ', true); }
+    }
+
     function renderRoles() {
       const list = document.getElementById('roleList');
       list.innerHTML = roles.map(r => `
         <div class="role-item ${r.id === selectedRoleId ? 'active' : ''}" onclick="selectRole(${r.id})">
           <div class="role-dot" style="background:${r.color}"></div>
           <span class="role-name">${r.display_name || r.name}</span>
-          ${r.is_default ? '<span style="font-size:0.7rem;color:rgba(255,255,255,0.3)">افتراضي</span>' : ''}
+          ${r.is_default ? '<span style="font-size:0.65rem;color:rgba(255,255,255,0.3);background:rgba(255,255,255,0.05);padding:2px 8px;border-radius:6px">افتراضي</span>' : ''}
           ${!r.is_default ? `<i class="fas fa-trash role-delete" onclick="event.stopPropagation();deleteRole(${r.id})"></i>` : ''}
         </div>
       `).join('');
@@ -288,33 +355,9 @@
       el.classList.toggle('active');
       const checkbox = el.querySelector('input');
       checkbox.checked = !checkbox.checked;
-
       if (!permissions[roleId]) permissions[roleId] = {};
       if (!permissions[roleId][pageId]) permissions[roleId][pageId] = { can_access: 0, can_edit: 0, can_delete: 0, can_manage: 0 };
       permissions[roleId][pageId][permType] = checkbox.checked ? 1 : 0;
-    }
-
-    async function addRole() {
-      const name = prompt('اسم الرتبة بالإنجليزية (مثلاً: moderator)');
-      if (!name) return;
-      const displayName = prompt('اسم العرض بالعربي (مثلاً: مشرف)');
-      if (!displayName) return;
-
-      try {
-        const res = await fetch('/api/admin/roles', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, display_name: displayName, color: '#780ecf', icon: 'fa-user', level: 0 })
-        });
-        const data = await res.json();
-        if (data.success) {
-          roles.push(data.role);
-          permissions[data.role.id] = {};
-          renderRoles();
-          selectRole(data.role.id);
-          showToast('تمت إضافة الرتبة بنجاح');
-        }
-      } catch(e) { showToast('حدث خطأ', true); }
     }
 
     async function deleteRole(id) {
@@ -344,7 +387,6 @@
         level: parseInt(document.getElementById('roleLevel').value) || 0,
         permissions: permissions[selectedRoleId] || {}
       };
-
       try {
         const res = await fetch(`/api/admin/roles/${selectedRoleId}`, {
           method: 'PUT',
@@ -354,7 +396,7 @@
         const data = await res.json();
         if (data.success) {
           const idx = roles.findIndex(r => r.id === selectedRoleId);
-          if (idx >= 0) { roles[idx] = { ...roles[idx], ...roleData }; }
+          if (idx >= 0) roles[idx] = { ...roles[idx], ...roleData };
           renderRoles();
           showToast('تم حفظ التغييرات بنجاح');
         }

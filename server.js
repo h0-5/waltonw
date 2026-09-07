@@ -36,6 +36,28 @@ async function migrate() {
     }
   }
   console.log('✅ Migration done');
+
+  // Seed default roles
+  try {
+    const [existing] = await db.query('SELECT COUNT(*) as c FROM roles');
+    if (existing[0].c === 0) {
+      const defaultRoles = [
+        { name: 'owner', display_name: 'المالك', color: '#ef4444', icon: 'fa-crown', level: 100, is_admin_role: 1, is_default: 0 },
+        { name: 'admin', display_name: 'مدير', color: '#f97316', icon: 'fa-shield-halved', level: 80, is_admin_role: 1, is_default: 0 },
+        { name: 'moderator', display_name: 'مشرف', color: '#eab308', icon: 'fa-gavel', level: 60, is_admin_role: 1, is_default: 0 },
+        { name: 'support', display_name: 'دعم فني', color: '#22c55e', icon: 'fa-headset', level: 40, is_admin_role: 1, is_default: 0 },
+        { name: 'member', display_name: 'عضو', color: '#3b82f6', icon: 'fa-user', level: 10, is_admin_role: 0, is_default: 1 },
+        { name: 'trial', display_name: 'تحت التجربة', color: '#9ca3af', icon: 'fa-user-clock', level: 5, is_admin_role: 0, is_default: 0 },
+      ];
+      for (const r of defaultRoles) {
+        await db.query(
+          'INSERT INTO roles (name, display_name, color, icon, level, is_admin_role, is_default) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [r.name, r.display_name, r.color, r.icon, r.level, r.is_admin_role, r.is_default]
+        );
+      }
+      console.log('✅ Default roles seeded');
+    }
+  } catch(e) { console.error('Role seed error:', e.message); }
 }
 
 async function start() {
