@@ -18,9 +18,10 @@ app.set('trust proxy', 1);
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 app.use(cors({ origin: process.env.SITE_URL || 'http://localhost:3000', credentials: true }));
 
-// Response compression (gzip) — big bandwidth/CPU saving on every page
+// Response compression (gzip) — level 4 = same bandwidth saving, noticeably
+// less CPU per response than 6 (Railway bills CPU)
 const compression = require('compression');
-app.use(compression({ level: 6, threshold: 1024 }));
+app.use(compression({ level: 4, threshold: 1024 }));
 
 // EJS template compilation cache — avoids re-compiling views on every request
 app.set('view cache', true);
@@ -114,28 +115,40 @@ app.use(async (req, res, next) => {
         res.locals.userPermissions = allPerms;
         res.locals.pageAccess = allPages;
       } else {
-        const [role] = await db.execute('SELECT id, is_admin_role FROM roles WHERE name = ?', [req.user.role]);
-        if (role.length) {
-          if (role[0].is_admin_role) {
-            // Admin roles get everything
-            const { getAllPermissionsFlat } = require('./config/permissions');
-            const allPerms = {};
-            getAllPermissionsFlat().forEach(k => { allPerms[k] = 1; });
-            res.locals.userPermissions = allPerms;
-          } else {
-            // Load permissions
-            const [perms] = await db.execute(
-              'SELECT permission_key FROM role_role_permissions WHERE role_id = ? AND enabled = 1',
+        // Cached per role (60s TTL) — was 3 DB queries on EVERY request
+        const cached = rolePermCache.get(req.user.role);
+        if (cached && (Date.now() - cached.at) < ROLE_PERM_TTL) {
+          res.locals.userPermissions = cached.perms;
+          res.locals.pageAccess = cached.pages;
+        } else {
+          const [role] = await db.execute('SELECT id, is_admin_role FROM roles WHERE name = ?', [req.user.role]);
+          if (role.length) {
+            if (role[0].is_admin_role) {
+              // Admin roles get everything
+              const { getAllPermissionsFlat } = require('./config/permissions');
+              const allPerms = {};
+              getAllPermissionsFlat().forEach(k => { allPerms[k] = 1; });
+              res.locals.userPermissions = allPerms;
+            } else {
+              // Load permissions
+              const [perms] = await db.execute(
+                'SELECT permission_key FROM role_role_permissions WHERE role_id = ? AND enabled = 1',
+                [role[0].id]
+              );
+              perms.forEach(p => { res.locals.userPermissions[p.permission_key] = 1; });
+            }
+            // Load page access (for all roles including admin — admin sidebar already handles this)
+            const [pages] = await db.execute(
+              'SELECT page_path, can_access FROM role_page_access WHERE role_id = ?',
               [role[0].id]
             );
-            perms.forEach(p => { res.locals.userPermissions[p.permission_key] = 1; });
+            pages.forEach(p => { res.locals.pageAccess[p.page_path] = p.can_access ? 1 : 0; });
+            rolePermCache.set(req.user.role, {
+              perms: res.locals.userPermissions,
+              pages: res.locals.pageAccess,
+              at: Date.now()
+            });
           }
-          // Load page access (for all roles including admin — admin sidebar already handles this)
-          const [pages] = await db.execute(
-            'SELECT page_path, can_access FROM role_page_access WHERE role_id = ?',
-            [role[0].id]
-          );
-          pages.forEach(p => { res.locals.pageAccess[p.page_path] = p.can_access ? 1 : 0; });
         }
       }
     } catch(e) {}
@@ -146,6 +159,38 @@ app.use(async (req, res, next) => {
 // View engine
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+
+// ── Asset version stamping (cache-busting) ──
+// Every boot gets a unique ?v= appended to /css/* and /js/* links inside
+// rendered HTML. Without this, browsers kept CSS cached for up to a full day
+// (static maxAge below) and users kept seeing the OLD design after every
+// deploy — the reason fixes "never appeared" on phones.
+const ASSET_VER = Date.now().toString(36);
+const ASSET_CSS_RE = /(href=")(\/css\/[^"?]*\.css)(\?[^"?]*)?(\")/g;
+const ASSET_JS_RE = /(src=")(\/js\/[^"?]*\.js)(\?[^"?]*)?(\")/g;
+app.use((req, res, next) => {
+  const origSend = res.send;
+  res.send = function(body) {
+    try {
+      if (typeof body === 'string' && (body.indexOf('/css/') !== -1 || body.indexOf('/js/') !== -1)) {
+        const ct = (typeof this.get === 'function' && this.get('Content-Type')) || '';
+        // patch only HTML documents — never JSON/API payloads
+        if (ct === '' || ct.indexOf('html') !== -1) {
+          body = body
+            .replace(ASSET_CSS_RE, '$1$2?v=' + ASSET_VER + '$4')
+            .replace(ASSET_JS_RE, '$1$2?v=' + ASSET_VER + '$4');
+        }
+      }
+    } catch (e) { /* never break a response over stamping */ }
+    return origSend.call(this, body);
+  };
+  next();
+});
+
+// Role permission cache — cuts 3 DB queries per request for every logged-in
+// user down to 3 per minute per role (permissions changes apply within 60s)
+const rolePermCache = new Map(); // role name -> { perms, pages, at }
+const ROLE_PERM_TTL = 60 * 1000;
 
 // Routes
 const indexRoutes = require('./routes/index');

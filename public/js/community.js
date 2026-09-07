@@ -14,6 +14,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Load messages
   async function loadMessages() {
+    if (isPolling) return;
+    isPolling = true;
     try {
       const res = await fetch(`/api/community/messages?lastId=${lastMessageId}`);
       const data = await res.json();
@@ -27,6 +29,8 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     } catch (e) {
       console.error('Error loading messages:', e);
+    } finally {
+      isPolling = false;
     }
   }
 
@@ -127,7 +131,23 @@ document.addEventListener('DOMContentLoaded', function() {
   loadMessages();
   loadOnlineUsers();
 
-  // Polling
-  setInterval(loadMessages, 3000);
-  setInterval(loadOnlineUsers, 30000);
+  // Polling — كان كل 3 ثوان (20 طلب/دقيقة لكل تاب مفتوح = استهلاك استضافة مستمر)
+  // الآن: 10 ثوان + يتوقف كلياً والتاب مخفي/بالخلفية، ويعيد الجلب فور رجوعك للتاب
+  let onlineTimer = setInterval(function() {
+    if (!document.hidden) loadOnlineUsers();
+  }, 30000);
+  let messageTimer = setInterval(function() {
+    if (!document.hidden) loadMessages();
+  }, 10000);
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+      loadMessages();
+      loadOnlineUsers();
+    }
+  });
+  // تحرير المؤقتات إذا غادرت صفحة المجتمع (تنقل SPA نادر لكن احتياط)
+  window.addEventListener('pagehide', function() {
+    clearInterval(messageTimer);
+    clearInterval(onlineTimer);
+  });
 });

@@ -421,7 +421,13 @@ body {
     .games-page {
         padding: 1rem;
     }
-    
+
+    /* حاوية الهاتف حشوتها 1rem — الـ hero كان بهامش سالب -1.5rem
+       فيفيض 8px عن الشاشة ويسبب تمريراً جانبياً واهتزازاً */
+    .games-hero {
+        margin: -2rem -1rem 2rem;
+    }
+
     .games-grid {
         grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
         gap: 1rem;
