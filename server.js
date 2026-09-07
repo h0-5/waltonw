@@ -54,6 +54,17 @@ async function migrate() {
   }
   console.log('✅ Migration done');
 
+  // Fix existing roles table - add missing columns
+  try {
+    await db.query("ALTER TABLE roles ADD COLUMN IF NOT EXISTS is_admin_role TINYINT(1) DEFAULT 0");
+    await db.query("ALTER TABLE roles ADD COLUMN IF NOT EXISTS is_default TINYINT(1) DEFAULT 0");
+    await db.query("ALTER TABLE roles ADD COLUMN IF NOT EXISTS color VARCHAR(20) DEFAULT '#ffffff'");
+    await db.query("ALTER TABLE roles ADD COLUMN IF NOT EXISTS icon VARCHAR(50) DEFAULT ''");
+    await db.query("ALTER TABLE roles ADD COLUMN IF NOT EXISTS sort_order INT DEFAULT 0");
+    await db.query("ALTER TABLE roles ADD COLUMN IF NOT EXISTS created_at DATETIME DEFAULT CURRENT_TIMESTAMP");
+    console.log('✅ roles table columns fixed');
+  } catch(e) { console.log('roles alter:', e.message); }
+
   // Seed default roles
   try {
     const [existing] = await db.query('SELECT COUNT(*) as c FROM roles');
@@ -74,6 +85,9 @@ async function migrate() {
       }
       console.log('✅ Default roles seeded');
     }
+    // Fix existing roles - set is_admin_role for admin roles
+    await db.query("UPDATE roles SET is_admin_role = 1 WHERE name IN ('owner', 'admin', 'moderator', 'support')");
+    await db.query("UPDATE roles SET is_default = 1 WHERE name = 'member'");
   } catch(e) { console.error('Role seed error:', e.message); }
 }
 
