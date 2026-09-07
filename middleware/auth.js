@@ -186,7 +186,10 @@ const checkPermission = (permissionKey) => {
     const db = require('../config/database');
     db.execute('SELECT id, is_admin_role FROM roles WHERE name = ?', [req.user.role])
       .then(([role]) => {
-        if (!role.length) return denyAccess(res);
+        if (!role.length) {
+          if (ADMIN_ROLES.includes(req.user.role)) return next();
+          return denyAccess(res);
+        }
         if (role[0].is_admin_role) return next();
         return db.execute(
           'SELECT enabled FROM role_role_permissions WHERE role_id = ? AND permission_key = ?',
@@ -196,7 +199,11 @@ const checkPermission = (permissionKey) => {
           return denyAccess(res);
         });
       })
-      .catch(() => denyAccess(res));
+      .catch((err) => {
+        console.error('checkPermission error:', err.message);
+        if (ADMIN_ROLES.includes(req.user.role)) return next();
+        return denyAccess(res);
+      });
   };
 };
 

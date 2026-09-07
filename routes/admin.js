@@ -183,6 +183,9 @@ router.get('/settings', checkPermission('site_settings_view'), async (req, res) 
 router.get('/roles', checkPermission('roles_config_view'), async (req, res) => {
   try {
     const [roles] = await db.execute('SELECT * FROM roles ORDER BY is_admin_role DESC, sort_order ASC, id ASC');
+    if (!roles.length) {
+      console.error('[Admin/Roles] WARNING: roles table returned 0 rows!');
+    }
     const [perms] = await db.execute('SELECT * FROM role_permissions');
     const permissions = {};
     perms.forEach(p => {

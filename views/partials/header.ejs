@@ -102,6 +102,12 @@
       transition: width 0.2s ease;
     }
   </style>
+</head>
+<body>
+  <!-- Loading Bar -->
+  <div id="loadingBar" class="loading-bar">
+    <div class="loading-bar-progress"></div>
+  </div>
 
   <script>
     (function() {
@@ -123,7 +129,6 @@
         }, 400);
       }
 
-      // Intercept all internal link clicks
       document.addEventListener('click', function(e) {
         var link = e.target.closest('a[href]');
         if (!link) return;
@@ -131,21 +136,11 @@
         if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('mailto:')) return;
         if (link.target === '_blank') return;
         if (link.hasAttribute('download')) return;
-        if (link.hostname !== location.hostname) return;
+        if (link.hostname && link.hostname !== location.hostname) return;
         startLoading();
       });
 
-      // Also handle back/forward browser navigation
       window.addEventListener('pageshow', endLoading);
-      window.addEventListener('load', endLoading);
-
-      // Fallback: stop after 8 seconds
       setTimeout(endLoading, 8000);
     })();
   </script>
-</head>
-<body>
-  <!-- Loading Bar -->
-  <div id="loadingBar" class="loading-bar">
-    <div class="loading-bar-progress"></div>
-  </div>
