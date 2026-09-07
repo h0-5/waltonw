@@ -13,6 +13,13 @@
     var _admUser = typeof user !== 'undefined' ? user : null;
     var _admPath = typeof currentPath !== 'undefined' ? currentPath : '/admin';
     var _admTitle = typeof title !== 'undefined' ? title : 'Admin';
+    // Permission check helper — owner and admin roles always pass
+    var _canAccess = function(permKey) {
+      if (!_admUser) return false;
+      if (_admUser.role === 'owner') return true;
+      if (typeof _admUserPerms !== 'undefined' && _admUserPerms && _admUserPerms[permKey]) return true;
+      return false;
+    };
   %>
   <title><%= _admTitle %> | Walton Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -51,63 +58,99 @@
       <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
     </div>
     <nav class="sidebar-nav">
+      <% if (_canAccess('users_view')) { %>
       <a href="/admin" class="nav-item<%= _admPath === '/admin' ? ' active' : '' %>">
         <i class="fas fa-tachometer-alt"></i><span>لوحة التحكم</span>
       </a>
+      <% } %>
       <div class="nav-section-title">المحتوى</div>
+      <% if (_canAccess('users_view')) { %>
       <a href="/admin/users" class="nav-item<%= _admPath === '/admin/users' ? ' active' : '' %>">
         <i class="fas fa-users"></i><span>المستخدمين</span>
       </a>
+      <% } %>
+      <% if (_canAccess('products_view')) { %>
       <a href="/admin/products" class="nav-item<%= _admPath === '/admin/products' ? ' active' : '' %>">
         <i class="fas fa-box"></i><span>المنتجات</span>
       </a>
+      <% } %>
+      <% if (_canAccess('store_orders_view')) { %>
       <a href="/admin/orders" class="nav-item<%= _admPath === '/admin/orders' ? ' active' : '' %>">
         <i class="fas fa-shopping-bag"></i><span>الطلبات</span>
       </a>
+      <% } %>
+      <% if (_canAccess('news_add')) { %>
       <a href="/admin/news" class="nav-item<%= _admPath === '/admin/news' ? ' active' : '' %>">
         <i class="fas fa-newspaper"></i><span>الأخبار</span>
       </a>
+      <% } %>
       <div class="nav-section-title">الادارة</div>
+      <% if (_canAccess('rules_view')) { %>
       <a href="/admin/rules" class="nav-item<%= _admPath === '/admin/rules' ? ' active' : '' %>">
         <i class="fas fa-gavel"></i><span>القوانين</span>
       </a>
+      <% } %>
+      <% if (_canAccess('discounts_manage')) { %>
       <a href="/admin/discounts" class="nav-item<%= _admPath === '/admin/discounts' ? ' active' : '' %>">
         <i class="fas fa-tag"></i><span>أكواد الخصم</span>
       </a>
+      <% } %>
+      <% if (_canAccess('apps_view')) { %>
       <a href="/admin/applications" class="nav-item<%= _admPath === '/admin/applications' ? ' active' : '' %>">
         <i class="fas fa-file-alt"></i><span>الطلبات المقدمة</span>
       </a>
+      <% } %>
+      <% if (_canAccess('app_types_view')) { %>
       <a href="/admin/manage-apps" class="nav-item<%= _admPath === '/admin/manage-apps' ? ' active' : '' %>">
         <i class="fas fa-cogs"></i><span>إدارة التقديمات</span>
       </a>
+      <% } %>
+      <% if (_canAccess('tickets_view')) { %>
       <a href="/admin/tickets" class="nav-item<%= _admPath === '/admin/tickets' ? ' active' : '' %>">
         <i class="fas fa-headset"></i><span>التذاكر</span>
       </a>
+      <% } %>
+      <% if (_canAccess('broadcast_send')) { %>
       <a href="/admin/broadcast" class="nav-item<%= _admPath === '/admin/broadcast' ? ' active' : '' %>">
         <i class="fas fa-bullhorn"></i><span>البث</span>
       </a>
+      <% } %>
+      <% if (_canAccess('properties_view')) { %>
       <a href="/admin/properties" class="nav-item<%= _admPath === '/admin/properties' ? ' active' : '' %>">
         <i class="fas fa-building"></i><span>الممتلكات</span>
       </a>
+      <% } %>
+      <% if (_canAccess('company_view')) { %>
       <a href="/admin/company" class="nav-item<%= _admPath === '/admin/company' ? ' active' : '' %>">
         <i class="fas fa-briefcase"></i><span>الشركة</span>
       </a>
+      <% } %>
       <div class="nav-section-title">النظام</div>
+      <% if (_canAccess('about_view')) { %>
       <a href="/admin/about" class="nav-item<%= _admPath === '/admin/about' ? ' active' : '' %>">
         <i class="fas fa-info-circle"></i><span>صفحة من نحن</span>
       </a>
+      <% } %>
+      <% if (_canAccess('site_settings_view')) { %>
       <a href="/admin/settings" class="nav-item<%= _admPath === '/admin/settings' ? ' active' : '' %>">
         <i class="fas fa-cog"></i><span>الإعدادات</span>
       </a>
+      <% } %>
+      <% if (_canAccess('roles_config_view')) { %>
       <a href="/admin/roles" class="nav-item<%= _admPath === '/admin/roles' ? ' active' : '' %>">
         <i class="fas fa-user-shield"></i><span>الرتب</span>
       </a>
+      <% } %>
+      <% if (_canAccess('users_ban')) { %>
       <a href="/admin/banned" class="nav-item<%= _admPath === '/admin/banned' ? ' active' : '' %>">
         <i class="fas fa-ban"></i><span>المحظورين</span>
       </a>
+      <% } %>
+      <% if (_canAccess('logs_view')) { %>
       <a href="/admin/logs" class="nav-item<%= _admPath === '/admin/logs' ? ' active' : '' %>">
         <i class="fas fa-scroll"></i><span>السجلات</span>
       </a>
+      <% } %>
       <div class="nav-divider"></div>
       <a href="/" class="nav-item">
         <i class="fas fa-home"></i><span>الموقع</span>
