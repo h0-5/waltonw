@@ -19,7 +19,7 @@ if (mobBtn) {
   });
 }
 document.querySelectorAll('.admin-table').forEach(function(t) {
-  if (!t.closest('.table-container')) {
+  if (!t.closest('.table-container') && !t.closest('.admin-table-wrapper') && !t.closest('.tbl-wrap')) {
     var w = document.createElement('div');
     w.className = 'table-container';
     t.parentNode.insertBefore(w, t);
@@ -27,5 +27,17 @@ document.querySelectorAll('.admin-table').forEach(function(t) {
   }
 });
 </script>
+<style>
+/* Last-in-cascade admin mobile overrides (wins over per-page inline <style>) */
+@media (max-width: 768px) {
+  .admin-content > div[style*="flex"] { flex-direction: column !important; align-items: stretch !important; }
+  .admin-content > div[style*="flex"] > div[style*="flex-shrink:0"] { width: 100% !important; max-height: 300px !important; }
+  .admin-content > div[style*="flex"] > div { max-height: none !important; }
+  .admin-modal-content { max-width: 100% !important; }
+}
+@media (max-width: 480px) {
+  .admin-modal-header, .admin-modal-footer { flex-wrap: wrap; }
+}
+</style>
 </body>
 </html>

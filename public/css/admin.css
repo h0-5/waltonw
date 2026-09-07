@@ -364,6 +364,68 @@
 .status-dot.offline { background: #666; }
 
 /* ==========================================
+   MISSING COMPONENT STYLES (tickets/orders/news/roles templates)
+   ========================================== */
+.admin-header-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 20px;
+}
+.admin-filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.admin-select {
+  padding: 10px 12px; background: var(--bg-card);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  color: var(--text); font-size: 14px; font-family: inherit; outline: none;
+}
+.admin-select:focus { border-color: var(--ac); }
+.admin-select option { background: #1a1525; color: #fff; }
+.admin-select-small {
+  padding: 6px 10px; background: rgba(var(--ac-rgb), 0.05);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  color: var(--text); font-size: 12px; font-family: inherit; outline: none;
+}
+.admin-table-wrapper {
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius); border: 1px solid var(--border);
+}
+
+/* Priority badges */
+.priority-badge {
+  display: inline-block; padding: 3px 10px; border-radius: 50px;
+  font-size: 11px; font-weight: 600; white-space: nowrap;
+}
+.priority-high { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+.priority-medium { background: rgba(234, 179, 8, 0.2); color: #eab308; }
+.priority-low { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+
+/* Status badge aliases used by tickets/orders/news */
+.status-badge.status-pending { background: rgba(234, 179, 8, 0.2); color: #eab308; }
+.status-badge.status-processing { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+.status-badge.status-shipped { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+.status-badge.status-delivered { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+.status-badge.status-cancelled { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+.badge-danger { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+
+/* Modal layout used by news/tickets/roles */
+.admin-modal-content {
+  background: var(--bg-card-solid); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px; width: 90%; max-width: 500px;
+  max-height: 80vh; overflow-y: auto; backdrop-filter: blur(16px);
+}
+.admin-modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; margin-bottom: 20px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.admin-modal-header h3 { font-size: 16px; margin: 0; }
+.admin-modal-footer {
+  display: flex; justify-content: flex-end; gap: 10px;
+  margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border);
+}
+
+/* Nested admin-content (layout wrapper + page wrapper) -> keep single padding */
+.admin-main > .admin-content > .admin-content { padding: 0; }
+
+/* ==========================================
    RESPONSIVE FIXES - must come after all
    component definitions so they win the cascade
    ========================================== */
@@ -379,11 +441,20 @@
   .header-actions .admin-search-box { flex: 1; min-width: 180px; }
   .admin-search-box input { min-width: 0; width: 100%; }
   .admin-content { padding: 16px; }
-  .form-row { grid-template-columns: 1fr; }
-  .table-container { -webkit-overflow-scrolling: touch; }
+  .form-row { grid-template-columns: 1fr !important; }
+  .form-grid { grid-template-columns: 1fr !important; }
+  .table-container, .admin-table-wrapper { -webkit-overflow-scrolling: touch; }
   .admin-table th, .admin-table td { white-space: nowrap; }
   .admin-user span { display: none; }
   .admin-sidebar.collapsed ~ .admin-main { margin-right: 0; }
+  .admin-header-bar { flex-direction: column; align-items: stretch; }
+  .admin-header-bar .admin-filters select { width: 100%; }
+  .admin-modal-content { width: 95%; padding: 18px; }
+  .admin-modal-footer { flex-wrap: wrap; }
+  .admin-modal-footer .admin-btn { flex: 1; justify-content: center; }
+  .admin-table-wrapper,
+  .table-container,
+  .tbl-wrap { max-width: 100%; }
 }
 
 @media (max-width: 480px) {
@@ -402,14 +473,21 @@
   .header-actions { gap: 8px; }
   .add-btn { flex: 1; justify-content: center; }
   .table-container { border: none; border-radius: 0; }
+  .admin-table-wrapper { border: none; border-radius: 0; }
   .admin-table { min-width: 600px; }
   .admin-table th, .admin-table td { padding: 8px 10px; font-size: 12px; }
   .admin-btn { padding: 8px 12px; font-size: 12px; flex: 1; justify-content: center; }
   .action-btn { width: 30px; height: 30px; }
-  .modal .modal-content, .admin-modal .modal-content { width: 95%; padding: 18px; }
+  .modal .modal-content, .admin-modal .modal-content, .admin-modal-content { width: 95%; padding: 18px; }
   .modal-actions { flex-wrap: wrap; }
   .modal-actions .admin-btn { flex: 1; justify-content: center; }
-  .role-badge, .badge, .status-badge, .category-badge { font-size: 10px; padding: 2px 8px; }
+  .role-badge, .badge, .status-badge, .category-badge, .priority-badge { font-size: 10px; padding: 2px 8px; }
   .user-cell { gap: 6px; }
   .form-group input, .form-group select, .form-group textarea { font-size: 16px; }
+  .admin-header-bar h2 { font-size: 17px; }
+  .admin-filters, .admin-header-bar .admin-filters select { width: 100%; }
+  .stat-card-sm { min-width: 46%; flex: 1 1 40%; }
+  .app-filter-bar select, .app-filter-bar input { width: 100%; }
+  .small-btn, .status-toggle { padding: 8px 10px; }
+  .actions-cell, .inline-actions, .type-actions { flex-wrap: wrap; }
 }
