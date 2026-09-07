@@ -10,209 +10,384 @@
     #backToTicketBtn { display: none !important; }
 }
 
-/* ── Compact Footer ── */
-.wf-footer {
+/* ═══════════════════════════════════════════════════════════
+   Hover Footer — Neon Cyber theme (بطاقة عائمة + كلمة كشف بالماوس)
+   الثيم: بنفسجي #b026ff · سماوي #29c9ff · فوشيا #ff2d6f · خلفية #0a0a10
+   مترجم من مكوّن React (TextHoverEffect) إلى EJS/CSS/JS خالص
+   ═══════════════════════════════════════════════════════════ */
+.wf-footer.ftv2 {
+    --ftp: #b026ff;
+    --ftp-rgb: 176, 38, 255;
+    --fts: #29c9ff;
+    --fts-rgb: 41, 201, 255;
+    --fta: #ff2d6f;
+    --fta-rgb: 255, 45, 111;
+    --ftline: rgba(255, 255, 255, 0.07);
+
+    position: relative;
+    margin: 2.5rem 1.25rem 1.25rem;
+}
+
+.ftv2-card {
     position: relative;
     overflow: hidden;
-    margin-top: 3rem;
-    background: linear-gradient(180deg, transparent 0%, rgba(8, 4, 8, 0.98) 6%, #050305 100%);
-}
-
-.ft-glow-top {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent 0%, rgba(var(--ac-rgb), 0.9) 25%, rgba(var(--ac-rgb), 0.7) 50%, rgba(var(--ac-rgb), 0.9) 75%, transparent 100%);
-    box-shadow: 0 0 60px 6px rgba(var(--ac-rgb), 0.2), 0 0 120px 12px rgba(var(--ac-rgb), 0.08);
-}
-
-.ft-inner {
-    position: relative;
-    z-index: 1;
     max-width: 1100px;
     margin: 0 auto;
-    padding: 2rem 2rem 0;
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
+    border-radius: 24px;
+    border: 1px solid var(--ftline);
+    background: linear-gradient(180deg, rgba(18, 18, 28, 0.78), rgba(8, 8, 14, 0.94));
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 0 90px rgba(var(--ftp-rgb), 0.08);
+}
+
+/* الخلفية الشعاعية — نفس تركيبة المكون الأصلي بألوان الثيم */
+.ftv2-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: radial-gradient(125% 125% at 50% 10%, rgba(15, 15, 20, 0.4) 50%, rgba(var(--ftp-rgb), 0.2) 100%);
+    pointer-events: none;
+}
+
+.ftv2-inner {
+    position: relative;
+    z-index: 1;
+    max-width: 1024px;
+    margin: 0 auto;
+    padding: 2.8rem 3rem 1.2rem;
+    display: grid;
+    grid-template-columns: 1.3fr 1fr 1fr 1.25fr;
+    gap: 1.8rem 2.4rem;
     direction: rtl;
-    gap: 2rem;
 }
 
-/* Brand Column */
-.ft-brand-col {
-    flex: 1.2;
-}
-
-.ft-brand-logo {
+/* ── Brand (اللوغو كما هو) ── */
+.ftv2-brand {
     display: flex;
-    align-items: center;
-    margin-bottom: 0.4rem;
+    flex-direction: column;
+    align-items: flex-start;
 }
 
-.ft-brand-logo img {
+.ftv2-brand-logo {
+    display: flex;
+    margin-bottom: 0.7rem;
+}
+
+.ftv2-brand-logo img {
     width: 60px;
     height: 60px;
     border-radius: 50%;
     object-fit: contain;
-    border: 2px solid rgba(var(--ac-rgb), 0.3);
-    box-shadow: 0 0 20px rgba(var(--ac-rgb), 0.15);
+    border: 2px solid rgba(var(--ftp-rgb), 0.35);
+    box-shadow: 0 0 24px rgba(var(--ftp-rgb), 0.18);
 }
 
-.ft-brand-name {
-    font-size: 1.1rem;
+.ftv2-brand-name {
+    font-size: 1.25rem;
     font-weight: 900;
-    background: linear-gradient(90deg, var(--ac), #fff);
+    background: linear-gradient(90deg, var(--ftp), #fff);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    margin-bottom: 0.2rem;
+    margin-bottom: 0.25rem;
 }
 
-.ft-brand-desc {
-    color: rgba(255, 255, 255, 0.35);
-    font-size: 0.75rem;
-    line-height: 1.5;
-    margin-bottom: 0.75rem;
+.ftv2-brand-desc {
+    color: rgba(255, 255, 255, 0.38);
+    font-size: 0.78rem;
+    line-height: 1.7;
 }
 
-/* Links Columns */
-.ft-links-col {
-    display: flex;
-    gap: 4rem;
-}
-
-.ft-links-group {
+/* ── الأعمدة ── */
+.ftv2-col {
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: 0.1rem;
+    min-width: 0;
 }
 
-.ft-col-title {
-    font-size: 0.8rem;
-    font-weight: 800;
+.ftv2-title {
     color: #fff;
-    margin-bottom: 0.5rem;
-}
-
-.ft-link {
-    color: rgba(255, 255, 255, 0.4);
-    font-size: 0.78rem;
-    text-decoration: none;
-    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-    font-weight: 500;
+    font-size: 0.92rem;
+    font-weight: 800;
+    margin-bottom: 0.85rem;
     position: relative;
-    display: inline-block;
-    transform: translateY(0);
+    padding-right: 0.75rem;
 }
 
-.ft-link::after {
+.ftv2-title::before {
     content: '';
     position: absolute;
-    bottom: -2px;
     right: 0;
-    width: 0;
-    height: 1.5px;
-    background: var(--ac);
-    transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 0 8px rgba(var(--ac-rgb), 0.4);
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 0.85em;
+    border-radius: 2px;
+    background: linear-gradient(180deg, var(--ftp), var(--fts));
+    box-shadow: 0 0 8px rgba(var(--ftp-rgb), 0.5);
 }
 
-.ft-link:hover {
-    color: #fff;
-    transform: translateY(-2px);
-    text-shadow: 0 0 12px rgba(var(--ac-rgb), 0.3);
+.ftv2-link {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 0.82rem;
+    text-decoration: none;
+    padding: 0.3rem 0;
+    transition: color 0.25s, transform 0.25s;
 }
 
-.ft-link:hover::after {
-    width: 100%;
+.ftv2-link:hover {
+    color: var(--fts);
+    transform: translateX(-3px);
 }
 
-/* Bottom Bar */
-.ft-bottom {
+/* نقطة "الدعم المباشر" النابضة — من التصميم المرجعي */
+.ftv2-pulse {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--fts);
+    box-shadow: 0 0 8px rgba(var(--fts-rgb), 0.8);
+    margin-right: 0.4rem;
+    animation: ftv2Pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes ftv2Pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+}
+
+/* ── تواصل معنا ── */
+.ftv2-contact-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.8rem;
+    text-decoration: none;
+    padding: 0.32rem 0;
+    transition: color 0.25s;
+}
+
+.ftv2-contact-item i {
+    color: var(--fts);
+    font-size: 0.95rem;
+    width: 18px;
+    text-align: center;
+}
+
+.ftv2-contact-item span { unicode-bidi: plaintext; }
+
+.ftv2-contact-item:hover { color: #fff; }
+
+/* ── الفاصل ── */
+.ftv2-divider {
     position: relative;
     z-index: 1;
+    height: 1px;
+    margin: 0.4rem 3rem 0;
+    background: linear-gradient(90deg, transparent, rgba(var(--ftp-rgb), 0.28), rgba(var(--fts-rgb), 0.16), transparent);
+}
+
+/* ── الشريط السفلي ── */
+.ftv2-bottom {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 1.3rem 3rem 1.5rem;
+    max-width: 1024px;
+    margin: 0 auto;
+}
+
+.ftv2-social {
+    display: flex;
+    gap: 0.7rem;
+}
+
+.ftv2-soc {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.5);
+    border: 1px solid var(--ftline);
+    background: rgba(255, 255, 255, 0.03);
+    transition: color 0.25s, border-color 0.25s, background 0.25s, transform 0.25s, box-shadow 0.25s;
+}
+
+.ftv2-soc:hover {
+    color: #fff;
+    border-color: rgba(var(--ftp-rgb), 0.5);
+    background: rgba(var(--ftp-rgb), 0.08);
+    box-shadow: 0 0 18px rgba(var(--ftp-rgb), 0.25);
+    transform: translateY(-2px);
+}
+
+.ftv2-cr {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.6rem;
-    padding: 0.9rem 2rem 1.2rem;
-    max-width: 1100px;
-    margin: 1.5rem auto 0;
-    border-top: 1px solid rgba(var(--ac-rgb), 0.08);
+    gap: 0.45rem;
+    text-align: center;
 }
 
-.ft-bottom-cr-badge {
+.ftv2-cr-badge {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    padding: 0.3rem 0.9rem;
+    padding: 0.32rem 0.85rem;
     border-radius: 20px;
-    background: rgba(var(--ac-rgb), 0.06);
-    border: 1px solid rgba(var(--ac-rgb), 0.2);
-    color: rgba(255, 255, 255, 0.45);
-    font-size: 0.65rem;
+    background: rgba(var(--ftp-rgb), 0.07);
+    border: 1px solid rgba(var(--ftp-rgb), 0.25);
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.66rem;
     font-weight: 600;
-    box-shadow: 0 0 15px rgba(var(--ac-rgb), 0.08), inset 0 0 10px rgba(var(--ac-rgb), 0.03);
-    transition: all 0.3s;
 }
 
-.ft-bottom-cr-badge:hover {
-    border-color: rgba(var(--ac-rgb), 0.4);
-    box-shadow: 0 0 25px rgba(var(--ac-rgb), 0.15), inset 0 0 15px rgba(var(--ac-rgb), 0.05);
-    color: rgba(255, 255, 255, 0.6);
-}
-
-.ft-cr-lock {
+.ftv2-lock {
     font-size: 0.55rem;
-    color: rgba(var(--ac-rgb), 0.5);
+    color: rgba(var(--ftp-rgb), 0.6);
 }
 
-.ft-bottom-dev {
+.ftv2-dev {
     display: flex;
     align-items: center;
     gap: 0.6rem;
     font-size: 0.65rem;
-    color: rgba(255, 255, 255, 0.25);
+    color: rgba(255, 255, 255, 0.28);
 }
 
-.ft-bottom-dev strong {
+.ftv2-dev strong {
     font-weight: 800;
-    background: linear-gradient(90deg, var(--ac), rgba(var(--ac-rgb), 0.6));
+    background: linear-gradient(90deg, var(--ftp), rgba(var(--ftp-rgb), 0.55));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
 
-.ft-dev-team-label {
-    font-size: 0.6rem;
-    font-weight: 700;
-    color: rgba(255, 255, 255, 0.15);
+.ftv2-dev-label {
+    font-size: 0.58rem;
+    color: rgba(255, 255, 255, 0.16);
     letter-spacing: 0.05em;
+}
+
+/* ══ الكلمة الكبيرة — TextHoverEffect ══ */
+.ftv2-word {
+    position: relative;
+    z-index: 1;
+    height: 17rem;
+    margin: -6.5rem -1rem -4.5rem;
+}
+
+.ftv2-word svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.ftv2-word text {
+    font-family: 'Space Grotesk', 'Cairo', sans-serif;
+    font-weight: 700;
+    font-size: 62px;
+    fill: transparent;
+    stroke-width: 0.8;
+}
+
+/* طبقة الحدود الرمادية — تظهر عند المرور فقط */
+.ftv2-w1 {
+    stroke: rgba(255, 255, 255, 0.55);
+    opacity: 0;
+    transition: opacity 0.35s;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .ftv2-word:hover .ftv2-w1 { opacity: 0.65; }
+}
+
+/* احتياط: JS يضيف .hovered عندما يقترب المؤشر من منطقة الكلمة */
+.ftv2-word.hovered .ftv2-w1 { opacity: 0.65; }
+
+/* الطبقة السماوية — ترسم نفسها مرة واحدة عند التحميل
+   (أهدأ من التدرج حتى يبرز كشف الماوس) */
+.ftv2-w2 {
+    stroke: rgba(var(--fts-rgb), 0.42);
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    animation: ftv2Draw 3.6s ease-in-out 0.2s forwards;
+}
+
+@keyframes ftv2Draw {
+    to { stroke-dashoffset: 0; }
+}
+
+/* طبقة التدرج — تُكشف حول المؤشر عبر القناع */
+.ftv2-w3 {
+    stroke: url(#ftv2TextGradient);
 }
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
-    .ft-inner {
-        flex-direction: column;
+    .wf-footer.ftv2 {
+        margin: 1.25rem 0.6rem 0.9rem;
+    }
+
+    .ftv2-card { border-radius: 18px; }
+
+    .ftv2-inner {
+        grid-template-columns: 1fr 1fr;
+        padding: 1.9rem 1.4rem 0.8rem;
+        gap: 1.5rem 1.2rem;
+    }
+
+    .ftv2-brand {
+        grid-column: 1 / -1;
         align-items: center;
         text-align: center;
-        gap: 1.5rem;
     }
-    .ft-brand-col {
-        display: flex;
+
+    .ftv2-brand-logo { justify-content: center; }
+
+    .ftv2-contact { grid-column: 1 / -1; }
+
+    .ftv2-divider { margin: 0.3rem 1.4rem 0; }
+
+    .ftv2-bottom {
         flex-direction: column;
-        align-items: center;
+        padding: 1.1rem 1.4rem 1.3rem;
     }
-    .ft-brand-logo {
-        justify-content: center;
+
+    .ftv2-cr { align-items: center; }
+
+    .ftv2-word {
+        height: 7.5rem;
+        margin: -2.2rem -0.5rem -1.6rem;
     }
-    .ft-links-col {
-        justify-content: center;
+
+    .ftv2-w1 { display: none; }
+}
+
+@media (max-width: 360px) {
+    .ftv2-inner { grid-template-columns: 1fr; }
+}
+
+/* احترام تقليل الحركة */
+@media (prefers-reduced-motion: reduce) {
+    .ftv2-w2 {
+        animation: none;
+        stroke-dashoffset: 0;
     }
-    .ft-bottom {
-        gap: 0.4rem;
-    }
+    .ftv2-pulse { animation: none; }
+    .ftv2-link,
+    .ftv2-soc,
+    .ftv2-w1 { transition: none; }
 }

@@ -1,48 +1,133 @@
 <%
   var _ftSettings = typeof settings !== 'undefined' ? settings : {};
+  var _ftYear = new Date().getFullYear();
+  var _ftDiscord = _ftSettings.discord_server_url || '#';
 %>
-<footer class="wf-footer compact-footer">
-    <div class="ft-glow-top"></div>
-    <div class="ft-inner">
-        <!-- Right: Brand -->
-        <div class="ft-brand-col">
-            <div class="ft-brand-logo">
-                <img src="<%= _ftSettings.site_logo_url || '/images/walton-logo.svg' %>" alt="WF">
-            </div>
-            <div class="ft-brand-name">Walton Family</div>
-            <p class="ft-brand-desc">مجتمع والتون فاميلي — أكثر من مجرد عائلة</p>
-        </div>
+<footer class="wf-footer ftv2">
+  <div class="ftv2-card">
+    <div class="ftv2-bg" aria-hidden="true"></div>
 
-        <!-- Middle: Links -->
-        <div class="ft-links-col">
-            <div class="ft-links-group">
-                <h4 class="ft-col-title">القائمة</h4>
-                <a href="/" class="ft-link">الرئيسية</a>
-                <a href="/applications" class="ft-link">التقديمات</a>
-                <a href="/rules" class="ft-link">القوانين</a>
-                <a href="/store" class="ft-link">المتجر</a>
-            </div>
-            <div class="ft-links-group">
-                <h4 class="ft-col-title">الدعم الفني</h4>
-                <a href="/support" class="ft-link">مركز المساعدة</a>
-                <a href="/about" class="ft-link">من نحن</a>
-                <a href="<%= _ftSettings.discord_server_url || '#' %>" target="_blank" class="ft-link">ديسكورد الدعم</a>
-            </div>
+    <div class="ftv2-inner">
+      <!-- ══ Brand — اللوغو بمكانه كما هو (بطلب المستخدم) ══ -->
+      <div class="ftv2-brand">
+        <div class="ftv2-brand-logo">
+          <img src="<%= _ftSettings.site_logo_url || '/images/logo.png' %>" alt="WF">
         </div>
+        <div class="ftv2-brand-name">Walton Family</div>
+        <p class="ftv2-brand-desc">مجتمع والتون فاميلي — أكثر من مجرد عائلة</p>
+      </div>
+
+      <!-- روابط -->
+      <nav class="ftv2-col" aria-label="روابط الموقع">
+        <h4 class="ftv2-title">القائمة</h4>
+        <a href="/" class="ftv2-link">الرئيسية</a>
+        <a href="/applications" class="ftv2-link">التقديمات</a>
+        <a href="/rules" class="ftv2-link">القوانين</a>
+        <a href="/store" class="ftv2-link">المتجر</a>
+      </nav>
+
+      <nav class="ftv2-col" aria-label="الدعم الفني">
+        <h4 class="ftv2-title">الدعم الفني</h4>
+        <a href="/support" class="ftv2-link">مركز المساعدة<span class="ftv2-pulse" aria-hidden="true"></span></a>
+        <a href="/about" class="ftv2-link">من نحن</a>
+        <a href="<%= _ftDiscord %>" target="_blank" rel="noopener" class="ftv2-link">ديسكورد الدعم</a>
+      </nav>
+
+      <!-- تواصل -->
+      <div class="ftv2-col ftv2-contact">
+        <h4 class="ftv2-title">تواصل معنا</h4>
+        <a href="<%= _ftDiscord %>" target="_blank" rel="noopener" class="ftv2-contact-item">
+          <i class="fab fa-discord" aria-hidden="true"></i><span>سيرفر الديسكورد</span>
+        </a>
+        <a href="/support" class="ftv2-contact-item">
+          <i class="fas fa-headset" aria-hidden="true"></i><span>الدعم الفني</span>
+        </a>
+        <a href="/" class="ftv2-contact-item">
+          <i class="fas fa-globe" aria-hidden="true"></i><span>waltonfamily.gg</span>
+        </a>
+      </div>
     </div>
 
-    <!-- Bottom Bar -->
-    <div class="ft-bottom">
-        <div class="ft-bottom-cr-badge">
-            <i class="fas fa-lock ft-cr-lock"></i>
-            <span>والتون فاميلي &copy; <%= new Date().getFullYear() %>. جميع الحقوق محفوظة.</span>
+    <div class="ftv2-divider" aria-hidden="true"></div>
+
+    <div class="ftv2-bottom">
+      <div class="ftv2-social">
+        <a href="<%= _ftDiscord %>" target="_blank" rel="noopener" aria-label="Discord" class="ftv2-soc"><i class="fab fa-discord"></i></a>
+        <a href="/support" aria-label="الدعم الفني" class="ftv2-soc"><i class="fas fa-headset"></i></a>
+        <a href="/" aria-label="الرئيسية" class="ftv2-soc"><i class="fas fa-globe"></i></a>
+      </div>
+      <div class="ftv2-cr">
+        <div class="ftv2-cr-badge">
+          <i class="fas fa-lock ftv2-lock" aria-hidden="true"></i>
+          <span>والتون فاميلي &copy; <%= _ftYear %>. جميع الحقوق محفوظة.</span>
         </div>
-        <div class="ft-bottom-dev">
-            <span>تم التطوير بواسطة <strong>KHARBOSH · h05</strong></span>
-            <span class="ft-dev-team-label">Developer Team</span>
+        <div class="ftv2-dev">
+          <span>تم التطوير بواسطة <strong>KHARBOSH · h05</strong></span>
+          <span class="ftv2-dev-label">Developer Team</span>
         </div>
+      </div>
     </div>
+
+    <!-- ══ الكلمة الكبيرة: كشف بالماوس على الديسكتوب / ثابتة على الهاتف ══ -->
+    <div class="ftv2-word" aria-hidden="true">
+      <svg id="ftv2WordSvg" viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg" role="presentation" focusable="false">
+        <defs>
+          <linearGradient id="ftv2TextGradient" gradientUnits="userSpaceOnUse" cx="50%" cy="50%" r="25%">
+            <stop offset="0%" stop-color="#b026ff"/>
+            <stop offset="25%" stop-color="#ff2d6f"/>
+            <stop offset="50%" stop-color="#ff1744"/>
+            <stop offset="75%" stop-color="#29c9ff"/>
+            <stop offset="100%" stop-color="#b026ff"/>
+          </linearGradient>
+          <radialGradient id="ftv2RevealMask" gradientUnits="userSpaceOnUse" cx="50%" cy="50%" r="20%">
+            <stop offset="0%" stop-color="white"/>
+            <stop offset="100%" stop-color="black"/>
+          </radialGradient>
+          <mask id="ftv2TextMask">
+            <rect x="0" y="0" width="300" height="100" fill="url(#ftv2RevealMask)"/>
+          </mask>
+        </defs>
+        <!-- طبقة 1: حدود رمادية تظهر مع المرور -->
+        <text class="ftv2-w1" x="50%" y="54" text-anchor="middle" textLength="264" lengthAdjust="spacingAndGlyphs">WALTON</text>
+        <!-- طبقة 2: حدود سماوية مرسومة مرة واحدة -->
+        <text class="ftv2-w2" x="50%" y="54" text-anchor="middle" textLength="264" lengthAdjust="spacingAndGlyphs">WALTON</text>
+        <!-- طبقة 3: تدرج الثيم يُكشف بمكان المؤشر -->
+        <text class="ftv2-w3" x="50%" y="54" text-anchor="middle" textLength="264" lengthAdjust="spacingAndGlyphs" mask="url(#ftv2TextMask)">WALTON</text>
+      </svg>
+    </div>
+  </div>
 </footer>
+
+<script>(function(){
+  var svg = document.getElementById('ftv2WordSvg');
+  if (!svg) return;
+  var wrap = svg.closest('.ftv2-word');
+  var card = svg.closest('.ftv2-card');
+  var maskG = document.getElementById('ftv2RevealMask');
+  // الهاتف/اللمس: تبقى الكلمة ثابتة بدون مستمعات (اقتصادية)
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  // الماوس يُتتبَّع على مستوى البطاقة كلها — «كشاف» يكشف تدرج الكلمة
+  // من أي مكان، دون أن يحجب أي عنصر الروابط القابلة للنقر
+  var pending = false, lastX = 0, lastY = 0;
+  function apply() {
+    var r = svg.getBoundingClientRect();
+    if (r.width && r.height) {
+      var cx = (lastX - r.left) / r.width;
+      var cy = (lastY - r.top) / r.height;
+      maskG.setAttribute('cx', (cx * 100).toFixed(2) + '%');
+      maskG.setAttribute('cy', (cy * 100).toFixed(2) + '%');
+      var inside = lastX >= r.left - 24 && lastX <= r.right + 24 &&
+                   lastY >= r.top - 24 && lastY <= r.bottom + 24;
+      if (inside) { wrap.classList.add('hovered'); } else { wrap.classList.remove('hovered'); }
+    }
+    pending = false;
+  }
+  card.addEventListener('mousemove', function(e){
+    lastX = e.clientX; lastY = e.clientY;
+    if (!pending) { pending = true; requestAnimationFrame(apply); }
+  }, { passive: true });
+  card.addEventListener('mouseleave', function(){ wrap.classList.remove('hovered'); });
+})();</script>
 
 <!-- ═══ Scroll Progress Bar + Back To Top ═══ -->
 <style>

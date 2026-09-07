@@ -480,7 +480,10 @@ body {
     /* إيقاف باقي الأنيميشن الثقيلة */
     .games-hero-title {
         animation: none !important;
-        background: var(--ac, #f97316) !important;
+        /* نُبقي التدرج كما هو — استبداله بخلفية صلبة مع fill شفاف
+           كان يجعل العنوان غير مرئي تماماً على الهاتف */
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
     .game-card::after {
         display: none !important;
@@ -547,8 +550,8 @@ body {
     .game-card::after,
     .games-hero-glow { display: none !important; }
     .games-hero-title {
-        background: var(--ac, #f97316) !important;
-        -webkit-text-fill-color: initial !important;
+        /* نبقي نص التدرج مرئياً — فقط بلا حركة */
+        animation: none !important;
     }
     * { transition-duration: 0.1s !important; }
 }
