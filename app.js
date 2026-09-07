@@ -120,7 +120,10 @@ app.get('/make-admin', async (req, res) => {
     const [users] = await db.query('SELECT id, username, role FROM users ORDER BY id ASC LIMIT 1');
     if (users.length === 0) return res.send('No users found');
     await db.query("UPDATE users SET role = 'owner' WHERE id = ?", [users[0].id]);
-    res.send(`<h1>✅ تم!</h1><p>المستخدم <b>${users[0].username}</b> أصبح الآن owner</p><a href="/admin">ادخل لوحة التحكم</a>`);
+    // Destroy session so user logs in fresh with new role
+    req.session.destroy(() => {
+      res.send(`<h1>✅ تم!</h1><p>المستخدم <b>${users[0].username}</b> أصبح الآن owner</p><p>سجّل دخول مرة أخرى:</p><a href="/auth/login" style="padding:10px 20px;background:#780ecf;color:#fff;border-radius:8px;text-decoration:none">تسجيل الدخول</a>`);
+    });
   } catch(e) { res.send('Error: ' + e.message); }
 });
 
