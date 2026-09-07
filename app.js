@@ -139,6 +139,7 @@ const storeApi = require('./routes/api/store');
 const supportApi = require('./routes/api/support');
 const profileApi = require('./routes/api/profile');
 const gamesApi = require('./routes/api/games');
+const applicationsApi = require('./routes/api/applications');
 const adminApi = require('./routes/api/admin');
 
 app.use('/', indexRoutes);
@@ -149,6 +150,7 @@ app.use('/api/store', storeApi);
 app.use('/api/support', supportApi);
 app.use('/api/profile', profileApi);
 app.use('/api/games', gamesApi);
+app.use('/api/applications', applicationsApi);
 app.use('/api/admin', adminApi);
 app.use('/api/orders', adminApi);
 app.use('/api/notifications', adminApi);

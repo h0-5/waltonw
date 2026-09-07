@@ -10,7 +10,22 @@ if (mobBtn) {
   mobBtn.addEventListener('click', function() {
     document.getElementById('adminSidebar').classList.toggle('show');
   });
+  document.querySelectorAll('.sidebar-nav .nav-item').forEach(function(item) {
+    item.addEventListener('click', function() {
+      if (window.innerWidth <= 768) {
+        document.getElementById('adminSidebar').classList.remove('show');
+      }
+    });
+  });
 }
+document.querySelectorAll('.admin-table').forEach(function(t) {
+  if (!t.closest('.table-container')) {
+    var w = document.createElement('div');
+    w.className = 'table-container';
+    t.parentNode.insertBefore(w, t);
+    w.appendChild(t);
+  }
+});
 </script>
 </body>
 </html>

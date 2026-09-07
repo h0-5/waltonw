@@ -164,6 +164,71 @@ router.get('/applications', isAuthenticated, isInGuild, checkPageAccess('/applic
   res.render('pages/applications', { title: 'الطلبات', applications, settings });
 });
 
+// Application form
+router.get('/applications/form/:type', isAuthenticated, isInGuild, checkPageAccess('/applications'), async (req, res) => {
+  const settings = await getSettings();
+  const type = decodeURIComponent(req.params.type);
+
+  const [appSettings] = await db.execute('SELECT * FROM application_settings WHERE application_type = ?', [type]);
+  if (!appSettings.length) {
+    return res.status(404).render('pages/404', { title: '404 - الصفحة غير موجودة', settings });
+  }
+  const appSetting = appSettings[0];
+
+  const [qRows] = await db.execute(
+    'SELECT id, question, type, required, options, max_selections, keyword, sort_order FROM application_questions WHERE application_type = ? ORDER BY sort_order ASC, id ASC',
+    [type]
+  );
+  const questions = qRows.map(q => q);
+
+  let pending = [];
+  try {
+    pending = await db.execute(
+      "SELECT id FROM submitted_applications WHERE user_id = ? AND application_type = ? AND status = 'pending'",
+      [req.user.id, type]
+    );
+    pending = pending[0];
+  } catch (e) {}
+
+  let inCooldown = false;
+  let cooldownUntil = null;
+  const rejected = await safeQuery(
+    'SELECT cooldown_until, created_at FROM submitted_applications WHERE user_id = ? AND application_type = ? AND status = "rejected" ORDER BY id DESC LIMIT 1',
+    [req.user.id, type]
+  );
+  if (rejected.length) {
+    if (rejected[0].cooldown_until && new Date(rejected[0].cooldown_until) > new Date()) {
+      inCooldown = true;
+      cooldownUntil = new Date(rejected[0].cooldown_until);
+    } else if (!rejected[0].cooldown_until && appSetting.rejection_cooldown_hours > 0 && rejected[0].created_at) {
+      const cd = new Date(rejected[0].created_at);
+      cd.setHours(cd.getHours() + Number(appSetting.rejection_cooldown_hours));
+      if (cd > new Date()) {
+        inCooldown = true;
+        cooldownUntil = cd;
+      }
+    }
+  }
+
+  const discordError = !req.user.discord_id;
+  const hasBlacklistRole = !!req.user.is_banned;
+  const hasRequiredRole = true;
+
+  const userSubmitted = await safeQuery(
+    'SELECT id, status, created_at FROM submitted_applications WHERE user_id = ? AND application_type = ? ORDER BY id DESC LIMIT 10',
+    [req.user.id, type]
+  );
+
+  res.render('pages/application-form', {
+    title: appSetting.title || 'تقديم طلب',
+    appSetting, questions, settings,
+    inCooldown, cooldownUntil,
+    pendingApp: pending.length > 0,
+    discordError, hasBlacklistRole, hasRequiredRole,
+    userSubmitted
+  });
+});
+
 // Support
 router.get('/support', isAuthenticated, isInGuild, checkPageAccess('/support'), async (req, res) => {
   const settings = await getSettings();
