@@ -33,7 +33,6 @@ if (discordClientId && discordClientSecret && discordRedirectUri) {
     scope: ['identify', 'email', 'guilds', 'guilds.members.read']
   }, async (accessToken, refreshToken, profile, done) => {
     try {
-      profile.accessToken = accessToken;
       const discordId = profile.id;
       const username = profile.username;
       const avatar = profile.avatar ?
@@ -49,6 +48,7 @@ if (discordClientId && discordClientSecret && discordRedirectUri) {
           [username, avatar, discordId]
         );
         [existingUser] = await db.execute('SELECT * FROM users WHERE discord_id = ?', [discordId]);
+        existingUser[0].accessToken = accessToken;
         return done(null, existingUser[0]);
       }
 
@@ -58,6 +58,7 @@ if (discordClientId && discordClientSecret && discordRedirectUri) {
       );
 
       const [newUser] = await db.execute('SELECT * FROM users WHERE id = ?', [result.insertId]);
+      newUser[0].accessToken = accessToken;
 
       try {
         const webhookUrl = process.env.WH_NEW_ACCOUNT;

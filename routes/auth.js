@@ -24,8 +24,7 @@ router.get('/discord/callback', (req, res, next) => {
     console.log('Time:', new Date().toISOString());
     console.log('Error:', err ? err.stack : 'none');
     console.log('User:', user ? user.username : 'none');
-    console.log('Info:', JSON.stringify(info));
-    console.log('Query:', JSON.stringify(req.query));
+    console.log('Has accessToken:', !!(info && info.accessToken));
     console.log('==========================');
     
     if (err) {
@@ -34,12 +33,15 @@ router.get('/discord/callback', (req, res, next) => {
     if (!user) {
       return res.redirect('/auth/login?error=failed');
     }
+    const accessToken = info && info.accessToken ? info.accessToken : null;
     req.logIn(user, (loginErr) => {
       if (loginErr) {
         console.error('Session login error:', loginErr);
         return res.redirect('/auth/login?error=login_failed');
       }
-      req.session.accessToken = info.accessToken || req.session.accessToken;
+      if (accessToken) {
+        req.session.accessToken = accessToken;
+      }
       const returnTo = req.session.returnTo || '/';
       delete req.session.returnTo;
       return res.redirect(returnTo);
