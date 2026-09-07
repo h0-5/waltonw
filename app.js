@@ -75,6 +75,54 @@ app.use(async (req, res, next) => {
   res.locals.settings = settings;
   res.locals.bgUrl = settings.site_bg_url || '';
   res.locals.mobileBgUrl = settings.site_mobile_bg_url || '';
+
+  // Load user permissions & page access for navbar/sidebar filtering
+  res.locals.userPermissions = {};
+  res.locals.pageAccess = {};
+  if (req.user) {
+    try {
+      if (req.user.role === 'owner') {
+        // Owner gets all permissions + all pages
+        const { getAllPermissionsFlat } = require('./config/permissions');
+        const allPerms = {};
+        const allPages = {};
+        getAllPermissionsFlat().forEach(k => { allPerms[k] = 1; });
+        ['/','/home','/rules','/applications','/store','/games','/community','/about',
+         '/properties','/company','/profile','/cart','/contact','/checkout','/orders',
+         '/my-discounts','/support',
+         '/games/quiz','/games/snake','/games/memory','/games/tetris','/games/minesweeper',
+         '/games/chess','/games/tic-tac-toe','/games/2048','/games/flappy-bird',
+         '/games/sudoku','/games/pacman','/games/crossy-road','/games/rock-paper-scissors'
+        ].forEach(p => { allPages[p] = 1; });
+        res.locals.userPermissions = allPerms;
+        res.locals.pageAccess = allPages;
+      } else {
+        const [role] = await db.execute('SELECT id, is_admin_role FROM roles WHERE name = ?', [req.user.role]);
+        if (role.length) {
+          if (role[0].is_admin_role) {
+            // Admin roles get everything
+            const { getAllPermissionsFlat } = require('./config/permissions');
+            const allPerms = {};
+            getAllPermissionsFlat().forEach(k => { allPerms[k] = 1; });
+            res.locals.userPermissions = allPerms;
+          } else {
+            // Load permissions
+            const [perms] = await db.execute(
+              'SELECT permission_key FROM role_role_permissions WHERE role_id = ? AND enabled = 1',
+              [role[0].id]
+            );
+            perms.forEach(p => { res.locals.userPermissions[p.permission_key] = 1; });
+          }
+          // Load page access (for all roles including admin — admin sidebar already handles this)
+          const [pages] = await db.execute(
+            'SELECT page_path, can_access FROM role_page_access WHERE role_id = ?',
+            [role[0].id]
+          );
+          pages.forEach(p => { res.locals.pageAccess[p.page_path] = p.can_access ? 1 : 0; });
+        }
+      }
+    } catch(e) {}
+  }
   next();
 });
 

@@ -18,6 +18,7 @@ const PERMISSION_GROUPS = {
       users_unban:            { label: 'فك حظر',           desc: 'فك الحظر عن مستخدم' },
       users_unban_all:        { label: 'فك حظر شامل',      desc: 'رفع الحظر عن جميع المحظورين' },
       users_change_role:      { label: 'تغيير الرتبة',     desc: 'ترقية أو تخفيض رتبة مستخدم' },
+      users_edit:             { label: 'تعديل المستخدم',   desc: 'تعديل بيانات المستخدمين' },
       users_change_username:  { label: 'تغيير الاسم',      desc: 'تغيير اسم مستخدم' },
       users_view_email:       { label: 'رؤية الإيميل',     desc: 'رؤية إيميلات المستخدمين' },
       users_delete:           { label: 'حذف مستخدم',       desc: 'حذف مستخدم نهائياً' },
@@ -63,11 +64,13 @@ const PERMISSION_GROUPS = {
     icon: 'fa-box',
     is_site: false,
     permissions: {
-      products_view:  { label: 'عرض المنتجات',  desc: 'مشاهدة قائمة المنتجات' },
+      products_view:   { label: 'عرض المنتجات',  desc: 'مشاهدة قائمة المنتجات' },
       products_add:    { label: 'إضافة منتج',  desc: 'إضافة منتجات جديدة' },
       products_edit:   { label: 'تعديل منتج',  desc: 'تعديل المنتجات الموجودة' },
       products_delete: { label: 'حذف منتج',    desc: 'حذف المنتجات' },
+      products_manage: { label: 'إدارة المنتجات', desc: 'إضافة وتعديل وحذف المنتجات' },
     },
+  },
   },
 
   // ════════════════════════════════════════════════════════════
@@ -240,6 +243,7 @@ const PERMISSION_GROUPS = {
       site_settings_edit_admin:        { label: 'إعدادات الإدارة',   desc: 'خلفية ولون لوحة الإدارة' },
       site_settings_edit_permissions:  { label: 'صلاحيات الإدارة',   desc: 'تحديد من يدخل صفحات الإدارة' },
       site_settings_edit_bot:          { label: 'إعدادات البوت',     desc: 'تعديل رابط البوت الأساسي' },
+      site_settings_edit:              { label: 'تعديل الإعدادات',   desc: 'تعديل إعدادات الموقع' },
     },
   },
 
@@ -312,6 +316,7 @@ const PERMISSION_GROUPS = {
       roles_config_view:               { label: 'عرض الصفحة',        desc: 'مشاهدة صفحة إدارة الرتب' },
       roles_config_edit_names:         { label: 'تعديل الأسماء',     desc: 'تغيير أسماء وألوان الرتب' },
       roles_config_edit_permissions:   { label: 'تعديل الصلاحيات',   desc: 'تعديل صلاحيات الرتب' },
+      roles_config_edit:               { label: 'تعديل الرتب',       desc: 'تعديل الرتب والإعدادات' },
       roles_config_manage_roles:       { label: 'إضافة/حذف رتب',     desc: 'إضافة وحذف وإعادة ترتيب الرتب' },
     },
   },
@@ -328,6 +333,8 @@ const PERMISSION_GROUPS = {
       game_points_manage:   { label: 'نقاط الألعاب',          desc: 'إدارة نقاط الألعاب' },
       warnings_view:        { label: 'سجل التحذيرات',         desc: 'مشاهدة سجل التحذيرات' },
       webhooks_manage:      { label: 'إدارة Webhooks',        desc: 'إدارة روابط Webhooks' },
+      gifts_manage:         { label: 'إدارة الهدايا',         desc: 'إدارة الهدايا والاسموزات' },
+      roles_assign:         { label: 'تعيين رتب',             desc: 'تعيين رتب للمستخدمين' },
     },
   },
 

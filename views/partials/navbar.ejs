@@ -3,6 +3,15 @@
   var _nbSettings = typeof settings !== 'undefined' ? settings : {};
   var _nbUser = typeof user !== 'undefined' ? user : null;
   var _nbPath = typeof currentPath !== 'undefined' ? currentPath : '/';
+  var _nbPageAccess = typeof pageAccess !== 'undefined' ? pageAccess : {};
+  var _nbUserPerms = typeof userPermissions !== 'undefined' ? userPermissions : {};
+  var _nbCanSee = function(path) {
+    if (!_nbUser) return true;
+    if (_nbUser.role === 'owner') return true;
+    // If no records in page_access table, default to visible
+    if (!(path in _nbPageAccess)) return true;
+    return _nbPageAccess[path] === 1;
+  };
 %>
 <nav class="navbar">
   <!-- Logo + Mobile Menu -->
@@ -20,12 +29,24 @@
   <!-- Desktop Links - Centered -->
   <div class="nav-links">
     <a href="/" class="nav-link<%= _nbPath === '/' || _nbPath === '/home' ? ' active' : '' %>"><i class="fas fa-home"></i>الرئيسية</a>
+    <% if (_nbCanSee('/rules')) { %>
     <a href="/rules" class="nav-link<%= _nbPath === '/rules' ? ' active' : '' %>"><i class="fas fa-gavel"></i>القوانين</a>
+    <% } %>
+    <% if (_nbCanSee('/applications')) { %>
     <a href="/applications" class="nav-link<%= _nbPath === '/applications' ? ' active' : '' %>"><i class="fas fa-file-alt"></i>التقديمات</a>
+    <% } %>
+    <% if (_nbCanSee('/store')) { %>
     <a href="/store" class="nav-link<%= _nbPath === '/store' ? ' active' : '' %>"><i class="fas fa-store"></i>المتجر</a>
+    <% } %>
+    <% if (_nbCanSee('/games')) { %>
     <a href="/games" class="nav-link<%= _nbPath === '/games' ? ' active' : '' %>"><i class="fas fa-gamepad" style="color:var(--ac)"></i>الألعاب</a>
+    <% } %>
+    <% if (_nbCanSee('/properties')) { %>
     <a href="/properties" class="nav-link<%= _nbPath === '/properties' ? ' active' : '' %>"><i class="fas fa-building"></i>الممتلكات</a>
+    <% } %>
+    <% if (_nbCanSee('/company')) { %>
     <a href="/company" class="nav-link<%= _nbPath === '/company' ? ' active' : '' %>"><i class="fas fa-briefcase"></i>الشركة</a>
+    <% } %>
     <a href="/community" class="nav-link<%= _nbPath === '/community' ? ' active' : '' %>"><i class="fas fa-comments"></i>المجتمع</a>
     <a href="/about" class="nav-link<%= _nbPath === '/about' ? ' active' : '' %>"><i class="fas fa-info-circle"></i>من نحن</a>
     <% if (_nbUser && ['owner', 'developer', 'founder', 'moderator', 'support', 'admin'].includes(_nbUser.role)) { %>
@@ -84,12 +105,24 @@
 <!-- Mobile Nav -->
 <div id="mobileNav">
   <a href="/" class="nav-link<%= _nbPath === '/' ? ' active' : '' %>"><i class="fas fa-home"></i>الرئيسية</a>
+  <% if (_nbCanSee('/rules')) { %>
   <a href="/rules" class="nav-link<%= _nbPath === '/rules' ? ' active' : '' %>"><i class="fas fa-gavel"></i>القوانين</a>
+  <% } %>
+  <% if (_nbCanSee('/applications')) { %>
   <a href="/applications" class="nav-link<%= _nbPath === '/applications' ? ' active' : '' %>"><i class="fas fa-file-alt"></i>التقديمات</a>
+  <% } %>
+  <% if (_nbCanSee('/store')) { %>
   <a href="/store" class="nav-link<%= _nbPath === '/store' ? ' active' : '' %>"><i class="fas fa-store"></i>المتجر</a>
+  <% } %>
+  <% if (_nbCanSee('/games')) { %>
   <a href="/games" class="nav-link<%= _nbPath === '/games' ? ' active' : '' %>" style="color:var(--ac)"><i class="fas fa-gamepad" style="color:var(--ac)"></i>الألعاب</a>
+  <% } %>
+  <% if (_nbCanSee('/properties')) { %>
   <a href="/properties" class="nav-link<%= _nbPath === '/properties' ? ' active' : '' %>"><i class="fas fa-building"></i>الممتلكات</a>
+  <% } %>
+  <% if (_nbCanSee('/company')) { %>
   <a href="/company" class="nav-link<%= _nbPath === '/company' ? ' active' : '' %>"><i class="fas fa-briefcase"></i>الشركة</a>
+  <% } %>
   <a href="/community" class="nav-link<%= _nbPath === '/community' ? ' active' : '' %>"><i class="fas fa-comments"></i>المجتمع</a>
   <a href="/about" class="nav-link<%= _nbPath === '/about' ? ' active' : '' %>"><i class="fas fa-info-circle"></i>من نحن</a>
   <% if (!_nbUser) { %>

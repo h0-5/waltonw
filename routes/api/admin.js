@@ -1,13 +1,10 @@
 ﻿const express = require('express');
 const router = express.Router();
 const db = require('../../config/database');
-const { isAdmin } = require('../../middleware/auth');
-
-// Apply isAdmin to ALL admin API routes
-router.use(isAdmin);
+const { isAdmin, checkPermission } = require('../../middleware/auth');
 
 // Admin Users API
-router.post('/users/update', async (req, res) => {
+router.post('/users/update', checkPermission('users_edit'), async (req, res) => {
   const { user_id, username, email } = req.body;
   try {
     await db.execute('UPDATE users SET username = ?, email = ? WHERE id = ?', [username, email, user_id]);
@@ -15,7 +12,7 @@ router.post('/users/update', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-router.post('/users/role', async (req, res) => {
+router.post('/users/role', checkPermission('users_edit'), async (req, res) => {
   const { user_id, role } = req.body;
   try {
     await db.execute('UPDATE users SET role = ? WHERE id = ?', [role, user_id]);
@@ -23,7 +20,7 @@ router.post('/users/role', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-router.post('/users/ban', async (req, res) => {
+router.post('/users/ban', checkPermission('users_ban'), async (req, res) => {
   const { user_id } = req.body;
   try {
     await db.execute('UPDATE users SET is_banned = 1 WHERE id = ?', [user_id]);
@@ -31,7 +28,7 @@ router.post('/users/ban', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-router.post('/users/unban', async (req, res) => {
+router.post('/users/unban', checkPermission('users_ban'), async (req, res) => {
   const { user_id } = req.body;
   try {
     await db.execute('UPDATE users SET is_banned = 0 WHERE id = ?', [user_id]);
@@ -40,7 +37,7 @@ router.post('/users/unban', async (req, res) => {
 });
 
 // Admin Products API
-router.post('/products/add', async (req, res) => {
+router.post('/products/add', checkPermission('products_manage'), async (req, res) => {
   const { name, description, category_type, price_points, price_money, stock } = req.body;
   try {
     await db.execute(
@@ -51,7 +48,7 @@ router.post('/products/add', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-router.post('/products/delete', async (req, res) => {
+router.post('/products/delete', checkPermission('products_manage'), async (req, res) => {
   const { product_id } = req.body;
   try {
     await db.execute('DELETE FROM fs_products WHERE id = ?', [product_id]);
@@ -59,7 +56,7 @@ router.post('/products/delete', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-router.post('/products/edit', async (req, res) => {
+router.post('/products/edit', checkPermission('products_manage'), async (req, res) => {
   const { product_id, name, description, category_type, price_points, price_money, stock, image } = req.body;
   try {
     await db.execute(
@@ -71,7 +68,7 @@ router.post('/products/edit', async (req, res) => {
 });
 
 // ===== Orders API =====
-router.post('/orders/:id/status', async (req, res) => {
+router.post('/orders/:id/status', checkPermission('store_orders_view'), async (req, res) => {
   try {
     const { status } = req.body;
     const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
@@ -82,7 +79,7 @@ router.post('/orders/:id/status', async (req, res) => {
 });
 
 // ===== News API =====
-router.get('/news/:id', async (req, res) => {
+router.get('/news/:id', checkPermission('news_add'), async (req, res) => {
   try {
     const [rows] = await db.execute('SELECT * FROM news WHERE id = ?', [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'غير موجود' });
@@ -90,7 +87,7 @@ router.get('/news/:id', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-router.post('/news', async (req, res) => {
+router.post('/news', checkPermission('news_add'), async (req, res) => {
   try {
     const { title, content, type, image, is_published } = req.body;
     const [result] = await db.execute(
@@ -101,7 +98,7 @@ router.post('/news', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-router.put('/news/:id', async (req, res) => {
+router.put('/news/:id', checkPermission('news_add'), async (req, res) => {
   try {
     const { title, content, type, image, is_published } = req.body;
     await db.execute(
@@ -112,7 +109,7 @@ router.put('/news/:id', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-router.delete('/news/:id', async (req, res) => {
+router.delete('/news/:id', checkPermission('news_add'), async (req, res) => {
   try {
     await db.execute('DELETE FROM news WHERE id = ?', [req.params.id]);
     res.json({ success: true });
@@ -120,7 +117,7 @@ router.delete('/news/:id', async (req, res) => {
 });
 
 // ===== Tickets API =====
-router.get('/tickets/:id', async (req, res) => {
+router.get('/tickets/:id', checkPermission('tickets_view'), async (req, res) => {
   try {
     const [ticket] = await db.execute('SELECT t.*, u.username FROM support_tickets t LEFT JOIN users u ON t.user_id = u.id WHERE t.id = ?', [req.params.id]);
     if (!ticket.length) return res.status(404).json({ error: 'غير موجود' });
@@ -129,7 +126,7 @@ router.get('/tickets/:id', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-router.post('/tickets/:id/reply', async (req, res) => {
+router.post('/tickets/:id/reply', checkPermission('tickets_reply'), async (req, res) => {
   try {
     const { message } = req.body;
     if (!message || !message.trim()) return res.status(400).json({ error: 'الرسالة مطلوبة' });
@@ -139,7 +136,7 @@ router.post('/tickets/:id/reply', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-router.post('/tickets/:id/close', async (req, res) => {
+router.post('/tickets/:id/close', checkPermission('tickets_reply'), async (req, res) => {
   try {
     await db.execute("UPDATE support_tickets SET status = 'closed' WHERE id = ?", [req.params.id]);
     res.json({ success: true });
@@ -147,14 +144,14 @@ router.post('/tickets/:id/close', async (req, res) => {
 });
 
 // ===== Giveaways API =====
-router.get('/giveaways', async (req, res) => {
+router.get('/giveaways', checkPermission('gifts_manage'), async (req, res) => {
   try {
     const [giveaways] = await db.execute('SELECT * FROM giveaways ORDER BY id DESC');
     res.json({ giveaways });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-router.post('/giveaways', async (req, res) => {
+router.post('/giveaways', checkPermission('gifts_manage'), async (req, res) => {
   try {
     const { title, description, prize, type, winner_count, required_role, required_points, starts_at, ends_at } = req.body;
     const [result] = await db.execute(
@@ -165,14 +162,14 @@ router.post('/giveaways', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-router.delete('/giveaways/:id', async (req, res) => {
+router.delete('/giveaways/:id', checkPermission('gifts_manage'), async (req, res) => {
   try {
     await db.execute('DELETE FROM giveaways WHERE id = ?', [req.params.id]);
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-router.post('/giveaways/:id/end', async (req, res) => {
+router.post('/giveaways/:id/end', checkPermission('gifts_manage'), async (req, res) => {
   try {
     await db.execute("UPDATE giveaways SET status = 'ended' WHERE id = ?", [req.params.id]);
     // Pick random winners
@@ -185,7 +182,7 @@ router.post('/giveaways/:id/end', async (req, res) => {
 });
 
 // Admin Settings API
-router.post('/settings', async (req, res) => {
+router.post('/settings', checkPermission('site_settings_edit'), async (req, res) => {
   try {
     for (const [key, value] of Object.entries(req.body)) {
       await db.execute(
@@ -198,7 +195,7 @@ router.post('/settings', async (req, res) => {
 });
 
 // Notifications API
-router.get('/notifications', async (req, res) => {
+router.get('/notifications', require('../../middleware/auth').isAuthenticated, async (req, res) => {
   if (!req.user) return res.json({ notifications: [] });
   try {
     const [notifications] = await db.execute(
@@ -209,7 +206,7 @@ router.get('/notifications', async (req, res) => {
   } catch(e) { res.json({ notifications: [] }); }
 });
 
-router.post('/notifications/read', async (req, res) => {
+router.post('/notifications/read', require('../../middleware/auth').isAuthenticated, async (req, res) => {
   if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
   try {
     await db.execute('UPDATE notifications SET is_read = 1 WHERE user_id = ?', [req.user.id]);
@@ -218,7 +215,7 @@ router.post('/notifications/read', async (req, res) => {
 });
 
 // Orders API
-router.post('/orders/create', async (req, res) => {
+router.post('/orders/create', require('../../middleware/auth').isAuthenticated, async (req, res) => {
   if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
   const { full_name, address, phone, payment } = req.body;
   try {
@@ -231,7 +228,7 @@ router.post('/orders/create', async (req, res) => {
 });
 
 // Rules API
-router.post('/rules', async (req, res) => {
+router.post('/rules', checkPermission('rules_add'), async (req, res) => {
   try {
     const { category, rule_text, sort_order } = req.body;
     await db.execute('INSERT INTO rules (category, rule_text, sort_order) VALUES (?, ?, ?)', [category, rule_text, sort_order || 0]);
@@ -239,7 +236,7 @@ router.post('/rules', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-router.delete('/rules/:id', async (req, res) => {
+router.delete('/rules/:id', checkPermission('rules_delete'), async (req, res) => {
   try {
     await db.execute('DELETE FROM rules WHERE id = ?', [req.params.id]);
     res.json({ success: true });
@@ -247,7 +244,7 @@ router.delete('/rules/:id', async (req, res) => {
 });
 
 // Discounts API
-router.post('/discounts', async (req, res) => {
+router.post('/discounts', checkPermission('discounts_manage'), async (req, res) => {
   try {
     const { code, discount_percent, max_uses, expires_at } = req.body;
     await db.execute('INSERT INTO discount_codes (code, discount_percent, max_uses, expires_at) VALUES (?, ?, ?, ?)',
@@ -256,7 +253,7 @@ router.post('/discounts', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-router.delete('/discounts/:id', async (req, res) => {
+router.delete('/discounts/:id', checkPermission('discounts_manage'), async (req, res) => {
   try {
     await db.execute('DELETE FROM discount_codes WHERE id = ?', [req.params.id]);
     res.json({ success: true });
@@ -264,7 +261,7 @@ router.delete('/discounts/:id', async (req, res) => {
 });
 
 // Users Unban API (by URL param)
-router.post('/users/:id/unban', async (req, res) => {
+router.post('/users/:id/unban', checkPermission('users_ban'), async (req, res) => {
   try {
     await db.execute('UPDATE users SET is_banned = 0 WHERE id = ?', [req.params.id]);
     res.json({ success: true });
@@ -272,7 +269,7 @@ router.post('/users/:id/unban', async (req, res) => {
 });
 
 // Broadcast API
-router.post('/broadcast', async (req, res) => {
+router.post('/broadcast', checkPermission('broadcast_send'), async (req, res) => {
   try {
     const { title, message, target } = req.body;
     let whereClause = '';
@@ -289,7 +286,7 @@ router.post('/broadcast', async (req, res) => {
 });
 
 // About Content API
-router.post('/about', async (req, res) => {
+router.post('/about', checkPermission('about_edit'), async (req, res) => {
   try {
     for (const [key, value] of Object.entries(req.body)) {
       await db.execute(
@@ -302,7 +299,7 @@ router.post('/about', async (req, res) => {
 });
 
 // Properties API
-router.post('/properties', async (req, res) => {
+router.post('/properties', checkPermission('properties_edit'), async (req, res) => {
   try {
     const { title, category, sort_order, image_url } = req.body;
     let image = image_url || '';
@@ -321,7 +318,7 @@ router.post('/properties', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-router.delete('/properties/:id', async (req, res) => {
+router.delete('/properties/:id', checkPermission('properties_delete'), async (req, res) => {
   try {
     const [rows] = await db.execute('SELECT image FROM properties WHERE id = ?', [req.params.id]);
     if (rows.length && rows[0].image && rows[0].image.startsWith('/uploads/')) {
@@ -334,7 +331,7 @@ router.delete('/properties/:id', async (req, res) => {
 });
 
 // Company Items API
-router.post('/company/items', async (req, res) => {
+router.post('/company/items', checkPermission('company_edit'), async (req, res) => {
   try {
     const { title, description, category, video_url, service_status } = req.body;
     let image = '';
@@ -353,7 +350,7 @@ router.post('/company/items', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-router.delete('/company/items/:id', async (req, res) => {
+router.delete('/company/items/:id', checkPermission('company_delete'), async (req, res) => {
   try {
     await db.execute('DELETE FROM service_questions WHERE service_id = ?', [req.params.id]);
     await db.execute('DELETE FROM service_packages WHERE service_id = ?', [req.params.id]);
@@ -363,14 +360,14 @@ router.delete('/company/items/:id', async (req, res) => {
 });
 
 // Company Service Request Actions
-router.post('/company/requests/:id/approve', async (req, res) => {
+router.post('/company/requests/:id/approve', checkPermission('company_edit'), async (req, res) => {
   try {
     await db.execute("UPDATE service_requests SET status = 'approved', reviewed_at = NOW() WHERE id = ?", [req.params.id]);
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-router.post('/company/requests/:id/reject', async (req, res) => {
+router.post('/company/requests/:id/reject', checkPermission('company_edit'), async (req, res) => {
   try {
     await db.execute("UPDATE service_requests SET status = 'rejected', reviewed_at = NOW() WHERE id = ?", [req.params.id]);
     res.json({ success: true });
@@ -378,7 +375,7 @@ router.post('/company/requests/:id/reject', async (req, res) => {
 });
 
 // Service Request from user
-router.post('/service-request', async (req, res) => {
+router.post('/service-request', require('../../middleware/auth').isAuthenticated, async (req, res) => {
   try {
     if (!req.user) return res.status(401).json({ error: 'ظٹط¬ط¨ طھط³ط¬ظٹظ„ ط§ظ„ط¯ط®ظˆظ„' });
     const { service_id, package_id } = req.body;
@@ -395,7 +392,7 @@ const path = require('path');
 const fs = require('fs');
 
 // Approve application
-router.post('/applications/:id/approve', async (req, res) => {
+router.post('/applications/:id/approve', checkPermission('apps_approve'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (!id || id <= 0) return res.status(400).json({ error: 'ط±ظ‚ظ… ط؛ظٹط± طµط­ظٹط­' });
@@ -426,7 +423,7 @@ router.post('/applications/:id/approve', async (req, res) => {
 });
 
 // Reject application
-router.post('/applications/:id/reject',   async (req, res) => {
+router.post('/applications/:id/reject', checkPermission('apps_reject'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (!id || id <= 0) return res.status(400).json({ error: 'ط±ظ‚ظ… ط؛ظٹط± طµط­ظٹط­' });
@@ -460,7 +457,7 @@ router.post('/applications/:id/reject',   async (req, res) => {
 });
 
 // Delete application
-router.post('/applications/:id/delete', async (req, res) => {
+router.post('/applications/:id/delete', checkPermission('apps_delete'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (!id || id <= 0) return res.status(400).json({ error: 'ط±ظ‚ظ… ط؛ظٹط± طµط­ظٹط­' });
@@ -481,7 +478,7 @@ router.post('/applications/:id/delete', async (req, res) => {
 });
 
 // Get questions for type
-router.get('/applications/questions/:type', async (req, res) => {
+router.get('/applications/questions/:type', checkPermission('app_types_view'), async (req, res) => {
   try {
     const type = req.params.type;
     const [qs] = await db.query('SELECT * FROM application_questions WHERE application_type = ? ORDER BY order_index ASC, sort_order ASC', [type]);
@@ -490,7 +487,7 @@ router.get('/applications/questions/:type', async (req, res) => {
 });
 
 // Add question
-router.post('/applications/questions', async (req, res) => {
+router.post('/applications/questions', checkPermission('app_types_edit'), async (req, res) => {
   try {
     const { application_type, question, type, required, options, order_index, max_selections } = req.body;
     if (!application_type || !question) return res.status(400).json({ error: 'ط§ظ„ط¨ظٹط§ظ†ط§طھ ظ†ط§ظ‚طµط©' });
@@ -511,7 +508,7 @@ router.post('/applications/questions', async (req, res) => {
 });
 
 // Delete question
-router.delete('/applications/questions/:id', async (req, res) => {
+router.delete('/applications/questions/:id', checkPermission('app_types_edit'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (!id) return res.status(400).json({ error: 'ط±ظ‚ظ… ط؛ظٹط± طµط­ظٹط­' });
@@ -521,7 +518,7 @@ router.delete('/applications/questions/:id', async (req, res) => {
 });
 
 // Get settings for type
-router.get('/applications/settings/:type', async (req, res) => {
+router.get('/applications/settings/:type', checkPermission('app_types_view'), async (req, res) => {
   try {
     const [s] = await db.query('SELECT * FROM application_settings WHERE application_type = ? LIMIT 1', [req.params.type]);
     res.json(s && s.length ? s[0] : {});
@@ -529,7 +526,7 @@ router.get('/applications/settings/:type', async (req, res) => {
 });
 
 // Update settings for type
-router.put('/applications/settings/:type', async (req, res) => {
+router.put('/applications/settings/:type', checkPermission('app_types_edit'), async (req, res) => {
   try {
     const type = req.params.type;
     const { title, status, description, requirements, image, site_role, discord_role_id, discord_role_id_2, discord_role_id_3, required_discord_role_id, rejection_cooldown_hours, notify_enabled } = req.body;
@@ -558,7 +555,7 @@ router.put('/applications/settings/:type', async (req, res) => {
 });
 
 // Add type
-router.post('/applications/types', async (req, res) => {
+router.post('/applications/types', checkPermission('app_types_edit'), async (req, res) => {
   try {
     const { application_type, title, description, requirements, image, status } = req.body;
     if (!application_type || !/^[a-zA-Z0-9_\-]+$/.test(application_type)) {
@@ -578,7 +575,7 @@ router.post('/applications/types', async (req, res) => {
 });
 
 // Update type
-router.put('/applications/types/:id', async (req, res) => {
+router.put('/applications/types/:id', checkPermission('app_types_edit'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const { title, description, requirements, image, status } = req.body;
@@ -591,7 +588,7 @@ router.put('/applications/types/:id', async (req, res) => {
 });
 
 // Toggle type status
-router.post('/applications/types/status', async (req, res) => {
+router.post('/applications/types/status', checkPermission('app_types_edit'), async (req, res) => {
   try {
     const { application_type, status } = req.body;
     const s = ['open','closed'].includes(status) ? status : 'closed';
@@ -601,7 +598,7 @@ router.post('/applications/types/status', async (req, res) => {
 });
 
 // Delete type
-router.delete('/applications/types/:id', async (req, res) => {
+router.delete('/applications/types/:id', checkPermission('app_types_edit'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const [type] = await db.query('SELECT application_type FROM application_settings WHERE id = ?', [id]);
@@ -615,7 +612,7 @@ router.delete('/applications/types/:id', async (req, res) => {
 // ===== Roles & Permissions API =====
 
 // Get all roles
-router.get('/roles', async (req, res) => {
+router.get('/roles', checkPermission('roles_config_view'), async (req, res) => {
   try {
     const [roles] = await db.execute('SELECT * FROM roles ORDER BY is_admin_role DESC, sort_order ASC, id ASC');
     const [perms] = await db.execute('SELECT * FROM role_permissions');
@@ -629,7 +626,7 @@ router.get('/roles', async (req, res) => {
 });
 
 // Create role
-router.post('/roles', async (req, res) => {
+router.post('/roles', checkPermission('roles_config_edit'), async (req, res) => {
   try {
     const { name, display_name, color, icon, description } = req.body;
     const [result] = await db.execute(
@@ -642,7 +639,7 @@ router.post('/roles', async (req, res) => {
 });
 
 // Update role (advanced)
-router.put('/roles/:id', async (req, res) => {
+router.put('/roles/:id', checkPermission('roles_config_edit'), async (req, res) => {
   try {
     const { name, display_name, color, icon, emoji, description, is_admin_role, is_protected, is_default, is_staff,
             can_assign_roles, page_permissions, element_permissions, punishments } = req.body;
@@ -697,7 +694,7 @@ router.put('/roles/:id', async (req, res) => {
 });
 
 // Delete role
-router.delete('/roles/:id', async (req, res) => {
+router.delete('/roles/:id', checkPermission('roles_config_edit'), async (req, res) => {
   try {
     const roleId = req.params.id;
     const [role] = await db.execute('SELECT * FROM roles WHERE id = ?', [roleId]);
@@ -719,7 +716,7 @@ router.delete('/roles/:id', async (req, res) => {
 });
 
 // Get role members
-router.get('/roles/:id/members', async (req, res) => {
+router.get('/roles/:id/members', checkPermission('roles_config_view'), async (req, res) => {
   try {
     const roleId = req.params.id;
     const [role] = await db.execute('SELECT name FROM roles WHERE id = ?', [roleId]);
@@ -730,7 +727,7 @@ router.get('/roles/:id/members', async (req, res) => {
 });
 
 // Assign role to user
-router.post('/roles/:id/assign', async (req, res) => {
+router.post('/roles/:id/assign', checkPermission('roles_assign'), async (req, res) => {
   try {
     const roleId = req.params.id;
     const { user_id, reason } = req.body;
@@ -758,7 +755,7 @@ router.post('/roles/:id/assign', async (req, res) => {
 });
 
 // Get user role permissions (for frontend use)
-router.get('/user-permissions/:userId', async (req, res) => {
+router.get('/user-permissions/:userId', checkPermission('roles_config_view'), async (req, res) => {
   try {
     const [user] = await db.execute('SELECT role FROM users WHERE id = ?', [req.params.userId]);
     if (!user.length) return res.status(404).json({ error: 'غير موجود' });
@@ -819,7 +816,7 @@ router.get('/user-permissions/:userId', async (req, res) => {
 // ===== Unified Permissions API =====
 
 // Get all permissions for a role
-router.get('/roles/:id/all-permissions', async (req, res) => {
+router.get('/roles/:id/all-permissions', checkPermission('roles_config_view'), async (req, res) => {
   try {
     const roleId = req.params.id;
     const [perms] = await db.execute('SELECT permission_key, enabled FROM role_role_permissions WHERE role_id = ?', [roleId]);
@@ -830,7 +827,7 @@ router.get('/roles/:id/all-permissions', async (req, res) => {
 });
 
 // Save all permissions for a role (bulk replace)
-router.post('/roles/:id/all-permissions', async (req, res) => {
+router.post('/roles/:id/all-permissions', checkPermission('roles_config_edit'), async (req, res) => {
   try {
     const roleId = req.params.id;
     const { permissions } = req.body;
@@ -860,7 +857,7 @@ router.post('/roles/:id/all-permissions', async (req, res) => {
 // ===== Side Roles API =====
 
 // Get all side roles
-router.get('/side-roles', async (req, res) => {
+router.get('/side-roles', checkPermission('roles_config_view'), async (req, res) => {
   try {
     const [roles] = await db.execute('SELECT * FROM side_roles ORDER BY sort_order ASC, id ASC');
     res.json({ sideRoles: roles });
@@ -868,7 +865,7 @@ router.get('/side-roles', async (req, res) => {
 });
 
 // Create side role
-router.post('/side-roles', async (req, res) => {
+router.post('/side-roles', checkPermission('roles_config_edit'), async (req, res) => {
   try {
     const { name, display_name, color, icon, emoji } = req.body;
     if (!name || !display_name) return res.status(400).json({ error: 'الاسم مطلوب' });
@@ -885,7 +882,7 @@ router.post('/side-roles', async (req, res) => {
 });
 
 // Update side role
-router.put('/side-roles/:id', async (req, res) => {
+router.put('/side-roles/:id', checkPermission('roles_config_edit'), async (req, res) => {
   try {
     const { name, display_name, color, icon, emoji, is_active, sort_order } = req.body;
     await db.execute(
@@ -897,7 +894,7 @@ router.put('/side-roles/:id', async (req, res) => {
 });
 
 // Delete side role
-router.delete('/side-roles/:id', async (req, res) => {
+router.delete('/side-roles/:id', checkPermission('roles_config_edit'), async (req, res) => {
   try {
     await db.execute('DELETE FROM user_side_roles WHERE side_role_id = ?', [req.params.id]);
     await db.execute('DELETE FROM side_roles WHERE id = ?', [req.params.id]);
@@ -906,7 +903,7 @@ router.delete('/side-roles/:id', async (req, res) => {
 });
 
 // Assign side role to user
-router.post('/side-roles/:id/assign', async (req, res) => {
+router.post('/side-roles/:id/assign', checkPermission('roles_config_edit'), async (req, res) => {
   try {
     const { user_id } = req.body;
     if (!user_id) return res.status(400).json({ error: 'user_id مطلوب' });
@@ -919,7 +916,7 @@ router.post('/side-roles/:id/assign', async (req, res) => {
 });
 
 // Remove side role from user
-router.post('/side-roles/:id/unassign', async (req, res) => {
+router.post('/side-roles/:id/unassign', checkPermission('roles_config_edit'), async (req, res) => {
   try {
     const { user_id } = req.body;
     if (!user_id) return res.status(400).json({ error: 'user_id مطلوب' });
@@ -929,7 +926,7 @@ router.post('/side-roles/:id/unassign', async (req, res) => {
 });
 
 // Get users with a side role
-router.get('/side-roles/:id/members', async (req, res) => {
+router.get('/side-roles/:id/members', checkPermission('roles_config_view'), async (req, res) => {
   try {
     const [members] = await db.execute(
       'SELECT u.id, u.username, u.profile_picture FROM users u JOIN user_side_roles usr ON u.id = usr.user_id WHERE usr.side_role_id = ?',
@@ -940,7 +937,7 @@ router.get('/side-roles/:id/members', async (req, res) => {
 });
 
 // Get side roles for a user
-router.get('/users/:id/side-roles', async (req, res) => {
+router.get('/users/:id/side-roles', checkPermission('roles_config_view'), async (req, res) => {
   try {
     const [roles] = await db.execute(
       'SELECT sr.* FROM side_roles sr JOIN user_side_roles usr ON sr.id = usr.side_role_id WHERE usr.user_id = ?',
@@ -951,7 +948,7 @@ router.get('/users/:id/side-roles', async (req, res) => {
 });
 
 // Reorder roles
-router.post('/roles/reorder', async (req, res) => {
+router.post('/roles/reorder', checkPermission('roles_config_edit'), async (req, res) => {
   try {
     const { order } = req.body;
     if (!Array.isArray(order)) return res.status(400).json({ error: 'order مطلوب' });
@@ -965,7 +962,7 @@ router.post('/roles/reorder', async (req, res) => {
 // ===== Page Access API =====
 
 // Get page access for a role
-router.get('/roles/:id/page-access', async (req, res) => {
+router.get('/roles/:id/page-access', checkPermission('roles_config_view'), async (req, res) => {
   try {
     const [rows] = await db.execute('SELECT page_path, can_access FROM role_page_access WHERE role_id = ?', [req.params.id]);
     const access = {};
@@ -975,7 +972,7 @@ router.get('/roles/:id/page-access', async (req, res) => {
 });
 
 // Save page access for a role (bulk)
-router.post('/roles/:id/page-access', async (req, res) => {
+router.post('/roles/:id/page-access', checkPermission('roles_config_edit'), async (req, res) => {
   try {
     const roleId = req.params.id;
     const { pages } = req.body;
@@ -1003,7 +1000,7 @@ router.post('/roles/:id/page-access', async (req, res) => {
 });
 
 // Get all pages access for all roles (for rendering)
-router.get('/page-access-all', async (req, res) => {
+router.get('/page-access-all', checkPermission('roles_config_view'), async (req, res) => {
   try {
     const [rows] = await db.execute('SELECT role_id, page_path, can_access FROM role_page_access');
     const result = {};
