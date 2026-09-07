@@ -424,3 +424,53 @@
   .hw-hero-badge, .hw-btn-primary::after, .hw-caret, .hw-scroll-hint span,
   .hw-giveaway-gift, .hw-games-icons span, .hw-discord-icon, .hw-meta-chip .hw-dot { animation: none !important; }
 }
+
+/* ==========================================
+   V3.1 DESKTOP POLISH — PC consistency fixes
+   ========================================== */
+
+/* Particles: the JS builds them, but the styles lived in the
+   OLD home.css which is no longer loaded → dead effect. */
+.particle-bg {
+  position: fixed; inset: 0; pointer-events: none;
+  z-index: -1; overflow: hidden;
+}
+.particle {
+  position: absolute; width: 3px; height: 3px; border-radius: 50%;
+  background: var(--ac); opacity: 0.3;
+  animation: hwParticleFloat linear infinite;
+  box-shadow: 0 0 8px rgba(var(--ac-rgb), 0.55);
+}
+@keyframes hwParticleFloat {
+  0% { transform: translateY(100vh) translateX(0) scale(0); opacity: 0; }
+  10% { opacity: 0.3; transform: translateY(90vh) translateX(10px) scale(1); }
+  90% { opacity: 0.3; }
+  100% { transform: translateY(-10vh) translateX(-10px) scale(0); opacity: 0; }
+}
+
+/* Bento grid: fill the desktop 3-col layout perfectly.
+   6 cards = 8 cells → one hole in the last row. Making the
+   support card span 2 only on desktop completes 3x3 = 9/9.
+   The 2-col (tablet) and 1-col (phone) layouts stay as they were. */
+@media (min-width: 901px) {
+  .hw-bento { grid-auto-rows: 1fr; }
+  .hw-bento-card.wide-desktop { grid-column: span 2; }
+}
+
+/* Short desktop windows (laptops / small browser windows):
+   compact hero so nothing crowds or overlaps. */
+@media (min-width: 901px) and (max-height: 840px) {
+  .hw-hero { min-height: auto; padding: 6.5rem 1.25rem 4.5rem; }
+  .hw-hero-badge { margin-bottom: 1.4rem; }
+  .hw-logo-ring { width: 140px; height: 140px; margin-bottom: 1.6rem; }
+  .hw-logo-ring img { width: 124px; height: 124px; }
+  .hw-title { margin-bottom: 0.8rem; }
+  .hw-sub { margin-bottom: 1.6rem; }
+  .hw-cta { margin-bottom: 1.8rem; }
+}
+
+/* Keep wide cards' text readable on very large screens */
+@media (min-width: 1500px) {
+  .hw-bento-card.wide, .hw-bento-card.wide-desktop { padding: 30px 34px; }
+  .hw-stats { max-width: 1080px; }
+}
