@@ -101,7 +101,11 @@ async function migrate() {
     `CREATE TABLE IF NOT EXISTS product_logs (id INT AUTO_INCREMENT PRIMARY KEY, product_id INT, action VARCHAR(100), details TEXT, user_id INT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
     `CREATE TABLE IF NOT EXISTS game_reward_log (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, game_name VARCHAR(100), points INT DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
     `CREATE TABLE IF NOT EXISTS user_activity_log (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, action VARCHAR(255), ip VARCHAR(45), created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
-    `CREATE TABLE IF NOT EXISTS giveaways (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255), description TEXT, prize VARCHAR(255), type VARCHAR(20) DEFAULT 'normal', winner_count INT DEFAULT 1, status VARCHAR(20) DEFAULT 'active', required_role VARCHAR(50), required_points INT DEFAULT 0, created_by INT, starts_at DATETIME, ends_at DATETIME, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`
+    `CREATE TABLE IF NOT EXISTS giveaways (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255), description TEXT, prize VARCHAR(255), type VARCHAR(20) DEFAULT 'normal', winner_count INT DEFAULT 1, status VARCHAR(20) DEFAULT 'active', required_role VARCHAR(50), required_points INT DEFAULT 0, created_by INT, starts_at DATETIME, ends_at DATETIME, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE TABLE IF NOT EXISTS role_element_permissions (id INT AUTO_INCREMENT PRIMARY KEY, role_id INT, page VARCHAR(100), element_type VARCHAR(50) DEFAULT 'button', element_id VARCHAR(100), can_view TINYINT(1) DEFAULT 1, can_use TINYINT(1) DEFAULT 0, FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE, UNIQUE KEY unique_role_element (role_id, page, element_id))`,
+    `CREATE TABLE IF NOT EXISTS role_page_permissions (id INT AUTO_INCREMENT PRIMARY KEY, role_id INT, page VARCHAR(100), can_view TINYINT(1) DEFAULT 0, can_create TINYINT(1) DEFAULT 0, can_edit TINYINT(1) DEFAULT 0, can_delete TINYINT(1) DEFAULT 0, can_manage TINYINT(1) DEFAULT 0, can_export TINYINT(1) DEFAULT 0, can_broadcast TINYINT(1) DEFAULT 0, FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE, UNIQUE KEY unique_role_page_p (role_id, page))`,
+    `CREATE TABLE IF NOT EXISTS role_assignments (id INT AUTO_INCREMENT PRIMARY KEY, role_id INT, user_id INT, assigned_by INT, reason TEXT, assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP, expires_at DATETIME, FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE)`,
+    `CREATE TABLE IF NOT EXISTS role_punishments (id INT AUTO_INCREMENT PRIMARY KEY, role_id INT, can_ban TINYINT(1) DEFAULT 0, can_mute TINYINT(1) DEFAULT 0, can_warn TINYINT(1) DEFAULT 0, can_kick TINYINT(1) DEFAULT 0, max_ban_level INT DEFAULT 0, FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE, UNIQUE KEY unique_role_punish (role_id))`
   ];
 
   for (const sql of tables) {
@@ -177,6 +181,15 @@ async function migrate() {
     { table: 'service_requests', col: 'total_price', sql: "ALTER TABLE service_requests ADD COLUMN total_price DECIMAL(10,2) DEFAULT 0" },
     { table: 'service_requests', col: 'package_id', sql: "ALTER TABLE service_requests ADD COLUMN package_id INT" },
     { table: 'service_requests', col: 'admin_id', sql: "ALTER TABLE service_requests ADD COLUMN admin_id INT" },
+    { table: 'roles', col: 'description', sql: "ALTER TABLE roles ADD COLUMN description TEXT" },
+    { table: 'roles', col: 'can_assign_roles', sql: "ALTER TABLE roles ADD COLUMN can_assign_roles TINYINT(1) DEFAULT 0" },
+    { table: 'roles', col: 'max_role_level', sql: "ALTER TABLE roles ADD COLUMN max_role_level INT DEFAULT 0" },
+    { table: 'roles', col: 'is_protected', sql: "ALTER TABLE roles ADD COLUMN is_protected TINYINT(1) DEFAULT 0" },
+    { table: 'role_punishments', col: 'can_ban', sql: "ALTER TABLE role_punishments ADD COLUMN can_ban TINYINT(1) DEFAULT 0" },
+    { table: 'role_punishments', col: 'can_mute', sql: "ALTER TABLE role_punishments ADD COLUMN can_mute TINYINT(1) DEFAULT 0" },
+    { table: 'role_punishments', col: 'can_warn', sql: "ALTER TABLE role_punishments ADD COLUMN can_warn TINYINT(1) DEFAULT 0" },
+    { table: 'role_punishments', col: 'can_kick', sql: "ALTER TABLE role_punishments ADD COLUMN can_kick TINYINT(1) DEFAULT 0" },
+    { table: 'role_punishments', col: 'max_ban_level', sql: "ALTER TABLE role_punishments ADD COLUMN max_ban_level INT DEFAULT 0" },
   ];
   for (const { table, col, sql } of alterStatements) {
     try {

@@ -151,9 +151,39 @@ router.get('/roles', isAdmin, async (req, res) => {
       if (!permissions[p.role_id]) permissions[p.role_id] = {};
       permissions[p.role_id][p.page] = { can_access: p.can_access, can_edit: p.can_edit, can_delete: p.can_delete, can_manage: p.can_manage };
     });
-    res.render('admin/roles', { title: 'إدارة الصلاحيات', roles, permissions, currentPath: req.path });
+
+    // Page permissions (advanced)
+    let pagePerms = {};
+    try {
+      const [pp] = await db.execute('SELECT * FROM role_page_permissions');
+      pp.forEach(p => {
+        if (!pagePerms[p.role_id]) pagePerms[p.role_id] = {};
+        pagePerms[p.role_id][p.page] = { can_view: p.can_view, can_create: p.can_create, can_edit: p.can_edit, can_delete: p.can_delete, can_manage: p.can_manage, can_export: p.can_export, can_broadcast: p.can_broadcast };
+      });
+    } catch(e) {}
+
+    // Element permissions
+    let elemPerms = {};
+    try {
+      const [ep] = await db.execute('SELECT * FROM role_element_permissions');
+      ep.forEach(p => {
+        if (!elemPerms[p.role_id]) elemPerms[p.role_id] = {};
+        elemPerms[p.role_id][p.page + ':' + p.element_id] = { can_view: p.can_view, can_use: p.can_use };
+      });
+    } catch(e) {}
+
+    // Punishments
+    let punishData = {};
+    try {
+      const [pd] = await db.execute('SELECT * FROM role_punishments');
+      pd.forEach(p => {
+        punishData[p.role_id] = { can_ban: p.can_ban, can_mute: p.can_mute, can_warn: p.can_warn, can_kick: p.can_kick, max_ban_level: p.max_ban_level };
+      });
+    } catch(e) {}
+
+    res.render('admin/roles', { title: 'إدارة الصلاحيات', roles, permissions, pagePerms, elemPerms, punishData, currentPath: req.path });
   } catch(err) {
-    res.render('admin/roles', { title: 'إدارة الصلاحيات', roles: [], permissions: {}, currentPath: req.path });
+    res.render('admin/roles', { title: 'إدارة الصلاحيات', roles: [], permissions: {}, pagePerms: {}, elemPerms: {}, punishData: {}, currentPath: req.path });
   }
 });
 

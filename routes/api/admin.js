@@ -631,36 +631,65 @@ router.get('/roles', async (req, res) => {
 // Create role
 router.post('/roles', async (req, res) => {
   try {
-    const { name, display_name, color, icon, level } = req.body;
+    const { name, display_name, color, icon, level, description } = req.body;
     const [result] = await db.execute(
-      'INSERT INTO roles (name, display_name, color, icon, level) VALUES (?, ?, ?, ?, ?)',
-      [name, display_name, color || '#780ecf', icon || 'fa-user', level || 0]
+      'INSERT INTO roles (name, display_name, color, icon, level, description) VALUES (?, ?, ?, ?, ?, ?)',
+      [name, display_name, color || '#780ecf', icon || 'fa-user', level || 0, description || '']
     );
     const [role] = await db.execute('SELECT * FROM roles WHERE id = ?', [result.insertId]);
     res.json({ success: true, role: role[0] });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// Update role
+// Update role (advanced)
 router.put('/roles/:id', async (req, res) => {
   try {
-    const { name, display_name, color, icon, level, permissions } = req.body;
+    const { name, display_name, color, icon, level, description, is_admin_role, is_protected, is_default,
+            can_assign_roles, max_role_level, page_permissions, element_permissions, punishments } = req.body;
     const roleId = req.params.id;
-    
+
+    // Check hierarchy - can't edit role >= your level
+    const [myRole] = await db.execute('SELECT level FROM roles WHERE name = ?', [req.user.role]);
+    const [targetRole] = await db.execute('SELECT level FROM roles WHERE id = ?', [roleId]);
+    if (targetRole.length && myRole.length && targetRole[0].level >= myRole[0].level && req.user.role !== 'owner') {
+      return res.status(403).json({ error: 'لا يمكنك تعديل رتبة بنفس المستوى أو أعلى' });
+    }
+
     await db.execute(
-      'UPDATE roles SET name=?, display_name=?, color=?, icon=?, level=? WHERE id=?',
-      [name, display_name, color, icon, level, roleId]
+      'UPDATE roles SET name=?, display_name=?, color=?, icon=?, level=?, description=?, is_admin_role=?, is_protected=?, is_default=?, can_assign_roles=?, max_role_level=? WHERE id=?',
+      [name, display_name, color, icon, level, description || '', is_admin_role || 0, is_protected || 0, is_default || 0, can_assign_roles || 0, max_role_level || 0, roleId]
     );
 
-    // Update permissions
-    if (permissions) {
-      await db.execute('DELETE FROM role_permissions WHERE role_id = ?', [roleId]);
-      for (const [page, perms] of Object.entries(permissions)) {
+    // Update page permissions
+    if (page_permissions) {
+      await db.execute('DELETE FROM role_page_permissions WHERE role_id = ?', [roleId]);
+      for (const [page, perms] of Object.entries(page_permissions)) {
         await db.execute(
-          'INSERT INTO role_permissions (role_id, page, can_access, can_edit, can_delete, can_manage) VALUES (?, ?, ?, ?, ?, ?)',
-          [roleId, page, perms.can_access ? 1 : 0, perms.can_edit ? 1 : 0, perms.can_delete ? 1 : 0, perms.can_manage ? 1 : 0]
+          'INSERT INTO role_page_permissions (role_id, page, can_view, can_create, can_edit, can_delete, can_manage, can_export, can_broadcast) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [roleId, page, perms.can_view||0, perms.can_create||0, perms.can_edit||0, perms.can_delete||0, perms.can_manage||0, perms.can_export||0, perms.can_broadcast||0]
         );
       }
+    }
+
+    // Update element permissions
+    if (element_permissions) {
+      await db.execute('DELETE FROM role_element_permissions WHERE role_id = ?', [roleId]);
+      for (const key of Object.keys(element_permissions)) {
+        const [page, element] = key.split(':');
+        await db.execute(
+          'INSERT INTO role_element_permissions (role_id, page, element_id, can_view, can_use) VALUES (?, ?, ?, 1, 1)',
+          [roleId, page, element]
+        );
+      }
+    }
+
+    // Update punishments
+    if (punishments) {
+      await db.execute('DELETE FROM role_punishments WHERE role_id = ?', [roleId]);
+      await db.execute(
+        'INSERT INTO role_punishments (role_id, can_ban, can_mute, can_warn, can_kick, max_ban_level) VALUES (?, ?, ?, ?, ?, ?)',
+        [roleId, punishments.can_ban||0, punishments.can_mute||0, punishments.can_warn||0, punishments.can_kick||0, punishments.max_ban_level||0]
+      );
     }
 
     res.json({ success: true });
@@ -672,11 +701,61 @@ router.delete('/roles/:id', async (req, res) => {
   try {
     const roleId = req.params.id;
     const [role] = await db.execute('SELECT * FROM roles WHERE id = ?', [roleId]);
-    if (!role.length) return res.status(404).json({ error: 'ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
-    if (role[0].is_default) return res.status(400).json({ error: 'ظ„ط§ ظٹظ…ظƒظ† ط­ط°ظپ ط§ظ„ط±طھط¨ط© ط§ظ„ط§ظپطھط±ط§ط¶ظٹط©' });
-    
+    if (!role.length) return res.status(404).json({ error: 'غير موجود' });
+    if (role[0].is_default) return res.status(400).json({ error: 'لا يمكن حذف الرتبة الافتراضية' });
+    if (role[0].is_protected) return res.status(400).json({ error: 'هذه الرتبة محمية' });
+
+    // Check hierarchy
+    const [myRole] = await db.execute('SELECT level FROM roles WHERE name = ?', [req.user.role]);
+    if (myRole.length && role[0].level >= myRole[0].level && req.user.role !== 'owner') {
+      return res.status(403).json({ error: 'لا يمكنك حذف رتبة بنفس المستوى أو أعلى' });
+    }
+
     await db.execute('DELETE FROM role_permissions WHERE role_id = ?', [roleId]);
+    await db.execute('DELETE FROM role_page_permissions WHERE role_id = ?', [roleId]);
+    await db.execute('DELETE FROM role_element_permissions WHERE role_id = ?', [roleId]);
+    await db.execute('DELETE FROM role_punishments WHERE role_id = ?', [roleId]);
+    await db.execute('DELETE FROM role_assignments WHERE role_id = ?', [roleId]);
     await db.execute('DELETE FROM roles WHERE id = ?', [roleId]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Get role members
+router.get('/roles/:id/members', async (req, res) => {
+  try {
+    const roleId = req.params.id;
+    const [role] = await db.execute('SELECT name FROM roles WHERE id = ?', [roleId]);
+    if (!role.length) return res.json({ members: [] });
+    const [members] = await db.execute('SELECT id, username, profile_picture, discord_id, created_at FROM users WHERE role = ?', [role[0].name]);
+    res.json({ members });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Assign role to user (with hierarchy check)
+router.post('/roles/:id/assign', async (req, res) => {
+  try {
+    const roleId = req.params.id;
+    const { user_id, reason } = req.body;
+    if (!user_id) return res.status(400).json({ error: 'user_id مطلوب' });
+
+    // Check hierarchy
+    const [myRole] = await db.execute('SELECT level FROM roles WHERE name = ?', [req.user.role]);
+    const [targetRole] = await db.execute('SELECT * FROM roles WHERE id = ?', [roleId]);
+    if (!targetRole.length) return res.status(404).json({ error: 'الرتبة غير موجودة' });
+    if (myRole.length && targetRole[0].level >= myRole[0].level && req.user.role !== 'owner') {
+      return res.status(403).json({ error: 'لا يمكنك تعيين رتبة بنفس المستوى أو أعلى' });
+    }
+
+    // Check can_assign_roles
+    const [myPerms] = await db.execute('SELECT can_assign_roles, max_role_level FROM roles WHERE name = ?', [req.user.role]);
+    if (myPerms.length && !myPerms[0].can_assign_roles && req.user.role !== 'owner') {
+      return res.status(403).json({ error: 'ليس لديك صلاحية تعيين رتب' });
+    }
+
+    await db.execute('UPDATE users SET role = ? WHERE id = ?', [targetRole[0].name, user_id]);
+    await db.execute('INSERT INTO role_assignments (role_id, user_id, assigned_by, reason, assigned_at) VALUES (?, ?, ?, ?, NOW())',
+      [roleId, user_id, req.user.id, reason || '']);
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -685,7 +764,7 @@ router.delete('/roles/:id', async (req, res) => {
 router.get('/user-permissions/:userId', async (req, res) => {
   try {
     const [user] = await db.execute('SELECT role FROM users WHERE id = ?', [req.params.userId]);
-    if (!user.length) return res.status(404).json({ error: 'ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
+    if (!user.length) return res.status(404).json({ error: 'غير موجود' });
     
     const [role] = await db.execute('SELECT * FROM roles WHERE name = ?', [user[0].role]);
     if (!role.length) return res.json({ permissions: {} });
@@ -695,7 +774,31 @@ router.get('/user-permissions/:userId', async (req, res) => {
     perms.forEach(p => {
       permissions[p.page] = { can_access: p.can_access, can_edit: p.can_edit, can_delete: p.can_delete, can_manage: p.can_manage };
     });
-    res.json({ role: role[0], permissions });
+
+    // Advanced page permissions
+    let pagePerms = {};
+    try {
+      const [pp] = await db.execute('SELECT * FROM role_page_permissions WHERE role_id = ?', [role[0].id]);
+      pp.forEach(p => {
+        pagePerms[p.page] = { can_view: p.can_view, can_create: p.can_create, can_edit: p.can_edit, can_delete: p.can_delete, can_manage: p.can_manage, can_export: p.can_export, can_broadcast: p.can_broadcast };
+      });
+    } catch(e) {}
+
+    // Element permissions
+    let elemPerms = {};
+    try {
+      const [ep] = await db.execute('SELECT * FROM role_element_permissions WHERE role_id = ?', [role[0].id]);
+      ep.forEach(p => { elemPerms[p.page + ':' + p.element_id] = { can_view: p.can_view, can_use: p.can_use }; });
+    } catch(e) {}
+
+    // Punishments
+    let punish = {};
+    try {
+      const [pd] = await db.execute('SELECT * FROM role_punishments WHERE role_id = ?', [role[0].id]);
+      if (pd.length) punish = pd[0];
+    } catch(e) {}
+
+    res.json({ role: role[0], permissions, pagePerms, elemPerms, punish });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

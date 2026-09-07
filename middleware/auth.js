@@ -105,3 +105,72 @@ const isAdmin = (req, res, next) => {
 };
 
 module.exports = { isAuthenticated, isInGuild, isAdmin, REQUIRED_GUILD_ID };
+
+// Advanced permission checker
+const checkPagePermission = (page, action) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      req.session.returnTo = req.originalUrl;
+      return res.redirect('/auth/login');
+    }
+
+    // Owner/admin bypass
+    if (req.user.role === 'owner') return next();
+    if (ADMIN_ROLES.includes(req.user.role)) return next();
+
+    const db = require('../config/database');
+    db.execute('SELECT id FROM roles WHERE name = ?', [req.user.role])
+      .then(([role]) => {
+        if (!role.length) return denyAccess(res);
+        return db.execute('SELECT * FROM role_page_permissions WHERE role_id = ? AND page = ?', [role[0].id, page]);
+      })
+      .then(([perms]) => {
+        if (!perms || !perms.length) return denyAccess(res);
+        if (perms[0][action] === 1) return next();
+        return denyAccess(res);
+      })
+      .catch(() => denyAccess(res));
+  };
+};
+
+const checkElementPermission = (page, element) => {
+  return (req, res, next) => {
+    if (!req.user) return res.status(401).json({ error: 'غير مصرح' });
+    if (req.user.role === 'owner') return next();
+    if (ADMIN_ROLES.includes(req.user.role)) return next();
+
+    const db = require('../config/database');
+    db.execute('SELECT id FROM roles WHERE name = ?', [req.user.role])
+      .then(([role]) => {
+        if (!role.length) return res.status(403).json({ error: 'غير مصرح' });
+        return db.execute('SELECT * FROM role_element_permissions WHERE role_id = ? AND page = ? AND element_id = ?', [role[0].id, page, element]);
+      })
+      .then(([perms]) => {
+        if (!perms || !perms.length || !perms[0].can_use) return res.status(403).json({ error: 'ليس لديك صلاحية' });
+        return next();
+      })
+      .catch(() => res.status(403).json({ error: 'خطأ في الصلاحيات' }));
+  };
+};
+
+const checkCanBan = (req, res, next) => {
+  if (!req.user) return res.status(401).json({ error: 'غير مصرح' });
+  if (req.user.role === 'owner') return next();
+
+  const db = require('../config/database');
+  db.execute('SELECT rp.* FROM role_punishments rp JOIN roles r ON rp.role_id = r.id WHERE r.name = ?', [req.user.role])
+    .then(([p]) => {
+      if (p.length && p[0].can_ban) return next();
+      return res.status(403).json({ error: 'ليس لديك صلاحية الحظر' });
+    })
+    .catch(() => res.status(403).json({ error: 'خطأ في الصلاحيات' }));
+};
+
+function denyAccess(res) {
+  return res.status(403).render('pages/error', {
+    title: 'غير مصرح',
+    error: 'ليس لديك صلاحية للوصول لهذه الصفحة'
+  });
+}
+
+module.exports = { isAuthenticated, isInGuild, isAdmin, checkPagePermission, checkElementPermission, checkCanBan, REQUIRED_GUILD_ID };
