@@ -276,7 +276,7 @@
       <button class="admin-btn" onclick="closeModal('emojiPickerModal')"><i class="fas fa-times"></i></button>
     </div>
     <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;max-height:300px;overflow-y:auto;padding:0.5rem">
-      <% const emojis = ['🎯','👑','⚔️','🛡️','🎮','🏆','⭐','💎','🔥','💜','🎨','🎭','🦊','🐺','🦁','🐉','⚡','🌟','💫','🎪','🎭','🎯','🎲','🧩','🎰','🗿','👤','👥','💬','📝','🔑','🏠','🌍','💎','🗡️','🏹','🔮','🧿','ControlItem','👤','🏆','🎖️','🏅','☮️','☯️','💜','💙','💚','💛','🧡','❤️','🖤','🤍','💜','🏴','🚩','⚜️','🔱','🔯','暹','♒','♓','♈','♉','♊','♋','♌','♍','♎','♏','♐','♑']; %>
+      <% var emojis = ['🎯','👑','⚔️','🛡️','🎮','🏆','⭐','💎','🔥','💜','🎨','🎭','🦊','🐺','🦁','🐉','⚡','🌟','💫','🎪','🎭','🎯','🎲','🧩','🎰','🗿','👤','👥','💬','📝','🔑','🏠','🌍','💎','🗡️','🏹','🔮','🧿','ControlItem','👤','🏆','🎖️','🏅','☮️','☯️','💜','💙','💚','💛','🧡','❤️','🖤','🤍','💜','🏴','🚩','⚜️','🔱','🔯','暹','♒','♓','♈','♉','♊','♋','♌','♍','♎','♏','♐','♑']; %>
       <% emojis.forEach(function(e) { %>
         <button onclick="pickEmoji('<%= e %>')" style="font-size:1.4rem;padding:6px;background:none;border:1px solid rgba(255,255,255,0.06);border-radius:6px;cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor='var(--ac)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.06)'"><%= e %></button>
       <% }); %>
