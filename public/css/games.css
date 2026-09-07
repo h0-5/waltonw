@@ -150,3 +150,66 @@
   background: var(--bg-card); border: 1px solid var(--border-color);
   border-radius: var(--radius-md); padding: 24px; margin: 16px auto; max-width: 400px;
 }
+
+/* ==========================================
+   MOBILE RESPONSIVE (GAMES)
+   ========================================== */
+@media (max-width: 768px) {
+  .game-page { padding-top: 60px; }
+  .game-header { padding: 14px 16px; gap: 12px; flex-wrap: wrap; }
+  .game-header h1 { font-size: 18px; }
+  .game-content { padding: 16px; }
+  .back-btn { padding: 6px 12px; font-size: 13px; }
+  .lobby-card { padding: 24px 16px; }
+  .lobby-card h2 { font-size: 20px; }
+  .room-header { padding: 12px; gap: 10px; }
+  .player-card img { width: 40px; height: 40px; }
+  .players-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+
+  /* RPS */
+  .score-display { gap: 16px; margin-bottom: 24px; }
+  .score-value { font-size: 36px; }
+  .score-divider { font-size: 28px; }
+  .rps-choices { gap: 12px; margin-bottom: 24px; }
+  .rps-btn {
+    width: 86px; height: 86px; gap: 4px; border-radius: 14px; font-size: 12px;
+  }
+  .rps-btn i { font-size: 28px; }
+  .rps-result { padding: 20px 12px; }
+  .result-choices { gap: 18px; }
+  .result-choice i { font-size: 36px; }
+  .result-text { font-size: 20px; }
+
+  /* Memory */
+  .memory-stats { gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+  .memory-stats span { font-size: 12px; }
+  .memory-grid { gap: 8px; max-width: 100%; }
+  .memory-card { min-height: 0; }
+  .card-front { font-size: 18px; }
+  .card-back { font-size: 24px; }
+
+  /* Spin Wheel */
+  #wheelCanvas { width: 260px !important; height: 260px !important; }
+  .spin-result { padding: 16px; margin: 12px auto; }
+}
+
+@media (max-width: 480px) {
+  .game-content { padding: 12px; }
+  .game-header h1 { font-size: 16px; }
+  .game-info-badge { font-size: 12px; padding: 4px 10px; }
+
+  /* RPS small phones */
+  .rps-btn {
+    width: 72px; height: 72px; gap: 3px; font-size: 11px;
+  }
+  .rps-btn i { font-size: 22px; }
+  .score-display { gap: 10px; }
+  .score-value { font-size: 30px; }
+  .players-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Memory grid stays 4 cols but smaller gaps */
+  .memory-grid { gap: 6px; }
+
+  #wheelCanvas { width: 220px !important; height: 220px !important; }
+  .wheel-pointer { font-size: 24px; top: -8px; }
+}

@@ -300,6 +300,29 @@
   .admin-search-box input { min-width: 150px; }
 }
 
+@media (max-width: 480px) {
+  .admin-header {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px 14px;
+  }
+  .admin-header h1 { font-size: 18px; }
+  .admin-search-box { width: 100%; }
+  .admin-search-box input { min-width: 0; width: 100%; }
+  .stats-row { grid-template-columns: 1fr; gap: 10px; }
+  .stat-card-admin { padding: 16px; }
+  .admin-btn { padding: 8px 12px; font-size: 12px; }
+  .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .admin-table { min-width: 560px; }
+  .admin-table th, .admin-table td { padding: 8px 10px; font-size: 12px; white-space: nowrap; }
+  .admin-card { padding: 16px; }
+  .quick-actions { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .quick-action { padding: 14px 10px; font-size: 12px; }
+  .modal-actions { flex-wrap: wrap; }
+  .modal-actions .admin-btn { flex: 1; justify-content: center; }
+  .role-badge, .badge { font-size: 10px; padding: 2px 8px; }
+}
+
 /* Admin Buttons */
 .admin-btn {
   display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;

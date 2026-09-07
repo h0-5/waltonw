@@ -565,6 +565,24 @@
 }
 
 @media (max-width: 480px) {
-  .stats-grid-modern { grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
-  .btn-group { flex-direction: column; align-items: center; }
+  .hero-section-modern { min-height: 62vh; padding: 4.5rem 0.75rem 2rem; }
+  .logo-wrapper-modern { width: 88px; height: 88px; margin-bottom: 1.5rem; }
+  .hero-title-modern { font-size: clamp(1.6rem, 8vw, 2.2rem); }
+  .hero-sub-modern { font-size: 0.85rem; margin-bottom: 1.5rem; }
+  .btn-primary-modern, .btn-outline-modern { width: 100%; justify-content: center; padding: 12px 20px; font-size: 14px; }
+  .stats-grid-modern { grid-template-columns: repeat(3, 1fr); gap: 0.4rem; margin: 2rem auto; padding: 0 0.75rem; }
+  .stat-card-modern { padding: 1rem 0.5rem; border-radius: 14px; gap: 0.5rem; }
+  .stat-number-modern { font-size: 1.15rem; }
+  .stat-label-modern { font-size: 0.7rem; }
+  .stat-icon-modern { font-size: 1.4rem; }
+  .news-grid-modern { gap: 1rem; margin-top: 1.5rem; }
+  .news-card-content { padding: 1rem; }
+  .news-title-modern { font-size: 1rem; }
+  .section-title-modern { font-size: 1.2rem; }
+  .discord-section-modern { margin: 2.5rem auto; padding: 0 0.75rem; }
+  .discord-card-modern, .games-card-modern { padding: 1.75rem 1rem; }
+  .discord-icon-modern { font-size: 3rem; }
+  .games-icons-row { gap: 0.75rem; }
+  .games-float-icon { font-size: 1.6rem; }
+  .custom-container { padding: 0 0.75rem; }
 }

@@ -241,3 +241,36 @@
         padding: 0 0.6rem;
     }
 }
+
+@media (max-width: 480px) {
+    .cy-page-hero {
+        padding: 2.2rem 0.75rem 1.25rem;
+    }
+    .cy-page-hero-logo {
+        width: 44px;
+        height: 44px;
+    }
+    .cy-logo-core {
+        width: 32px;
+        height: 32px;
+    }
+    .cy-logo-core img {
+        width: 18px;
+        height: 18px;
+    }
+    .cy-page-hero h1 {
+        font-size: 1.25rem;
+    }
+    .cy-page-hero-subtitle {
+        font-size: 0.8rem;
+    }
+    .cy-page-hero-stats {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.25rem;
+    }
+    .cy-page-hero-stat {
+        padding: 0 0.5rem;
+        font-size: 0.75rem;
+    }
+}

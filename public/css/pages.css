@@ -613,3 +613,148 @@
 }
 .feature-box h3 { font-size: 16px; margin-bottom: 8px; }
 .feature-box p { color: var(--text-secondary); font-size: 14px; }
+
+/* ==========================================
+   MOBILE RESPONSIVE (PAGES)
+   ========================================== */
+@media (max-width: 768px) {
+  /* Common heroes */
+  .store-hero, .games-hero, .app-hero, .support-hero, .rules-hero,
+  .about-hero, .contact-hero, .cart-hero {
+    padding: 80px 0 30px;
+  }
+  .store-hero h1, .games-hero h1, .app-hero h1, .support-hero h1,
+  .rules-hero h1, .about-hero h1, .contact-hero h1 {
+    font-size: 26px;
+  }
+  .store-hero p, .games-hero p, .app-hero p, .support-hero p,
+  .rules-hero p, .about-hero p, .contact-hero p {
+    font-size: 15px;
+  }
+  .store-hero-icon, .games-hero-icon, .app-hero-icon,
+  .support-hero-icon, .about-hero-icon, .contact-hero-icon {
+    font-size: 36px;
+  }
+
+  /* Store */
+  .store-controls { padding: 16px 0; }
+  .controls-wrapper { flex-direction: column; align-items: stretch; }
+  .search-box { min-width: 0; }
+  .filter-tabs { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+  .filter-tab { white-space: nowrap; }
+  .products-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .product-image { height: 140px; }
+  .product-info { padding: 12px; }
+  .product-name { font-size: 14px; }
+  .product-desc { font-size: 12px; line-height: 1.5; }
+
+  /* Games grid */
+  .games-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+  .game-card { flex-direction: column; text-align: center; gap: 10px; padding: 16px; }
+  .game-icon { width: 50px; height: 50px; min-width: 50px; font-size: 20px; }
+
+  /* Community */
+  .community-page { height: auto; }
+  .community-layout { flex-direction: column; height: auto; }
+  .community-sidebar {
+    width: 100%; border-left: none; border-bottom: 1px solid var(--border-color);
+    max-height: 30vh;
+  }
+  .chat-main { height: 70vh; }
+  .chat-messages { padding: 12px; }
+
+  /* Applications */
+  .application-card { padding: 18px; }
+  .applications-grid { grid-template-columns: 1fr; }
+  .app-metrics { gap: 12px; flex-wrap: wrap; }
+
+  /* Support form */
+  .form-row { grid-template-columns: 1fr; gap: 0; }
+  .support-form { padding: 20px; }
+  .support-form-wrapper { padding: 0 12px; }
+  .faq-grid { grid-template-columns: 1fr; }
+
+  /* Profile */
+  .profile-cover { height: 180px; }
+  .profile-header {
+    flex-direction: column; align-items: center; text-align: center;
+    margin-top: -60px; padding: 0 12px; gap: 12px;
+  }
+  .profile-avatar { width: 110px; height: 110px; }
+  .profile-name { font-size: 22px; justify-content: center; flex-wrap: wrap; }
+  .profile-info { padding-bottom: 8px; }
+  .profile-content { padding: 24px 0; }
+  .profile-grid { grid-template-columns: 1fr; gap: 16px; }
+  .profile-card { padding: 18px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* Cart */
+  .cart-layout { grid-template-columns: 1fr; gap: 16px; }
+  .cart-item { flex-wrap: wrap; gap: 10px; padding: 12px; }
+  .item-image { width: 60px; height: 60px; min-width: 60px; }
+  .item-details { flex: 1 1 120px; }
+  .order-summary { position: static; padding: 18px; }
+
+  /* About */
+  .story-content { grid-template-columns: 1fr; gap: 24px; }
+  .team-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .values-grid { grid-template-columns: 1fr; }
+  .about-story, .team-section, .values-section { padding: 32px 0; }
+
+  /* Rules */
+  .category-header { gap: 10px; margin-bottom: 16px; }
+  .category-header h2 { font-size: 18px; }
+  .category-icon { width: 40px; height: 40px; font-size: 18px; }
+  .rules-grid { grid-template-columns: 1fr; }
+  .rule-card { padding: 16px; gap: 12px; }
+
+  /* Contact */
+  .contact-card { padding: 28px 16px; margin: 0 12px 32px; }
+  .invite-link-box { flex-direction: column; }
+  .copy-btn { width: 100%; }
+  .features-row { grid-template-columns: 1fr; gap: 12px; }
+
+  /* Profile quick links */
+  .quick-link { padding: 10px; font-size: 13px; }
+}
+
+@media (max-width: 480px) {
+  .store-hero h1, .games-hero h1, .app-hero h1, .support-hero h1,
+  .rules-hero h1, .about-hero h1, .contact-hero h1, .cart-hero h1 {
+    font-size: 22px;
+  }
+  .products-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .games-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .app-metrics { gap: 18px; }
+  .metric-value { font-size: 24px; }
+
+  .rule-number { width: 30px; height: 30px; min-width: 30px; font-size: 13px; }
+  .rules-count { font-size: 11px; }
+
+  .faq-grid { grid-template-columns: 1fr; }
+
+  .empty-state { padding: 40px 16px; }
+  .empty-cart { padding: 40px 16px; }
+  .empty-icon { font-size: 60px; }
+
+  .game-card { padding: 12px; }
+  .game-icon { width: 44px; height: 44px; min-width: 44px; font-size: 18px; }
+  .game-info h3 { font-size: 14px; }
+
+  .chat-input-area { padding: 10px 12px; }
+  .chat-input-wrapper input { padding: 10px 12px; font-size: 13px; }
+  .send-btn { padding: 10px 14px; }
+  .chat-header { padding: 12px; }
+  .chat-title h2 { font-size: 15px; }
+
+  .order-summary { padding: 16px; }
+  .summary-row { font-size: 13px; }
+  .summary-row.total { font-size: 16px; }
+
+  .contact-card h2 { font-size: 20px; }
+  .discord-icon-large { font-size: 48px; }
+  .join-discord-btn { padding: 12px 20px; font-size: 14px; }
+
+  .feature-box { padding: 24px 16px; }
+}

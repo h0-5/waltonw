@@ -1413,6 +1413,62 @@ button { cursor: pointer; font-family: inherit; }
   .games-page-grid { grid-template-columns: 1fr; }
   .page-hero-icon { width: 64px; height: 64px; }
   .page-hero-icon i { font-size: 28px; }
+  .hero-buttons .btn-primary, .hero-buttons .btn-outline { width: 100%; justify-content: center; }
+  .section-title { font-size: 22px; }
+  .stat-card { min-width: 0; padding: 20px 16px; }
+  .news-grid { gap: 16px; }
+  .games-grid { gap: 10px; }
+  .game-card { padding: 14px 10px; }
+  .game-card i { font-size: 24px; }
+  .container { padding: 0 1rem; }
+  .discord-card-modern, .discord-section { padding: 2rem 1.25rem; }
+  .footer-grid { gap: 24px; }
+  .site-footer { padding: 40px 16px 24px; }
+  .cart-item { align-items: flex-start; }
+  .payment-methods { grid-template-columns: 1fr; }
+  .profile-cover { height: 200px; }
+  .profile-header { margin-top: -52px; }
+  .profile-avatar { width: 100px; height: 100px; }
+  .page-hero { padding: 90px 0 36px; }
+}
+@media (max-width: 480px) {
+  .hero-section { min-height: 72vh; }
+  .hero-content { padding: 24px 16px; }
+  .hero-subtitle { font-size: 15px; }
+  .section-title { font-size: 19px; margin-bottom: 22px; gap: 8px; }
+  .stats-section, .news-section, .giveaway-section, .features-section,
+  .games-preview-section, .about-story, .team-section, .values-section {
+    padding: 36px 0;
+  }
+  .games-grid { grid-template-columns: repeat(2, 1fr); }
+  .news-image { height: 150px; }
+  .news-content { padding: 14px; }
+  .error-code { font-size: 84px; }
+  .error-page h1, .maintenance-page h1 { font-size: 24px; }
+  .empty-state { padding: 48px 16px; }
+  .empty-state i { font-size: 44px; }
+  .game-icon { width: 48px; height: 48px; min-width: 48px; font-size: 20px; }
+  .game-list-card { padding: 14px; gap: 10px; }
+  .status-bar { padding: 5px 12px; gap: 6px; font-size: 10px; }
+  .site-footer { margin-top: 40px; }
+  .footer-links a { font-size: 13px; }
+  .footer-contact p { font-size: 13px; }
+  .feature-icon { width: 52px; height: 52px; font-size: 22px; }
+  .feature-card { padding: 26px 16px; }
+  .search-box { min-width: 0; }
+  .discord-text h2 { font-size: 26px; }
+  .discord-text p { font-size: 14px; }
+  .giveaway-card { padding: 18px; }
+  .stat-value { font-size: 26px; }
+  .stat-icon { width: 44px; height: 44px; font-size: 18px; }
+  .cart-item { flex-direction: column; }
+  .item-details { flex: 1 1 auto; width: 100%; }
+  .quantity-form { margin-top: 4px; }
+  .item-total { margin-inline-start: auto; }
+  .order-header, .order-body, .order-footer { padding: 12px; }
+  .summary-row { font-size: 13px; }
+  .checkout-card, .summary-card, .order-summary { padding: 16px; }
+  .modal-content, .admin-modal .modal-content { padding: 18px; width: 95%; }
 }
 @media (hover: none) and (pointer: coarse) {
   .glass-card:hover, .product-card:hover, .game-card:hover, .game-list-card:hover { transform: none; }
