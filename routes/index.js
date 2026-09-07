@@ -271,4 +271,9 @@ router.get('/company', isAuthenticated, isInGuild, async (req, res) => {
   res.render('pages/company', { title: 'الشركة', infoItems, activityItems, servicesQuestions, servicesPackages });
 });
 
+// Test page - no auth required
+router.get('/test', (req, res) => {
+  res.render('pages/test', { title: 'اختبار التحديث' });
+});
+
 module.exports = router;

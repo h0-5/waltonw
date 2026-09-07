@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تحديث ناجح | Walton Family</title>
+  <style>
+    body {
+      font-family: 'Cairo', sans-serif;
+      background: #06040a;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .test-card {
+      background: rgba(12, 8, 22, 0.85);
+      border: 1px solid rgba(120, 14, 207, 0.3);
+      border-radius: 24px;
+      padding: 3rem;
+      text-align: center;
+      max-width: 400px;
+    }
+    .check { font-size: 4rem; margin-bottom: 1rem; }
+    h1 { color: #22c55e; margin-bottom: 0.5rem; }
+    p { color: rgba(255,255,255,0.5); }
+    .time { color: rgba(255,255,255,0.3); font-size: 0.8rem; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <div class="test-card">
+    <div class="check">✅</div>
+    <h1>التحديث ناجح!</h1>
+    <p>تم تحديث الموقع من GitHub بنجاح</p>
+    <p class="time">آخر تحديث: <%= new Date().toLocaleString('ar-EG') %></p>
+  </div>
+</body>
+</html>
