@@ -18,23 +18,44 @@ router.get('/debug', isAuthenticated, async (req, res) => {
       const [myRole] = await db.execute('SELECT id, is_admin_role FROM roles WHERE name = ?', [req.user.role]);
       debug.myRoleFromDB = myRole.length ? myRole[0] : null;
     } catch(e) { debug.myRoleError = e.message; }
-
-    try {
-      const [myPerms] = await db.execute(
-        'SELECT permission_key, enabled FROM role_role_permissions WHERE role_id = (SELECT id FROM roles WHERE name = ? LIMIT 1)',
-        [req.user.role]
-      );
-      debug.myPermissions = myPerms;
-    } catch(e) { debug.myPermsError = e.message; }
-
-    const ADMIN_ROLES = ['owner', 'admin', 'moderator', 'support'];
-    debug.isInHardcodedList = ADMIN_ROLES.includes(req.user.role);
-    debug.isOwner = req.user.role === 'owner';
-    debug.isInGuild = req.user.in_guild;
   }
 
-  debug.isAdminMiddlewareWants = 'isAdmin checks: 1) ADMIN_ROLES list, 2) roles.is_admin_role in DB';
-  debug.checkPermissionWants = 'checkPermission checks: 1) owner, 2) roles.is_admin_role, 3) role_role_permissions';
+  // Try rendering the roles page and capture errors
+  try {
+    const [roles] = await db.execute('SELECT * FROM roles ORDER BY is_admin_role DESC, sort_order ASC, id ASC');
+    const [perms] = await db.execute('SELECT * FROM role_permissions');
+    const permissions = {};
+    perms.forEach(p => {
+      if (!permissions[p.role_id]) permissions[p.role_id] = {};
+      permissions[p.role_id][p.page] = { can_access: p.can_access, can_edit: p.can_edit, can_delete: p.can_delete, can_manage: p.can_manage };
+    });
+
+    let pagePerms = {};
+    try { const [pp] = await db.execute('SELECT * FROM role_page_permissions'); pp.forEach(p => { if (!pagePerms[p.role_id]) pagePerms[p.role_id] = {}; pagePerms[p.role_id][p.page] = {}; }); } catch(e) { debug.pagePermsError = e.message; }
+
+    let elemPerms = {};
+    try { const [ep] = await db.execute('SELECT * FROM role_element_permissions'); ep.forEach(p => { if (!elemPerms[p.role_id]) elemPerms[p.role_id] = {}; }); } catch(e) { debug.elemPermsError = e.message; }
+
+    let punishData = {};
+    try { const [pd] = await db.execute('SELECT * FROM role_punishments'); pd.forEach(p => { punishData[p.role_id] = {}; }); } catch(e) { debug.punishError = e.message; }
+
+    let unifiedPerms = {};
+    try { const [up] = await db.execute('SELECT role_id, permission_key, enabled FROM role_role_permissions'); up.forEach(p => { if (!unifiedPerms[p.role_id]) unifiedPerms[p.role_id] = {}; unifiedPerms[p.role_id][p.permission_key] = p.enabled; }); } catch(e) { debug.unifiedError = e.message; }
+
+    let sideRoles = [];
+    try { const [sr] = await db.execute('SELECT * FROM side_roles ORDER BY sort_order ASC'); sideRoles = sr; } catch(e) { debug.sideRolesError = e.message; }
+
+    let userSideRoles = {};
+    try { const [usr] = await db.execute('SELECT user_id, side_role_id FROM user_side_roles'); usr.forEach(r => { if (!userSideRoles[r.user_id]) userSideRoles[r.user_id] = []; userSideRoles[r.user_id].push(r.side_role_id); }); } catch(e) { debug.userSideRolesError = e.message; }
+
+    const { PERMISSION_GROUPS } = require('../config/permissions');
+
+    let pageAccess = {};
+    try { const [pa] = await db.execute('SELECT role_id, page_path, can_access FROM role_page_access'); pa.forEach(r => { if (!pageAccess[r.role_id]) pageAccess[r.role_id] = {}; pageAccess[r.role_id][r.page_path] = r.can_access; }); } catch(e) { debug.pageAccessError = e.message; }
+
+    debug.renderData = { rolesCount: roles.length, rolesNames: roles.map(r => r.name), permsCount: Object.keys(permissions).length, pagePermsCount: Object.keys(pagePerms).length, unifiedPermsCount: Object.keys(unifiedPerms).length };
+    debug.renderErrors = debug.pagePermsError || debug.elemPermsError || debug.punishError || debug.unifiedError || debug.sideRolesError || debug.pageAccessError ? debug : 'none';
+  } catch(e) { debug.renderFatalError = e.message; }
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.send(`<pre style="background:#111;color:#0f0;padding:2rem;font-size:14px;white-space:pre-wrap;direction:ltr">${JSON.stringify(debug, null, 2)}</pre>`);
