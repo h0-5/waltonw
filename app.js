@@ -114,6 +114,32 @@ app.use((req, res, next) => {
   next();
 });
 
+// TEMPORARY: SQL Import endpoint
+app.get('/import-sql', (req, res) => {
+  res.send(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>SQL Import</title><style>body{font-family:Arial;background:#111;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}form{background:#222;padding:40px;border-radius:16px;text-align:center}input[type=file]{margin:20px 0}button{background:#780ecf;color:#fff;border:none;padding:12px 30px;border-radius:8px;font-size:16px;cursor:pointer}pre{margin-top:20px;text-align:left;max-height:400px;overflow:auto;background:#000;padding:10px;border-radius:8px;font-size:12px}</style></head><body><form method="POST" action="/import-sql" enctype="multipart/form-data"><h2>SQL Import</h2><input type="file" name="sqlfile" accept=".sql"><br><button type="submit">Import</button></form></body></html>`);
+});
+
+app.post('/import-sql', async (req, res) => {
+  try {
+    if (!req.files || !req.files.sqlfile) return res.status(400).send('No file');
+    const sqlContent = req.files.sqlfile.data.toString('utf8');
+    const statements = sqlContent.split(';').filter(s => s.trim().length > 10);
+    const results = [];
+    for (const stmt of statements) {
+      try {
+        await db.query(stmt);
+        const match = stmt.match(/INSERT INTO `?(\w+)`?/i) || stmt.match(/CREATE TABLE.*`?(\w+)`?/i);
+        results.push('✅ ' + (match ? match[1] : 'ok'));
+      } catch (e) {
+        results.push('❌ ' + e.message.substring(0, 80));
+      }
+    }
+    res.send('<html><body style="font-family:monospace;background:#111;color:#fff;padding:20px"><pre>' + results.join('\n') + '</pre></body></html>');
+  } catch (e) {
+    res.status(500).send('Error: ' + e.message);
+  }
+});
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).render('pages/404', { title: '404 - الصفحة غير موجودة' });
