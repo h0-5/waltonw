@@ -114,6 +114,20 @@ app.use((req, res, next) => {
   next();
 });
 
+// TEMPORARY: Debug - show user info
+app.get('/debug-me', async (req, res) => {
+  try {
+    const sessionUser = req.user ? { id: req.user.id, username: req.user.username, role: req.user.role, discord_id: req.user.discord_id } : null;
+    let dbUser = null;
+    if (req.user && req.user.id) {
+      const [rows] = await db.query('SELECT id, username, role, discord_id FROM users WHERE id = ?', [req.user.id]);
+      dbUser = rows[0] || null;
+    }
+    const [adminRoles] = await db.query('SELECT name, is_admin_role FROM roles');
+    res.json({ sessionUser, dbUser, adminRoles, cookies: !!req.cookies });
+  } catch(e) { res.json({ error: e.message }); }
+});
+
 // TEMPORARY: Make first user admin
 app.get('/make-admin', async (req, res) => {
   try {
