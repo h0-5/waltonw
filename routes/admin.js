@@ -8,9 +8,9 @@ router.get('/', isAdmin, async (req, res) => {
   try {
     const stats = {};
     try { const [r] = await db.execute('SELECT COUNT(*) as c FROM users'); stats.users = r[0].c; } catch(e) {}
-    try { const [r] = await db.execute('SELECT COUNT(*) as c FROM fs_products'); stats.products = r[0].c; } catch(e) {}
+    try { const [r] = await db.execute('SELECT COUNT(*) as c FROM products'); stats.products = r[0].c; } catch(e) {}
     try { const [r] = await db.execute('SELECT COUNT(*) as c FROM orders'); stats.orders = r[0].c; } catch(e) {}
-    try { const [r] = await db.execute("SELECT COUNT(*) as c FROM support_tickets WHERE status='open'"); stats.openTickets = r[0].c; } catch(e) {}
+    try { const [r] = await db.execute("SELECT COUNT(*) as c FROM tickets WHERE status='open'"); stats.openTickets = r[0].c; } catch(e) {}
     try { const [r] = await db.execute("SELECT COUNT(*) as c FROM users WHERE last_login > DATE_SUB(NOW(), INTERVAL 24 HOUR)"); stats.activeToday = r[0].c; } catch(e) {}
     try { const [r] = await db.execute("SELECT COUNT(*) as c FROM orders WHERE created_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)"); stats.newOrders = r[0].c; } catch(e) {}
 
