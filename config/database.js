@@ -55,4 +55,6 @@ pool.getConnection()
     console.error('❌ Database connection failed:', err.message);
   });
 
+pool.dbConfig = dbConfig;
+
 module.exports = pool;
