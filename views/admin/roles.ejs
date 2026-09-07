@@ -70,11 +70,7 @@
 
           <!-- Tab: Role Settings -->
           <div class="tab-content active" id="tab-roles">
-            <% if (r.name === 'owner') { %>
-            <div id="ownerInfoBox" style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:12px;padding:1.5rem;margin-bottom:1.2rem">
-            <% } else { %>
-            <div id="ownerInfoBox" style="display:none;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:12px;padding:1.5rem;margin-bottom:1.2rem">
-            <% } %>
+            <div id="ownerInfoBox" style="display:<%= r.name === 'owner' ? 'block' : 'none' %>;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:12px;padding:1.5rem;margin-bottom:1.2rem">
               <div style="display:flex;align-items:center;gap:10px;margin-bottom:0.75rem">
                 <i class="fas fa-crown" style="color:#f59e0b;font-size:1.2rem"></i>
                 <h3 style="color:#f59e0b;margin:0">رتبة المالك</h3>
@@ -83,7 +79,6 @@
                 هذه الرتبة <strong>محمية بالكامل</strong> ولا يمكن تعديلها. المالك يملك <strong>كل الصلاحيات</strong> تلقائياً ولا يحتاج لأي إعداد.
               </p>
             </div>
-            <% } %>
 
             <div class="settings-section">
               <h3><i class="fas fa-info-circle"></i> معلومات الرتبة</h3>
