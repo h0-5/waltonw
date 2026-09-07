@@ -535,3 +535,13 @@ body{background:#0a0000;padding-top:70px}
 @media(max-width:480px){
   .nav-logo-text,.nav-logo-sub{display:none}
 }
+/* ── Mobile only: center family logo in navbar (desktop untouched) ── */
+@media (max-width: 768px) {
+  .nav-logo-group { flex: 1; }
+  .nav-logo {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  #mobileMenuBtn { position: relative; z-index: 2; }
+}
