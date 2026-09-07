@@ -5,19 +5,8 @@
 document.getElementById('sidebarToggle').addEventListener('click', function() {
   document.getElementById('adminSidebar').classList.toggle('collapsed');
 });
-var mobBtn = document.getElementById('mobileSidebarBtn');
-if (mobBtn) {
-  mobBtn.addEventListener('click', function() {
-    document.getElementById('adminSidebar').classList.toggle('show');
-  });
-  document.querySelectorAll('.sidebar-nav .nav-item').forEach(function(item) {
-    item.addEventListener('click', function() {
-      if (window.innerWidth <= 768) {
-        document.getElementById('adminSidebar').classList.remove('show');
-      }
-    });
-  });
-}
+
+/* Wrap any bare admin table in a scroll container */
 document.querySelectorAll('.admin-table').forEach(function(t) {
   if (!t.closest('.table-container') && !t.closest('.admin-table-wrapper') && !t.closest('.tbl-wrap')) {
     var w = document.createElement('div');
@@ -26,6 +15,74 @@ document.querySelectorAll('.admin-table').forEach(function(t) {
     w.appendChild(t);
   }
 });
+
+/* ── V5: table → card helper ──
+   Injects each <th> text into its column cells as data-label
+   (used by the CSS card layout on phones) and wraps the cell
+   content into a single .wf-tdv value area. */
+(function() {
+  function cardify(t) {
+    if (t.getAttribute('data-wfcard')) return;
+    t.setAttribute('data-wfcard', '1');
+    var heads = [];
+    t.querySelectorAll('thead th').forEach(function(th) { heads.push(th.textContent.trim()); });
+    if (!heads.length) return;
+    t.querySelectorAll('tbody tr').forEach(function(tr) {
+      if (tr.classList.contains('empty-row') || tr.querySelector('.empty-row')) {
+        tr.classList.add('wf-empty-card');
+        var er = tr.querySelector('.empty-row');
+        if (er) er.setAttribute('data-label', '');
+        return;
+      }
+      var cells = tr.querySelectorAll('td');
+      cells.forEach(function(td, i) {
+        if (!td.getAttribute('data-label') && heads[i]) td.setAttribute('data-label', heads[i]);
+        if (!td.querySelector(':scope > .wf-tdv')) {
+          var wrap = document.createElement('span');
+          wrap.className = 'wf-tdv';
+          while (td.firstChild) wrap.appendChild(td.firstChild);
+          td.appendChild(wrap);
+        }
+      });
+    });
+  }
+  function cardifyAll() { document.querySelectorAll('.admin-table').forEach(cardify); }
+  cardifyAll();
+  window.wfCardify = cardify; // for pages that render tables dynamically
+})();
+
+/* ── V5: mobile sidebar with dim overlay + scroll lock ── */
+(function() {
+  var sidebar = document.getElementById('adminSidebar');
+  var mobBtn = document.getElementById('mobileSidebarBtn');
+  if (!sidebar || !mobBtn) return;
+  var overlay = document.createElement('div');
+  overlay.className = 'sidebar-overlay';
+  document.body.appendChild(overlay);
+  function openSidebar() {
+    sidebar.classList.add('show');
+    overlay.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeSidebar() {
+    sidebar.classList.remove('show');
+    overlay.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+  mobBtn.addEventListener('click', function() {
+    if (sidebar.classList.contains('show')) closeSidebar(); else openSidebar();
+  });
+  overlay.addEventListener('click', closeSidebar);
+  document.querySelectorAll('.sidebar-nav .nav-item').forEach(function(item) {
+    item.addEventListener('click', function() {
+      if (window.innerWidth <= 768) closeSidebar();
+    });
+  });
+  window.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeSidebar(); });
+  window.addEventListener('resize', function() {
+    if (window.innerWidth > 768) closeSidebar();
+  });
+})();
 </script>
 <style>
 /* Last-in-cascade admin mobile overrides (wins over per-page inline <style>) */

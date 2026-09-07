@@ -695,3 +695,116 @@
 @media (max-width: 920px) and (orientation: landscape) {
   .admin-content { padding: 16px 20px; }
 }
+
+/* ==========================================
+   V5 MOBILE MASTER LAYER
+   1) Every admin table becomes tidy cards on phones
+   2) Sidebar gets a dim overlay + scroll lock
+   3) Touch comfort: 16px inputs, wrap-safe cells
+   Desktop (>=769px) completely untouched.
+   ========================================== */
+
+/* Overlay element (injected by admin_footer.js) */
+.sidebar-overlay {
+  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px); z-index: 99;
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+.sidebar-overlay.show { opacity: 1; visibility: visible; }
+@media (min-width: 769px) { .sidebar-overlay { display: none; } }
+
+@media (max-width: 768px) {
+  /* Strip scroll-container chrome — cards carry the look now */
+  .table-container, .admin-table-wrapper, .tbl-wrap {
+    border: none; border-radius: 0; overflow: visible;
+    background: transparent; padding: 0;
+  }
+
+  /* ── Table → cards ── */
+  .admin-table thead { display: none; }
+  .admin-table { min-width: 0 !important; background: transparent; border: none; }
+  .admin-table tbody { display: flex; flex-direction: column; gap: 12px; }
+  .admin-table tr {
+    display: block; width: 100%; margin: 0;
+    background: linear-gradient(145deg, rgba(20, 15, 34, 0.72), rgba(14, 11, 26, 0.82));
+    border: 1px solid rgba(var(--ac-rgb), 0.16);
+    border-radius: 16px; padding: 6px 14px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  }
+  .admin-table tr:hover { transform: none; }
+  .admin-table tr.wf-empty-card {
+    padding: 0; background: transparent; border-style: dashed;
+    border-color: rgba(var(--ac-rgb), 0.22); box-shadow: none;
+  }
+  .admin-table td {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    width: auto !important; max-width: 100%;
+    padding: 10px 0; border-bottom: 1px dashed rgba(255, 255, 255, 0.07);
+    white-space: normal !important; text-align: right;
+    font-size: 13px; min-height: 42px;
+    overflow-wrap: anywhere; word-break: break-word;
+  }
+  .admin-table td:last-child { border-bottom: none; padding-bottom: 12px; }
+  .admin-table td:first-child { padding-top: 12px; }
+  /* Column label (injected as data-label from <th>) */
+  .admin-table td::before {
+    content: attr(data-label);
+    flex-shrink: 0; max-width: 42%;
+    color: var(--text-dim); font-size: 11px; font-weight: 700;
+    letter-spacing: 0.2px; text-align: right;
+  }
+  .admin-table td[data-label=""]::before,
+  .admin-table td.empty-row::before { display: none; }
+  .admin-table td.empty-row {
+    display: block; text-align: center; padding: 26px 0 !important;
+    border-bottom: none; min-height: 0;
+  }
+  /* Wrapped value area (built by admin_footer.js) */
+  .admin-table td .wf-tdv {
+    flex: 1 1 auto; min-width: 0; margin-inline-start: auto;
+    text-align: left; overflow-wrap: anywhere;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .admin-table td .wf-tdv > div { max-width: 100%; }
+  .admin-table td img { max-width: 44px; height: auto; }
+  .admin-table td[style*="width"] { width: auto !important; }
+  /* Action buttons stay grouped & tappable */
+  .admin-table td .action-btns, .admin-table td .actions-cell,
+  .admin-table td .inline-actions { justify-content: flex-start; }
+  .action-btn { width: 34px; height: 34px; font-size: 13px; }
+
+  /* ── Generic comfort ── */
+  .admin-content { overflow-x: hidden; padding: 14px; }
+  .content-header { margin-bottom: 16px; }
+  .content-header h2 { font-size: 17px; }
+  .admin-content input[type="text"],
+  .admin-content input[type="email"],
+  .admin-content input[type="number"],
+  .admin-content input[type="password"],
+  .admin-content input[type="date"],
+  .admin-content input[type="search"],
+  .admin-content input[type="url"],
+  .admin-content select,
+  .admin-content textarea,
+  .admin-modal input, .admin-modal select, .admin-modal textarea {
+    font-size: 16px; /* prevents iOS auto-zoom */
+  }
+  .admin-modal-content, .admin-modal .modal-content, .modal .modal-content {
+    max-height: 88vh;
+  }
+
+  /* Roles page: 8-col permission grid too cramped on phones */
+  .admin-content [style*="repeat(8,1fr)"],
+  .admin-content [style*="repeat(8, 1fr)"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .role-tabs { gap: 0.4rem; }
+}
+
+@media (max-width: 380px) {
+  .admin-table td { font-size: 12px; gap: 8px; }
+  .admin-table td::before { font-size: 10px; max-width: 40%; }
+  .admin-table tr { border-radius: 14px; padding: 4px 11px; }
+  .admin-content { padding: 11px; }
+}
