@@ -148,6 +148,11 @@
       </a>
       <% } %>
       <% if (_canAccess('logs_view')) { %>
+      <a href="/admin/security" class="nav-item<%= _admPath === '/admin/security' ? ' active' : '' %>">
+        <i class="fas fa-shield-halved"></i><span>مركز الحماية</span>
+      </a>
+      <% } %>
+      <% if (_canAccess('logs_view')) { %>
       <a href="/admin/logs" class="nav-item<%= _admPath === '/admin/logs' ? ' active' : '' %>">
         <i class="fas fa-scroll"></i><span>السجلات</span>
       </a>

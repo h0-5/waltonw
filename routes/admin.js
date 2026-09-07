@@ -140,6 +140,7 @@ router.get('/', checkPermission('users_view'), async (req, res) => {
         );
         visits.topPages = tp.map(r => ({ path: r.path, views: Number(r.v) || 0 }));
       } catch(e) {}
+      try { const [b] = await db.execute('SELECT SUM(views) AS v FROM bot_visits WHERE visit_date = CURDATE()'); visits.botToday = Number(b[0].v) || 0; } catch(e) {}
     } catch(e) {}
 
     // Recent activity
@@ -158,8 +159,49 @@ router.get('/', checkPermission('users_view'), async (req, res) => {
 
     res.render('admin/dashboard', { title: 'لوحة التحكم', stats, visits, recentActivity, recentUsers, currentPath: req.path });
   } catch(err) {
-    res.render('admin/dashboard', { title: 'لوحة التحكم', stats: {}, visits: { today: 0, yesterday: 0, week: 0, total: 0, uniqueToday: 0, daily: [], topPages: [] }, recentActivity: [], recentUsers: [], currentPath: req.path });
+    res.render('admin/dashboard', { title: 'لوحة التحكم', stats: {}, visits: { today: 0, yesterday: 0, week: 0, total: 0, uniqueToday: 0, botToday: 0, daily: [], topPages: [] }, recentActivity: [], recentUsers: [], currentPath: req.path });
   }
+});
+
+// ═══ Security / Protection Center ═══
+const guardModule = require('../middleware/guard');
+
+router.get('/security', checkPermission('logs_view'), async (req, res) => {
+  const sec = { blockedNow: 0, blockedToday: 0, botVisitsToday: 0, blockedList: [], topBots: [], botMode: (process.env.GUARD_BOT_MODE || 'log') };
+  try {
+    await guardModule.ensureTables();
+    try { const [r] = await db.execute("SELECT COUNT(*) c FROM blocked_ips WHERE expires_at IS NULL OR expires_at > NOW()"); sec.blockedNow = r[0].c; } catch(e) {}
+    try { const [r] = await db.execute("SELECT COUNT(*) c FROM blocked_ips WHERE blocked_at >= CURDATE()"); sec.blockedToday = r[0].c; } catch(e) {}
+    try { const [r] = await db.execute("SELECT SUM(views) v FROM bot_visits WHERE visit_date = CURDATE()"); sec.botVisitsToday = Number(r[0].v) || 0; } catch(e) {}
+    try {
+      const [r] = await db.execute("SELECT ip, reason, user_agent, blocked_at, expires_at FROM blocked_ips WHERE expires_at IS NULL OR expires_at > NOW() ORDER BY blocked_at DESC LIMIT 100");
+      sec.blockedList = r;
+    } catch(e) {}
+  } catch(e) {}
+  sec.topBots = Array.from(guardModule.botUAStats.entries()).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  res.render('admin/security', { title: 'مركز الحماية', sec, currentPath: req.path });
+});
+
+router.post('/security/block', checkPermission('logs_view'), async (req, res) => {
+  try {
+    const ip = String(req.body.ip || '').trim().slice(0, 60);
+    const reason = String(req.body.reason || 'manual').trim().slice(0, 180);
+    if (ip) await guardModule.blockIp(ip, 'manual: ' + reason, '', null);
+  } catch(e) {}
+  res.redirect('/admin/security');
+});
+
+router.post('/security/unblock', checkPermission('logs_view'), async (req, res) => {
+  try {
+    const ip = String(req.body.ip || '').trim();
+    if (ip) await guardModule.unblockIp(ip);
+  } catch(e) {}
+  res.redirect('/admin/security');
+});
+
+router.post('/security/clear-expired', checkPermission('logs_view'), async (req, res) => {
+  try { await db.execute('DELETE FROM blocked_ips WHERE expires_at IS NOT NULL AND expires_at <= NOW()'); } catch(e) {}
+  res.redirect('/admin/security');
 });
 
 // Users Management

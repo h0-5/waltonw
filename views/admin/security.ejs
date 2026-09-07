@@ -1,0 +1,131 @@
+<%- include('layout') %>
+
+<div class="admin-content">
+  <!-- Status cards -->
+  <div class="stats-row" style="margin-bottom:20px">
+    <div class="stat-card">
+      <div class="stat-icon tickets"><i class="fas fa-ban"></i></div>
+      <div class="stat-info">
+        <h3><%= sec.blockedNow %></h3>
+        <p>IP محظور الآن</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon orders"><i class="fas fa-shield-halved"></i></div>
+      <div class="stat-info">
+        <h3><%= sec.blockedToday %></h3>
+        <p>حظر اليوم (هجمات/فيضان)</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon products"><i class="fas fa-robot"></i></div>
+      <div class="stat-info">
+        <h3><%= sec.botVisitsToday %></h3>
+        <p>زيارات بوتات اليوم</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon users"><i class="fas fa-toggle-on"></i></div>
+      <div class="stat-info">
+        <h3 style="font-size:16px"><%= sec.botMode === 'block' ? 'حظر البوتات' : 'مراقبة البوتات' %></h3>
+        <p>الوضع: <%= sec.botMode === 'block' ? 'GUARD_BOT_MODE=block' : 'GUARD_BOT_MODE=log' %></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="admin-grid" style="margin-bottom:20px">
+    <!-- Manual block -->
+    <div class="admin-card">
+      <h3><i class="fas fa-user-lock"></i> حظر IP يدوياً</h3>
+      <form method="POST" action="/admin/security/block" style="display:flex;gap:10px;flex-wrap:wrap">
+        <input type="text" name="ip" placeholder="مثال: 192.168.1.50" required
+               style="flex:1;min-width:160px;padding:10px 12px;background:rgba(var(--ac-rgb),0.05);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Space Grotesk',monospace;outline:none">
+        <input type="text" name="reason" placeholder="السبب (اختياري)"
+               style="flex:1;min-width:160px;padding:10px 12px;background:rgba(var(--ac-rgb),0.05);border:1px solid var(--border);border-radius:10px;color:var(--text);outline:none">
+        <button type="submit" class="admin-btn danger" style="flex:0"><i class="fas fa-ban"></i> حظر دائم</button>
+      </form>
+      <p style="font-size:11.5px;color:rgba(255,255,255,0.35);margin-top:10px">
+        الحظر اليدوي دائم حتى الإزالة. الحظر التلقائي (فيضان/هجوم) مؤقت — <%= '15-30' %> دقيقة ثم ينحذف تلقائياً.
+      </p>
+    </div>
+
+    <!-- Top bots -->
+    <div class="admin-card">
+      <h3><i class="fas fa-robot"></i> أكثر بوتات تزور الآن <span style="font-size:10px;color:rgba(255,255,255,0.3);font-weight:400">(منذ آخر إقلاع)</span></h3>
+      <% if (sec.topBots.length) { %>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <% sec.topBots.forEach(function(b) { %>
+            <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;background:rgba(var(--ac-rgb),0.05);border-radius:10px;padding:8px 12px">
+              <span style="font-family:'Space Grotesk',monospace;font-size:11px;color:rgba(255,255,255,0.6);direction:ltr;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:75%"><%= b[0] %></span>
+              <strong style="color:var(--ac);font-size:13px"><%= b[1] %></strong>
+            </div>
+          <% }); %>
+        </div>
+      <% } else { %>
+        <div style="text-align:center;padding:1.6rem;color:rgba(255,255,255,0.3)">
+          <i class="fas fa-robot" style="font-size:1.4rem;display:block;margin-bottom:0.5rem"></i>
+          لا توجد زيارات بوتات مسجلة بعد
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- Blocked list -->
+  <div class="admin-card">
+    <h3 style="justify-content:space-between">
+      <span><i class="fas fa-list"></i> قائمة المحظورين حالياً (<%= sec.blockedList.length %>)</span>
+      <form method="POST" action="/admin/security/clear-expired" style="margin:0">
+        <button type="submit" class="admin-btn small"><i class="fas fa-broom"></i> تنظيف المنتهية</button>
+      </form>
+    </h3>
+    <% if (sec.blockedList.length) { %>
+      <div class="admin-table-wrapper">
+        <table class="admin-table">
+          <thead>
+            <tr><th>IP</th><th>السبب</th><th>User-Agent</th><th>وقت الحظر</th><th>النوع</th><th>إجراء</th></tr>
+          </thead>
+          <tbody>
+            <% sec.blockedList.forEach(function(b) { %>
+              <tr>
+                <td style="font-family:'Space Grotesk',monospace;direction:ltr"><%= b.ip %></td>
+                <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><%= b.reason %></td>
+                <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;font-size:11px;color:rgba(255,255,255,0.4)"><%= b.user_agent || '—' %></td>
+                <td style="font-size:12px"><%= new Date(String(b.blocked_at).replace(' ', 'T')).toLocaleString('ar-EG') %></td>
+                <td>
+                  <% if (!b.expires_at) { %>
+                    <span class="status-badge status-cancelled">دائم</span>
+                  <% } else { %>
+                    <span class="status-badge status-processing">مؤقت</span>
+                  <% } %>
+                </td>
+                <td>
+                  <form method="POST" action="/admin/security/unblock" style="margin:0">
+                    <input type="hidden" name="ip" value="<%= b.ip %>">
+                    <button type="submit" class="admin-btn small success"><i class="fas fa-unlock"></i> فك</button>
+                  </form>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } else { %>
+      <div style="text-align:center;padding:2.4rem;color:rgba(255,255,255,0.3)">
+        <i class="fas fa-shield-halved" style="font-size:2rem;display:block;margin-bottom:0.6rem;color:rgba(74,222,128,0.5)"></i>
+        لا يوجد أي IP محظور حالياً — كل شيء تحت السيطرة ✨
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<style>
+.stat-card { animation: fadeIn 0.4s ease both; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.admin-card h3 { justify-content: flex-start; }
+.admin-card h3 span:first-child { display: flex; align-items: center; gap: 8px; }
+@media (max-width: 768px) {
+  .admin-card h3 { flex-wrap: wrap; gap: 10px; }
+}
+</style>
+
+<%- include('admin_footer') %>

@@ -32,6 +32,17 @@ function ensureTables() {
           INDEX idx_vu_date (visit_date)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
       `);
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS bot_visits (
+          id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+          visit_date DATE NOT NULL,
+          path VARCHAR(191) NOT NULL,
+          views INT UNSIGNED NOT NULL DEFAULT 0,
+          updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          UNIQUE KEY uq_bot_date_path (visit_date, path),
+          INDEX idx_bot_visit_date (visit_date)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      `);
     })().catch(err => {
       console.error('[analytics] table init failed:', err.message);
       initPromise = null; // allow retry on next request
@@ -63,6 +74,7 @@ function getCookie(header, name) {
 
 function trackVisit(req, res, next) {
   let shouldTrack = false;
+  let isBotVisit = false;
   let cleanPath = '/';
   let vid = null;
 
@@ -72,11 +84,13 @@ function trackVisit(req, res, next) {
       const skipped = SKIP_PREFIXES.some(pre => p === pre || p.startsWith(pre));
       if (!skipped && !p.includes('.')) {
         const ua = req.headers['user-agent'] || '';
-        if (ua && ua.length >= 10 && !BOT_RE.test(ua)) {
-          shouldTrack = true;
-          cleanPath = (p.length > 180 ? p.slice(0, 180) : p) || '/';
+        isBotVisit = !ua || ua.length < 10 || BOT_RE.test(ua);
+        // Record ANY visitor — bots and humans alike
+        shouldTrack = true;
+        cleanPath = (p.length > 180 ? p.slice(0, 180) : p) || '/';
 
-          // Unique visitor id (1-year cookie)
+        // Unique visitor id (1-year cookie) — humans only
+        if (!isBotVisit) {
           vid = getCookie(req.headers.cookie, 'wf_vid');
           if (!vid || vid.length > 64) {
             vid = crypto.randomBytes(16).toString('hex');
@@ -96,8 +110,12 @@ function trackVisit(req, res, next) {
     if (!shouldTrack) return;
     if (req.method !== 'GET' || res.statusCode !== 200) return;
 
-    ensureTables()
-      .then(() => Promise.all([
+    const writes = isBotVisit
+      ? [db.execute(
+          'INSERT INTO bot_visits (visit_date, path, views) VALUES (CURDATE(), ?, 1) ON DUPLICATE KEY UPDATE views = views + 1',
+          [cleanPath]
+        )]
+      : [
         db.execute(
           'INSERT INTO site_visits (visit_date, path, views) VALUES (CURDATE(), ?, 1) ON DUPLICATE KEY UPDATE views = views + 1',
           [cleanPath]
@@ -106,10 +124,13 @@ function trackVisit(req, res, next) {
           'INSERT IGNORE INTO visit_uniques (visit_date, visitor_id) VALUES (CURDATE(), ?)',
           [vid]
         )
-      ]))
+      ];
+
+    ensureTables()
+      .then(() => Promise.all(writes))
       .then(() => {
         // Occasional housekeeping: purge unique-visitor rows older than 120 days
-        if (Math.random() < 0.02) {
+        if (!isBotVisit && Math.random() < 0.02) {
           db.execute('DELETE FROM visit_uniques WHERE visit_date < DATE_SUB(CURDATE(), INTERVAL 120 DAY)')
             .catch(() => {});
         }

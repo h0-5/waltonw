@@ -24,6 +24,10 @@ app.use(compression({ level: 6, threshold: 1024 }));
 
 // EJS template compilation cache — avoids re-compiling views on every request
 app.set('view cache', true);
+
+// Security guard: attack-tool blocking, bot policy, flood auto-block (before static = cheapest kill)
+const { guard } = require('./middleware/guard');
+app.use(guard);
 app.use(securityHeaders);
 app.use(sanitizeInput);
 
