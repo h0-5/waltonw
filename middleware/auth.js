@@ -68,11 +68,19 @@ const isInGuild = async (req, res, next) => {
   }
 };
 
+const ADMIN_ROLES = ['owner', 'admin', 'moderator', 'support'];
+
 const isAdmin = (req, res, next) => {
   if (!req.user) {
     req.session.returnTo = req.originalUrl;
     return res.redirect('/auth/login');
   }
+
+  // Quick check first
+  if (ADMIN_ROLES.includes(req.user.role)) {
+    return next();
+  }
+
   const db = require('../config/database');
   db.execute('SELECT * FROM roles WHERE name = ?', [req.user.role])
     .then(([role]) => {
@@ -85,6 +93,10 @@ const isAdmin = (req, res, next) => {
       });
     })
     .catch(() => {
+      // Fallback to hardcoded list if DB fails
+      if (ADMIN_ROLES.includes(req.user.role)) {
+        return next();
+      }
       return res.status(403).render('pages/error', {
         title: 'غير مصرح',
         error: 'ليس لديك صلاحية للوصول لهذه الصفحة'
