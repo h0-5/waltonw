@@ -634,3 +634,64 @@
 .admin-main::-webkit-scrollbar-track { background: transparent; }
 .admin-main::-webkit-scrollbar-thumb { background: rgba(var(--ac-rgb), 0.25); border-radius: 8px; }
 .admin-main::-webkit-scrollbar-thumb:hover { background: rgba(var(--ac-rgb), 0.45); }
+
+/* ==========================================
+   V4 RESPONSIVE MASTER LAYER
+   Fixes "random" mobile layout: fixed inline
+   widths, non-wrapping inline flex/grid rows,
+   modal overflow, stat grid adaptation.
+   Desktop (>=769px) stays untouched.
+   ========================================== */
+
+/* Fixed inline px widths only overflow on small screens — scope to mobile */
+@media (max-width: 768px) {
+  /* 1) Any inline width shrinks to fit its container */
+  .admin-content [style*="width:"],
+  .admin-header [style*="width:"],
+  .admin-modal-content [style*="width:"] { max-width: 100% !important; }
+
+  /* 2) Inline grids collapse to a single column */
+  .admin-content [style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+
+  /* 3) Inline flex rows that forgot to wrap */
+  .admin-content [style*="display:flex"]:not([style*="wrap"]) { flex-wrap: wrap; }
+
+  /* 4) Modals: comfortable width, never overflow */
+  .admin-modal-content,
+  .modal .modal-content,
+  .admin-modal .modal-content {
+    width: 96% !important;
+    max-width: 96% !important;
+  }
+
+  /* 5) Search inputs always fill their row */
+  .admin-search-box { flex: 1 1 100%; }
+  .admin-search-box input { width: 100%; }
+
+  /* 6) Table action buttons: keep row tidy */
+  .action-btns, .actions-cell, .inline-actions, .type-actions { flex-wrap: wrap; }
+
+  /* 7) Header user chip stays compact */
+  .admin-user { gap: 6px; }
+
+  /* 8) Sidebar overlay shadow when open */
+  .admin-sidebar.show { box-shadow: -12px 0 50px rgba(0,0,0,0.6); }
+}
+
+@media (max-width: 1024px) {
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Re-assert single column at phones (must come after the 1024 rule) */
+@media (max-width: 480px) {
+  .stats-row { grid-template-columns: 1fr; }
+  .admin-content { padding: 12px; }
+  .admin-header { padding: 10px 12px; }
+  .admin-table { min-width: 560px; }
+  .vh-big-num { font-size: 32px; }
+}
+
+/* Landscape phones / small tablets polish */
+@media (max-width: 920px) and (orientation: landscape) {
+  .admin-content { padding: 16px 20px; }
+}
