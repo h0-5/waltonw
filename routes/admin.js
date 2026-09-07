@@ -1,7 +1,44 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
-const { isAdmin, checkPermission } = require('../middleware/auth');
+const { isAdmin, checkPermission, isAuthenticated } = require('../middleware/auth');
+
+// DEBUG PAGE - shows exactly what's wrong
+router.get('/debug', isAuthenticated, async (req, res) => {
+  let debug = {};
+  debug.user = req.user ? { id: req.user.id, username: req.user.username, role: req.user.role, discord_id: req.user.discord_id } : null;
+
+  try {
+    const [allRoles] = await db.execute('SELECT * FROM roles');
+    debug.allRoles = allRoles;
+  } catch(e) { debug.rolesError = e.message; }
+
+  if (req.user) {
+    try {
+      const [myRole] = await db.execute('SELECT id, is_admin_role FROM roles WHERE name = ?', [req.user.role]);
+      debug.myRoleFromDB = myRole.length ? myRole[0] : null;
+    } catch(e) { debug.myRoleError = e.message; }
+
+    try {
+      const [myPerms] = await db.execute(
+        'SELECT permission_key, enabled FROM role_role_permissions WHERE role_id = (SELECT id FROM roles WHERE name = ? LIMIT 1)',
+        [req.user.role]
+      );
+      debug.myPermissions = myPerms;
+    } catch(e) { debug.myPermsError = e.message; }
+
+    const ADMIN_ROLES = ['owner', 'admin', 'moderator', 'support'];
+    debug.isInHardcodedList = ADMIN_ROLES.includes(req.user.role);
+    debug.isOwner = req.user.role === 'owner';
+    debug.isInGuild = req.user.in_guild;
+  }
+
+  debug.isAdminMiddlewareWants = 'isAdmin checks: 1) ADMIN_ROLES list, 2) roles.is_admin_role in DB';
+  debug.checkPermissionWants = 'checkPermission checks: 1) owner, 2) roles.is_admin_role, 3) role_role_permissions';
+
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.send(`<pre style="background:#111;color:#0f0;padding:2rem;font-size:14px;white-space:pre-wrap;direction:ltr">${JSON.stringify(debug, null, 2)}</pre>`);
+});
 
 // Load user permissions for sidebar filtering
 router.use(isAdmin, async (req, res, next) => {
