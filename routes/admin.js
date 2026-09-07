@@ -118,12 +118,16 @@ router.get('/settings', isAdmin, async (req, res) => {
 // Roles
 router.get('/roles', isAdmin, async (req, res) => {
   try {
-    let rolesConfig = {};
-    const [rows] = await db.execute("SELECT setting_value FROM site_settings WHERE setting_key = 'custom_roles'");
-    if (rows.length > 0) rolesConfig = JSON.parse(rows[0].setting_value || '{}');
-    res.render('admin/roles', { title: 'الرتب', roles: rolesConfig, currentPath: req.path });
+    const [roles] = await db.execute('SELECT * FROM roles ORDER BY level DESC, sort_order ASC');
+    const [perms] = await db.execute('SELECT * FROM role_permissions');
+    const permissions = {};
+    perms.forEach(p => {
+      if (!permissions[p.role_id]) permissions[p.role_id] = {};
+      permissions[p.role_id][p.page] = { can_access: p.can_access, can_edit: p.can_edit, can_delete: p.can_delete, can_manage: p.can_manage };
+    });
+    res.render('admin/roles', { title: 'إدارة الصلاحيات', roles, permissions, currentPath: req.path });
   } catch(err) {
-    res.render('admin/roles', { title: 'الرتب', roles: {}, currentPath: req.path });
+    res.render('admin/roles', { title: 'إدارة الصلاحيات', roles: [], permissions: {}, currentPath: req.path });
   }
 });
 

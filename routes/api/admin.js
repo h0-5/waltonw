@@ -495,4 +495,91 @@ router.delete('/applications/types/:id', isAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: 'حدث خطأ' }); }
 });
 
+// ===== Roles & Permissions API =====
+
+// Get all roles
+router.get('/roles', isAdmin, async (req, res) => {
+  try {
+    const [roles] = await db.execute('SELECT * FROM roles ORDER BY level DESC, sort_order ASC');
+    const [perms] = await db.execute('SELECT * FROM role_permissions');
+    const permissions = {};
+    perms.forEach(p => {
+      if (!permissions[p.role_id]) permissions[p.role_id] = {};
+      permissions[p.role_id][p.page] = { can_access: p.can_access, can_edit: p.can_edit, can_delete: p.can_delete, can_manage: p.can_manage };
+    });
+    res.json({ roles, permissions });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Create role
+router.post('/roles', isAdmin, async (req, res) => {
+  try {
+    const { name, display_name, color, icon, level } = req.body;
+    const [result] = await db.execute(
+      'INSERT INTO roles (name, display_name, color, icon, level) VALUES (?, ?, ?, ?, ?)',
+      [name, display_name, color || '#780ecf', icon || 'fa-user', level || 0]
+    );
+    const [role] = await db.execute('SELECT * FROM roles WHERE id = ?', [result.insertId]);
+    res.json({ success: true, role: role[0] });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Update role
+router.put('/roles/:id', isAdmin, async (req, res) => {
+  try {
+    const { name, display_name, color, icon, level, permissions } = req.body;
+    const roleId = req.params.id;
+    
+    await db.execute(
+      'UPDATE roles SET name=?, display_name=?, color=?, icon=?, level=? WHERE id=?',
+      [name, display_name, color, icon, level, roleId]
+    );
+
+    // Update permissions
+    if (permissions) {
+      await db.execute('DELETE FROM role_permissions WHERE role_id = ?', [roleId]);
+      for (const [page, perms] of Object.entries(permissions)) {
+        await db.execute(
+          'INSERT INTO role_permissions (role_id, page, can_access, can_edit, can_delete, can_manage) VALUES (?, ?, ?, ?, ?, ?)',
+          [roleId, page, perms.can_access ? 1 : 0, perms.can_edit ? 1 : 0, perms.can_delete ? 1 : 0, perms.can_manage ? 1 : 0]
+        );
+      }
+    }
+
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Delete role
+router.delete('/roles/:id', isAdmin, async (req, res) => {
+  try {
+    const roleId = req.params.id;
+    const [role] = await db.execute('SELECT * FROM roles WHERE id = ?', [roleId]);
+    if (!role.length) return res.status(404).json({ error: 'غير موجود' });
+    if (role[0].is_default) return res.status(400).json({ error: 'لا يمكن حذف الرتبة الافتراضية' });
+    
+    await db.execute('DELETE FROM role_permissions WHERE role_id = ?', [roleId]);
+    await db.execute('DELETE FROM roles WHERE id = ?', [roleId]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Get user role permissions (for frontend use)
+router.get('/user-permissions/:userId', isAdmin, async (req, res) => {
+  try {
+    const [user] = await db.execute('SELECT role FROM users WHERE id = ?', [req.params.userId]);
+    if (!user.length) return res.status(404).json({ error: 'غير موجود' });
+    
+    const [role] = await db.execute('SELECT * FROM roles WHERE name = ?', [user[0].role]);
+    if (!role.length) return res.json({ permissions: {} });
+    
+    const [perms] = await db.execute('SELECT * FROM role_permissions WHERE role_id = ?', [role[0].id]);
+    const permissions = {};
+    perms.forEach(p => {
+      permissions[p.page] = { can_access: p.can_access, can_edit: p.can_edit, can_delete: p.can_delete, can_manage: p.can_manage };
+    });
+    res.json({ role: role[0], permissions });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 module.exports = router;
