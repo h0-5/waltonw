@@ -44,4 +44,70 @@
     </div>
 </footer>
 
+<!-- ═══ Scroll Progress Bar + Back To Top ═══ -->
+<style>
+    #wfScrollProgress {
+        position: fixed;
+        top: 0;
+        right: 0;
+        height: 3px;
+        width: 0%;
+        z-index: 9999;
+        background: linear-gradient(90deg, #9b30ff, #780ecf, #9b30ff);
+        box-shadow: 0 0 12px rgba(120, 14, 207, 0.8), 0 0 24px rgba(120, 14, 207, 0.4);
+        border-radius: 0 3px 3px 0;
+        transition: width 0.08s linear;
+        pointer-events: none;
+    }
+    #wfBackToTop {
+        position: fixed;
+        bottom: 24px;
+        left: 24px;
+        z-index: 9998;
+        width: 46px;
+        height: 46px;
+        border: 1px solid rgba(155, 48, 255, 0.4);
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.05rem;
+        color: #fff;
+        background: linear-gradient(135deg, #780ecf, #9b30ff);
+        box-shadow: 0 6px 20px rgba(120, 14, 207, 0.45);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(16px);
+        transition: all 0.35s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+    }
+    #wfBackToTop.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+    #wfBackToTop:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 28px rgba(120, 14, 207, 0.65), 0 0 18px rgba(155, 48, 255, 0.4);
+    }
+    @media (max-width: 640px) {
+        #wfBackToTop { bottom: 18px; left: 18px; width: 40px; height: 40px; }
+    }
+</style>
+<div id="wfScrollProgress"></div>
+<button id="wfBackToTop" aria-label="العودة للأعلى"><i class="fas fa-chevron-up"></i></button>
+<script>(function(){
+    var bar=document.getElementById('wfScrollProgress'),btn=document.getElementById('wfBackToTop'),tick=false;
+    function upd(){
+        var st=document.documentElement.scrollTop||document.body.scrollTop;
+        var h=document.documentElement.scrollHeight-document.documentElement.clientHeight;
+        bar.style.width=(h>0?(st/h*100):0)+'%';
+        if(st>300){btn.classList.add('show');}else{btn.classList.remove('show');}
+        tick=false;
+    }
+    window.addEventListener('scroll',function(){if(!tick){tick=true;requestAnimationFrame(upd);}},{passive:true});
+    upd();
+    btn.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
+})();</script>
+
 <script>(function(){var els=document.querySelectorAll('.wf-reveal,.wf-reveal-left,.wf-reveal-right,.wf-reveal-scale');if(!els.length)return;var io=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visible');io.unobserve(e.target);}});},{threshold:0.12});els.forEach(function(el){io.observe(el);});})();</script>
