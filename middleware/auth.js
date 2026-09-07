@@ -187,16 +187,14 @@ const checkPermission = (permissionKey) => {
     db.execute('SELECT id, is_admin_role FROM roles WHERE name = ?', [req.user.role])
       .then(([role]) => {
         if (!role.length) return denyAccess(res);
-        if (role[0].is_admin_role) { next(); return null; }
+        if (role[0].is_admin_role) return next();
         return db.execute(
           'SELECT enabled FROM role_role_permissions WHERE role_id = ? AND permission_key = ?',
           [role[0].id, permissionKey]
-        );
-      })
-      .then(([perm]) => {
-        if (!perm) return;
-        if (perm.length && perm[0].enabled) return next();
-        return denyAccess(res);
+        ).then(([perm]) => {
+          if (perm && perm.length && perm[0].enabled) return next();
+          return denyAccess(res);
+        });
       })
       .catch(() => denyAccess(res));
   };
@@ -236,17 +234,15 @@ const checkPageAccess = (pagePath) => {
     db.execute('SELECT id, is_admin_role FROM roles WHERE name = ?', [req.user.role])
       .then(([role]) => {
         if (!role.length) return denyAccess(res);
-        if (role[0].is_admin_role) { next(); return null; }
+        if (role[0].is_admin_role) return next();
         return db.execute(
           'SELECT can_access FROM role_page_access WHERE role_id = ? AND page_path = ?',
           [role[0].id, pagePath]
-        );
-      })
-      .then(([rows]) => {
-        if (!rows) return;
-        if (!rows.length) return next();
-        if (rows[0].can_access) return next();
-        return denyAccess(res);
+        ).then(([rows]) => {
+          if (!rows || !rows.length) return next();
+          if (rows[0].can_access) return next();
+          return denyAccess(res);
+        });
       })
       .catch(() => next());
   };
