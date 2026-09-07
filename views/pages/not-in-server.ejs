@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>انضم لسيرفرنا | Walton Family</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    :root {
+      --ac: #780ecf;
+      --ac-rgb: 120, 14, 207;
+      --ac-dark: #600ba5;
+      --ac-light: #9b30ff;
+      --discord: #5865F2;
+      --discord-rgb: 88, 101, 242;
+    }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Cairo', sans-serif;
+      background: #06040a;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(var(--ac-rgb),0.04) 59px, rgba(var(--ac-rgb),0.04) 60px),
+        repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(var(--ac-rgb),0.04) 59px, rgba(var(--ac-rgb),0.04) 60px);
+      z-index: 0;
+      animation: gridMove 20s linear infinite;
+    }
+
+    @keyframes gridMove {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(60px, 60px); }
+    }
+
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .orb-1 { width: 400px; height: 400px; background: rgba(var(--ac-rgb),0.12); top: -100px; right: -100px; animation: orbFloat1 8s ease-in-out infinite; }
+    .orb-2 { width: 300px; height: 300px; background: rgba(var(--discord-rgb),0.1); bottom: -80px; left: -80px; animation: orbFloat2 10s ease-in-out infinite; }
+    .orb-3 { width: 200px; height: 200px; background: rgba(var(--ac-rgb),0.08); top: 50%; left: 50%; animation: orbFloat3 6s ease-in-out infinite; }
+
+    @keyframes orbFloat1 { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-30px, 30px) scale(1.1); } }
+    @keyframes orbFloat2 { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(20px, -20px) scale(1.15); } }
+    @keyframes orbFloat3 { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.2); } }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 480px;
+      padding: 1.5rem;
+    }
+
+    .card {
+      background: rgba(12, 8, 22, 0.85);
+      backdrop-filter: blur(24px);
+      border: 1px solid rgba(var(--ac-rgb),0.2);
+      border-radius: 24px;
+      padding: 3rem 2.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      animation: cardReveal 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      opacity: 0;
+      transform: translateY(30px) scale(0.95);
+    }
+
+    @keyframes cardReveal {
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--discord), rgba(var(--discord-rgb),0.5), var(--discord), transparent);
+      animation: glowLine 3s linear infinite;
+    }
+
+    @keyframes glowLine {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    .corner-tl, .corner-br {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      opacity: 0.4;
+    }
+    .corner-tl { top: 8px; left: 8px; border-top: 2px solid var(--discord); border-left: 2px solid var(--discord); border-radius: 8px 0 0 0; }
+    .corner-br { bottom: 8px; right: 8px; border-bottom: 2px solid var(--discord); border-right: 2px solid var(--discord); border-radius: 0 0 8px 0; }
+
+    .icon-container {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 1.5rem;
+      animation: iconPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes iconPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    .icon-container::before {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      background: conic-gradient(from 0deg, var(--discord), rgba(var(--discord-rgb),0.3), var(--discord), rgba(var(--discord-rgb),0.1), var(--discord));
+      animation: ringRotate 3s linear infinite;
+    }
+
+    @keyframes ringRotate { to { transform: rotate(360deg); } }
+
+    .icon-container::after {
+      content: '';
+      position: absolute;
+      inset: 2px;
+      border-radius: 50%;
+      background: #0a0612;
+    }
+
+    .icon-container .icon {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      color: var(--discord);
+      filter: drop-shadow(0 0 15px rgba(var(--discord-rgb),0.5));
+    }
+
+    .title {
+      font-size: 1.6rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #fff, rgba(255,255,255,0.7), var(--discord));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      font-size: 0.92rem;
+      color: rgba(255,255,255,0.45);
+      margin-bottom: 1.5rem;
+      line-height: 1.8;
+    }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+      text-align: right;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: rgba(var(--discord-rgb),0.08);
+      border: 1px solid rgba(var(--discord-rgb),0.15);
+      border-radius: 14px;
+      transition: all 0.3s;
+    }
+
+    .step:hover {
+      background: rgba(var(--discord-rgb),0.12);
+      border-color: rgba(var(--discord-rgb),0.25);
+    }
+
+    .step-num {
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      border-radius: 50%;
+      background: var(--discord);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 800;
+    }
+
+    .step-text {
+      font-size: 0.88rem;
+      color: rgba(255,255,255,0.7);
+      line-height: 1.5;
+    }
+
+    .join-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      padding: 16px 24px;
+      background: var(--discord);
+      color: #fff;
+      border: none;
+      border-radius: 16px;
+      font-family: 'Cairo', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+      overflow: hidden;
+      text-decoration: none;
+      box-shadow: 0 8px 25px rgba(var(--discord-rgb),0.35);
+    }
+
+    .join-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+      transform: translateX(-100%);
+      transition: transform 0.6s;
+    }
+
+    .join-btn:hover::before { transform: translateX(100%); }
+
+    .join-btn:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 12px 35px rgba(var(--discord-rgb),0.5);
+    }
+
+    .join-btn:active { transform: translateY(0) scale(0.98); }
+
+    .join-btn i { font-size: 1.3rem; }
+
+    .check-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 1.5rem;
+      color: rgba(255,255,255,0.35);
+      font-size: 0.85rem;
+      text-decoration: none;
+      transition: color 0.3s;
+      font-weight: 600;
+    }
+
+    .check-btn:hover { color: var(--ac); }
+
+    .check-btn i { font-size: 0.9rem; }
+
+    .particles {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .particle {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      border-radius: 50%;
+      background: var(--discord);
+      opacity: 0.3;
+      animation: particleUp linear infinite;
+    }
+
+    @keyframes particleUp {
+      0% { transform: translateY(100vh) scale(0); opacity: 0; }
+      10% { opacity: 0.3; }
+      90% { opacity: 0.3; }
+      100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+    }
+
+    @media (max-width: 480px) {
+      .card { padding: 2.5rem 1.5rem; }
+      .title { font-size: 1.3rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <div class="particles" id="particles"></div>
+
+  <div class="container">
+    <div class="card">
+      <div class="corner-tl"></div>
+      <div class="corner-br"></div>
+
+      <div class="icon-container">
+        <div class="icon">
+          <i class="fab fa-discord"></i>
+        </div>
+      </div>
+
+      <h1 class="title">انضم لسيرفرنا أولاً</h1>
+      <p class="subtitle">للدخول إلى Walton Family يجب أن تكون عضواً في سيرفر Discord الرسمي</p>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-text">اضغط على زر "انضم للسيرفر" أدناه</div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-text">اقبل دعوة الانضمام على Discord</div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-text">عد هنا واضغط "تحقق من عضويتي"</div>
+        </div>
+      </div>
+
+      <a href="<%= joinLink %>" target="_blank" class="join-btn" id="joinBtn">
+        <i class="fab fa-discord"></i>
+        <span>انضم للسيرفر</span>
+      </a>
+
+      <a href="/auth/login" class="check-btn">
+        <i class="fas fa-sync-alt"></i>
+        تحقق من عضويتي
+      </a>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const container = document.getElementById('particles');
+      for (let i = 0; i < 25; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.animationDuration = (6 + Math.random() * 10) + 's';
+        p.style.animationDelay = Math.random() * 6 + 's';
+        p.style.width = p.style.height = (1.5 + Math.random() * 2.5) + 'px';
+        container.appendChild(p);
+      }
+    })();
+  </script>
+</body>
+</html>

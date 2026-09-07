@@ -33,6 +33,7 @@ if (discordClientId && discordClientSecret && discordRedirectUri) {
     scope: ['identify', 'email', 'guilds', 'guilds.members.read']
   }, async (accessToken, refreshToken, profile, done) => {
     try {
+      profile.accessToken = accessToken;
       const discordId = profile.id;
       const username = profile.username;
       const avatar = profile.avatar ?

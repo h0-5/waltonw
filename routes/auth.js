@@ -39,6 +39,7 @@ router.get('/discord/callback', (req, res, next) => {
         console.error('Session login error:', loginErr);
         return res.redirect('/auth/login?error=login_failed');
       }
+      req.session.accessToken = info.accessToken || req.session.accessToken;
       const returnTo = req.session.returnTo || '/';
       delete req.session.returnTo;
       return res.redirect(returnTo);
