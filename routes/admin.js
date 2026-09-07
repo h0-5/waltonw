@@ -144,7 +144,7 @@ router.get('/settings', isAdmin, async (req, res) => {
 // Roles
 router.get('/roles', isAdmin, async (req, res) => {
   try {
-    const [roles] = await db.execute('SELECT * FROM roles ORDER BY level DESC, sort_order ASC');
+    const [roles] = await db.execute('SELECT * FROM roles ORDER BY is_admin_role DESC, sort_order ASC, id ASC');
     const [perms] = await db.execute('SELECT * FROM role_permissions');
     const permissions = {};
     perms.forEach(p => {

@@ -67,7 +67,7 @@ async function migrate() {
     `CREATE TABLE IF NOT EXISTS news (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255), content TEXT, image TEXT, author_id INT, is_published TINYINT(1) DEFAULT 1, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
     `CREATE TABLE IF NOT EXISTS tickets (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, subject VARCHAR(255), message TEXT, status VARCHAR(50) DEFAULT 'open', priority VARCHAR(20) DEFAULT 'medium', created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
     `CREATE TABLE IF NOT EXISTS site_settings (setting_key VARCHAR(100) PRIMARY KEY, setting_value TEXT)`,
-    `CREATE TABLE IF NOT EXISTS roles (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(50) UNIQUE, display_name VARCHAR(100), level INT DEFAULT 0, color VARCHAR(20) DEFAULT '#ffffff', icon VARCHAR(50) DEFAULT '', is_admin_role TINYINT(1) DEFAULT 0, is_default TINYINT(1) DEFAULT 0, sort_order INT DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE TABLE IF NOT EXISTS roles (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(50) UNIQUE, display_name VARCHAR(100), color VARCHAR(20) DEFAULT '#ffffff', icon VARCHAR(50) DEFAULT '', is_admin_role TINYINT(1) DEFAULT 0, is_default TINYINT(1) DEFAULT 0, is_protected TINYINT(1) DEFAULT 0, sort_order INT DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
     `CREATE TABLE IF NOT EXISTS role_permissions (id INT AUTO_INCREMENT PRIMARY KEY, role_id INT, page VARCHAR(100), can_access TINYINT(1) DEFAULT 1, can_edit TINYINT(1) DEFAULT 0, can_delete TINYINT(1) DEFAULT 0, can_manage TINYINT(1) DEFAULT 0, FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE, UNIQUE KEY unique_role_page (role_id, page))`,
     `CREATE TABLE IF NOT EXISTS rules (id INT AUTO_INCREMENT PRIMARY KEY, category VARCHAR(100), title VARCHAR(255), content TEXT, sort_order INT DEFAULT 0)`,
     `CREATE TABLE IF NOT EXISTS discounts (id INT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(50) UNIQUE, percentage INT DEFAULT 0, max_uses INT DEFAULT 0, used_count INT DEFAULT 0, expires_at DATETIME, is_active TINYINT(1) DEFAULT 1)`,
@@ -134,11 +134,11 @@ async function migrate() {
         id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(50) UNIQUE,
         display_name VARCHAR(100),
-        level INT DEFAULT 0,
         color VARCHAR(20) DEFAULT '#ffffff',
         icon VARCHAR(50) DEFAULT '',
         is_admin_role TINYINT(1) DEFAULT 0,
         is_default TINYINT(1) DEFAULT 0,
+        is_protected TINYINT(1) DEFAULT 0,
         sort_order INT DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )`);
@@ -155,8 +155,8 @@ async function migrate() {
       )`);
       for (const r of existingRoles) {
         await db.query(
-          'INSERT INTO roles (name, display_name, color, icon, level, is_admin_role, is_default) VALUES (?, ?, ?, ?, ?, ?, ?)',
-          [r.name, r.display_name, r.color || '#ffffff', r.icon || '', r.level || 0, r.is_admin_role || 0, r.is_default || 0]
+          'INSERT INTO roles (name, display_name, color, icon, is_admin_role, is_default, is_protected) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [r.name, r.display_name, r.color || '#ffffff', r.icon || '', r.is_admin_role || 0, r.is_default || 0, r.name === 'owner' ? 1 : 0]
         );
       }
       console.log('✅ roles table recreated with correct schema');
@@ -187,7 +187,6 @@ async function migrate() {
     { table: 'service_requests', col: 'admin_id', sql: "ALTER TABLE service_requests ADD COLUMN admin_id INT" },
     { table: 'roles', col: 'description', sql: "ALTER TABLE roles ADD COLUMN description TEXT" },
     { table: 'roles', col: 'can_assign_roles', sql: "ALTER TABLE roles ADD COLUMN can_assign_roles TINYINT(1) DEFAULT 0" },
-    { table: 'roles', col: 'max_role_level', sql: "ALTER TABLE roles ADD COLUMN max_role_level INT DEFAULT 0" },
     { table: 'roles', col: 'is_protected', sql: "ALTER TABLE roles ADD COLUMN is_protected TINYINT(1) DEFAULT 0" },
     { table: 'roles', col: 'emoji', sql: "ALTER TABLE roles ADD COLUMN emoji VARCHAR(20) DEFAULT ''" },
     { table: 'roles', col: 'is_staff', sql: "ALTER TABLE roles ADD COLUMN is_staff TINYINT(1) DEFAULT 0" },
@@ -213,23 +212,28 @@ async function migrate() {
     const [existing] = await db.query('SELECT COUNT(*) as c FROM roles');
     if (existing[0].c === 0) {
       const defaultRoles = [
-        { name: 'owner', display_name: 'المالك', color: '#ef4444', icon: 'fa-crown', level: 100, is_admin_role: 1, is_default: 0 },
-        { name: 'admin', display_name: 'مدير', color: '#f97316', icon: 'fa-shield-halved', level: 80, is_admin_role: 1, is_default: 0 },
-        { name: 'moderator', display_name: 'مشرف', color: '#eab308', icon: 'fa-gavel', level: 60, is_admin_role: 1, is_default: 0 },
-        { name: 'support', display_name: 'دعم فني', color: '#22c55e', icon: 'fa-headset', level: 40, is_admin_role: 1, is_default: 0 },
-        { name: 'member', display_name: 'عضو', color: '#3b82f6', icon: 'fa-user', level: 10, is_admin_role: 0, is_default: 1 },
-        { name: 'trial', display_name: 'تحت التجربة', color: '#9ca3af', icon: 'fa-user-clock', level: 5, is_admin_role: 0, is_default: 0 },
+        { name: 'owner', display_name: 'المالك', color: '#ef4444', icon: 'fa-crown', is_admin_role: 1, is_default: 0, is_protected: 1 },
+        { name: 'admin', display_name: 'مدير', color: '#f97316', icon: 'fa-shield-halved', is_admin_role: 1, is_default: 0, is_protected: 0 },
+        { name: 'moderator', display_name: 'مشرف', color: '#eab308', icon: 'fa-gavel', is_admin_role: 1, is_default: 0, is_protected: 0 },
+        { name: 'support', display_name: 'دعم فني', color: '#22c55e', icon: 'fa-headset', is_admin_role: 1, is_default: 0, is_protected: 0 },
+        { name: 'member', display_name: 'عضو', color: '#3b82f6', icon: 'fa-user', is_admin_role: 0, is_default: 1, is_protected: 0 },
+        { name: 'trial', display_name: 'تحت التجربة', color: '#9ca3af', icon: 'fa-user-clock', is_admin_role: 0, is_default: 0, is_protected: 0 },
       ];
       for (const r of defaultRoles) {
         await db.query(
-          'INSERT INTO roles (name, display_name, color, icon, level, is_admin_role, is_default) VALUES (?, ?, ?, ?, ?, ?, ?)',
-          [r.name, r.display_name, r.color, r.icon, r.level, r.is_admin_role, r.is_default]
+          'INSERT INTO roles (name, display_name, color, icon, is_admin_role, is_default, is_protected) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [r.name, r.display_name, r.color, r.icon, r.is_admin_role, r.is_default, r.is_protected]
         );
       }
       console.log('✅ Default roles seeded');
     }
-    await db.query("UPDATE roles SET is_admin_role = 1 WHERE name IN ('owner', 'admin', 'moderator', 'support')");
+    // Protect owner role
+    await db.query("UPDATE roles SET is_protected = 1, is_admin_role = 1 WHERE name = 'owner'");
+    await db.query("UPDATE roles SET is_admin_role = 1 WHERE name IN ('admin', 'moderator', 'support')");
     await db.query("UPDATE roles SET is_default = 1 WHERE name = 'member'");
+    // Remove level column if it exists
+    try { await db.query("ALTER TABLE roles DROP COLUMN level"); console.log('✅ Removed level column'); } catch(e) {}
+    try { await db.query("ALTER TABLE roles DROP COLUMN max_role_level"); console.log('✅ Removed max_role_level column'); } catch(e) {}
   } catch(e) { console.error('Role seed error:', e.message); }
 }
 

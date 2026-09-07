@@ -11,22 +11,24 @@
       <input type="text" id="roleSearch" placeholder="بحث عن رتبة..." oninput="filterRoles()" style="width:100%;padding:8px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(var(--ac-rgb),0.2);border-radius:8px;color:#fff;font-family:inherit;font-size:0.8rem;margin-bottom:0.75rem">
       <div id="roleList">
         <% if (typeof roles !== 'undefined' && roles && roles.length) { %>
-          <% roles.sort((a,b) => b.level - a.level).forEach(function(r, i) { %>
-            <div class="role-list-item <%= i === 0 ? 'selected' : '' %>" onclick="selectRole(<%= r.id %>)" data-id="<%= r.id %>" data-name="<%= (r.display_name || r.name).toLowerCase() %>" draggable="true" data-sort="<%= r.sort_order || 0 %>">
+          <% roles.forEach(function(r, i) { %>
+            <div class="role-list-item <%= i === 0 ? 'selected' : '' %> <%= r.name === 'owner' ? 'owner-role' : '' %>" onclick="selectRole(<%= r.id %>)" data-id="<%= r.id %>" data-name="<%= (r.display_name || r.name).toLowerCase() %>" draggable="<%= r.name === 'owner' ? 'false' : 'true' %>" data-sort="<%= r.sort_order || 0 %>">
               <div style="display:flex;align-items:center;gap:10px;flex:1">
-                <div class="drag-handle" title="اسحب للترتيب"><i class="fas fa-grip-vertical"></i></div>
+                <% if (r.name !== 'owner') { %><div class="drag-handle" title="اسحب للترتيب"><i class="fas fa-grip-vertical"></i></div><% } %>
                 <div style="width:12px;height:12px;border-radius:50%;background:<%= r.color %>;flex-shrink:0"></div>
                 <div style="flex:1;min-width:0">
                   <div style="font-weight:700;font-size:0.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
                     <% if (r.emoji) { %><span class="role-emoji-badge"><%= r.emoji %></span><% } %><%= r.display_name || r.name %>
+                    <% if (r.name === 'owner') { %><i class="fas fa-crown" style="color:#f59e0b;margin-right:4px;font-size:0.7rem"></i><% } %>
                   </div>
-                  <div style="font-size:0.7rem;color:rgba(255,255,255,0.35)">Lv.<%= r.level %> • <%= r.name %>
+                  <div style="font-size:0.7rem;color:rgba(255,255,255,0.35)"><%= r.name %>
                     <% if (r.is_admin_role) { %><span class="badge-admin-sm">admin</span><% } %>
                     <% if (r.is_staff) { %><span class="badge-staff-sm">staff</span><% } %>
+                    <% if (r.name === 'owner') { %><span class="badge-owner-sm">owner</span><% } %>
                   </div>
                 </div>
               </div>
-              <% if (!r.is_default && !r.is_protected) { %>
+              <% if (r.name !== 'owner' && !r.is_default && !r.is_protected) { %>
                 <button class="role-delete-btn" onclick="event.stopPropagation();deleteRole(<%= r.id %>)" title="حذف"><i class="fas fa-trash"></i></button>
               <% } %>
             </div>
@@ -46,9 +48,18 @@
               <div id="rolePreviewBadge" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;background:<%= r.color %>20;border:1px solid <%= r.color %>40;font-weight:800;font-size:0.95rem;color:<%= r.color %>">
                 <% if (r.emoji) { %><span><%= r.emoji %></span><% } %><i class="fas <%= r.icon || 'fa-user' %>"></i> <%= r.display_name || r.name %>
               </div>
-              <span style="font-size:0.8rem;color:rgba(255,255,255,0.4)">Level <%= r.level %> • <%= r.name %></span>
+              <span style="font-size:0.8rem;color:rgba(255,255,255,0.4)"><%= r.name %>
+                <% if (r.name === 'owner') { %> <i class="fas fa-crown" style="color:#f59e0b"></i> رتبة المالك — محمية بالكامل <% } %>
+              </span>
             </div>
-            <button class="admin-btn primary" onclick="saveAll()"><i class="fas fa-save"></i> حفظ الكل</button>
+            <% if (r.name !== 'owner') { %>
+              <div style="display:flex;gap:8px">
+                <button class="admin-btn" onclick="resetPermissions()" title="إعادة تعيين الصلاحيات"><i class="fas fa-undo"></i> إعادة تعيين</button>
+                <button class="admin-btn primary" onclick="saveAll()"><i class="fas fa-save"></i> حفظ الكل</button>
+              </div>
+            <% } else { %>
+              <span style="padding:6px 14px;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:8px;color:#f59e0b;font-size:0.8rem;font-weight:700"><i class="fas fa-lock"></i> محمية — لا يمكن التعديل</span>
+            <% } %>
           </div>
 
           <!-- Tabs -->
@@ -62,43 +73,51 @@
 
           <!-- Tab: Role Settings -->
           <div class="tab-content active" id="tab-roles">
+            <% if (r.name === 'owner') { %>
+            <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:12px;padding:1.5rem;margin-bottom:1.2rem">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:0.75rem">
+                <i class="fas fa-crown" style="color:#f59e0b;font-size:1.2rem"></i>
+                <h3 style="color:#f59e0b;margin:0">رتبة المالك</h3>
+              </div>
+              <p style="color:rgba(255,255,255,0.6);font-size:0.9rem;line-height:1.6">
+                هذه الرتبة <strong>محمية بالكامل</strong> ولا يمكن تعديلها. المالك يملك <strong>كل الصلاحيات</strong> تلقائياً ولا يحتاج لأي إعداد.
+              </p>
+            </div>
+            <% } %>
+
             <div class="settings-section">
               <h3><i class="fas fa-info-circle"></i> معلومات الرتبة</h3>
               <div class="form-grid">
                 <div class="form-group">
                   <label>الاسم (إنجليزي)</label>
-                  <input type="text" id="r_name" value="<%= r.name %>" oninput="updatePreview()">
+                  <input type="text" id="r_name" value="<%= r.name %>" oninput="updatePreview()" <%= r.name === 'owner' ? 'disabled' : '' %>>
                 </div>
                 <div class="form-group">
                   <label>اسم العرض (عربي)</label>
-                  <input type="text" id="r_display_name" value="<%= r.display_name || '' %>" oninput="updatePreview()">
+                  <input type="text" id="r_display_name" value="<%= r.display_name || '' %>" oninput="updatePreview()" <%= r.name === 'owner' ? 'disabled' : '' %>>
                 </div>
                 <div class="form-group">
                   <label>اللون</label>
-                  <input type="color" id="r_color" value="<%= r.color || '#ffffff' %>" oninput="updatePreview()">
+                  <input type="color" id="r_color" value="<%= r.color || '#ffffff' %>" oninput="updatePreview()" <%= r.name === 'owner' ? 'disabled' : '' %>>
                 </div>
                 <div class="form-group">
                   <label>الأيقونة (Font Awesome)</label>
                   <div style="display:flex;gap:6px;align-items:center">
                     <i id="iconPreview" class="fas <%= r.icon || 'fa-user' %>" style="font-size:1.2rem;color:var(--ac)"></i>
-                    <input type="text" id="r_icon" value="<%= r.icon || '' %>" placeholder="fa-shield-halved" oninput="updateIconPreview()" style="flex:1">
+                    <input type="text" id="r_icon" value="<%= r.icon || '' %>" placeholder="fa-shield-halved" oninput="updateIconPreview()" style="flex:1" <%= r.name === 'owner' ? 'disabled' : '' %>>
                   </div>
                 </div>
                 <div class="form-group">
                   <label>الإيموجي</label>
                   <div style="display:flex;gap:6px;align-items:center">
                     <span id="emojiPreview" style="font-size:1.3rem"><%= r.emoji || '' %></span>
-                    <input type="text" id="r_emoji" value="<%= r.emoji || '' %>" placeholder="🎯" maxlength="10" oninput="updatePreview()" style="flex:1">
-                    <button class="admin-btn small" onclick="openEmojiPicker()" title="اختر إيموجي"><i class="fas fa-smile"></i></button>
+                    <input type="text" id="r_emoji" value="<%= r.emoji || '' %>" placeholder="🎯" maxlength="10" oninput="updatePreview()" style="flex:1" <%= r.name === 'owner' ? 'disabled' : '' %>>
+                    <% if (r.name !== 'owner') { %><button class="admin-btn small" onclick="openEmojiPicker()" title="اختر إيموجي"><i class="fas fa-smile"></i></button><% } %>
                   </div>
-                </div>
-                <div class="form-group">
-                  <label>المستوى (0-100)</label>
-                  <input type="number" id="r_level" value="<%= r.level %>" min="0" max="100">
                 </div>
                 <div class="form-group" style="grid-column:1/-1">
                   <label>الوصف</label>
-                  <input type="text" id="r_description" value="<%= r.description || '' %>" placeholder="وصف الرتبة...">
+                  <input type="text" id="r_description" value="<%= r.description || '' %>" placeholder="وصف الرتبة..." <%= r.name === 'owner' ? 'disabled' : '' %>>
                 </div>
               </div>
             </div>
@@ -106,29 +125,27 @@
             <div class="settings-section">
               <h3><i class="fas fa-shield-halved"></i> خيارات الرتبة</h3>
               <div class="toggle-grid">
-                <label class="toggle-item"><input type="checkbox" id="r_is_admin" <%= r.is_admin_role ? 'checked' : '' %>><span class="toggle-switch"></span><span>رتبة إدارية</span></label>
-                <label class="toggle-item"><input type="checkbox" id="r_is_protected" <%= r.is_protected ? 'checked' : '' %>><span class="toggle-switch"></span><span>محمية (لا يمكن حذفها)</span></label>
-                <label class="toggle-item"><input type="checkbox" id="r_is_default" <%= r.is_default ? 'checked' : '' %>><span class="toggle-switch"></span><span>رتبة افتراضية للأعضاء الجدد</span></label>
-                <label class="toggle-item"><input type="checkbox" id="r_is_staff" <%= r.is_staff ? 'checked' : '' %>><span class="toggle-switch"></span><span>Staff (تظهر في قائمة الفريق)</span></label>
-                <label class="toggle-item"><input type="checkbox" id="h_can_assign" <%= r.can_assign_roles ? 'checked' : '' %>><span class="toggle-switch"></span><span>يمكنه تعيين رتب</span></label>
-              </div>
-              <div class="form-group" style="margin-top:1rem;max-width:300px">
-                <label>أقصى مستوى للرتبة المسموح بتعيينها</label>
-                <input type="number" id="h_max_assign_level" value="<%= r.max_role_level || 0 %>" min="0" max="<%= r.level %>">
+                <label class="toggle-item"><input type="checkbox" id="r_is_admin" <%= r.is_admin_role ? 'checked' : '' %> <%= r.name === 'owner' ? 'disabled' : '' %>><span class="toggle-switch"></span><span>رتبة إدارية</span></label>
+                <label class="toggle-item"><input type="checkbox" id="r_is_protected" <%= r.is_protected ? 'checked' : '' %> <%= r.name === 'owner' ? 'disabled' : '' %>><span class="toggle-switch"></span><span>محمية (لا يمكن حذفها)</span></label>
+                <label class="toggle-item"><input type="checkbox" id="r_is_default" <%= r.is_default ? 'checked' : '' %> <%= r.name === 'owner' ? 'disabled' : '' %>><span class="toggle-switch"></span><span>رتبة افتراضية للأعضاء الجدد</span></label>
+                <label class="toggle-item"><input type="checkbox" id="r_is_staff" <%= r.is_staff ? 'checked' : '' %> <%= r.name === 'owner' ? 'disabled' : '' %>><span class="toggle-switch"></span><span>Staff (تظهر في قائمة الفريق)</span></label>
+                <label class="toggle-item"><input type="checkbox" id="h_can_assign" <%= r.can_assign_roles ? 'checked' : '' %> <%= r.name === 'owner' ? 'disabled' : '' %>><span class="toggle-switch"></span><span>يمكنه تعيين رتب</span></label>
               </div>
             </div>
 
             <!-- Hierarchy preview -->
             <div class="settings-section">
-              <h3><i class="fas fa-sitemap"></i> الهيكل الحالي</h3>
+              <h3><i class="fas fa-sitemap"></i> ترتيب الرتب</h3>
               <div class="hierarchy-tree">
                 <% if (typeof roles !== 'undefined' && roles) { %>
-                  <% roles.sort((a,b) => b.level - a.level).forEach(function(role, idx) { %>
+                  <% roles.forEach(function(role, idx) { %>
                     <div class="tree-node" style="padding-left:<%= idx * 20 %>px">
                       <div class="tree-dot" style="background:<%= role.color %>"></div>
-                      <span class="tree-name"><% if (role.emoji) { %><%= role.emoji %> <% } %><%= role.display_name || role.name %></span>
-                      <span class="tree-level">Lv.<%= role.level %></span>
+                      <span class="tree-name"><% if (role.emoji) { %><%= role.emoji %> <% } %><%= role.display_name || role.name %>
+                        <% if (role.name === 'owner') { %><i class="fas fa-crown" style="color:#f59e0b;font-size:0.7rem;margin-right:4px"></i><% } %>
+                      </span>
                       <% if (role.id === r.id) { %><span class="badge-current">حالي</span><% } %>
+                      <% if (role.name === 'owner') { %><span class="badge-owner-sm">محمية</span><% } %>
                     </div>
                   <% }); %>
                 <% } %>
@@ -221,7 +238,6 @@
       <div class="form-group"><label>اللون</label><input type="color" id="new_color" value="#780ecf"></div>
       <div class="form-group"><label>الأيقونة</label><input type="text" id="new_icon" value="fa-user"></div>
       <div class="form-group"><label>الإيموجي</label><input type="text" id="new_emoji" placeholder="🎯" maxlength="10"></div>
-      <div class="form-group"><label>المستوى (0-100)</label><input type="number" id="new_level" value="0" min="0" max="100"></div>
       <div class="form-group" style="grid-column:1/-1"><label>الوصف</label><input type="text" id="new_description" placeholder="وصف الرتبة..."></div>
     </div>
     <div class="admin-modal-footer">
@@ -324,6 +340,8 @@
 /* Badges */
 .badge-admin-sm{padding:1px 5px;background:rgba(239,68,68,0.2);color:#ef4444;border-radius:4px;font-size:0.6rem;font-weight:700;margin-right:4px}
 .badge-staff-sm{padding:1px 5px;background:rgba(59,130,246,0.2);color:#3b82f6;border-radius:4px;font-size:0.6rem;font-weight:700;margin-right:4px}
+.badge-owner-sm{padding:1px 5px;background:rgba(245,158,11,0.2);color:#f59e0b;border-radius:4px;font-size:0.6rem;font-weight:700;margin-right:4px}
+.owner-role{background:rgba(245,158,11,0.05)!important;border:1px solid rgba(245,158,11,0.15)!important}
 .badge-current{padding:1px 6px;background:rgba(var(--ac-rgb),0.2);color:var(--ac);border-radius:4px;font-size:0.65rem;font-weight:700}
 .hierarchy-tree{display:flex;flex-direction:column;gap:0.25rem}
 .tree-node{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;transition:background 0.2s}
@@ -631,14 +649,12 @@ function selectRole(id) {
   document.getElementById('r_color').value = role.color || '#ffffff';
   document.getElementById('r_icon').value = role.icon || '';
   document.getElementById('r_emoji').value = role.emoji || '';
-  document.getElementById('r_level').value = role.level;
   document.getElementById('r_description').value = role.description || '';
   document.getElementById('r_is_admin').checked = !!role.is_admin_role;
   document.getElementById('r_is_protected').checked = !!role.is_protected;
   document.getElementById('r_is_default').checked = !!role.is_default;
   document.getElementById('r_is_staff').checked = !!role.is_staff;
   document.getElementById('h_can_assign').checked = !!role.can_assign_roles;
-  document.getElementById('h_max_assign_level').value = role.max_role_level || 0;
   updatePreview();
   // Re-render current tab
   const activeTab = document.querySelector('.role-tab.active')?.textContent || '';
@@ -799,6 +815,9 @@ async function saveAll() {
   const id = selectedRoleId;
   if (!id) return;
 
+  const role = roles.find(r => r.id === id);
+  if (role && role.name === 'owner') return showToast('لا يمكن تعديل رتبة المالك', true);
+
   // 1. Save role settings
   const roleBody = {
     name: document.getElementById('r_name').value,
@@ -806,14 +825,12 @@ async function saveAll() {
     color: document.getElementById('r_color').value,
     icon: document.getElementById('r_icon').value,
     emoji: document.getElementById('r_emoji').value,
-    level: parseInt(document.getElementById('r_level').value) || 0,
     description: document.getElementById('r_description').value,
     is_admin_role: document.getElementById('r_is_admin').checked ? 1 : 0,
     is_protected: document.getElementById('r_is_protected').checked ? 1 : 0,
     is_default: document.getElementById('r_is_default').checked ? 1 : 0,
     is_staff: document.getElementById('r_is_staff').checked ? 1 : 0,
     can_assign_roles: document.getElementById('h_can_assign').checked ? 1 : 0,
-    max_role_level: parseInt(document.getElementById('h_max_assign_level').value) || 0,
   };
 
   try {
@@ -844,6 +861,21 @@ async function saveAll() {
   showToast('تم الحفظ بنجاح');
 }
 
+// Reset all permissions for current role
+function resetPermissions() {
+  if (!confirm('هل أنت متأكد من إعادة تعيين كل الصلاحيات؟')) return;
+  const id = selectedRoleId;
+  if (!id) return;
+  permState[id] = {};
+  pageAccess[id] = {};
+  // Re-render current tab
+  const activeTab = document.querySelector('.role-tab.active')?.textContent || '';
+  if (activeTab.includes('الصفحات')) renderPagesAccess();
+  else if (activeTab.includes('الإدارة')) renderPermGroup('admin');
+  else if (activeTab.includes('الموقع')) renderPermGroup('site');
+  showToast('تم إعادة التعيين — اضغط حفظ للتأكيد');
+}
+
 // CRUD
 async function createRole() {
   const body = {
@@ -852,7 +884,6 @@ async function createRole() {
     color: document.getElementById('new_color').value,
     icon: document.getElementById('new_icon').value,
     emoji: document.getElementById('new_emoji').value,
-    level: parseInt(document.getElementById('new_level').value) || 0,
     description: document.getElementById('new_description').value
   };
   if (!body.name || !body.display_name) return alert('أدخل الأسماء');
