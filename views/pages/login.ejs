@@ -138,12 +138,6 @@
       width: 100px;
       height: 100px;
       margin: 0 auto 1.5rem;
-      animation: logoFloat 4s ease-in-out infinite;
-    }
-
-    @keyframes logoFloat {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-8px); }
     }
 
     .login-logo::before {
@@ -152,7 +146,7 @@
       inset: -4px;
       border-radius: 50%;
       background: conic-gradient(from 0deg, var(--ac), rgba(var(--ac-rgb),0.3), var(--ac), rgba(var(--ac-rgb),0.1), var(--ac));
-      animation: ringRotate 3s linear infinite;
+      animation: ringRotate 12s linear infinite;
     }
 
     @keyframes ringRotate { to { transform: rotate(360deg); } }

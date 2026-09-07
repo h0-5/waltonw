@@ -118,7 +118,7 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    animation: heroTitleShine 5s ease-in-out infinite;
+
     filter: drop-shadow(0 0 20px rgba(var(--purple-rgb,120,14,207),0.2));
 }
 

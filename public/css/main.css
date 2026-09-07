@@ -973,7 +973,6 @@ button { cursor: pointer; font-family: inherit; }
   border: 4px solid var(--bg-body);
   box-shadow: 0 0 0 3px var(--ac), 0 0 15px rgba(var(--ac-rgb),0.3);
   object-fit: cover;
-  animation: avatarGlow 3s ease-in-out infinite;
 }
 @keyframes avatarGlow {
   0%,100% { box-shadow: 0 0 0 3px var(--ac), 0 0 15px rgba(var(--ac-rgb),0.3); }

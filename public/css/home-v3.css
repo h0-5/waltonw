@@ -55,7 +55,6 @@
   background: rgba(var(--ac-rgb), 0.1);
   border: 1px solid rgba(var(--ac-rgb), 0.3);
   backdrop-filter: blur(12px);
-  animation: hwFloatY 4s ease-in-out infinite;
 }
 .hw-hero-badge i { color: #facc15; filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.6)); }
 @keyframes hwFloatY { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
@@ -67,18 +66,17 @@
 .hw-logo-ring::before {
   content: ''; position: absolute; inset: -5px; border-radius: 50%;
   background: conic-gradient(from 0deg, var(--ac), transparent 25%, rgba(var(--ac-rgb), 0.5) 50%, transparent 75%, var(--ac));
-  animation: hwSpin 5s linear infinite;
+  animation: hwSpin 14s linear infinite;
 }
 .hw-logo-ring::after {
   content: ''; position: absolute; inset: -5px; border-radius: 50%;
   background: conic-gradient(from 0deg, var(--ac), transparent 25%, rgba(var(--ac-rgb), 0.5) 50%, transparent 75%, var(--ac));
-  animation: hwSpin 5s linear infinite; filter: blur(18px); opacity: 0.7;
+  filter: blur(18px); opacity: 0.4;
 }
 @keyframes hwSpin { to { transform: rotate(360deg); } }
 .hw-logo-ring img {
   width: 150px; height: 150px; border-radius: 50%; position: relative; z-index: 1;
   border: 4px solid rgba(10, 8, 18, 0.9);
-  animation: hwLogoFloat 6s ease-in-out infinite;
   transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .hw-logo-ring:hover img { transform: scale(1.07); }
@@ -92,9 +90,7 @@
   background: linear-gradient(90deg, #fff 0%, var(--ac-light, #9b30ff) 30%, var(--ac) 55%, #fff 85%);
   background-size: 220% auto;
   -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-  animation: hwShine 4.5s linear infinite;
 }
-@keyframes hwShine { to { background-position: -220% center; } }
 
 .hw-sub {
   font-size: clamp(0.95rem, 2.4vw, 1.2rem); color: rgba(255,255,255,0.65);
@@ -125,7 +121,6 @@
   content: ''; position: absolute; top: 0; height: 100%; width: 60px;
   left: -80px; transform: skewX(-25deg);
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
-  animation: hwSweep 3.2s ease infinite;
 }
 @keyframes hwSweep { 0% { left: -80px; } 45%, 100% { left: calc(100% + 40px); } }
 .hw-btn-primary:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 16px 42px rgba(var(--ac-rgb), 0.55); }
@@ -153,9 +148,8 @@
 .hw-meta-chip i { color: var(--ac); font-size: 12px; }
 .hw-meta-chip .hw-dot {
   width: 7px; height: 7px; border-radius: 50%; background: #4ade80;
-  box-shadow: 0 0 8px #4ade80; animation: hwPulse 2s ease infinite;
+  box-shadow: 0 0 8px #4ade80;
 }
-@keyframes hwPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(74,222,128,0.5); } 50% { box-shadow: 0 0 0 6px rgba(74,222,128,0); } }
 
 .hw-scroll-hint {
   position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%);
@@ -280,9 +274,7 @@
   width: 68px; height: 68px; border-radius: 20px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center; font-size: 30px; color: #facc15;
   background: rgba(250, 204, 21, 0.12); border: 1px solid rgba(250, 204, 21, 0.3);
-  animation: hwGiftShake 3.4s ease infinite;
 }
-@keyframes hwGiftShake { 0%,86%,100% { transform: rotate(0); } 88% { transform: rotate(-9deg); } 92% { transform: rotate(8deg); } 96% { transform: rotate(-5deg); } }
 .hw-giveaway-info h3 { font-size: 1.25rem; font-weight: 900; color: #fff; margin-bottom: 4px; }
 .hw-giveaway-info p { font-size: 12.5px; color: rgba(255,255,255,0.55); }
 .hw-countdown { display: flex; gap: 10px; direction: ltr; }
@@ -362,7 +354,6 @@
   display: flex; align-items: center; justify-content: center; font-size: 34px; color: #fff;
   background: linear-gradient(135deg, #5865F2, #7983F5);
   box-shadow: 0 14px 40px rgba(88, 101, 242, 0.45);
-  animation: hwFloatY 4.5s ease-in-out infinite;
 }
 .hw-discord-card h2 { font-size: clamp(1.3rem, 3.5vw, 1.8rem); font-weight: 900; margin-bottom: 0.5rem; }
 .hw-discord-card > p { color: rgba(255,255,255,0.55); font-size: 14px; margin-bottom: 1.6rem; }
@@ -385,8 +376,7 @@
   border: 1px solid rgba(74, 222, 128, 0.25);
 }
 .hw-games-icons { display: flex; gap: 18px; justify-content: center; margin-bottom: 1.2rem; font-size: 1.9rem; }
-.hw-games-icons span { display: inline-block; animation: hwIconBounce 3s ease infinite; filter: drop-shadow(0 6px 14px rgba(0,0,0,0.4)); }
-@keyframes hwIconBounce { 0%,100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-12px) rotate(6deg); } }
+.hw-games-icons span { display: inline-block; filter: drop-shadow(0 6px 14px rgba(0,0,0,0.4)); }
 .hw-games-card h2 { font-size: clamp(1.3rem, 3.5vw, 1.8rem); font-weight: 900; margin-bottom: 0.5rem; }
 .hw-games-card > p { color: rgba(255,255,255,0.55); font-size: 14px; margin-bottom: 1.6rem; }
 .hw-btn-games {
@@ -420,9 +410,8 @@
   .hw-games { margin-bottom: 4rem; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .hw-orb, .hw-logo-ring::before, .hw-logo-ring::after, .hw-logo-ring img,
-  .hw-hero-badge, .hw-btn-primary::after, .hw-caret, .hw-scroll-hint span,
-  .hw-giveaway-gift, .hw-games-icons span, .hw-discord-icon, .hw-meta-chip .hw-dot { animation: none !important; }
+  .hw-orb, .hw-logo-ring::before, .hw-caret, .hw-scroll-hint span,
+  .particle { animation: none !important; }
 }
 
 /* ==========================================

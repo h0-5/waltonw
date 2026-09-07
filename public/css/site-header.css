@@ -67,14 +67,10 @@ img[data-profile-protected="true"] {
     user-select: none !important;
 }
 
-/* استعادة الأنيميشن الأصلي للوجو */
-.hero-section .logo-wrapper img {
-    animation: logoFloat 3s ease-in-out infinite, logoPulse 2s ease-in-out infinite !important;
-    background: none !important;
-}
-
+/* اللوجو ثابت تماماً — بلا دوران ولا وهج (بطلب المستخدم) */
 .nav-logo-img {
-    animation: logoSpin 6s ease-in-out infinite, logoGlow 3s ease-in-out infinite !important;
+    animation: none !important;
+    filter: none !important;
     background: none !important;
 }
 
@@ -87,73 +83,14 @@ img[src*="logo"].fast-img {
     background-image: none !important;
     background-color: transparent !important;
     animation: none !important;
+    filter: none !important;
     opacity: 1 !important;
-}
-
-/* استعادة الأنيميشن للوجو حتى لو كان له كلاس fast-img */
-.nav-logo-img.fast-img {
-    animation: logoSpin 6s ease-in-out infinite, logoGlow 3s ease-in-out infinite !important;
-}
-
-.hero-section .logo-wrapper img.fast-img {
-    animation: logoFloat 3s ease-in-out infinite, logoPulse 2s ease-in-out infinite !important;
 }
 
 .page-icon-box{background:linear-gradient(135deg,rgba(var(--ac-rgb),0.2),rgba(var(--ac-rgb),0.1));border:1px solid rgba(var(--ac-rgb),0.3);box-shadow:0 8px 30px rgba(var(--ac-rgb),0.3)}
 .page-icon-box i{color:var(--ac)}
 .app-btn{background:linear-gradient(135deg,var(--ac),var(--ac-dark));box-shadow:0 4px 16px rgba(var(--ac-rgb),0.35)}
 
-/* ========== إجبار الدائرة المتحركة على الظهور - أولوية قصوى ========== */
-.logo-wrapper::before {
-    content: '' !important;
-    position: absolute !important;
-    top: -2px !important;
-    left: -2px !important;
-    right: -2px !important;
-    bottom: -2px !important;
-    border-radius: 50% !important;
-    background: conic-gradient(
-        var(--ac, #ff6b1a),
-        rgba(var(--ac-rgb, 249,115,22), 0.5),
-        var(--ac, #ff6b1a),
-        rgba(var(--ac-rgb, 249,115,22), 0.3),
-        var(--ac, #ff6b1a)
-    ) !important;
-    animation: spinBorder 3s linear infinite !important;
-    z-index: 0 !important;
-    display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    pointer-events: none !important;
-}
-
-@keyframes spinBorder {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-.logo-wrapper::after {
-    content: '' !important;
-    position: absolute !important;
-    inset: 0px !important;
-    border-radius: 50% !important;
-    background: #000 !important;
-    z-index: 1 !important;
-    display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-}
-
-.logo-wrapper {
-    position: relative !important;
-    overflow: visible !important;
-    z-index: 10 !important;
-}
-
-.hero-section {
-    position: relative !important;
-    overflow: visible !important;
-}
 *,*::before,*::after{box-sizing:border-box}
 html{margin:0;padding:0;min-height:100vh}
 body{margin:0;padding:0;font-family:'Cairo',sans-serif;direction:rtl;min-height:100vh;color:#fff}
@@ -181,16 +118,7 @@ body{background:#0a0000;padding-top:70px}
 
 .nav-logo-img{
   width:40px;height:40px;
-  animation: logoSpin 6s ease-in-out infinite, logoGlow 3s ease-in-out infinite;
-  transition:transform .2s;
-}
-@keyframes logoSpin {
-  0%,100%{transform:rotateY(0deg)}
-  50%{transform:rotateY(360deg)}
-}
-@keyframes logoGlow {
-  0%,100%{filter:drop-shadow(0 0 6px rgba(255,107,26,0.5))}
-  50%{filter:drop-shadow(0 0 18px rgba(255,140,0,1)) drop-shadow(0 0 35px rgba(255,107,26,0.8))}
+  display:block;
 }
 
 .nav-logo-text{
@@ -199,11 +127,6 @@ body{background:#0a0000;padding-top:70px}
   background-size:200% auto;
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
   letter-spacing:1px;
-  animation:textShine 3s linear infinite;
-}
-@keyframes textShine {
-  0%{background-position:200% center}
-  100%{background-position:-200% center}
 }
 
 .nav-logo-sub{
@@ -211,7 +134,6 @@ body{background:#0a0000;padding-top:70px}
   background:linear-gradient(90deg,var(--ac,#f97316),#fff,var(--ac,#f97316));
   background-size:200% auto;
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  animation:textShine 2s linear infinite reverse;
 }
 
 /* Nav links - Centered */
@@ -288,13 +210,6 @@ body{background:#0a0000;padding-top:70px}
 
 .nav-link.active i {
   color: var(--ac);
-  animation: iconBounce 2.5s ease-in-out infinite;
-}
-
-@keyframes iconBounce {
-  0%, 100% { transform: scale(1) rotate(0deg); }
-  30% { transform: scale(1.25) rotate(-8deg); }
-  60% { transform: scale(1.1) rotate(4deg); }
 }
 
 /* Active link underline - with pulse animation */
@@ -308,24 +223,11 @@ body{background:#0a0000;padding-top:70px}
   background: linear-gradient(90deg, var(--ac), var(--ac-light));
   border-radius: 2px;
   box-shadow: 0 0 10px rgba(var(--ac-rgb),0.8);
-  animation: activePulse 1.5s ease-in-out infinite;
 }
 
 /* Remove the before pseudo-element for active links to avoid conflict */
 .nav-link.active::before {
   display: none;
-}
-
-/* Pulse animation for active link */
-@keyframes activePulse {
-  0%, 100% {
-    opacity: 1;
-    box-shadow: 0 0 5px rgba(var(--ac-rgb),0.5);
-  }
-  50% {
-    opacity: 0.7;
-    box-shadow: 0 0 15px rgba(var(--ac-rgb),0.9);
-  }
 }
 
 /* Actions - Right side */
@@ -354,20 +256,8 @@ body{background:#0a0000;padding-top:70px}
   color:#fff;font-size:.55rem;font-weight:800;
   border-radius:50%;display:flex;align-items:center;justify-content:center;
   padding:0 3px;border:1px solid #000;
-  animation: badgePulse 1.5s ease-in-out infinite;
 }
 #notificationBadge.hidden { display:none !important; }
-
-@keyframes badgePulse {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(var(--ac-rgb),0.7);
-  }
-  50% {
-    transform: scale(1.1);
-    box-shadow: 0 0 0 4px rgba(var(--ac-rgb),0);
-  }
-}
 
 /* Notification dropdown */
 #notificationDropdown{
