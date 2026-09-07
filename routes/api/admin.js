@@ -1,6 +1,10 @@
-const express = require('express');
+﻿const express = require('express');
 const router = express.Router();
 const db = require('../../config/database');
+const { isAdmin } = require('../../middleware/auth');
+
+// Apply isAdmin to ALL admin API routes
+router.use(isAdmin);
 
 // Admin Users API
 router.post('/users/update', async (req, res) => {
@@ -62,6 +66,120 @@ router.post('/products/edit', async (req, res) => {
       'UPDATE fs_products SET name=?, description=?, category_type=?, price_points=?, price_money=?, stock=?, image=? WHERE id=?',
       [name, description, category_type, price_points || 0, price_money || 0, stock || 0, image || null, product_id]
     );
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== Orders API =====
+router.post('/orders/:id/status', async (req, res) => {
+  try {
+    const { status } = req.body;
+    const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+    if (!validStatuses.includes(status)) return res.status(400).json({ error: 'حالة غير صالحة' });
+    await db.execute('UPDATE orders SET status = ? WHERE id = ?', [status, req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== News API =====
+router.get('/news/:id', async (req, res) => {
+  try {
+    const [rows] = await db.execute('SELECT * FROM news WHERE id = ?', [req.params.id]);
+    if (!rows.length) return res.status(404).json({ error: 'غير موجود' });
+    res.json({ news: rows[0] });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.post('/news', async (req, res) => {
+  try {
+    const { title, content, type, image, is_published } = req.body;
+    const [result] = await db.execute(
+      'INSERT INTO news (title, content, type, image, author_id, is_published, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())',
+      [title, content, type || 'news', image || null, req.user.id, is_published !== undefined ? is_published : 1]
+    );
+    res.json({ success: true, id: result.insertId });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.put('/news/:id', async (req, res) => {
+  try {
+    const { title, content, type, image, is_published } = req.body;
+    await db.execute(
+      'UPDATE news SET title=?, content=?, type=?, image=?, is_published=? WHERE id=?',
+      [title, content, type || 'news', image || null, is_published !== undefined ? is_published : 1, req.params.id]
+    );
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.delete('/news/:id', async (req, res) => {
+  try {
+    await db.execute('DELETE FROM news WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== Tickets API =====
+router.get('/tickets/:id', async (req, res) => {
+  try {
+    const [ticket] = await db.execute('SELECT t.*, u.username FROM support_tickets t LEFT JOIN users u ON t.user_id = u.id WHERE t.id = ?', [req.params.id]);
+    if (!ticket.length) return res.status(404).json({ error: 'غير موجود' });
+    const [replies] = await db.execute('SELECT r.*, u.username FROM ticket_replies r LEFT JOIN users u ON r.user_id = u.id WHERE r.ticket_id = ? ORDER BY r.created_at ASC', [req.params.id]);
+    res.json({ ticket: ticket[0], replies });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.post('/tickets/:id/reply', async (req, res) => {
+  try {
+    const { message } = req.body;
+    if (!message || !message.trim()) return res.status(400).json({ error: 'الرسالة مطلوبة' });
+    await db.execute('INSERT INTO ticket_replies (ticket_id, user_id, message, is_admin, created_at) VALUES (?, ?, ?, 1, NOW())', [req.params.id, req.user.id, message.trim()]);
+    await db.execute("UPDATE support_tickets SET status = 'replied' WHERE id = ? AND status = 'open'", [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.post('/tickets/:id/close', async (req, res) => {
+  try {
+    await db.execute("UPDATE support_tickets SET status = 'closed' WHERE id = ?", [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== Giveaways API =====
+router.get('/giveaways', async (req, res) => {
+  try {
+    const [giveaways] = await db.execute('SELECT * FROM giveaways ORDER BY id DESC');
+    res.json({ giveaways });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.post('/giveaways', async (req, res) => {
+  try {
+    const { title, description, prize, type, winner_count, required_role, required_points, starts_at, ends_at } = req.body;
+    const [result] = await db.execute(
+      'INSERT INTO giveaways (title, description, prize, type, winner_count, required_role, required_points, created_by, starts_at, ends_at, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "active", NOW())',
+      [title, description, prize, type || 'normal', winner_count || 1, required_role || null, required_points || 0, req.user.id, starts_at || null, ends_at || null]
+    );
+    res.json({ success: true, id: result.insertId });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.delete('/giveaways/:id', async (req, res) => {
+  try {
+    await db.execute('DELETE FROM giveaways WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.post('/giveaways/:id/end', async (req, res) => {
+  try {
+    await db.execute("UPDATE giveaways SET status = 'ended' WHERE id = ?", [req.params.id]);
+    // Pick random winners
+    const [participants] = await db.execute('SELECT * FROM giveaway_participants WHERE giveaway_id = ? ORDER BY RAND() LIMIT 1', [req.params.id]);
+    if (participants.length) {
+      await db.execute('INSERT INTO giveaway_winners (giveaway_id, user_id, username, selected_at) VALUES (?, ?, ?, NOW())', [req.params.id, participants[0].user_id, participants[0].username]);
+    }
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -164,7 +282,7 @@ router.post('/broadcast', async (req, res) => {
     const [users] = await db.execute(`SELECT id FROM users WHERE 1=1 ${whereClause}`);
     for (const u of users) {
       await db.execute('INSERT INTO notifications (user_id, title, message, is_read, created_at) VALUES (?, ?, ?, 0, NOW())',
-        [u.id, title || 'إشعار عام', message]);
+        [u.id, title || 'ط¥ط´ط¹ط§ط± ط¹ط§ظ…', message]);
     }
     res.json({ success: true, sent: users.length });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -262,7 +380,7 @@ router.post('/company/requests/:id/reject', async (req, res) => {
 // Service Request from user
 router.post('/service-request', async (req, res) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'يجب تسجيل الدخول' });
+    if (!req.user) return res.status(401).json({ error: 'ظٹط¬ط¨ طھط³ط¬ظٹظ„ ط§ظ„ط¯ط®ظˆظ„' });
     const { service_id, package_id } = req.body;
     await db.execute('INSERT INTO service_requests (service_id, user_id, answers, status, total_price, package_id) VALUES (?, ?, ?, ?, ?, ?)',
       [service_id, req.user.id, JSON.stringify([]), 'pending', 0, package_id || 0]);
@@ -270,21 +388,20 @@ router.post('/service-request', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ═══════════════════════════════════════════
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
 // Application Management APIs
-// ═══════════════════════════════════════════
-const { isAdmin } = require('../../middleware/auth');
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
 const path = require('path');
 const fs = require('fs');
 
 // Approve application
-router.post('/applications/:id/approve', isAdmin, async (req, res) => {
+router.post('/applications/:id/approve', async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    if (!id || id <= 0) return res.status(400).json({ error: 'رقم غير صحيح' });
+    if (!id || id <= 0) return res.status(400).json({ error: 'ط±ظ‚ظ… ط؛ظٹط± طµط­ظٹط­' });
     const [app] = await db.query('SELECT * FROM submitted_applications WHERE id = ? LIMIT 1', [id]);
-    if (!app || !app.length) return res.status(404).json({ error: 'الطلب غير موجود' });
-    if (app[0].status !== 'pending') return res.status(400).json({ error: 'يمكن قبول الطلبات المعلقة فقط' });
+    if (!app || !app.length) return res.status(404).json({ error: 'ط§ظ„ط·ظ„ط¨ ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
+    if (app[0].status !== 'pending') return res.status(400).json({ error: 'ظٹظ…ظƒظ† ظ‚ط¨ظˆظ„ ط§ظ„ط·ظ„ط¨ط§طھ ط§ظ„ظ…ط¹ظ„ظ‚ط© ظپظ‚ط·' });
 
     await db.query(
       "UPDATE submitted_applications SET status = 'waiting_join', reviewed_by = ?, reviewed_at = NOW(), review_notes = ? WHERE id = ?",
@@ -304,18 +421,18 @@ router.post('/applications/:id/approve', isAdmin, async (req, res) => {
     res.json({ success: true });
   } catch(e) {
     console.error('Approve app error:', e.message);
-    res.status(500).json({ error: 'حدث خطأ' });
+    res.status(500).json({ error: 'ط­ط¯ط« ط®ط·ط£' });
   }
 });
 
 // Reject application
-router.post('/applications/:id/reject', isAdmin, async (req, res) => {
+router.post('/applications/:id/reject',   async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    if (!id || id <= 0) return res.status(400).json({ error: 'رقم غير صحيح' });
+    if (!id || id <= 0) return res.status(400).json({ error: 'ط±ظ‚ظ… ط؛ظٹط± طµط­ظٹط­' });
     const [app] = await db.query('SELECT * FROM submitted_applications WHERE id = ? LIMIT 1', [id]);
-    if (!app || !app.length) return res.status(404).json({ error: 'الطلب غير موجود' });
-    if (app[0].status !== 'pending') return res.status(400).json({ error: 'يمكن رفض الطلبات المعلقة فقط' });
+    if (!app || !app.length) return res.status(404).json({ error: 'ط§ظ„ط·ظ„ط¨ ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
+    if (app[0].status !== 'pending') return res.status(400).json({ error: 'ظٹظ…ظƒظ† ط±ظپط¶ ط§ظ„ط·ظ„ط¨ط§طھ ط§ظ„ظ…ط¹ظ„ظ‚ط© ظپظ‚ط·' });
 
     const notes = typeof req.body.notes === 'string' ? req.body.notes.substring(0, 1000) : '';
     let cooldownUntil = null;
@@ -338,17 +455,17 @@ router.post('/applications/:id/reject', isAdmin, async (req, res) => {
     res.json({ success: true });
   } catch(e) {
     console.error('Reject app error:', e.message);
-    res.status(500).json({ error: 'حدث خطأ' });
+    res.status(500).json({ error: 'ط­ط¯ط« ط®ط·ط£' });
   }
 });
 
 // Delete application
-router.post('/applications/:id/delete', isAdmin, async (req, res) => {
+router.post('/applications/:id/delete', async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    if (!id || id <= 0) return res.status(400).json({ error: 'رقم غير صحيح' });
+    if (!id || id <= 0) return res.status(400).json({ error: 'ط±ظ‚ظ… ط؛ظٹط± طµط­ظٹط­' });
     const [app] = await db.query('SELECT id FROM submitted_applications WHERE id = ? LIMIT 1', [id]);
-    if (!app || !app.length) return res.status(404).json({ error: 'الطلب غير موجود' });
+    if (!app || !app.length) return res.status(404).json({ error: 'ط§ظ„ط·ظ„ط¨ ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
 
     await db.query('DELETE FROM submitted_applications WHERE id = ?', [id]);
     await db.query(
@@ -359,12 +476,12 @@ router.post('/applications/:id/delete', isAdmin, async (req, res) => {
     res.json({ success: true });
   } catch(e) {
     console.error('Delete app error:', e.message);
-    res.status(500).json({ error: 'حدث خطأ' });
+    res.status(500).json({ error: 'ط­ط¯ط« ط®ط·ط£' });
   }
 });
 
 // Get questions for type
-router.get('/applications/questions/:type', isAdmin, async (req, res) => {
+router.get('/applications/questions/:type', async (req, res) => {
   try {
     const type = req.params.type;
     const [qs] = await db.query('SELECT * FROM application_questions WHERE application_type = ? ORDER BY order_index ASC, sort_order ASC', [type]);
@@ -373,10 +490,10 @@ router.get('/applications/questions/:type', isAdmin, async (req, res) => {
 });
 
 // Add question
-router.post('/applications/questions', isAdmin, async (req, res) => {
+router.post('/applications/questions', async (req, res) => {
   try {
     const { application_type, question, type, required, options, order_index, max_selections } = req.body;
-    if (!application_type || !question) return res.status(400).json({ error: 'البيانات ناقصة' });
+    if (!application_type || !question) return res.status(400).json({ error: 'ط§ظ„ط¨ظٹط§ظ†ط§طھ ظ†ط§ظ‚طµط©' });
     const validTypes = ['text','textarea','number','select','radio','multiple_choice','true_false','server_name','image'];
     const qType = validTypes.includes(type) ? type : 'text';
     const opts = typeof options === 'string' ? options.substring(0, 5000) : '';
@@ -389,22 +506,22 @@ router.post('/applications/questions', isAdmin, async (req, res) => {
     res.json({ success: true });
   } catch(e) {
     console.error('Add question error:', e.message);
-    res.status(500).json({ error: 'حدث خطأ' });
+    res.status(500).json({ error: 'ط­ط¯ط« ط®ط·ط£' });
   }
 });
 
 // Delete question
-router.delete('/applications/questions/:id', isAdmin, async (req, res) => {
+router.delete('/applications/questions/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    if (!id) return res.status(400).json({ error: 'رقم غير صحيح' });
+    if (!id) return res.status(400).json({ error: 'ط±ظ‚ظ… ط؛ظٹط± طµط­ظٹط­' });
     await db.query('DELETE FROM application_questions WHERE id = ?', [id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: 'حدث خطأ' }); }
+  } catch(e) { res.status(500).json({ error: 'ط­ط¯ط« ط®ط·ط£' }); }
 });
 
 // Get settings for type
-router.get('/applications/settings/:type', isAdmin, async (req, res) => {
+router.get('/applications/settings/:type', async (req, res) => {
   try {
     const [s] = await db.query('SELECT * FROM application_settings WHERE application_type = ? LIMIT 1', [req.params.type]);
     res.json(s && s.length ? s[0] : {});
@@ -412,7 +529,7 @@ router.get('/applications/settings/:type', isAdmin, async (req, res) => {
 });
 
 // Update settings for type
-router.put('/applications/settings/:type', isAdmin, async (req, res) => {
+router.put('/applications/settings/:type', async (req, res) => {
   try {
     const type = req.params.type;
     const { title, status, description, requirements, image, site_role, discord_role_id, discord_role_id_2, discord_role_id_3, required_discord_role_id, rejection_cooldown_hours, notify_enabled } = req.body;
@@ -436,19 +553,19 @@ router.put('/applications/settings/:type', isAdmin, async (req, res) => {
     res.json({ success: true });
   } catch(e) {
     console.error('Update settings error:', e.message);
-    res.status(500).json({ error: 'حدث خطأ' });
+    res.status(500).json({ error: 'ط­ط¯ط« ط®ط·ط£' });
   }
 });
 
 // Add type
-router.post('/applications/types', isAdmin, async (req, res) => {
+router.post('/applications/types', async (req, res) => {
   try {
     const { application_type, title, description, requirements, image, status } = req.body;
     if (!application_type || !/^[a-zA-Z0-9_\-]+$/.test(application_type)) {
-      return res.status(400).json({ error: 'النوع يجب أن يحتوي على أحرف إنجليزية وأرقام فقط' });
+      return res.status(400).json({ error: 'ط§ظ„ظ†ظˆط¹ ظٹط¬ط¨ ط£ظ† ظٹط­طھظˆظٹ ط¹ظ„ظ‰ ط£ط­ط±ظپ ط¥ظ†ط¬ظ„ظٹط²ظٹط© ظˆط£ط±ظ‚ط§ظ… ظپظ‚ط·' });
     }
     const [exists] = await db.query('SELECT id FROM application_settings WHERE application_type = ?', [application_type]);
-    if (exists && exists.length) return res.status(400).json({ error: 'هذا النوع موجود بالفعل' });
+    if (exists && exists.length) return res.status(400).json({ error: 'ظ‡ط°ط§ ط§ظ„ظ†ظˆط¹ ظ…ظˆط¬ظˆط¯ ط¨ط§ظ„ظپط¹ظ„' });
     await db.query(
       'INSERT INTO application_settings (application_type, title, description, requirements, image, status) VALUES (?, ?, ?, ?, ?, ?)',
       [application_type, (title||'').substring(0,255), (description||'').substring(0,5000), (requirements||'').substring(0,5000), (image||'').substring(0,255), status === 'open' ? 'open' : 'closed']
@@ -456,12 +573,12 @@ router.post('/applications/types', isAdmin, async (req, res) => {
     res.json({ success: true });
   } catch(e) {
     console.error('Add type error:', e.message);
-    res.status(500).json({ error: 'حدث خطأ' });
+    res.status(500).json({ error: 'ط­ط¯ط« ط®ط·ط£' });
   }
 });
 
 // Update type
-router.put('/applications/types/:id', isAdmin, async (req, res) => {
+router.put('/applications/types/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const { title, description, requirements, image, status } = req.body;
@@ -470,35 +587,35 @@ router.put('/applications/types/:id', isAdmin, async (req, res) => {
       [(title||'').substring(0,255), (description||'').substring(0,5000), (requirements||'').substring(0,5000), (image||'').substring(0,255), status === 'open' ? 'open' : 'closed', id]
     );
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: 'حدث خطأ' }); }
+  } catch(e) { res.status(500).json({ error: 'ط­ط¯ط« ط®ط·ط£' }); }
 });
 
 // Toggle type status
-router.post('/applications/types/status', isAdmin, async (req, res) => {
+router.post('/applications/types/status', async (req, res) => {
   try {
     const { application_type, status } = req.body;
     const s = ['open','closed'].includes(status) ? status : 'closed';
     await db.query('UPDATE application_settings SET status = ?, updated_at = NOW() WHERE application_type = ?', [s, application_type]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: 'حدث خطأ' }); }
+  } catch(e) { res.status(500).json({ error: 'ط­ط¯ط« ط®ط·ط£' }); }
 });
 
 // Delete type
-router.delete('/applications/types/:id', isAdmin, async (req, res) => {
+router.delete('/applications/types/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const [type] = await db.query('SELECT application_type FROM application_settings WHERE id = ?', [id]);
-    if (!type || !type.length) return res.status(404).json({ error: 'غير موجود' });
+    if (!type || !type.length) return res.status(404).json({ error: 'ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
     await db.query('DELETE FROM application_questions WHERE application_type = ?', [type[0].application_type]);
     await db.query('DELETE FROM application_settings WHERE id = ?', [id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: 'حدث خطأ' }); }
+  } catch(e) { res.status(500).json({ error: 'ط­ط¯ط« ط®ط·ط£' }); }
 });
 
 // ===== Roles & Permissions API =====
 
 // Get all roles
-router.get('/roles', isAdmin, async (req, res) => {
+router.get('/roles', async (req, res) => {
   try {
     const [roles] = await db.execute('SELECT * FROM roles ORDER BY level DESC, sort_order ASC');
     const [perms] = await db.execute('SELECT * FROM role_permissions');
@@ -512,7 +629,7 @@ router.get('/roles', isAdmin, async (req, res) => {
 });
 
 // Create role
-router.post('/roles', isAdmin, async (req, res) => {
+router.post('/roles', async (req, res) => {
   try {
     const { name, display_name, color, icon, level } = req.body;
     const [result] = await db.execute(
@@ -525,7 +642,7 @@ router.post('/roles', isAdmin, async (req, res) => {
 });
 
 // Update role
-router.put('/roles/:id', isAdmin, async (req, res) => {
+router.put('/roles/:id', async (req, res) => {
   try {
     const { name, display_name, color, icon, level, permissions } = req.body;
     const roleId = req.params.id;
@@ -551,12 +668,12 @@ router.put('/roles/:id', isAdmin, async (req, res) => {
 });
 
 // Delete role
-router.delete('/roles/:id', isAdmin, async (req, res) => {
+router.delete('/roles/:id', async (req, res) => {
   try {
     const roleId = req.params.id;
     const [role] = await db.execute('SELECT * FROM roles WHERE id = ?', [roleId]);
-    if (!role.length) return res.status(404).json({ error: 'غير موجود' });
-    if (role[0].is_default) return res.status(400).json({ error: 'لا يمكن حذف الرتبة الافتراضية' });
+    if (!role.length) return res.status(404).json({ error: 'ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
+    if (role[0].is_default) return res.status(400).json({ error: 'ظ„ط§ ظٹظ…ظƒظ† ط­ط°ظپ ط§ظ„ط±طھط¨ط© ط§ظ„ط§ظپطھط±ط§ط¶ظٹط©' });
     
     await db.execute('DELETE FROM role_permissions WHERE role_id = ?', [roleId]);
     await db.execute('DELETE FROM roles WHERE id = ?', [roleId]);
@@ -565,10 +682,10 @@ router.delete('/roles/:id', isAdmin, async (req, res) => {
 });
 
 // Get user role permissions (for frontend use)
-router.get('/user-permissions/:userId', isAdmin, async (req, res) => {
+router.get('/user-permissions/:userId', async (req, res) => {
   try {
     const [user] = await db.execute('SELECT role FROM users WHERE id = ?', [req.params.userId]);
-    if (!user.length) return res.status(404).json({ error: 'غير موجود' });
+    if (!user.length) return res.status(404).json({ error: 'ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
     
     const [role] = await db.execute('SELECT * FROM roles WHERE name = ?', [user[0].role]);
     if (!role.length) return res.json({ permissions: {} });

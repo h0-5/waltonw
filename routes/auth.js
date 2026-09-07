@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const passport = require('../config/auth');
+const db = require('../config/database');
 
 // Login page
 router.get('/login', (req, res) => {
@@ -42,6 +43,11 @@ router.get('/discord/callback', (req, res, next) => {
       if (accessToken) {
         req.session.accessToken = accessToken;
       }
+      // Update last_login
+      db.execute('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]).catch(() => {});
+      // Log activity
+      db.execute('INSERT INTO user_activity_log (user_id, action, ip, created_at) VALUES (?, ?, ?, NOW())',
+        [user.id, 'login', req.ip]).catch(() => {});
       const returnTo = req.session.returnTo || '/';
       delete req.session.returnTo;
       return res.redirect(returnTo);
@@ -51,10 +57,15 @@ router.get('/discord/callback', (req, res, next) => {
 
 // Logout
 router.get('/logout', (req, res) => {
+  const userId = req.user ? req.user.id : null;
   req.logout((err) => {
     if (err) console.error('Logout error:', err);
     req.session.destroy((err) => {
       if (err) console.error('Session destroy error:', err);
+      if (userId) {
+        db.execute('INSERT INTO user_activity_log (user_id, action, ip, created_at) VALUES (?, ?, ?, NOW())',
+          [userId, 'logout', req.ip]).catch(() => {});
+      }
       res.clearCookie('wf_session');
       res.redirect('/auth/login');
     });

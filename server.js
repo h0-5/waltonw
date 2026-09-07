@@ -1,6 +1,61 @@
+const http = require('http');
+const { Server } = require('socket.io');
 const app = require('./app');
 const db = require('./config/database');
 const PORT = process.env.PORT || 3000;
+
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: { origin: '*', methods: ['GET', 'POST'] }
+});
+
+// Socket.IO - Community Chat
+const onlineUsers = new Map();
+
+io.on('connection', (socket) => {
+  console.log('🔌 Socket connected:', socket.id);
+
+  socket.on('user:online', (userData) => {
+    if (userData && userData.id) {
+      onlineUsers.set(userData.id, { ...userData, socketId: socket.id, lastSeen: Date.now() });
+      io.emit('users:online', Array.from(onlineUsers.values()));
+    }
+  });
+
+  socket.on('chat:send', async (data) => {
+    if (!data || !data.message || !data.userId) return;
+    try {
+      const [result] = await db.execute(
+        'INSERT INTO community_messages (user_id, username, avatar, message, created_at) VALUES (?, ?, ?, ?, NOW())',
+        [data.userId, data.username, data.avatar || '', data.message.substring(0, 2000)]
+      );
+      const msg = {
+        id: result.insertId,
+        user_id: data.userId,
+        username: data.username,
+        avatar: data.avatar || '',
+        message: data.message.substring(0, 2000),
+        created_at: new Date().toISOString()
+      };
+      io.emit('chat:message', msg);
+    } catch(e) { console.error('Chat error:', e.message); }
+  });
+
+  socket.on('chat:typing', (userData) => {
+    if (userData) socket.broadcast.emit('chat:typing', userData);
+  });
+
+  socket.on('disconnect', () => {
+    for (const [userId, user] of onlineUsers.entries()) {
+      if (user.socketId === socket.id) {
+        onlineUsers.delete(userId);
+        break;
+      }
+    }
+    io.emit('users:online', Array.from(onlineUsers.values()));
+    console.log('🔌 Socket disconnected:', socket.id);
+  });
+});
 
 async function migrate() {
   console.log('🔄 Running migration...');
@@ -40,7 +95,13 @@ async function migrate() {
     `CREATE TABLE IF NOT EXISTS service_questions (id INT AUTO_INCREMENT PRIMARY KEY, service_id INT, question TEXT, type VARCHAR(50) DEFAULT 'text', sort_order INT DEFAULT 0)`,
     `CREATE TABLE IF NOT EXISTS service_packages (id INT AUTO_INCREMENT PRIMARY KEY, service_id INT, name VARCHAR(255), price DECIMAL(10,2), description TEXT, sort_order INT DEFAULT 0)`,
     `CREATE TABLE IF NOT EXISTS service_requests (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, service_id INT, answers JSON, status VARCHAR(20) DEFAULT 'pending', created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
-    `CREATE TABLE IF NOT EXISTS sessions (session_id VARCHAR(128) PRIMARY KEY, expires INT UNSIGNED NOT NULL, data MEDIUMTEXT, INDEX sessions_expires(expires))`
+    `CREATE TABLE IF NOT EXISTS sessions (session_id VARCHAR(128) PRIMARY KEY, expires INT UNSIGNED NOT NULL, data MEDIUMTEXT, INDEX sessions_expires(expires))`,
+    `CREATE TABLE IF NOT EXISTS community_messages (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, username VARCHAR(100), avatar TEXT, message TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE TABLE IF NOT EXISTS bot_logs (id INT AUTO_INCREMENT PRIMARY KEY, action VARCHAR(255), details TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE TABLE IF NOT EXISTS product_logs (id INT AUTO_INCREMENT PRIMARY KEY, product_id INT, action VARCHAR(100), details TEXT, user_id INT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE TABLE IF NOT EXISTS game_reward_log (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, game_name VARCHAR(100), points INT DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE TABLE IF NOT EXISTS user_activity_log (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, action VARCHAR(255), ip VARCHAR(45), created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE TABLE IF NOT EXISTS giveaways (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255), description TEXT, prize VARCHAR(255), type VARCHAR(20) DEFAULT 'normal', winner_count INT DEFAULT 1, status VARCHAR(20) DEFAULT 'active', required_role VARCHAR(50), required_points INT DEFAULT 0, created_by INT, starts_at DATETIME, ends_at DATETIME, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`
   ];
 
   for (const sql of tables) {
@@ -58,7 +119,6 @@ async function migrate() {
   try {
     const [cols] = await db.query("SHOW COLUMNS FROM roles LIKE 'is_admin_role'");
     if (cols.length === 0) {
-      // Table exists but missing columns - backup and recreate
       const [existingRoles] = await db.query('SELECT * FROM roles');
       await db.query('DROP TABLE role_permissions');
       await db.query('DROP TABLE roles');
@@ -85,7 +145,6 @@ async function migrate() {
         FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
         UNIQUE KEY unique_role_page (role_id, page)
       )`);
-      // Re-insert old roles
       for (const r of existingRoles) {
         await db.query(
           'INSERT INTO roles (name, display_name, color, icon, level, is_admin_role, is_default) VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -95,6 +154,40 @@ async function migrate() {
       console.log('✅ roles table recreated with correct schema');
     }
   } catch(e) { console.log('roles fix:', e.message); }
+
+  // Fix schema mismatches
+  const alterStatements = [
+    { table: 'users', col: 'last_login', sql: "ALTER TABLE users ADD COLUMN last_login DATETIME" },
+    { table: 'users', col: 'banned_at', sql: "ALTER TABLE users ADD COLUMN banned_at DATETIME" },
+    { table: 'users', col: 'muted_until', sql: "ALTER TABLE users ADD COLUMN muted_until DATETIME" },
+    { table: 'news', col: 'type', sql: "ALTER TABLE news ADD COLUMN type VARCHAR(50) DEFAULT 'news'" },
+    { table: 'news', col: 'expires_at', sql: "ALTER TABLE news ADD COLUMN expires_at DATETIME" },
+    { table: 'news', col: 'is_hidden', sql: "ALTER TABLE news ADD COLUMN is_hidden TINYINT(1) DEFAULT 0" },
+    { table: 'orders', col: 'total_amount', sql: "ALTER TABLE orders ADD COLUMN total_amount DECIMAL(10,2) DEFAULT 0" },
+    { table: 'orders', col: 'shipping_address', sql: "ALTER TABLE orders ADD COLUMN shipping_address TEXT" },
+    { table: 'orders', col: 'payment_method', sql: "ALTER TABLE orders ADD COLUMN payment_method VARCHAR(50) DEFAULT 'points'" },
+    { table: 'orders', col: 'notes', sql: "ALTER TABLE orders ADD COLUMN notes TEXT" },
+    { table: 'application_settings', col: 'discord_role_id', sql: "ALTER TABLE application_settings ADD COLUMN discord_role_id VARCHAR(50)" },
+    { table: 'application_settings', col: 'required_discord_role_id', sql: "ALTER TABLE application_settings ADD COLUMN required_discord_role_id VARCHAR(50)" },
+    { table: 'application_settings', col: 'rejection_cooldown_hours', sql: "ALTER TABLE application_settings ADD COLUMN rejection_cooldown_hours INT DEFAULT 0" },
+    { table: 'application_settings', col: 'notify_enabled', sql: "ALTER TABLE application_settings ADD COLUMN notify_enabled TINYINT(1) DEFAULT 1" },
+    { table: 'application_settings', col: 'updated_at', sql: "ALTER TABLE application_settings ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" },
+    { table: 'submitted_applications', col: 'reviewed_at', sql: "ALTER TABLE submitted_applications ADD COLUMN reviewed_at DATETIME" },
+    { table: 'submitted_applications', col: 'cooldown_until', sql: "ALTER TABLE submitted_applications ADD COLUMN cooldown_until DATETIME" },
+    { table: 'service_requests', col: 'total_price', sql: "ALTER TABLE service_requests ADD COLUMN total_price DECIMAL(10,2) DEFAULT 0" },
+    { table: 'service_requests', col: 'package_id', sql: "ALTER TABLE service_requests ADD COLUMN package_id INT" },
+    { table: 'service_requests', col: 'admin_id', sql: "ALTER TABLE service_requests ADD COLUMN admin_id INT" },
+  ];
+  for (const { table, col, sql } of alterStatements) {
+    try {
+      const [cols] = await db.query(`SHOW COLUMNS FROM ${table} LIKE '${col}'`);
+      if (cols.length === 0) {
+        await db.query(sql);
+        console.log(`✅ ${table}.${col} added`);
+      }
+    } catch(e) {}
+  }
+  console.log('✅ Schema fixes done');
 
   // Seed default roles
   try {
@@ -116,7 +209,6 @@ async function migrate() {
       }
       console.log('✅ Default roles seeded');
     }
-    // Fix existing roles - set is_admin_role for admin roles
     await db.query("UPDATE roles SET is_admin_role = 1 WHERE name IN ('owner', 'admin', 'moderator', 'support')");
     await db.query("UPDATE roles SET is_default = 1 WHERE name = 'member'");
   } catch(e) { console.error('Role seed error:', e.message); }
@@ -124,7 +216,7 @@ async function migrate() {
 
 async function start() {
   await migrate();
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`\n  Walton Family Server running on http://localhost:${PORT}\n`);
   });
 }

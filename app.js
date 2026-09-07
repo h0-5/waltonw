@@ -10,12 +10,15 @@ const sessionConfig = require('./config/session');
 const db = require('./config/database');
 
 const app = express();
+const { securityHeaders, sanitizeInput, maintenanceMode } = require('./middleware/security');
 
 app.set('trust proxy', 1);
 
 // Security middleware
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 app.use(cors({ origin: process.env.SITE_URL || 'http://localhost:3000', credentials: true }));
+app.use(securityHeaders);
+app.use(sanitizeInput);
 
 // Rate limiting
 const limiter = rateLimit({
@@ -102,6 +105,9 @@ app.use('/api/admin', adminApi);
 app.use('/api/orders', adminApi);
 app.use('/api/notifications', adminApi);
 
+// Maintenance mode (after routes, before static)
+app.use(maintenanceMode);
+
 // Ensure all view locals always exist (fallback for error/404 pages)
 app.use((req, res, next) => {
   res.locals.user = res.locals.user || null;
@@ -112,59 +118,6 @@ app.use((req, res, next) => {
   res.locals.bgUrl = res.locals.bgUrl || '';
   res.locals.mobileBgUrl = res.locals.mobileBgUrl || '';
   next();
-});
-
-// TEMPORARY: Debug - show user info
-app.get('/debug-me', async (req, res) => {
-  try {
-    const sessionUser = req.user ? { id: req.user.id, username: req.user.username, role: req.user.role, discord_id: req.user.discord_id } : null;
-    let dbUser = null;
-    if (req.user && req.user.id) {
-      const [rows] = await db.query('SELECT id, username, role, discord_id FROM users WHERE id = ?', [req.user.id]);
-      dbUser = rows[0] || null;
-    }
-    const [adminRoles] = await db.query('SELECT name, is_admin_role FROM roles');
-    res.json({ sessionUser, dbUser, adminRoles, cookies: !!req.cookies });
-  } catch(e) { res.json({ error: e.message }); }
-});
-
-// TEMPORARY: Make first user admin
-app.get('/make-admin', async (req, res) => {
-  try {
-    const [users] = await db.query('SELECT id, username, role FROM users ORDER BY id ASC LIMIT 1');
-    if (users.length === 0) return res.send('No users found');
-    await db.query("UPDATE users SET role = 'owner' WHERE id = ?", [users[0].id]);
-    // Destroy session so user logs in fresh with new role
-    req.session.destroy(() => {
-      res.send(`<h1>✅ تم!</h1><p>المستخدم <b>${users[0].username}</b> أصبح الآن owner</p><p>سجّل دخول مرة أخرى:</p><a href="/auth/login" style="padding:10px 20px;background:#780ecf;color:#fff;border-radius:8px;text-decoration:none">تسجيل الدخول</a>`);
-    });
-  } catch(e) { res.send('Error: ' + e.message); }
-});
-
-// TEMPORARY: SQL Import endpoint
-app.get('/import-sql', (req, res) => {
-  res.send(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>SQL Import</title><style>body{font-family:Arial;background:#111;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}form{background:#222;padding:40px;border-radius:16px;text-align:center}input[type=file]{margin:20px 0}button{background:#780ecf;color:#fff;border:none;padding:12px 30px;border-radius:8px;font-size:16px;cursor:pointer}pre{margin-top:20px;text-align:left;max-height:400px;overflow:auto;background:#000;padding:10px;border-radius:8px;font-size:12px}</style></head><body><form method="POST" action="/import-sql" enctype="multipart/form-data"><h2>SQL Import</h2><input type="file" name="sqlfile" accept=".sql"><br><button type="submit">Import</button></form></body></html>`);
-});
-
-app.post('/import-sql', async (req, res) => {
-  try {
-    if (!req.files || !req.files.sqlfile) return res.status(400).send('No file');
-    const sqlContent = req.files.sqlfile.data.toString('utf8');
-    const statements = sqlContent.split(';').filter(s => s.trim().length > 10);
-    const results = [];
-    for (const stmt of statements) {
-      try {
-        await db.query(stmt);
-        const match = stmt.match(/INSERT INTO `?(\w+)`?/i) || stmt.match(/CREATE TABLE.*`?(\w+)`?/i);
-        results.push('✅ ' + (match ? match[1] : 'ok'));
-      } catch (e) {
-        results.push('❌ ' + e.message.substring(0, 80));
-      }
-    }
-    res.send('<html><body style="font-family:monospace;background:#111;color:#fff;padding:20px"><pre>' + results.join('\n') + '</pre></body></html>');
-  } catch (e) {
-    res.status(500).send('Error: ' + e.message);
-  }
 });
 
 // 404 handler

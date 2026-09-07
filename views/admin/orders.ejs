@@ -1,0 +1,107 @@
+<%- include('layout') %>
+
+<div class="admin-content">
+  <div class="admin-header-bar">
+    <h2><i class="fas fa-shopping-bag"></i> إدارة الطلبات</h2>
+    <div class="admin-filters">
+      <select id="statusFilter" onchange="filterOrders()" class="admin-select">
+        <option value="">الكل</option>
+        <option value="pending">معلق</option>
+        <option value="processing">قيد التنفيذ</option>
+        <option value="shipped">تم الشحن</option>
+        <option value="delivered">تم التوصيل</option>
+        <option value="cancelled">ملغي</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="admin-table-wrapper">
+    <table class="admin-table" id="ordersTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>المستخدم</th>
+          <th>المنتج</th>
+          <th>الكمية</th>
+          <th>المبلغ</th>
+          <th>الحالة</th>
+          <th>التاريخ</th>
+          <th>إجراءات</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (typeof orders !== 'undefined' && orders && orders.length) { %>
+          <% orders.forEach(function(o) { %>
+            <tr data-status="<%= o.status %>">
+              <td><strong>#<%= o.id %></strong></td>
+              <td>
+                <div class="user-cell">
+                  <img src="<%= o.user_avatar || '/images/default-avatar.png' %>" alt="" style="width:28px;height:28px;border-radius:50%">
+                  <span><%= o.username || 'مستخدم #' + o.user_id %></span>
+                </div>
+              </td>
+              <td><%= o.product_name || o.product_id || '-' %></td>
+              <td><%= o.quantity || 1 %></td>
+              <td><strong><%= o.total_amount || o.total_price || 0 %> points</strong></td>
+              <td>
+                <span class="status-badge status-<%= o.status %>">
+                  <% if (o.status === 'pending') { %>معلق
+                  <% } else if (o.status === 'processing') { %>قيد التنفيذ
+                  <% } else if (o.status === 'shipped') { %>تم الشحن
+                  <% } else if (o.status === 'delivered') { %>تم التوصيل
+                  <% } else if (o.status === 'cancelled') { %>ملغي
+                  <% } else { %><%= o.status %><% } %>
+                </span>
+              </td>
+              <td><%= new Date(o.created_at).toLocaleDateString('ar-EG') %></td>
+              <td>
+                <div class="action-btns">
+                  <select onchange="updateOrderStatus(<%= o.id %>, this.value)" class="admin-select-small">
+                    <option value="pending" <%= o.status === 'pending' ? 'selected' : '' %>>معلق</option>
+                    <option value="processing" <%= o.status === 'processing' ? 'selected' : '' %>>قيد التنفيذ</option>
+                    <option value="shipped" <%= o.status === 'shipped' ? 'selected' : '' %>>تم الشحن</option>
+                    <option value="delivered" <%= o.status === 'delivered' ? 'selected' : '' %>>تم التوصيل</option>
+                    <option value="cancelled" <%= o.status === 'cancelled' ? 'selected' : '' %>>ملغي</option>
+                  </select>
+                </div>
+              </td>
+            </tr>
+          <% }); %>
+        <% } else { %>
+          <tr>
+            <td colspan="8" style="text-align:center;padding:3rem;color:rgba(255,255,255,0.3)">
+              <i class="fas fa-shopping-bag" style="font-size:2rem;margin-bottom:0.5rem;display:block"></i>
+              لا توجد طلبات بعد
+            </td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+function filterOrders() {
+  const filter = document.getElementById('statusFilter').value;
+  document.querySelectorAll('#ordersTable tbody tr').forEach(row => {
+    if (!filter || row.dataset.status === filter) {
+      row.style.display = '';
+    } else {
+      row.style.display = 'none';
+    }
+  });
+}
+
+async function updateOrderStatus(id, status) {
+  try {
+    const res = await fetch('/api/admin/orders/' + id + '/status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    });
+    const data = await res.json();
+    if (data.success) location.reload();
+    else alert(data.error || 'حدث خطأ');
+  } catch(e) { alert('حدث خطأ'); }
+}
+</script>

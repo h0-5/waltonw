@@ -1,0 +1,184 @@
+<%- include('layout') %>
+
+<div class="admin-content">
+  <div class="admin-header-bar">
+    <h2><i class="fas fa-newspaper"></i> إدارة الأخبار</h2>
+    <button class="admin-btn primary" onclick="openAddModal()"><i class="fas fa-plus"></i> خبر جديد</button>
+  </div>
+
+  <div class="admin-table-wrapper">
+    <table class="admin-table" id="newsTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>العنوان</th>
+          <th>النوع</th>
+          <th>الكاتب</th>
+          <th>الحالة</th>
+          <th>التاريخ</th>
+          <th>إجراءات</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (typeof news !== 'undefined' && news && news.length) { %>
+          <% news.forEach(function(n) { %>
+            <tr>
+              <td><strong>#<%= n.id %></strong></td>
+              <td><%= n.title %></td>
+              <td>
+                <span class="status-badge status-<%= n.type || 'news' %>">
+                  <% if (n.type === 'giveaway') { %>atted giveaway<% } else if (n.type === 'announcement') { %>announcement<% } else { %>news<% } %>
+                </span>
+              </td>
+              <td><%= n.author_name || '-' %></td>
+              <td>
+                <% if (n.is_published && !n.is_hidden) { %>
+                  <span class="status-badge status-delivered">منشور</span>
+                <% } else if (n.is_hidden) { %>
+                  <span class="status-badge status-cancelled">مخفي</span>
+                <% } else { %>
+                  <span class="status-badge status-pending">مسودة</span>
+                <% } %>
+              </td>
+              <td><%= new Date(n.created_at).toLocaleDateString('ar-EG') %></td>
+              <td>
+                <div class="action-btns">
+                  <button class="admin-btn small" onclick="editNews(<%= n.id %>)"><i class="fas fa-edit"></i></button>
+                  <button class="admin-btn danger small" onclick="deleteNews(<%= n.id %>)"><i class="fas fa-trash"></i></button>
+                </div>
+              </td>
+            </tr>
+          <% }); %>
+        <% } else { %>
+          <tr>
+            <td colspan="7" style="text-align:center;padding:3rem;color:rgba(255,255,255,0.3)">
+              <i class="fas fa-newspaper" style="font-size:2rem;margin-bottom:0.5rem;display:block"></i>
+              لا توجد أخبار بعد
+            </td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div id="newsModal" class="admin-modal" style="display:none">
+  <div class="admin-modal-content">
+    <div class="admin-modal-header">
+      <h3 id="modalTitle">خبر جديد</h3>
+      <button class="admin-btn" onclick="closeModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <form id="newsForm" onsubmit="saveNews(event)">
+      <input type="hidden" id="newsId" value="">
+      <div class="form-group">
+        <label>العنوان</label>
+        <input type="text" id="newsTitle" required placeholder="عنوان الخبر">
+      </div>
+      <div class="form-group">
+        <label>المحتوى</label>
+        <textarea id="newsContent" rows="6" required placeholder="محتوى الخبر..."></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>النوع</label>
+          <select id="newsType">
+            <option value="news">خبر</option>
+            <option value="announcement">إعلان</option>
+            <option value="giveaway">giveaway</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>الصورة (URL)</label>
+          <input type="text" id="newsImage" placeholder="https://...">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="newsPublished" checked> منشور
+          </label>
+        </div>
+        <% if (typeof giveaways !== 'undefined' && giveaways && giveaways.length) { %>
+        <div class="form-group">
+          <label>مرتبط بـ giveaway</label>
+          <select id="newsGiveawayId">
+            <option value="">بدون</option>
+            <% giveaways.forEach(function(g) { %>
+              <option value="<%= g.id %>"><%= g.title %></option>
+            <% }); %>
+          </select>
+        </div>
+        <% } %>
+      </div>
+      <div class="admin-modal-footer">
+        <button type="button" class="admin-btn" onclick="closeModal()">إلغاء</button>
+        <button type="submit" class="admin-btn primary">حفظ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openAddModal() {
+  document.getElementById('newsId').value = '';
+  document.getElementById('newsTitle').value = '';
+  document.getElementById('newsContent').value = '';
+  document.getElementById('newsType').value = 'news';
+  document.getElementById('newsImage').value = '';
+  document.getElementById('newsPublished').checked = true;
+  document.getElementById('modalTitle').textContent = 'خبر جديد';
+  document.getElementById('newsModal').style.display = 'flex';
+}
+
+async function editNews(id) {
+  try {
+    const res = await fetch('/api/admin/news/' + id);
+    const data = await res.json();
+    if (data.news) {
+      document.getElementById('newsId').value = data.news.id;
+      document.getElementById('newsTitle').value = data.news.title;
+      document.getElementById('newsContent').value = data.news.content;
+      document.getElementById('newsType').value = data.news.type || 'news';
+      document.getElementById('newsImage').value = data.news.image || '';
+      document.getElementById('newsPublished').checked = data.news.is_published;
+      document.getElementById('modalTitle').textContent = 'تعديل الخبر';
+      document.getElementById('newsModal').style.display = 'flex';
+    }
+  } catch(e) { alert('حدث خطأ'); }
+}
+
+async function saveNews(e) {
+  e.preventDefault();
+  const id = document.getElementById('newsId').value;
+  const body = {
+    title: document.getElementById('newsTitle').value,
+    content: document.getElementById('newsContent').value,
+    type: document.getElementById('newsType').value,
+    image: document.getElementById('newsImage').value,
+    is_published: document.getElementById('newsPublished').checked ? 1 : 0
+  };
+
+  try {
+    const url = id ? '/api/admin/news/' + id : '/api/admin/news';
+    const method = id ? 'PUT' : 'POST';
+    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const data = await res.json();
+    if (data.success) location.reload();
+    else alert(data.error || 'حدث خطأ');
+  } catch(e) { alert('حدث خطأ'); }
+}
+
+async function deleteNews(id) {
+  if (!confirm('هل أنت متأكد من حذف هذا الخبر؟')) return;
+  try {
+    const res = await fetch('/api/admin/news/' + id, { method: 'DELETE' });
+    const data = await res.json();
+    if (data.success) location.reload();
+    else alert(data.error || 'حدث خطأ');
+  } catch(e) { alert('حدث خطأ'); }
+}
+
+function closeModal() {
+  document.getElementById('newsModal').style.display = 'none';
+}
+</script>

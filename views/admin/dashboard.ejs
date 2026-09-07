@@ -47,12 +47,12 @@
           <div><div style="font-size:20px;font-weight:700"><%= stats.newOrders || 0 %></div><div style="font-size:11px;color:rgba(255,255,255,0.4)">طلبات جديدة</div></div>
         </div>
         <div class="quick-action">
-          <i class="fas fa-envelope-open" style="color:#fb923c"></i>
-          <div><div style="font-size:20px;font-weight:700"><%= stats.openTickets || 0 %></div><div style="font-size:11px;color:rgba(255,255,255,0.4)">تذاكر مفتوحة</div></div>
+          <i class="fas fa-file-alt" style="color:#fb923c"></i>
+          <div><div style="font-size:20px;font-weight:700"><%= stats.pendingApps || 0 %></div><div style="font-size:11px;color:rgba(255,255,255,0.4)">طلبات معلقة</div></div>
         </div>
         <div class="quick-action">
-          <i class="fas fa-box" style="color:var(--ac)"></i>
-          <div><div style="font-size:20px;font-weight:700"><%= stats.products || 0 %></div><div style="font-size:11px;color:rgba(255,255,255,0.4)">المنتجات</div></div>
+          <i class="fas fa-newspaper" style="color:#60a5fa"></i>
+          <div><div style="font-size:20px;font-weight:700"><%= stats.newsCount || 0 %></div><div style="font-size:11px;color:rgba(255,255,255,0.4)">أخبار</div></div>
         </div>
       </div>
     </div>
@@ -64,29 +64,75 @@
         <a href="/admin/products" class="quick-action"><i class="fas fa-box"></i> المنتجات</a>
         <a href="/admin/orders" class="quick-action"><i class="fas fa-shopping-bag"></i> الطلبات</a>
         <a href="/admin/news" class="quick-action"><i class="fas fa-newspaper"></i> الأخبار</a>
+        <a href="/admin/tickets" class="quick-action"><i class="fas fa-headset"></i> التذاكر</a>
         <a href="/admin/rules" class="quick-action"><i class="fas fa-gavel"></i> القوانين</a>
         <a href="/admin/discounts" class="quick-action"><i class="fas fa-tag"></i> أكواد الخصم</a>
         <a href="/admin/broadcast" class="quick-action"><i class="fas fa-bullhorn"></i> البث</a>
         <a href="/admin/settings" class="quick-action"><i class="fas fa-cog"></i> الإعدادات</a>
+        <a href="/admin/roles" class="quick-action"><i class="fas fa-user-shield"></i> الرتب</a>
       </div>
     </div>
   </div>
 
   <!-- Bottom Row -->
   <div class="admin-grid">
+    <!-- Recent Activity -->
     <div class="admin-card" style="border-image: linear-gradient(135deg, rgba(var(--ac-rgb),0.3), transparent) 1; border-width: 1px; border-style: solid;">
-      <h3><i class="fas fa-shield-alt"></i> الوصول السريع</h3>
-      <div class="quick-actions">
-        <a href="/admin/roles" class="quick-action"><i class="fas fa-user-shield"></i> الرتب</a>
-        <a href="/admin/banned" class="quick-action"><i class="fas fa-ban"></i> المحظورين</a>
-        <a href="/admin/about" class="quick-action"><i class="fas fa-info-circle"></i> من نحن</a>
-        <a href="/admin/logs" class="quick-action"><i class="fas fa-history"></i> السجلات</a>
-      </div>
+      <h3><i class="fas fa-history"></i> آخر النشاطات</h3>
+      <% if (typeof recentActivity !== 'undefined' && recentActivity && recentActivity.length) { %>
+        <div class="activity-list">
+          <% recentActivity.forEach(function(a) { %>
+            <div class="activity-item">
+              <div class="activity-dot"></div>
+              <div class="activity-content">
+                <span class="activity-user"><%= a.username || 'System' %></span>
+                <span class="activity-action"><%= a.action %></span>
+                <% if (a.target_name) { %>
+                  <span class="activity-target"><%= a.target_name %></span>
+                <% } %>
+                <div class="activity-time"><%= new Date(a.created_at).toLocaleString('ar-EG') %></div>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      <% } else { %>
+        <div style="text-align:center;padding:2rem;color:rgba(255,255,255,0.3)">
+          <i class="fas fa-history" style="font-size:1.5rem;margin-bottom:0.5rem;display:block"></i>
+          لا توجد نشاطات بعد
+        </div>
+      <% } %>
     </div>
-    <div class="admin-card" style="border-image: linear-gradient(135deg, rgba(var(--ac-rgb),0.3), transparent) 1; border-width: 1px; border-style: solid; text-align:center; display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:180px">
-      <div style="font-size:64px;margin-bottom:10px;background:linear-gradient(135deg,var(--ac),#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:900">WF</div>
-      <div style="color:rgba(255,255,255,0.5);font-size:13px">Admin Panel — Walton Family</div>
-      <div style="color:rgba(255,255,255,0.25);font-size:11px;margin-top:4px">Node.js v2.0</div>
+
+    <!-- Recent Users -->
+    <div class="admin-card" style="border-image: linear-gradient(135deg, rgba(var(--ac-rgb),0.3), transparent) 1; border-width: 1px; border-style: solid;">
+      <h3><i class="fas fa-user-plus"></i> أحدث الأعضاء</h3>
+      <% if (typeof recentUsers !== 'undefined' && recentUsers && recentUsers.length) { %>
+        <div class="recent-users-list">
+          <% recentUsers.forEach(function(u) { %>
+            <div class="recent-user-item">
+              <img src="<%= u.profile_picture || '/images/default-avatar.png' %>" alt="" class="recent-user-avatar">
+              <div class="recent-user-info">
+                <div class="recent-user-name"><%= u.username %></div>
+                <div class="recent-user-role"><%= u.role %></div>
+              </div>
+              <div class="recent-user-time"><%= new Date(u.created_at).toLocaleDateString('ar-EG') %></div>
+            </div>
+          <% }); %>
+        </div>
+      <% } else { %>
+        <div style="text-align:center;padding:2rem;color:rgba(255,255,255,0.3)">
+          <i class="fas fa-users" style="font-size:1.5rem;margin-bottom:0.5rem;display:block"></i>
+          لا يوجد أعضاء بعد
+        </div>
+      <% } %>
+
+      <!-- System Info -->
+      <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.05)">
+        <div style="display:flex;justify-content:space-between;color:rgba(255,255,255,0.3);font-size:11px">
+          <span>محظورين: <strong style="color:#ef4444"><%= stats.bannedUsers || 0 %></strong></span>
+          <span>Giveaways: <strong style="color:#facc15"><%= stats.activeGiveaways || 0 %></strong></span>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -96,6 +142,24 @@
 @keyframes slideUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
 .admin-card { animation: fadeIn 0.4s ease both; }
 @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+.activity-list { display: flex; flex-direction: column; gap: 0.75rem; max-height: 300px; overflow-y: auto; }
+.activity-item { display: flex; gap: 10px; align-items: flex-start; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.activity-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ac); margin-top: 6px; flex-shrink: 0; }
+.activity-content { flex: 1; font-size: 0.85rem; }
+.activity-user { font-weight: 700; color: var(--ac); }
+.activity-action { color: rgba(255,255,255,0.7); margin: 0 4px; }
+.activity-target { font-weight: 600; color: #fff; }
+.activity-time { font-size: 0.7rem; color: rgba(255,255,255,0.3); margin-top: 2px; }
+
+.recent-users-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.recent-user-item { display: flex; align-items: center; gap: 10px; padding: 0.5rem; border-radius: 10px; transition: background 0.3s; }
+.recent-user-item:hover { background: rgba(255,255,255,0.03); }
+.recent-user-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+.recent-user-info { flex: 1; }
+.recent-user-name { font-weight: 700; font-size: 0.9rem; }
+.recent-user-role { font-size: 0.75rem; color: rgba(255,255,255,0.4); }
+.recent-user-time { font-size: 0.7rem; color: rgba(255,255,255,0.3); }
 </style>
 
 <%- include('admin_footer') %>

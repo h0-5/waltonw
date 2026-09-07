@@ -1,0 +1,167 @@
+<%- include('layout') %>
+
+<div class="admin-content">
+  <div class="admin-header-bar">
+    <h2><i class="fas fa-headset"></i> إدارة التذاكر</h2>
+    <div class="admin-filters">
+      <select id="statusFilter" onchange="filterTickets()" class="admin-select">
+        <option value="">الكل</option>
+        <option value="open">مفتوحة</option>
+        <option value="replied">تم الرد</option>
+        <option value="closed">مغلقة</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="admin-table-wrapper">
+    <table class="admin-table" id="ticketsTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>المستخدم</th>
+          <th>الموضوع</th>
+          <th>الأولوية</th>
+          <th>الحالة</th>
+          <th>التاريخ</th>
+          <th>إجراءات</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (typeof tickets !== 'undefined' && tickets && tickets.length) { %>
+          <% tickets.forEach(function(t) { %>
+            <tr data-status="<%= t.status %>">
+              <td><strong>#<%= t.id %></strong></td>
+              <td>
+                <div class="user-cell">
+                  <img src="<%= t.user_avatar || '/images/default-avatar.png' %>" alt="" style="width:28px;height:28px;border-radius:50%">
+                  <span><%= t.username || t.name || 'مستخدم #' + t.user_id %></span>
+                </div>
+              </td>
+              <td><%= t.subject %></td>
+              <td>
+                <span class="priority-badge priority-<%= t.priority %>">
+                  <% if (t.priority === 'high') { %>عالية
+                  <% } else if (t.priority === 'medium') { %>متوسطة
+                  <% } else { %>منخفضة<% } %>
+                </span>
+              </td>
+              <td>
+                <span class="status-badge status-<%= t.status === 'open' ? 'pending' : t.status === 'replied' ? 'processing' : 'delivered' %>">
+                  <% if (t.status === 'open') { %>مفتوحة
+                  <% } else if (t.status === 'replied') { %>تم الرد
+                  <% } else { %>مغلقة<% } %>
+                </span>
+              </td>
+              <td><%= new Date(t.created_at).toLocaleDateString('ar-EG') %></td>
+              <td>
+                <div class="action-btns">
+                  <button class="admin-btn small" onclick="viewTicket(<%= t.id %>)"><i class="fas fa-eye"></i></button>
+                  <% if (t.status !== 'closed') { %>
+                    <button class="admin-btn success small" onclick="closeTicket(<%= t.id %>)"><i class="fas fa-lock"></i></button>
+                  <% } %>
+                </div>
+              </td>
+            </tr>
+          <% }); %>
+        <% } else { %>
+          <tr>
+            <td colspan="7" style="text-align:center;padding:3rem;color:rgba(255,255,255,0.3)">
+              <i class="fas fa-headset" style="font-size:2rem;margin-bottom:0.5rem;display:block"></i>
+              لا توجد تذاكر بعد
+            </td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div id="ticketModal" class="admin-modal" style="display:none">
+  <div class="admin-modal-content" style="max-width:700px">
+    <div class="admin-modal-header">
+      <h3>تذكرة #<span id="ticketId"></span></h3>
+      <button class="admin-btn" onclick="closeModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="ticketBody" style="max-height:400px;overflow-y:auto;padding:1rem;background:rgba(0,0,0,0.2);border-radius:12px;margin-bottom:1rem"></div>
+    <div class="form-group">
+      <label>رد سريع</label>
+      <textarea id="replyMessage" rows="3" placeholder="اكتب ردك..."></textarea>
+    </div>
+    <div class="admin-modal-footer">
+      <button class="admin-btn" onclick="closeModal()">إغلاق</button>
+      <button class="admin-btn primary" onclick="sendReply()"><i class="fas fa-paper-plane"></i> إرسال الرد</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentTicketId = null;
+
+function filterTickets() {
+  const filter = document.getElementById('statusFilter').value;
+  document.querySelectorAll('#ticketsTable tbody tr').forEach(row => {
+    if (!filter || row.dataset.status === filter) row.style.display = '';
+    else row.style.display = 'none';
+  });
+}
+
+async function viewTicket(id) {
+  currentTicketId = id;
+  document.getElementById('ticketId').textContent = id;
+  try {
+    const res = await fetch('/api/admin/tickets/' + id);
+    const data = await res.json();
+    if (data.ticket) {
+      const t = data.ticket;
+      const replies = data.replies || [];
+      let html = '<div style="margin-bottom:1rem;padding:1rem;background:rgba(255,255,255,0.05);border-radius:10px">';
+      html += '<strong>' + (t.name || t.subject) + '</strong>';
+      html += '<p style="margin-top:0.5rem;color:rgba(255,255,255,0.7)">' + t.message + '</p>';
+      html += '<small style="color:rgba(255,255,255,0.4)">' + new Date(t.created_at).toLocaleString('ar-EG') + '</small>';
+      html += '</div>';
+      replies.forEach(r => {
+        html += '<div style="margin-bottom:0.5rem;padding:0.75rem;background:rgba(' + (r.is_admin ? '120,14,207,0.15' : '255,255,255,0.05') + ');border-radius:10px;border-right:3px solid ' + (r.is_admin ? '#780ecf' : '#3b82f6') + '">';
+        html += '<small style="color:rgba(255,255,255,0.5)">' + (r.is_admin ? 'الإدارة' : 'المستخدم') + ' - ' + new Date(r.created_at).toLocaleString('ar-EG') + '</small>';
+        html += '<p style="margin-top:0.25rem">' + r.message + '</p>';
+        html += '</div>';
+      });
+      document.getElementById('ticketBody').innerHTML = html;
+      document.getElementById('ticketModal').style.display = 'flex';
+    }
+  } catch(e) { alert('حدث خطأ'); }
+}
+
+async function sendReply() {
+  if (!currentTicketId) return;
+  const message = document.getElementById('replyMessage').value.trim();
+  if (!message) return alert('اكتب رسالة');
+
+  try {
+    const res = await fetch('/api/admin/tickets/' + currentTicketId + '/reply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message })
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('replyMessage').value = '';
+      viewTicket(currentTicketId);
+    } else alert(data.error || 'حدث خطأ');
+  } catch(e) { alert('حدث خطأ'); }
+}
+
+async function closeTicket(id) {
+  if (!confirm('إغلاق التذكرة؟')) return;
+  try {
+    const res = await fetch('/api/admin/tickets/' + id + '/close', { method: 'POST' });
+    const data = await res.json();
+    if (data.success) location.reload();
+    else alert(data.error || 'حدث خطأ');
+  } catch(e) { alert('حدث خطأ'); }
+}
+
+function closeModal() {
+  document.getElementById('ticketModal').style.display = 'none';
+  currentTicketId = null;
+}
+</script>

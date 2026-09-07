@@ -8,15 +8,33 @@ router.get('/', isAdmin, async (req, res) => {
   try {
     const stats = {};
     try { const [r] = await db.execute('SELECT COUNT(*) as c FROM users'); stats.users = r[0].c; } catch(e) {}
-    try { const [r] = await db.execute('SELECT COUNT(*) as c FROM products'); stats.products = r[0].c; } catch(e) {}
+    try { const [r] = await db.execute('SELECT COUNT(*) as c FROM fs_products'); stats.products = r[0].c; } catch(e) {}
     try { const [r] = await db.execute('SELECT COUNT(*) as c FROM orders'); stats.orders = r[0].c; } catch(e) {}
-    try { const [r] = await db.execute("SELECT COUNT(*) as c FROM tickets WHERE status='open'"); stats.openTickets = r[0].c; } catch(e) {}
+    try { const [r] = await db.execute("SELECT COUNT(*) as c FROM support_tickets WHERE status='open'"); stats.openTickets = r[0].c; } catch(e) {}
     try { const [r] = await db.execute("SELECT COUNT(*) as c FROM users WHERE last_login > DATE_SUB(NOW(), INTERVAL 24 HOUR)"); stats.activeToday = r[0].c; } catch(e) {}
     try { const [r] = await db.execute("SELECT COUNT(*) as c FROM orders WHERE created_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)"); stats.newOrders = r[0].c; } catch(e) {}
+    try { const [r] = await db.execute("SELECT COUNT(*) as c FROM news"); stats.newsCount = r[0].c; } catch(e) {}
+    try { const [r] = await db.execute("SELECT COUNT(*) as c FROM submitted_applications WHERE status='pending'"); stats.pendingApps = r[0].c; } catch(e) {}
+    try { const [r] = await db.execute("SELECT COUNT(*) as c FROM users WHERE is_banned = 1"); stats.bannedUsers = r[0].c; } catch(e) {}
+    try { const [r] = await db.execute("SELECT COUNT(*) as c FROM giveaways WHERE status='active'"); stats.activeGiveaways = r[0].c; } catch(e) {}
 
-    res.render('admin/dashboard', { title: 'لوحة التحكم', stats, currentPath: req.path });
+    // Recent activity
+    let recentActivity = [];
+    try {
+      const [logs] = await db.execute("SELECT * FROM admin_logs ORDER BY created_at DESC LIMIT 10");
+      recentActivity = logs;
+    } catch(e) {}
+
+    // Recent users
+    let recentUsers = [];
+    try {
+      const [users] = await db.execute("SELECT id, username, profile_picture, role, created_at FROM users ORDER BY created_at DESC LIMIT 5");
+      recentUsers = users;
+    } catch(e) {}
+
+    res.render('admin/dashboard', { title: 'لوحة التحكم', stats, recentActivity, recentUsers, currentPath: req.path });
   } catch(err) {
-    res.render('admin/dashboard', { title: 'لوحة التحكم', stats: {}, currentPath: req.path });
+    res.render('admin/dashboard', { title: 'لوحة التحكم', stats: {}, recentActivity: [], recentUsers: [], currentPath: req.path });
   }
 });
 
@@ -43,7 +61,14 @@ router.get('/products', isAdmin, async (req, res) => {
 // Orders
 router.get('/orders', isAdmin, async (req, res) => {
   try {
-    const [orders] = await db.execute('SELECT o.*, u.username FROM orders o LEFT JOIN users u ON o.user_id = u.id ORDER BY o.id DESC');
+    const [orders] = await db.execute(`
+      SELECT o.*, u.username, u.profile_picture as user_avatar,
+             p.name as product_name
+      FROM orders o
+      LEFT JOIN users u ON o.user_id = u.id
+      LEFT JOIN fs_products p ON o.product_id = p.id
+      ORDER BY o.id DESC
+    `);
     res.render('admin/orders', { title: 'إدارة الطلبات', orders, currentPath: req.path });
   } catch(err) {
     res.render('admin/orders', { title: 'إدارة الطلبات', orders: [], currentPath: req.path });
@@ -53,17 +78,18 @@ router.get('/orders', isAdmin, async (req, res) => {
 // News
 router.get('/news', isAdmin, async (req, res) => {
   try {
-    const [news] = await db.execute('SELECT * FROM news ORDER BY id DESC');
-    res.render('admin/news', { title: 'إدارة الأخبار', news, currentPath: req.path });
+    const [news] = await db.execute('SELECT n.*, u.username as author_name FROM news n LEFT JOIN users u ON n.author_id = u.id ORDER BY n.id DESC');
+    const [giveaways] = await db.execute('SELECT id, title FROM giveaways ORDER BY id DESC');
+    res.render('admin/news', { title: 'إدارة الأخبار', news, giveaways, currentPath: req.path });
   } catch(err) {
-    res.render('admin/news', { title: 'إدارة الأخبار', news: [], currentPath: req.path });
+    res.render('admin/news', { title: 'إدارة الأخبار', news: [], giveaways: [], currentPath: req.path });
   }
 });
 
 // Tickets
 router.get('/tickets', isAdmin, async (req, res) => {
   try {
-    const [tickets] = await db.execute('SELECT t.*, u.username FROM support_tickets t LEFT JOIN users u ON t.user_id = u.id ORDER BY t.id DESC');
+    const [tickets] = await db.execute('SELECT t.*, u.username, u.profile_picture as user_avatar FROM support_tickets t LEFT JOIN users u ON t.user_id = u.id ORDER BY t.id DESC');
     res.render('admin/tickets', { title: 'إدارة التذاكر', tickets, currentPath: req.path });
   } catch(err) {
     res.render('admin/tickets', { title: 'إدارة التذاكر', tickets: [], currentPath: req.path });
