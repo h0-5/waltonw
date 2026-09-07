@@ -220,4 +220,36 @@ async function userHasPermission(userId, permissionKey) {
   return perm.length > 0 && perm[0].enabled === 1;
 }
 
-module.exports = { isAuthenticated, isInGuild, isAdmin, checkPagePermission, checkElementPermission, checkCanBan, checkPermission, userHasPermission, REQUIRED_GUILD_ID };
+/**
+ * Check page access — owner and admin roles bypass.
+ * For others, checks role_page_access table.
+ */
+const checkPageAccess = (pagePath) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      req.session.returnTo = req.originalUrl;
+      return res.redirect('/auth/login');
+    }
+    if (req.user.role === 'owner') return next();
+
+    const db = require('../config/database');
+    db.execute('SELECT id, is_admin_role FROM roles WHERE name = ?', [req.user.role])
+      .then(([role]) => {
+        if (!role.length) return denyAccess(res);
+        if (role[0].is_admin_role) return next();
+        return db.execute(
+          'SELECT can_access FROM role_page_access WHERE role_id = ? AND page_path = ?',
+          [role[0].id, pagePath]
+        );
+      })
+      .then(([rows]) => {
+        // If no record found, default to allowed (backward compat)
+        if (!rows || rows.length) return next();
+        if (rows[0].can_access) return next();
+        return denyAccess(res);
+      })
+      .catch(() => next()); // On error, allow access
+  };
+};
+
+module.exports = { isAuthenticated, isInGuild, isAdmin, checkPagePermission, checkElementPermission, checkCanBan, checkPermission, checkPageAccess, userHasPermission, REQUIRED_GUILD_ID };

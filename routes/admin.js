@@ -211,11 +211,21 @@ router.get('/roles', isAdmin, async (req, res) => {
     // Import permissions config
     const { PERMISSION_GROUPS } = require('../config/permissions');
 
+    // Page access data
+    let pageAccess = {};
+    try {
+      const [pa] = await db.execute('SELECT role_id, page_path, can_access FROM role_page_access');
+      pa.forEach(r => {
+        if (!pageAccess[r.role_id]) pageAccess[r.role_id] = {};
+        pageAccess[r.role_id][r.page_path] = r.can_access;
+      });
+    } catch(e) {}
+
     res.render('admin/roles', {
       title: 'إدارة الصلاحيات',
       roles, permissions, pagePerms, elemPerms, punishData,
       unifiedPerms, sideRoles, userSideRoles,
-      PERMISSION_GROUPS,
+      PERMISSION_GROUPS, pageAccess,
       currentPath: req.path
     });
   } catch(err) {
@@ -223,7 +233,7 @@ router.get('/roles', isAdmin, async (req, res) => {
       title: 'إدارة الصلاحيات',
       roles: [], permissions: {}, pagePerms: {}, elemPerms: {}, punishData: {},
       unifiedPerms: {}, sideRoles: [], userSideRoles: {},
-      PERMISSION_GROUPS: {},
+      PERMISSION_GROUPS: {}, pageAccess: {},
       currentPath: req.path
     });
   }

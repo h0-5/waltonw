@@ -54,6 +54,7 @@
           <!-- Tabs -->
           <div class="role-tabs">
             <button class="role-tab active" onclick="switchTab('roles')"><i class="fas fa-shield-halved"></i> الرتب</button>
+            <button class="role-tab" onclick="switchTab('pages-access')"><i class="fas fa-eye"></i> الصفحات</button>
             <button class="role-tab" onclick="switchTab('admin-perms')"><i class="fas fa-lock"></i> صلاحيات الإدارة</button>
             <button class="role-tab" onclick="switchTab('site-perms')"><i class="fas fa-globe"></i> صلاحيات الموقع</button>
             <button class="role-tab" onclick="switchTab('side-roles')"><i class="fas fa-tags"></i> الأدوار الجانبية</button>
@@ -143,6 +144,22 @@
                 <input type="text" id="assignReason" placeholder="السبب" style="flex:2;padding:8px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(var(--ac-rgb),0.2);border-radius:8px;color:#fff;font-family:inherit">
                 <button class="admin-btn primary small" onclick="assignRole()"><i class="fas fa-user-plus"></i></button>
               </div>
+            </div>
+          </div>
+
+          <!-- Tab: Pages Access -->
+          <div class="tab-content" id="tab-pages-access">
+            <div class="settings-section">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+                <h3 style="margin-bottom:0"><i class="fas fa-eye"></i> الصفحات التي يمكن للرتبة رؤيتها</h3>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <input type="text" id="pageAccessSearch" placeholder="🔍 بحث عن صفحة..." oninput="filterPagesAccess()" style="padding:6px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(var(--ac-rgb),0.2);border-radius:8px;color:#fff;font-family:inherit;font-size:0.8rem;width:200px">
+                  <button class="admin-btn small" onclick="toggleAllPages(true)">تحديد الكل</button>
+                  <button class="admin-btn small" onclick="toggleAllPages(false)">إلغاء الكل</button>
+                </div>
+              </div>
+              <p style="color:rgba(255,255,255,0.4);font-size:0.85rem;margin-bottom:1rem">حدد الصفحات التي يمكن لهذه الرتبة الوصول إليها. الصفحات المعطلة لن تظهر في القائمة ولن يمكن الوصول إليها.</p>
+              <div id="pagesAccessContainer"></div>
             </div>
           </div>
 
@@ -322,9 +339,71 @@
 
 <script>
 const PERMISSION_GROUPS = <%- JSON.stringify(PERMISSION_GROUPS || {}) %>;
+
+const ALL_PAGES = [
+  // ══════════════════════════════════════
+  // الموقع الرئيسي
+  // ══════════════════════════════════════
+  { path: '/', name: 'الرئيسية', icon: 'fa-home', category: 'site', desc: 'صفحة الدخول' },
+  { path: '/about', name: 'من نحن', icon: 'fa-users', category: 'site', desc: 'معلومات عن العائلة' },
+  { path: '/rules', name: 'القواعد', icon: 'fa-gavel', category: 'site', desc: 'قوانين المجتمع' },
+  { path: '/store', name: 'المتجر', icon: 'fa-store', category: 'site', desc: 'شراء المنتجات' },
+  { path: '/games', name: 'الألعاب', icon: 'fa-gamepad', category: 'site', desc: 'صفحة الألعاب' },
+  { path: '/community', name: 'المجتمع', icon: 'fa-comments', category: 'site', desc: 'شات المجتمع' },
+  { path: '/applications', name: 'التقديمات', icon: 'fa-file-alt', category: 'site', desc: 'تقديم طلبات' },
+  { path: '/support', name: 'الدعم الفني', icon: 'fa-headset', category: 'site', desc: 'فتح تذكرة' },
+  { path: '/profile', name: 'الملف الشخصي', icon: 'fa-user', category: 'site', desc: 'بروفايل المستخدم' },
+  { path: '/cart', name: 'السلة', icon: 'fa-shopping-cart', category: 'site', desc: 'سلة المشتريات' },
+  { path: '/checkout', name: 'إتمام الشراء', icon: 'fa-credit-card', category: 'site', desc: 'صفحة الدفع' },
+  { path: '/orders', name: 'طلباتي', icon: 'fa-box', category: 'site', desc: 'سجل الطلبات' },
+  { path: '/my_discounts', name: 'خصوماتي', icon: 'fa-tag', category: 'site', desc: 'أكواد الخصم' },
+  { path: '/contact', name: 'تواصل معنا', icon: 'fa-envelope', category: 'site', desc: 'معلومات التواصل' },
+  { path: '/properties', name: 'الممتلكات', icon: 'fa-building', category: 'site', desc: 'الممتلكات والقصور' },
+  { path: '/company', name: 'الشركة', icon: 'fa-briefcase', category: 'site', desc: 'معلومات الشركة' },
+
+  // ══════════════════════════════════════
+  // الألعاب
+  // ══════════════════════════════════════
+  { path: '/games/mafia', name: 'مافيا', icon: 'fa-mask', category: 'games', desc: 'لعبة المافيا' },
+  { path: '/games/rps', name: 'حجر ورقة مقص', icon: 'fa-hand', category: 'games', desc: 'لعبة الكلاسيكية' },
+  { path: '/games/memory', name: 'الذاكرة', icon: 'fa-brain', category: 'games', desc: 'لعبة الذاكرة' },
+  { path: '/games/spin_wheel', name: 'عجلة الحظ', icon: 'fa-dharmachakra', category: 'games', desc: 'دورة عجلة الحظ' },
+  { path: '/games/impostor', name: 'Impostor', icon: 'fa-user-secret', category: 'games', desc: 'لعبة الانتحال' },
+  { path: '/games/trivia', name: 'Trivia', icon: 'fa-question-circle', category: 'games', desc: 'أسئلة معلومات عامة' },
+  { path: '/games/uno', name: 'UNO', icon: 'fa-clone', category: 'games', desc: 'لعبة UNO' },
+  { path: '/games/math_race', name: 'سباق الحساب', icon: 'fa-calculator', category: 'games', desc: 'تحدي الحساب' },
+  { path: '/games/word_scramble', name: 'ترتيب الحروف', icon: 'fa-font', category: 'games', desc: 'ترتيب الحروف' },
+  { path: '/games/quick_quiz', name: 'كويز سريع', icon: 'fa-bolt', category: 'games', desc: 'أسئلة سريعة' },
+  { path: '/games/find_link', name: 'ابحث عن الرابط', icon: 'fa-link', category: 'games', desc: 'العثور على الرابط' },
+  { path: '/games/crossword', name: 'أحجية الكلمات', icon: 'fa-th', category: 'games', desc: ' solve words' },
+  { path: '/games/aviator', name: 'Aviator', icon: 'fa-plane', category: 'games', desc: 'لعبة الطائر' },
+
+  // ══════════════════════════════════════
+  // لوحة الإدارة
+  // ══════════════════════════════════════
+  { path: '/admin', name: 'لوحة التحكم', icon: 'fa-tachometer-alt', category: 'admin', desc: 'الصفحة الرئيسية للإدارة' },
+  { path: '/admin/users', name: 'إدارة المستخدمين', icon: 'fa-users-cog', category: 'admin', desc: 'عرض وتعديل المستخدمين' },
+  { path: '/admin/products', name: 'إدارة المنتجات', icon: 'fa-box-open', category: 'admin', desc: 'إضافة وتعديل المنتجات' },
+  { path: '/admin/orders', name: 'إدارة الطلبات', icon: 'fa-truck', category: 'admin', desc: 'متابعة الطلبات' },
+  { path: '/admin/news', name: 'إدارة الأخبار', icon: 'fa-newspaper', category: 'admin', desc: 'نشر وتعديل الأخبار' },
+  { path: '/admin/tickets', name: 'إدارة التذاكر', icon: 'fa-ticket', category: 'admin', desc: 'الرد على التذاكر' },
+  { path: '/admin/applications', name: 'الطلبات المقدمة', icon: 'fa-file-alt', category: 'admin', desc: 'مراجعة التقديمات' },
+  { path: '/admin/manage-apps', name: 'إدارة نظام التقديمات', icon: 'fa-sliders-h', category: 'admin', desc: 'إعداد أنواع التقديمات' },
+  { path: '/admin/settings', name: 'الإعدادات', icon: 'fa-cog', category: 'admin', desc: 'إعدادات الموقع' },
+  { path: '/admin/roles', name: 'إدارة الصلاحيات', icon: 'fa-shield-halved', category: 'admin', desc: 'إدارة الرتب والصلاحيات' },
+  { path: '/admin/rules', name: 'إدارة القوانين', icon: 'fa-gavel', category: 'admin', desc: 'إضافة وتعديل القوانين' },
+  { path: '/admin/discounts', name: 'أكواد الخصم', icon: 'fa-percentage', category: 'admin', desc: 'إدارة أكواد الخصم' },
+  { path: '/admin/banned', name: 'المحظورين', icon: 'fa-ban', category: 'admin', desc: 'قائمة المحظورين' },
+  { path: '/admin/broadcast', name: 'البث', icon: 'fa-bullhorn', category: 'admin', desc: 'إرسال إشعارات' },
+  { path: '/admin/about', name: 'من نحن (إدارة)', icon: 'fa-info-circle', category: 'admin', desc: 'تعديل صفحة من نحن' },
+  { path: '/admin/properties', name: 'إدارة الممتلكات', icon: 'fa-building', category: 'admin', desc: 'إضافة وتعديل الممتلكات' },
+  { path: '/admin/company', name: 'إدارة الشركة', icon: 'fa-briefcase', category: 'admin', desc: 'إدارة خدمات الشركة' },
+  { path: '/admin/logs', name: 'السجلات', icon: 'fa-history', category: 'admin', desc: 'سجل الإجراءات' },
+];
 let roles = <%- JSON.stringify(roles || []) %>;
 let unifiedPerms = <%- JSON.stringify(unifiedPerms || {}) %>;
 let sideRoles = <%- JSON.stringify(sideRoles || []) %>;
+let pageAccess = <%- JSON.stringify(pageAccess || {}) %>;
 let selectedRoleId = roles.length ? roles[0].id : null;
 let permState = {}; // { roleId: { perm_key: 1/0 } }
 
@@ -350,13 +429,115 @@ function switchTab(tab) {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   event.target.closest('.role-tab').classList.add('active');
   document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'pages-access') renderPagesAccess();
   if (tab === 'admin-perms') renderPermGroup('admin');
   if (tab === 'site-perms') renderPermGroup('site');
   if (tab === 'side-roles') renderSideRoles();
   if (tab === 'roles' && selectedRoleId) loadMembers(selectedRoleId);
 }
 
-// Render permission groups
+// ══════════════════════════════════════
+// Pages Access
+// ══════════════════════════════════════
+function renderPagesAccess() {
+  const container = document.getElementById('pagesAccessContainer');
+  if (!container) return;
+  const state = pageAccess[selectedRoleId] || {};
+
+  const categories = {
+    site: { label: 'الموقع الرئيسي', icon: 'fa-globe', color: '#3b82f6' },
+    games: { label: 'الألعاب', icon: 'fa-gamepad', color: '#a855f7' },
+    admin: { label: 'لوحة الإدارة', icon: 'fa-cog', color: '#ef4444' },
+  };
+
+  let html = '';
+  for (const [catKey, cat] of Object.entries(categories)) {
+    const pages = ALL_PAGES.filter(p => p.category === catKey);
+    const enabledCount = pages.filter(p => state[p.path] !== 0).length;
+
+    html += `<div class="perm-group" data-cat="${catKey}">
+      <div class="perm-group-header" onclick="togglePageCat('${catKey}')">
+        <h4><i class="fas ${cat.icon}" style="color:${cat.color}"></i> ${cat.label} <span class="group-count">${enabledCount}/${pages.length}</span></h4>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="group-toggle-all" onclick="event.stopPropagation();toggleAllPagesCat('${catKey}',true)">تحديد الكل</button>
+          <button class="group-toggle-all" onclick="event.stopPropagation();toggleAllPagesCat('${catKey}',false)" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.1);color:#ef4444">إلغاء الكل</button>
+          <i class="fas fa-chevron-right perm-group-arrow"></i>
+        </div>
+      </div>
+      <div class="perm-group-body">
+        ${pages.map(p => {
+          const isEnabled = state[p.path] !== 0;
+          return `<div class="perm-row page-access-row" data-path="${p.path}" data-search="${p.name} ${p.desc} ${p.path}">
+            <div style="display:flex;align-items:center;gap:10px;flex:1">
+              <i class="fas ${p.icon}" style="width:20px;text-align:center;color:${isEnabled ? cat.color : 'rgba(255,255,255,0.2)'};font-size:0.9rem"></i>
+              <div>
+                <div class="perm-label">${p.name}</div>
+                <div class="perm-desc">${p.desc} <code style="font-size:0.65rem;opacity:0.5">${p.path}</code></div>
+              </div>
+            </div>
+            <label class="toggle-item" style="margin:0;padding:6px 10px;border:none;background:none">
+              <input type="checkbox" ${isEnabled ? 'checked' : ''} onchange="togglePageAccess('${p.path}',this.checked)">
+              <span class="toggle-switch"></span>
+            </label>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }
+  container.innerHTML = html;
+}
+
+function togglePageCat(catKey) {
+  const el = document.querySelector(`.perm-group[data-cat="${catKey}"]`);
+  if (el) el.classList.toggle('open');
+}
+
+function togglePageAccess(path, enabled) {
+  if (!pageAccess[selectedRoleId]) pageAccess[selectedRoleId] = {};
+  pageAccess[selectedRoleId][path] = enabled ? 1 : 0;
+  // Update count
+  const cat = ALL_PAGES.find(p => p.path === path)?.category;
+  if (cat) {
+    const pages = ALL_PAGES.filter(p => p.category === cat);
+    const state = pageAccess[selectedRoleId];
+    const count = pages.filter(p => state[p.path] !== 0).length;
+    const el = document.querySelector(`.perm-group[data-cat="${cat}"] .group-count`);
+    if (el) el.textContent = count + '/' + pages.length;
+  }
+}
+
+function toggleAllPagesCat(catKey, enabled) {
+  if (!pageAccess[selectedRoleId]) pageAccess[selectedRoleId] = {};
+  ALL_PAGES.filter(p => p.category === catKey).forEach(p => {
+    pageAccess[selectedRoleId][p.path] = enabled ? 1 : 0;
+  });
+  renderPagesAccess();
+}
+
+function toggleAllPages(enabled) {
+  if (!pageAccess[selectedRoleId]) pageAccess[selectedRoleId] = {};
+  ALL_PAGES.forEach(p => {
+    pageAccess[selectedRoleId][p.path] = enabled ? 1 : 0;
+  });
+  renderPagesAccess();
+}
+
+function filterPagesAccess() {
+  const q = document.getElementById('pageAccessSearch')?.value?.toLowerCase() || '';
+  document.querySelectorAll('.page-access-row').forEach(row => {
+    const search = (row.dataset.search || '').toLowerCase() + (row.dataset.path || '').toLowerCase();
+    row.style.display = search.includes(q) ? '' : 'none';
+  });
+  // Show/hide groups based on visible rows
+  document.querySelectorAll('.perm-group[data-cat]').forEach(g => {
+    const visible = g.querySelectorAll('.page-access-row:not([style*="display: none"])');
+    g.style.display = visible.length ? '' : 'none';
+  });
+}
+
+// ══════════════════════════════════════
+// Permission Groups
+// ══════════════════════════════════════
 function renderPermGroup(type) {
   const container = document.getElementById(type === 'admin' ? 'adminPermsContainer' : 'sitePermsContainer');
   if (!container) return;
@@ -461,7 +642,8 @@ function selectRole(id) {
   updatePreview();
   // Re-render current tab
   const activeTab = document.querySelector('.role-tab.active')?.textContent || '';
-  if (activeTab.includes('الإدارة')) renderPermGroup('admin');
+  if (activeTab.includes('الصفحات')) renderPagesAccess();
+  else if (activeTab.includes('الإدارة')) renderPermGroup('admin');
   else if (activeTab.includes('الموقع')) renderPermGroup('site');
   else if (activeTab.includes('الجانبية')) renderSideRoles();
   else if (activeTab.includes('الأعضاء')) loadMembers(id);
@@ -645,6 +827,13 @@ async function saveAll() {
     const res = await fetch('/api/admin/roles/' + id + '/all-permissions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ permissions: permState[id] || {} }) });
     const data = await res.json();
     if (!data.success) { showToast(data.error || 'خطأ في حفظ الصلاحيات', true); return; }
+  } catch(e) { showToast('خطأ', true); return; }
+
+  // 3. Save page access
+  try {
+    const res = await fetch('/api/admin/roles/' + id + '/page-access', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pages: pageAccess[id] || {} }) });
+    const data = await res.json();
+    if (!data.success) { showToast(data.error || 'خطأ في حفظ صلاحيات الصفحات', true); return; }
   } catch(e) { showToast('خطأ', true); return; }
 
   // Update local state

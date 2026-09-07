@@ -956,12 +956,64 @@ router.get('/users/:id/side-roles', async (req, res) => {
 // Reorder roles
 router.post('/roles/reorder', async (req, res) => {
   try {
-    const { order } = req.body; // [{id, sort_order}]
+    const { order } = req.body;
     if (!Array.isArray(order)) return res.status(400).json({ error: 'order مطلوب' });
     for (const item of order) {
       await db.execute('UPDATE roles SET sort_order = ? WHERE id = ?', [item.sort_order, item.id]);
     }
     res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== Page Access API =====
+
+// Get page access for a role
+router.get('/roles/:id/page-access', async (req, res) => {
+  try {
+    const [rows] = await db.execute('SELECT page_path, can_access FROM role_page_access WHERE role_id = ?', [req.params.id]);
+    const access = {};
+    rows.forEach(r => { access[r.page_path] = r.can_access; });
+    res.json({ access });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Save page access for a role (bulk)
+router.post('/roles/:id/page-access', async (req, res) => {
+  try {
+    const roleId = req.params.id;
+    const { pages } = req.body; // { "/path": 1/0 }
+
+    const [myRole] = await db.execute('SELECT level FROM roles WHERE name = ?', [req.user.role]);
+    const [targetRole] = await db.execute('SELECT level FROM roles WHERE id = ?', [roleId]);
+    if (targetRole.length && myRole.length && targetRole[0].level >= myRole[0].level && req.user.role !== 'owner') {
+      return res.status(403).json({ error: 'لا يمكنك تعديل صلاحيات رتبة بنفس المستوى أو أعلى' });
+    }
+
+    await db.execute('DELETE FROM role_page_access WHERE role_id = ?', [roleId]);
+    if (pages && typeof pages === 'object') {
+      for (const [path, canAccess] of Object.entries(pages)) {
+        if (path) {
+          await db.execute(
+            'INSERT INTO role_page_access (role_id, page_path, can_access) VALUES (?, ?, ?)',
+            [roleId, path, canAccess ? 1 : 0]
+          );
+        }
+      }
+    }
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Get all pages access for all roles (for rendering)
+router.get('/page-access-all', async (req, res) => {
+  try {
+    const [rows] = await db.execute('SELECT role_id, page_path, can_access FROM role_page_access');
+    const result = {};
+    rows.forEach(r => {
+      if (!result[r.role_id]) result[r.role_id] = {};
+      result[r.role_id][r.page_path] = r.can_access;
+    });
+    res.json({ pageAccess: result });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
