@@ -23,7 +23,10 @@ const BOT_MODE = (process.env.GUARD_BOT_MODE || 'log').toLowerCase();
 // Attack/scanner tools — instant permanent-ish block
 const KILL_RE = /sqlmap|nikto|nmap|masscan|zgrab|acunetix|netsparker|dirbuster|wpscan|havij|hydra|libwww|python-requests|go-http-client/i;
 // General crawlers/bots
-const BOT_RE = /bot|crawl|spider|slurp|bing|preview|facebookexternalhit|whatsapp|telegram|discord|headless|lighthouse|semrush|ahrefs|mj12|dotbot|petalbot|yandex|baidu|sogou|curl|wget/i;
+// Real bots/crawlers/tools only — in-app browsers (Discord/WhatsApp/Telegram)
+// are real people, NOT bots. Bare 'discord|whatsapp|telegram|bing|preview'
+// caused false positives and would block real users if GUARD_BOT_MODE=block.
+const BOT_RE = /bot|crawl|spider|slurp|bingbot|facebookexternalhit|headless|lighthouse|semrush|ahrefs|mj12bot|dotbot|petalbot|yandex|baidu|sogou|curl|wget|python-requests|go-http-client|scrapy|phantomjs|selenium|puppeteer|playwright|okhttp|libwww/i;
 
 let initPromise = null;
 function ensureTables() {

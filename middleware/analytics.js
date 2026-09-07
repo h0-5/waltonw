@@ -9,6 +9,8 @@ const crypto = require('crypto');
 const db = require('../config/database');
 
 let initPromise = null;
+let writeFailStreak = 0;
+let lastFailLog = 0;
 function ensureTables() {
   if (!initPromise) {
     initPromise = (async () => {
@@ -52,7 +54,11 @@ function ensureTables() {
   return initPromise;
 }
 
-const BOT_RE = /bot|crawl|spider|slurp|bing|preview|embed|curl|wget|headless|lighthouse|facebookexternalhit|whatsapp|telegram|discord|python-requests|axios|node|go-http/i;
+// Real bots/crawlers/tools only. In-app browsers (Discord/WhatsApp/Telegram) are
+// REAL PEOPLE opening links from chat — they must count as human visits.
+// Bare tokens like 'discord'/'whatsapp'/'telegram'/'bing'/'preview'/'node'
+// caused false positives (in-app browsers, Safari Technology Preview...).
+const BOT_RE = /bot|crawl|spider|slurp|bingbot|curl|wget|headless|lighthouse|facebookexternalhit|python-requests|axios|node-fetch|go-http-client|okhttp|libwww|java\/|httpclient|scrapy|semrush|ahrefs|mj12bot|dotbot|petalbot|phantomjs|selenium|puppeteer|playwright|pingdom|uptimerobot|monitor/i;
 const SKIP_PREFIXES = [
   '/admin', '/api', '/auth', '/css/', '/js/', '/images/', '/fonts/',
   '/uploads/', '/favicon', '/robots.txt', '/site.webmanifest', '/manifest'
@@ -75,6 +81,7 @@ function getCookie(header, name) {
 function trackVisit(req, res, next) {
   let shouldTrack = false;
   let isBotVisit = false;
+  let trackAnyStatus = false;
   let cleanPath = '/';
   let vid = null;
 
@@ -86,7 +93,9 @@ function trackVisit(req, res, next) {
         const ua = req.headers['user-agent'] || '';
         isBotVisit = !ua || ua.length < 10 || BOT_RE.test(ua);
         // Record ANY visitor — bots and humans alike
+        // Bots are recorded even on non-200 (probes hitting 404s = security signal)
         shouldTrack = true;
+        if (isBotVisit) trackAnyStatus = true;
         cleanPath = (p.length > 180 ? p.slice(0, 180) : p) || '/';
 
         // Unique visitor id (1-year cookie) — humans only
@@ -108,7 +117,8 @@ function trackVisit(req, res, next) {
 
   res.on('finish', () => {
     if (!shouldTrack) return;
-    if (req.method !== 'GET' || res.statusCode !== 200) return;
+    if (req.method !== 'GET') return;
+    if (res.statusCode !== 200 && !trackAnyStatus) return;
 
     const writes = isBotVisit
       ? [db.execute(
@@ -129,13 +139,23 @@ function trackVisit(req, res, next) {
     ensureTables()
       .then(() => Promise.all(writes))
       .then(() => {
+        writeFailStreak = 0;
         // Occasional housekeeping: purge unique-visitor rows older than 120 days
         if (!isBotVisit && Math.random() < 0.02) {
           db.execute('DELETE FROM visit_uniques WHERE visit_date < DATE_SUB(CURDATE(), INTERVAL 120 DAY)')
             .catch(() => {});
         }
       })
-      .catch(() => { /* silent — analytics must never break the site */ });
+      .catch(err => {
+        // Analytics must never break the site — but make failures visible
+        // (throttled) in the logs so problems like missing tables get noticed.
+        writeFailStreak++;
+        const now = Date.now();
+        if (now - lastFailLog > 30000) {
+          lastFailLog = now;
+          console.error('[analytics] write failed (x' + writeFailStreak + '):', err.message);
+        }
+      });
   });
 
   next();

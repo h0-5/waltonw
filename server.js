@@ -125,7 +125,12 @@ async function migrate() {
     `CREATE TABLE IF NOT EXISTS role_role_permissions (id INT AUTO_INCREMENT PRIMARY KEY, role_id INT, permission_key VARCHAR(100), enabled TINYINT(1) DEFAULT 0, FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE, UNIQUE KEY unique_role_perm (role_id, permission_key))`,
     `CREATE TABLE IF NOT EXISTS role_page_access (id INT AUTO_INCREMENT PRIMARY KEY, role_id INT, page_path VARCHAR(100), can_access TINYINT(1) DEFAULT 1, FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE, UNIQUE KEY unique_role_page_access (role_id, page_path))`,
     `CREATE TABLE IF NOT EXISTS side_roles (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(50) UNIQUE, display_name VARCHAR(100), color VARCHAR(20) DEFAULT '#780ecf', icon VARCHAR(50) DEFAULT 'fa-tag', emoji VARCHAR(20) DEFAULT '', is_active TINYINT(1) DEFAULT 1, sort_order INT DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
-    `CREATE TABLE IF NOT EXISTS user_side_roles (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, side_role_id INT, assigned_by INT, assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (side_role_id) REFERENCES side_roles(id) ON DELETE CASCADE, UNIQUE KEY unique_user_side (user_id, side_role_id))`
+    `CREATE TABLE IF NOT EXISTS user_side_roles (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, side_role_id INT, assigned_by INT, assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (side_role_id) REFERENCES side_roles(id) ON DELETE CASCADE, UNIQUE KEY unique_user_side (user_id, side_role_id))`,
+    // Visit analytics + security guard tables (guaranteed creation + visible errors in logs)
+    `CREATE TABLE IF NOT EXISTS site_visits (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, visit_date DATE NOT NULL, path VARCHAR(191) NOT NULL, views INT UNSIGNED NOT NULL DEFAULT 0, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, UNIQUE KEY uq_date_path (visit_date, path), INDEX idx_visit_date (visit_date)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+    `CREATE TABLE IF NOT EXISTS visit_uniques (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, visit_date DATE NOT NULL, visitor_id VARCHAR(64) NOT NULL, UNIQUE KEY uq_date_visitor (visit_date, visitor_id), INDEX idx_vu_date (visit_date)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+    `CREATE TABLE IF NOT EXISTS bot_visits (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, visit_date DATE NOT NULL, path VARCHAR(191) NOT NULL, views INT UNSIGNED NOT NULL DEFAULT 0, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, UNIQUE KEY uq_bot_date_path (visit_date, path), INDEX idx_bot_visit_date (visit_date)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+    `CREATE TABLE IF NOT EXISTS blocked_ips (ip VARCHAR(64) PRIMARY KEY, reason VARCHAR(191) NOT NULL DEFAULT 'unknown', user_agent VARCHAR(255) DEFAULT '', blocked_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, expires_at DATETIME NULL, INDEX idx_blocked_expires (expires_at)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`
   ];
 
   for (const sql of tables) {
@@ -253,8 +258,8 @@ async function migrate() {
   } catch(e) { console.error('Role seed error:', e.message); }
 }
 
-// Bump this when tables/ALTERs change in migrate() — '5' covers current schema
-const SCHEMA_VERSION = '5';
+// Bump this when tables/ALTERs change in migrate() — '6' adds analytics + guard tables
+const SCHEMA_VERSION = '6';
 
 async function start() {
   // Skip the ~50-table migration when schema is already current:
