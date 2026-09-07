@@ -48,6 +48,7 @@ const PERMISSION_GROUPS = {
     icon: 'fa-gavel',
     is_site: false,
     permissions: {
+      rules_view:    { label: 'عرض القوانين',  desc: 'مشاهدة صفحة القوانين' },
       rules_add:    { label: 'إضافة قانون',  desc: 'إضافة قوانين جديدة' },
       rules_edit:   { label: 'تعديل قانون',  desc: 'تعديل القوانين الموجودة' },
       rules_delete: { label: 'حذف قانون',    desc: 'حذف القوانين' },
@@ -62,6 +63,7 @@ const PERMISSION_GROUPS = {
     icon: 'fa-box',
     is_site: false,
     permissions: {
+      products_view:  { label: 'عرض المنتجات',  desc: 'مشاهدة قائمة المنتجات' },
       products_add:    { label: 'إضافة منتج',  desc: 'إضافة منتجات جديدة' },
       products_edit:   { label: 'تعديل منتج',  desc: 'تعديل المنتجات الموجودة' },
       products_delete: { label: 'حذف منتج',    desc: 'حذف المنتجات' },
@@ -215,6 +217,7 @@ const PERMISSION_GROUPS = {
     icon: 'fa-sliders-h',
     is_site: false,
     permissions: {
+      app_types_view:  { label: 'عرض الأنواع',   desc: 'مشاهدة أنواع التقديمات' },
       app_types_add:    { label: 'إضافة نوع',   desc: 'إضافة نوع تقديم جديد' },
       app_types_edit:   { label: 'تعديل نوع',   desc: 'تعديل أنواع التقديمات' },
       app_types_delete: { label: 'حذف نوع',     desc: 'حذف نوع تقديم' },
@@ -248,10 +251,53 @@ const PERMISSION_GROUPS = {
     icon: 'fa-history',
     is_site: false,
     permissions: {
-      logs_view:     { label: 'عرض السجلات',  desc: 'مشاهدة سجل الإجراءات' },
-      logs_export:   { label: 'تصدير',        desc: 'تصدير السجلات' },
-      logs_delete:   { label: 'حذف السجلات',  desc: 'حذف السجلات القديمة' },
-      logs_clear_all:{ label: 'مسح الكل',     desc: 'مسح جميع السجلات' },
+      logs_view:      { label: 'عرض السجلات',  desc: 'مشاهدة سجل الإجراءات' },
+      logs_export:    { label: 'تصدير',        desc: 'تصدير السجلات' },
+      logs_delete:    { label: 'حذف السجلات',  desc: 'حذف السجلات القديمة' },
+      logs_clear_all: { label: 'مسح الكل',     desc: 'مسح جميع السجلات' },
+    },
+  },
+
+  // ════════════════════════════════════════════════════════════
+  // لوحة الإدارة — الممتلكات
+  // ════════════════════════════════════════════════════════════
+  admin_properties: {
+    label: 'الممتلكات',
+    icon: 'fa-building',
+    is_site: false,
+    permissions: {
+      properties_view:  { label: 'عرض الممتلكات',  desc: 'مشاهدة الممتلكات' },
+      properties_add:   { label: 'إضافة ملكية',    desc: 'إضافة ممتلكات جديدة' },
+      properties_edit:  { label: 'تعديل ملكية',    desc: 'تعديل الممتلكات الموجودة' },
+      properties_delete:{ label: 'حذف ملكية',      desc: 'حذف الممتلكات' },
+    },
+  },
+
+  // ════════════════════════════════════════════════════════════
+  // لوحة الإدارة — الشركة
+  // ════════════════════════════════════════════════════════════
+  admin_company: {
+    label: 'الشركة',
+    icon: 'fa-briefcase',
+    is_site: false,
+    permissions: {
+      company_view:  { label: 'عرض الشركة',  desc: 'مشاهدة صفحة الشركة' },
+      company_add:   { label: 'إضافة خدمة',  desc: 'إضافة خدمات جديدة' },
+      company_edit:  { label: 'تعديل خدمة',  desc: 'تعديل الخدمات الموجودة' },
+      company_delete:{ label: 'حذف خدمة',    desc: 'حذف الخدمات' },
+    },
+  },
+
+  // ════════════════════════════════════════════════════════════
+  // لوحة الإدارة — عن الموقع
+  // ════════════════════════════════════════════════════════════
+  admin_about: {
+    label: 'عن الموقع',
+    icon: 'fa-info-circle',
+    is_site: false,
+    permissions: {
+      about_view: { label: 'عرض المحتوى', desc: 'مشاهدة صفحة من نحن' },
+      about_edit: { label: 'تعديل المحتوى', desc: 'تعديل صفحة من نحن' },
     },
   },
 

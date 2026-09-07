@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
-const { isAdmin } = require('../middleware/auth');
+const { isAdmin, checkPermission } = require('../middleware/auth');
 
 // Admin Dashboard
-router.get('/', isAdmin, async (req, res) => {
+router.get('/', isAdmin, checkPermission('users_view'), async (req, res) => {
   try {
     const stats = {};
     try { const [r] = await db.execute('SELECT COUNT(*) as c FROM users'); stats.users = r[0].c; } catch(e) {}
@@ -39,7 +39,7 @@ router.get('/', isAdmin, async (req, res) => {
 });
 
 // Users Management
-router.get('/users', isAdmin, async (req, res) => {
+router.get('/users', isAdmin, checkPermission('users_view'), async (req, res) => {
   try {
     const [users] = await db.execute("SELECT * FROM users ORDER BY FIELD(role, 'owner','developer','founder','vice_founder','chairman','present_member','vice_president','leadership','family_member','admin','moderator','support','member','trial','user') ASC, id DESC");
     res.render('admin/users', { title: 'إدارة المستخدمين', users, currentPath: req.path });
@@ -49,7 +49,7 @@ router.get('/users', isAdmin, async (req, res) => {
 });
 
 // Products Management
-router.get('/products', isAdmin, async (req, res) => {
+router.get('/products', isAdmin, checkPermission('products_view'), async (req, res) => {
   try {
     const [products] = await db.execute('SELECT * FROM fs_products ORDER BY id DESC');
     res.render('admin/products', { title: 'إدارة المنتجات', products, currentPath: req.path });
@@ -59,7 +59,7 @@ router.get('/products', isAdmin, async (req, res) => {
 });
 
 // Orders
-router.get('/orders', isAdmin, async (req, res) => {
+router.get('/orders', isAdmin, checkPermission('store_orders_view'), async (req, res) => {
   try {
     const [orders] = await db.execute(`
       SELECT o.*, u.username, u.profile_picture as user_avatar,
@@ -76,7 +76,7 @@ router.get('/orders', isAdmin, async (req, res) => {
 });
 
 // News
-router.get('/news', isAdmin, async (req, res) => {
+router.get('/news', isAdmin, checkPermission('news_add'), async (req, res) => {
   try {
     const [news] = await db.execute('SELECT n.*, u.username as author_name FROM news n LEFT JOIN users u ON n.author_id = u.id ORDER BY n.id DESC');
     const [giveaways] = await db.execute('SELECT id, title FROM giveaways ORDER BY id DESC');
@@ -87,7 +87,7 @@ router.get('/news', isAdmin, async (req, res) => {
 });
 
 // Tickets
-router.get('/tickets', isAdmin, async (req, res) => {
+router.get('/tickets', isAdmin, checkPermission('tickets_view'), async (req, res) => {
   try {
     const [tickets] = await db.execute('SELECT t.*, u.username, u.profile_picture as user_avatar FROM support_tickets t LEFT JOIN users u ON t.user_id = u.id ORDER BY t.id DESC');
     res.render('admin/tickets', { title: 'إدارة التذاكر', tickets, currentPath: req.path });
@@ -97,7 +97,7 @@ router.get('/tickets', isAdmin, async (req, res) => {
 });
 
 // Applications - Submissions View
-router.get('/applications', isAdmin, async (req, res) => {
+router.get('/applications', isAdmin, checkPermission('apps_view'), async (req, res) => {
   try {
     const [applications] = await db.query(`
       SELECT sa.*, u.username 
@@ -119,7 +119,7 @@ router.get('/applications', isAdmin, async (req, res) => {
 });
 
 // Applications - Manage Types & Questions
-router.get('/manage-apps', isAdmin, async (req, res) => {
+router.get('/manage-apps', isAdmin, checkPermission('app_types_view'), async (req, res) => {
   try {
     const [types] = await db.query('SELECT * FROM application_settings ORDER BY id ASC');
     res.render('admin/manage-apps', { title: 'إدارة نظام التقديمات', types, currentPath: req.path });
@@ -130,7 +130,7 @@ router.get('/manage-apps', isAdmin, async (req, res) => {
 });
 
 // Settings
-router.get('/settings', isAdmin, async (req, res) => {
+router.get('/settings', isAdmin, checkPermission('site_settings_view'), async (req, res) => {
   try {
     const settings = {};
     const [rows] = await db.execute('SELECT setting_key, setting_value FROM site_settings');
@@ -142,7 +142,7 @@ router.get('/settings', isAdmin, async (req, res) => {
 });
 
 // Roles
-router.get('/roles', isAdmin, async (req, res) => {
+router.get('/roles', isAdmin, checkPermission('roles_config_view'), async (req, res) => {
   try {
     const [roles] = await db.execute('SELECT * FROM roles ORDER BY is_admin_role DESC, sort_order ASC, id ASC');
     const [perms] = await db.execute('SELECT * FROM role_permissions');
@@ -240,7 +240,7 @@ router.get('/roles', isAdmin, async (req, res) => {
 });
 
 // Rules Management
-router.get('/rules', isAdmin, async (req, res) => {
+router.get('/rules', isAdmin, checkPermission('rules_view'), async (req, res) => {
   try {
     const [rules] = await db.execute('SELECT * FROM rules ORDER BY sort_order ASC, id ASC');
     res.render('admin/rules', { title: 'إدارة القوانين', rules, currentPath: req.path });
@@ -250,7 +250,7 @@ router.get('/rules', isAdmin, async (req, res) => {
 });
 
 // Discounts Management
-router.get('/discounts', isAdmin, async (req, res) => {
+router.get('/discounts', isAdmin, checkPermission('discounts_manage'), async (req, res) => {
   try {
     const [discounts] = await db.execute('SELECT * FROM discount_codes ORDER BY id DESC');
     res.render('admin/discounts', { title: 'أكواد الخصم', discounts, currentPath: req.path });
@@ -260,7 +260,7 @@ router.get('/discounts', isAdmin, async (req, res) => {
 });
 
 // Banned Users
-router.get('/banned', isAdmin, async (req, res) => {
+router.get('/banned', isAdmin, checkPermission('users_ban'), async (req, res) => {
   try {
     const [banned] = await db.execute('SELECT * FROM users WHERE is_banned = 1 ORDER BY id DESC');
     res.render('admin/banned', { title: 'المحظورين', banned, currentPath: req.path });
@@ -270,12 +270,12 @@ router.get('/banned', isAdmin, async (req, res) => {
 });
 
 // Broadcast
-router.get('/broadcast', isAdmin, async (req, res) => {
+router.get('/broadcast', isAdmin, checkPermission('broadcast_send'), async (req, res) => {
   res.render('admin/broadcast', { title: 'البث', currentPath: req.path });
 });
 
 // About Content
-router.get('/about', isAdmin, async (req, res) => {
+router.get('/about', isAdmin, checkPermission('about_view'), async (req, res) => {
   try {
     const about = {};
     const [rows] = await db.execute('SELECT content_key, content_value FROM about_us_content');
@@ -287,7 +287,7 @@ router.get('/about', isAdmin, async (req, res) => {
 });
 
 // Properties Management
-router.get('/properties', isAdmin, async (req, res) => {
+router.get('/properties', isAdmin, checkPermission('properties_view'), async (req, res) => {
   try {
     const [properties] = await db.execute('SELECT * FROM properties ORDER BY sort_order ASC, id ASC');
     res.render('admin/properties', { title: 'إدارة الممتلكات', properties, currentPath: req.path });
@@ -297,7 +297,7 @@ router.get('/properties', isAdmin, async (req, res) => {
 });
 
 // Company Management
-router.get('/company', isAdmin, async (req, res) => {
+router.get('/company', isAdmin, checkPermission('company_view'), async (req, res) => {
   try {
     const [items] = await db.execute('SELECT * FROM company_items ORDER BY sort_order ASC');
     const [questions] = await db.execute('SELECT * FROM service_questions ORDER BY sort_order ASC');
@@ -310,7 +310,7 @@ router.get('/company', isAdmin, async (req, res) => {
 });
 
 // Logs
-router.get('/logs', isAdmin, async (req, res) => {
+router.get('/logs', isAdmin, checkPermission('logs_view'), async (req, res) => {
   const cat = String(req.query.cat || 'admin');
   const page = Math.max(1, parseInt(req.query.page) || 1);
   const limit = 30;
