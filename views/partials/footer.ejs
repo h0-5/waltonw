@@ -170,6 +170,21 @@
     var w3 = svg.querySelector('.ftv2-w3');
     if (w3) w3.removeAttribute('mask');
   }
+  // تحويل إحداثيات الشاشة إلى إحداثيات viewBox بمراعاة التوسيط (preserveAspectRatio):
+  // الكلمة تتوسّط داخل صندوق svg (عرض الصندوق أكبر من 3× ارتفاعه فالمحتوى محجوز بالارتفاع)،
+  // فقسمة موضع المؤشر على عرض الصندوق مباشرة تنضغط الإحداثيات نحو الوسط —
+  // وتوجيه الميلان يروح للحرف المجاور (تجي على W يتحرك A، وO/N ما تنشّط أصلاً)
+  var vbW = svg.viewBox.baseVal.width, vbH = svg.viewBox.baseVal.height;
+  function svgPoint(clientX, clientY) {
+    var r = svg.getBoundingClientRect();
+    if (!r.width || !r.height) return null;
+    var s = Math.min(r.width / vbW, r.height / vbH); // نفس منطق preserveAspectRatio الافتراضي
+    var cw = vbW * s, ch = vbH * s;
+    return [
+      (clientX - r.left - (r.width - cw) / 2) / cw * vbW,
+      (clientY - r.top  - (r.height - ch) / 2) / ch * vbH
+    ];
+  }
   // الماوس يُتتبَّع على مستوى البطاقة كلها — «كشاف» يكشف تدرج الكلمة من أي مكان،
   // دون أن يحجب أي عنصر الروابط القابلة للنقر (ماوس فقط — على اللمس التدرج كامل بلا قناع)
   if (!isTouch) {
@@ -177,15 +192,17 @@
   function apply() {
     var r = svg.getBoundingClientRect();
     if (r.width && r.height) {
-      var cx = (lastX - r.left) / r.width;
-      var cy = (lastY - r.top) / r.height;
-      maskG.setAttribute('cx', (cx * 100).toFixed(2) + '%');
-      maskG.setAttribute('cy', (cy * 100).toFixed(2) + '%');
+      // الكشاف بإحداثيات المحتوى الفعلية (بعد التوسيط) — يلتصق بمكان المؤشر بلا انزياح
+      var p = svgPoint(lastX, lastY);
+      if (p) {
+        maskG.setAttribute('cx', (p[0] / vbW * 100).toFixed(2) + '%');
+        maskG.setAttribute('cy', (p[1] / vbH * 100).toFixed(2) + '%');
+      }
       var inside = lastX >= r.left - 24 && lastX <= r.right + 24 &&
                    lastY >= r.top - 24 && lastY <= r.bottom + 24;
       if (inside) { wrap.classList.add('hovered'); } else { wrap.classList.remove('hovered'); }
       // نفس الإطار: توجيه بطاقة الـ 3D للحروف — صفر مستمعات إضافية وصفر قياسات
-      if (tiltAt) tiltAt((lastX - r.left) / r.width * 300, (lastY - r.top) / r.height * 100);
+      if (tiltAt && p) tiltAt(p[0], p[1]);
     }
     pending = false;
   }
@@ -229,7 +246,8 @@
     };
     tiltAt = function(xSvg, ySvg){
       var hit = -1;
-      if (wrap.classList.contains('w5-ready') && ySvg > 12 && ySvg < 72) {
+      // النطاق العمودي يغطي الحروف كاملة (القمم ~9.4 والقواعد ~54) مع هامش فوق/تحت
+      if (wrap.classList.contains('w5-ready') && ySvg > 6 && ySvg < 76) {
         for (var b = 0; b < bands.length; b++) {
           if (xSvg >= bands[b][0] && xSvg < bands[b][1]) { hit = b; break; }
         }
@@ -253,9 +271,8 @@
       var at = function(e){
         var t = e.touches[0];
         if (!t) return;
-        var r = svg.getBoundingClientRect();
-        if (!r.width || !r.height) return;
-        tiltAt((t.clientX - r.left) / r.width * 300, (t.clientY - r.top) / r.height * 100);
+        var p = svgPoint(t.clientX, t.clientY);
+        if (p) tiltAt(p[0], p[1]);
       };
       var release = function(){ tiltAt(NaN, NaN); };
       var dropHold = function(){ if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; } };
