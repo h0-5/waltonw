@@ -75,6 +75,16 @@ async function loadSettings() {
     }
     const [rows] = await db.execute('SELECT setting_key, setting_value FROM site_settings');
     rows.forEach(r => { globalSettings[r.setting_key] = r.setting_value; });
+    // ترحيل الخلفيات: نسخ PNG الثقيلة (2MB+) استبدلت بنظائر JPEG مضغوطة —
+    // أي قيمة قديمة مخزنة تُحوَّل هنا في الذاكرة (بدون كتابة DB) فكل الصفحات تستخدم الملف الخفيف
+    const BG_MIGRATE = {
+      '/images/site-bg.png': '/images/site-bg.jpg',
+      '/images/site-mobile-bg.png': '/images/site-mobile-bg.jpg',
+      '/images/admin-mobile-bg.png': '/images/admin-mobile-bg.jpg'
+    };
+    for (const k in globalSettings) {
+      if (BG_MIGRATE[globalSettings[k]]) globalSettings[k] = BG_MIGRATE[globalSettings[k]];
+    }
     settingsLastFetch = now;
   } catch(e) {}
   return globalSettings;

@@ -309,29 +309,34 @@
 /* احتياط: JS يضيف .hovered عندما يقترب المؤشر من منطقة الكلمة */
 .ftv2-word.hovered .ftv2-w1 { opacity: 0.65; }
 
-/* الطبقة البنفسجية — تُرسم عند وصول الزائر للفوتر (كلاس drawn يضيفه JS) */
+/* الطبقة البنفسجية — تنمسح عبر الكلمة عند الوصول للفوتر (نفس إحساس الرسم على كل الأجهزة)
+   ملاحظة: آلية dasharray القديمة كانت مكسورة — 1000 أصغر من محيط رسم WALTON الحقيقي
+   فتتلكم نهاية الحروف مخفية نهائياً = الشكل المشوه. المسح clip-path مضمون 100% */
 .ftv2-w2 {
     stroke: rgba(var(--ftp-rgb), 0.5);
-    stroke-dasharray: 1000;
-    stroke-dashoffset: 1000;
+    clip-path: inset(-6% 100% -6% 0);
 }
 
 .ftv2-word.drawn .ftv2-w2 {
-    animation: ftv2Draw 3.6s ease-in-out 0.2s forwards;
+    animation: ftv2Wipe 1.5s cubic-bezier(0.6, 0.05, 0.3, 1) 0.1s forwards;
 }
 
-@keyframes ftv2Draw {
-    to { stroke-dashoffset: 0; }
-}
-
-/* طبقة التدرج — مخفية تماماً حتى الوصول للفوتر (drawn)، ثم تُكشف حول المؤشر */
+/* طبقة التدرج — مخفية تماماً حتى الوصول للفوتر (drawn)، ثم تنمسح خلف الحدود بمناوبة «الساحل يطارد الرسم» */
 .ftv2-w3 {
     stroke: url(#ftv2TextGradient);
     opacity: 0;
-    transition: opacity 0.6s ease;
+    clip-path: inset(-6% 100% -6% 0);
 }
 
-.ftv2-word.drawn .ftv2-w3 { opacity: 1; }
+.ftv2-word.drawn .ftv2-w3 {
+    opacity: 1;
+    transition: opacity 0.3s ease 0.1s;
+    animation: ftv2Wipe 1.3s cubic-bezier(0.77, 0, 0.18, 1) 1.45s forwards;
+}
+
+@keyframes ftv2Wipe {
+    to { clip-path: inset(-6% -6% -6% -6%); }
+}
 
 /* أجهزة اللمس: التدرج كامل بدون قناع الماوس (احتياط لجانب JS) */
 @media (hover: none) {
@@ -372,7 +377,6 @@
     .ftv2-word text { stroke-width: 1.2; }
 
     .ftv2-w2 { stroke: rgba(var(--ftp-rgb), 0.7); }
-
     .ftv2-w1 { display: none; }
 }
 
@@ -380,13 +384,16 @@
     .ftv2-inner { grid-template-columns: 1fr; }
 }
 
-/* احترام تقليل الحركة */
+/* احترام تقليل الحركة — الكلمة جاهزة فوراً بدون مسح */
 @media (prefers-reduced-motion: reduce) {
+    .ftv2-word .ftv2-w2,
     .ftv2-word.drawn .ftv2-w2,
-    .ftv2-word .ftv2-w2 {
+    .ftv2-word .ftv2-w3,
+    .ftv2-word.drawn .ftv2-w3 {
         animation: none;
-        stroke-dashoffset: 0;
+        clip-path: none;
     }
+    .ftv2-word .ftv2-w3 { opacity: 1; }
     .ftv2-pulse { animation: none; }
     .ftv2-link,
     .ftv2-w1 { transition: none; }

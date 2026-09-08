@@ -17,6 +17,12 @@
   <meta name="description" content="<%= _siteName %> - مجتمعنا الرقمي">
   <meta name="theme-color" content="<%= _accentColor %>">
   <title><%= title %> | <%= _siteName %></title>
+
+  <!-- Preload الصور الحرجة (اللوغو والخلفية المحلية فقط) — أول ما تفتح الصفحة تبدأ بالتحميل فوراً مع الكاش 7 أيام فما تعيد التحميل مع كل تنقل -->
+  <% var _logoUrl = (typeof settings !== 'undefined' && settings && settings.site_logo_url) ? settings.site_logo_url : '/images/logo.png'; %>
+  <% if (_logoUrl.indexOf('/') === 0) { %><link rel="preload" as="image" href="<%= _logoUrl %>"><% } %>
+  <% if (_bgUrl && _bgUrl.indexOf('/images/') === 0) { %><link rel="preload" as="image" href="<%= _bgUrl %>" media="(min-width: 769px)"><% } %>
+  <% if (_mobileBgUrl && _mobileBgUrl.indexOf('/images/') === 0) { %><link rel="preload" as="image" href="<%= _mobileBgUrl %>" media="(max-width: 768px)"><% } %>
   
   <!-- Fonts — أوزان مستخدمة فعلياً فقط (تقليم ٦ ملفات خطوط عربية ثقيلة ≈ ‎250KB+‎ من أول تحميل) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -73,12 +79,22 @@
       background-attachment: fixed;
       background-repeat: no-repeat;
     }
+    /* الهاتف: طبقة خلفية ثابتة بـ position:fixed — نفس شكل الثبات بدون إعادة رسم كل إطار
+       (background-attachment:fixed على body يسبب تقطيع بالهاتف، والـ scroll يمدد الصورة على طول الصفحة كلها = تختفي) */
+    #wfBgFix {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background-image: var(--mobile-bg-url);
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      pointer-events: none;
+    }
     @media (max-width: 768px) {
-      body {
-        background-image: var(--mobile-bg-url);
-        /* scroll بدل fixed: الخلفية الثابتة تسبب إعادة رسم كاملة كل إطار على الهاتف = تقطيع بالتمرير */
-        background-attachment: scroll;
-      }
+      body { background-image: none; }
+      #wfBgFix { display: block; }
     }
   </style>
 
@@ -127,6 +143,8 @@
   </style>
 </head>
 <body>
+  <!-- الخلفية الثابتة للهاتف (فوقها كل المحتوى) -->
+  <div id="wfBgFix" aria-hidden="true"></div>
   <!-- Loading Bar -->
   <div id="loadingBar" class="loading-bar">
     <div class="loading-bar-progress"></div>
