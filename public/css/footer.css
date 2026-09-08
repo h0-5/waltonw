@@ -339,6 +339,35 @@
     to { clip-path: inset(-6% -6% -6% -6%); }
 }
 
+/* ── طبقة الوهج الحرفي: بعد اكتمال المسحة الأحرف تتوهج تباعاً وتبقى الكلمة مضيئة
+   بدون أي ماوس — على الهاتف والكمبيوتر (الديسكتوب كان يتطلب ماوس لإظهار التدرج) ── */
+.ftv2-w4 {
+    stroke: url(#ftv2TextGradient);
+    --w4w: 0.95;
+    opacity: 0;
+}
+
+.ftv2-word.w4-ready .ftv2-w4 { opacity: 1; }
+
+.ftv2-word .ftv2-w4 tspan { opacity: 0; }
+
+.ftv2-word.glow-start .ftv2-w4 tspan {
+    animation: ftv2Letter 0.85s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+
+.ftv2-word.glow-start .ftv2-w4 tspan:nth-child(1) { animation-delay: 0s; }
+.ftv2-word.glow-start .ftv2-w4 tspan:nth-child(2) { animation-delay: 0.18s; }
+.ftv2-word.glow-start .ftv2-w4 tspan:nth-child(3) { animation-delay: 0.36s; }
+.ftv2-word.glow-start .ftv2-w4 tspan:nth-child(4) { animation-delay: 0.54s; }
+.ftv2-word.glow-start .ftv2-w4 tspan:nth-child(5) { animation-delay: 0.72s; }
+.ftv2-word.glow-start .ftv2-w4 tspan:nth-child(6) { animation-delay: 0.9s; }
+
+@keyframes ftv2Letter {
+    0%   { opacity: 0; stroke-width: calc(var(--w4w) + 1.5); filter: drop-shadow(0 0 6px rgba(210, 77, 255, 0.9)); }
+    30%  { opacity: 1; stroke-width: calc(var(--w4w) + 1.5); filter: drop-shadow(0 0 14px rgba(210, 77, 255, 1)); }
+    100% { opacity: 1; stroke-width: var(--w4w); filter: drop-shadow(0 0 4px rgba(188, 19, 254, 0.45)); }
+}
+
 /* أجهزة اللمس: التدرج كامل بدون قناع الماوس (احتياط لجانب JS) */
 @media (hover: none) {
     .ftv2-w3 { mask: none; }
@@ -384,6 +413,8 @@
 
     .ftv2-word text { stroke-width: 1.2; }
 
+    .ftv2-w4 { --w4w: 1.25; }
+
     .ftv2-w2 { stroke: rgba(var(--ftp-rgb), 0.7); }
     .ftv2-w1 { display: none; }
 }
@@ -402,6 +433,8 @@
         clip-path: none;
     }
     .ftv2-word .ftv2-w3 { opacity: 1; }
+    .ftv2-word .ftv2-w4 { opacity: 1; }
+    .ftv2-word .ftv2-w4 tspan { animation: none; opacity: 1; filter: none; }
     .ftv2-pulse { animation: none; }
     .ftv2-link,
     .ftv2-w1 { transition: none; }
