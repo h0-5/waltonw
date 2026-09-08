@@ -49,7 +49,7 @@
 .ftv2-card {
     position: relative;
     overflow: hidden;
-    max-width: 1100px;
+    max-width: 1400px;
     margin: 0 auto;
     border-radius: 24px;
     border: 1px solid rgba(61, 61, 92, 0.65); /* #3D3D5C */
@@ -71,12 +71,12 @@
 .ftv2-inner {
     position: relative;
     z-index: 1;
-    max-width: 1024px;
+    max-width: none;
     margin: 0 auto;
-    padding: 2.8rem 3rem 1.2rem;
+    padding: 2.8rem 4rem 1.2rem;
     display: grid;
     grid-template-columns: 1.3fr 1fr 1.25fr;
-    gap: 1.8rem 2.4rem;
+    gap: 1.8rem 3rem;
     direction: rtl;
 }
 
@@ -123,6 +123,13 @@
     flex-direction: column;
     gap: 0.1rem;
     min-width: 0;
+}
+
+/* تفريد الأعمدة على الشاشات الكبيرة (طلب المستخدم):
+   البراند يمين، القائمة بمنتصفها، التواصل يسار — حتى يشغلوا عرض البطاقة كله */
+@media (min-width: 769px) {
+    .ftv2-inner .ftv2-col { align-items: center; }
+    .ftv2-inner .ftv2-contact { align-items: flex-end; }
 }
 
 .ftv2-title {
