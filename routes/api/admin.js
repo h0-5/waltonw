@@ -318,6 +318,32 @@ router.post('/properties', checkPermission('properties_edit'), async (req, res) 
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+router.put('/properties/:id', checkPermission('properties_edit'), async (req, res) => {
+  try {
+    const { title, category, sort_order, image_url } = req.body;
+    const [existing] = await db.execute('SELECT image FROM properties WHERE id = ?', [req.params.id]);
+    let image = existing.length ? existing[0].image : '';
+    if (req.files && req.files.image_file) {
+      if (image && image.startsWith('/uploads/')) {
+        const fp = require('path').join(__dirname, '../../public', image);
+        try { require('fs').unlinkSync(fp); } catch(_) {}
+      }
+      const file = req.files.image_file;
+      const ext = file.name.split('.').pop();
+      const fname = 'prop_' + Date.now() + '.' + ext;
+      const uploadDir = require('path').join(__dirname, '../../public/uploads/properties');
+      require('fs').mkdirSync(uploadDir, { recursive: true });
+      await file.mv(uploadDir + '/' + fname);
+      image = '/uploads/properties/' + fname;
+    } else if (image_url) {
+      image = image_url;
+    }
+    await db.execute('UPDATE properties SET title=?, image=?, category=?, sort_order=? WHERE id=?',
+      [title, image, category || 'palaces', sort_order || 0, req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 router.delete('/properties/:id', checkPermission('properties_delete'), async (req, res) => {
   try {
     const [rows] = await db.execute('SELECT image FROM properties WHERE id = ?', [req.params.id]);

@@ -5,7 +5,7 @@
     <button onclick="showAdd()" class="admin-btn primary"><i class="fas fa-plus"></i> إضافة</button>
   </div>
   <table class="admin-table">
-    <thead><tr><th>#</th><th>الاسم</th><th>التصنيف</th><th>الترتيب</th><th>إجراءات</th></tr></thead>
+    <thead><tr><th>#</th><th>الاسم</th><th>التصنيف</th><th>الصورة</th><th>الترتيب</th><th>إجراءات</th></tr></thead>
     <tbody>
       <% if (properties.length > 0) { %>
         <% properties.forEach(function(p, i) { %>
@@ -13,12 +13,16 @@
           <td><%= i + 1 %></td>
           <td><%= p.title %></td>
           <td><span class="badge"><%= p.category === 'vehicles' ? 'مركبات' : 'قصور' %></span></td>
+          <td><% if (p.image) { %><img src="<%= p.image %>" style="width:40px;height:40px;object-fit:cover;border-radius:8px"><% } else { %><span style="color:var(--text-dim)">—</span><% } %></td>
           <td><%= p.sort_order || 0 %></td>
-          <td><button onclick="deleteItem(<%= p.id %>)" class="admin-btn danger small"><i class="fas fa-trash"></i></button></td>
+          <td style="display:flex;gap:6px">
+            <button onclick="showEdit(<%= p.id %>,'<%= (p.title||'').replace(/'/g,"\\'") %>','<%= p.category||'palaces' %>','<%= (p.image||'').replace(/'/g,"\\'") %>',<%= p.sort_order||0 %>)" class="admin-btn small"><i class="fas fa-edit"></i></button>
+            <button onclick="deleteItem(<%= p.id %>)" class="admin-btn danger small"><i class="fas fa-trash"></i></button>
+          </td>
         </tr>
         <% }); %>
       <% } else { %>
-        <tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-dim)">لا توجد ممتلكات</td></tr>
+        <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-dim)">لا توجد ممتلكات</td></tr>
       <% } %>
     </tbody>
   </table>
@@ -33,8 +37,26 @@
       <div class="form-group"><label>الصورة (ملف أو رابط)</label><input type="file" name="image_file" accept="image/*"><input type="text" name="image_url" placeholder="أو أدخل رابط الصورة" style="margin-top:8px"></div>
       <div class="form-group"><label>الترتيب</label><input type="number" name="sort_order" value="0"></div>
       <div class="modal-actions">
-        <button type="button" onclick="closeModal()" class="admin-btn">إلغاء</button>
+        <button type="button" onclick="closeModal('addModal')" class="admin-btn">إلغاء</button>
         <button type="submit" class="admin-btn primary">حفظ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="editModal" class="admin-modal" style="display:none">
+  <div class="modal-content">
+    <h3>تعديل ملكية</h3>
+    <form id="editForm" enctype="multipart/form-data">
+      <input type="hidden" name="id" id="edit_id">
+      <div class="form-group"><label>الاسم</label><input type="text" name="title" id="edit_title" required></div>
+      <div class="form-group"><label>التصنيف</label><select name="category" id="edit_category"><option value="palaces">قصور</option><option value="vehicles">مركبات</option></select></div>
+      <div class="form-group"><label>الصورة الحالية</label><div id="edit_image_preview" style="margin-bottom:8px"></div></div>
+      <div class="form-group"><label>صورة جديدة (ملف أو رابط)</label><input type="file" name="image_file" accept="image/*"><input type="text" name="image_url" placeholder="أو أدخل رابط الصورة الجديدة" style="margin-top:8px"></div>
+      <div class="form-group"><label>الترتيب</label><input type="number" name="sort_order" id="edit_sort_order" value="0"></div>
+      <div class="modal-actions">
+        <button type="button" onclick="closeModal('editModal')" class="admin-btn">إلغاء</button>
+        <button type="submit" class="admin-btn primary">تحديث</button>
       </div>
     </form>
   </div>
@@ -42,11 +64,28 @@
 
 <script>
 function showAdd() { document.getElementById('addModal').style.display = 'flex'; }
-function closeModal() { document.getElementById('addModal').style.display = 'none'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+function showEdit(id, title, category, image, sortOrder) {
+  document.getElementById('edit_id').value = id;
+  document.getElementById('edit_title').value = title || '';
+  document.getElementById('edit_category').value = category || 'palaces';
+  document.getElementById('edit_sort_order').value = sortOrder || 0;
+  document.getElementById('edit_image_preview').innerHTML = image ? '<img src="' + image + '" style="width:60px;height:60px;object-fit:cover;border-radius:8px">' : '<span style="color:var(--text-dim)">لا توجد صورة</span>';
+  document.getElementById('editModal').style.display = 'flex';
+}
 document.getElementById('addForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const fd = new FormData(e.target);
   const res = await fetch('/api/admin/properties', { method: 'POST', body: fd });
+  const data = await res.json();
+  if (data.success) location.reload(); else alert(data.error || 'خطأ');
+});
+document.getElementById('editForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id = document.getElementById('edit_id').value;
+  const fd = new FormData(e.target);
+  fd.delete('id');
+  const res = await fetch('/api/admin/properties/' + id, { method: 'PUT', body: fd });
   const data = await res.json();
   if (data.success) location.reload(); else alert(data.error || 'خطأ');
 });
