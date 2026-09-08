@@ -93,12 +93,12 @@
 }
 
 .ftv2-brand-logo img {
-    width: 60px;
-    height: 60px;
+    width: 88px;
+    height: 88px;
     border-radius: 50%;
     object-fit: contain;
     border: 2px solid rgba(var(--ftp-rgb), 0.35);
-    box-shadow: 0 0 24px rgba(var(--ftp-rgb), 0.18);
+    box-shadow: 0 0 30px rgba(var(--ftp-rgb), 0.22);
 }
 
 .ftv2-brand-name {
@@ -369,6 +369,9 @@
     }
 
     .ftv2-brand-logo { justify-content: center; }
+
+    /* الهاتف: لوغو أكبر من السابق لكن أصغر من الكمبيوتر (فرق مقاسات الشاشات) */
+    .ftv2-brand-logo img { width: 72px; height: 72px; }
 
     .ftv2-divider { margin: 0.3rem 1.4rem 0; }
 
