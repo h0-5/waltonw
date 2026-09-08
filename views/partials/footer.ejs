@@ -85,10 +85,10 @@
         <text class="ftv2-w3" x="50%" y="54" text-anchor="middle" textLength="264" lengthAdjust="spacingAndGlyphs" mask="url(#ftv2TextMask)"><tspan>W</tspan><tspan>A</tspan><tspan>L</tspan><tspan>T</tspan><tspan>O</tspan><tspan>N</tspan></text>
         <!-- طبقة 4: وهج حرف-حرف بعد اكتمال المسحة — بنفس بنية الطبقات تماماً -->
         <text class="ftv2-w4" x="50%" y="54" text-anchor="middle" textLength="264" lengthAdjust="spacingAndGlyphs"><tspan>W</tspan><tspan>A</tspan><tspan>L</tspan><tspan>T</tspan><tspan>O</tspan><tspan>N</tspan></text>
-        <!-- طبقة 5: بروز وتوهج إضافي للحرف الواقع تحته المؤشر — حرف حرف بعناصر text مستقلة
+        <!-- طبقة 5: بروز وتوهج أقوى للحرف الموجّه — حرف حرف بعناصر text مستقلة
              (tspan لا يقبل transform لذا الحروف هنا عناصر مستقلة بقيم فتحات مأخوذة من الطبقات المرجعية نفسها:
               getExtentOfChar بعد التشديد — تُخبز literal فلا أي حسابات وقت تشغيل)
-             لا تُفعّل إلا بعد اكتمال كل الأنميشنات (w5-ready) وعلى أجهزة الماوس فقط -->
+             لا تُفعّل إلا بعد اكتمال كل الأنميشنات (w5-ready) — تعمل بالماوس وباللمس معاً -->
         <g class="ftv2-w5">
           <text class="ftv2-w5i" x="47.57" y="54" text-anchor="middle" textLength="59.15" lengthAdjust="spacingAndGlyphs"><tspan>W</tspan></text>
           <text class="ftv2-w5i" x="98.03" y="54" text-anchor="middle" textLength="41.76" lengthAdjust="spacingAndGlyphs"><tspan>A</tspan></text>
@@ -140,10 +140,10 @@
   if (isTouch) {
     var w3 = svg.querySelector('.ftv2-w3');
     if (w3) w3.removeAttribute('mask');
-    return;
   }
-  // الماوس يُتتبَّع على مستوى البطاقة كلها — «كشاف» يكشف تدرج الكلمة
-  // من أي مكان، دون أن يحجب أي عنصر الروابط القابلة للنقر
+  // الماوس يُتتبَّع على مستوى البطاقة كلها — «كشاف» يكشف تدرج الكلمة من أي مكان،
+  // دون أن يحجب أي عنصر الروابط القابلة للنقر (ماوس فقط — على اللمس التدرج كامل بلا قناع)
+  if (!isTouch) {
   var pending = false, lastX = 0, lastY = 0;
   function apply() {
     var r = svg.getBoundingClientRect();
@@ -165,7 +165,8 @@
     if (!pending) { pending = true; requestAnimationFrame(apply); }
   }, { passive: true });
   card.addEventListener('mouseleave', function(){ wrap.classList.remove('hovered'); });
-  // ── بطاقة 3D تفاعلية للحروف (نفس تفاعل بطاقات الرئيسية القديمة) ──
+  }
+  // ── بطاقة 3D تفاعلية للحروف (نفس تفاعل بطاقات الرئيسية القديمة) — ماوس ولمس معاً ──
   // تتبّع مركزي واحد على مستوى الـ SVG بدل مستمع لكل حرف:
   // · نطاقات الحروف محسوبة مرة واحدة من إحداثياتها المطبوعة (x/textLength) — صفر قياس وقت تشغيل
   // · التغطية متصلة بلا فراغات فالمؤشر لا يفقد الحرف بين الحروف ولا عند حوافه (حساسية أعلى بلا أخطاء)
@@ -214,7 +215,38 @@
       }
       lift(hit);
     };
-    svg.addEventListener('mouseleave', function(){ lift(-1); });
+    if (isTouch) {
+      // اللمس: الإصبع يحل محل الماوس بنفس التوجيه المركزي —
+      // · تمرير الإصبع فوق الكلمة يميل الحروف تباعاً معه (مستمعات passive فلا تعترض سكرول الصفحة أبداً)
+      // · نقرة واحدة ترفع الحرف وتُبقيه لحظة (900ms) ثم ينشال بنعومة
+      // · رفع الإصبع بعد تمرير ينشال فوراً (المنحنى النابض يتكفل بجمالية الإنشاءل)
+      var holdTimer = null, moved = 0, lx = 0, ly = 0;
+      var at = function(e){
+        var t = e.touches[0];
+        if (!t) return;
+        var r = svg.getBoundingClientRect();
+        if (!r.width || !r.height) return;
+        tiltAt((t.clientX - r.left) / r.width * 300, (t.clientY - r.top) / r.height * 100);
+      };
+      var release = function(){ tiltAt(NaN, NaN); };
+      var dropHold = function(){ if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; } };
+      svg.addEventListener('touchstart', function(e){
+        var t = e.touches[0];
+        if (t) { moved = 0; lx = t.clientX; ly = t.clientY; }
+        dropHold(); at(e);
+      }, { passive: true });
+      svg.addEventListener('touchmove', function(e){
+        var t = e.touches[0];
+        if (t) { moved += Math.abs(t.clientX - lx) + Math.abs(t.clientY - ly); lx = t.clientX; ly = t.clientY; }
+        at(e);
+      }, { passive: true });
+      svg.addEventListener('touchend', function(){
+        if (moved < 12) { holdTimer = setTimeout(release, 900); } else { release(); }
+      }, { passive: true });
+      svg.addEventListener('touchcancel', function(){ dropHold(); release(); }, { passive: true });
+    } else {
+      svg.addEventListener('mouseleave', function(){ lift(-1); });
+    }
   }
 })();</script>
 
