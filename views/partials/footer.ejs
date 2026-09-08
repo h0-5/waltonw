@@ -85,6 +85,18 @@
         <text class="ftv2-w3" x="50%" y="54" text-anchor="middle" textLength="264" lengthAdjust="spacingAndGlyphs" mask="url(#ftv2TextMask)"><tspan>W</tspan><tspan>A</tspan><tspan>L</tspan><tspan>T</tspan><tspan>O</tspan><tspan>N</tspan></text>
         <!-- طبقة 4: وهج حرف-حرف بعد اكتمال المسحة — بنفس بنية الطبقات تماماً -->
         <text class="ftv2-w4" x="50%" y="54" text-anchor="middle" textLength="264" lengthAdjust="spacingAndGlyphs"><tspan>W</tspan><tspan>A</tspan><tspan>L</tspan><tspan>T</tspan><tspan>O</tspan><tspan>N</tspan></text>
+        <!-- طبقة 5: بروز وتوهج إضافي للحرف الواقع تحته المؤشر — حرف حرف بعناصر text مستقلة
+             (tspan لا يقبل transform لذا الحروف هنا عناصر مستقلة بقيم فتحات مأخوذة من الطبقات المرجعية نفسها:
+              getExtentOfChar بعد التشديد — تُخبز literal فلا أي حسابات وقت تشغيل)
+             لا تُفعّل إلا بعد اكتمال كل الأنميشنات (w5-ready) وعلى أجهزة الماوس فقط -->
+        <g class="ftv2-w5">
+          <text class="ftv2-w5i" x="47.57" y="54" text-anchor="middle" textLength="59.15" lengthAdjust="spacingAndGlyphs"><tspan>W</tspan></text>
+          <text class="ftv2-w5i" x="98.03" y="54" text-anchor="middle" textLength="41.76" lengthAdjust="spacingAndGlyphs"><tspan>A</tspan></text>
+          <text class="ftv2-w5i" x="136.76" y="54" text-anchor="middle" textLength="35.7" lengthAdjust="spacingAndGlyphs"><tspan>L</tspan></text>
+          <text class="ftv2-w5i" x="173.98" y="54" text-anchor="middle" textLength="38.73" lengthAdjust="spacingAndGlyphs"><tspan>T</tspan></text>
+          <text class="ftv2-w5i" x="215.61" y="54" text-anchor="middle" textLength="44.53" lengthAdjust="spacingAndGlyphs"><tspan>O</tspan></text>
+          <text class="ftv2-w5i" x="259.93" y="54" text-anchor="middle" textLength="44.13" lengthAdjust="spacingAndGlyphs"><tspan>N</tspan></text>
+        </g>
       </svg>
     </div>
   </div>
@@ -101,20 +113,29 @@
   // المحاذاة مضمونة بلا أي حسابات: المتصفح يوزّع الحروف بنفس التخطيط بالضبط،
   // وبعد اكتمال المسحة (~3.8ث) كل حرف يتوهج تباعاً عبر CSS فقط
   wrap.classList.add('w4-ready');
+  // تفضيل تقليل الحركة: كل شيء جاهز فوراً (CSS يتخطى الأنميشنات أصلاً)
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   // الكمبيوتر: القناع يبدأ خارج الشاشة — صفر كشف قبل الوصول للفوتر وحركة الماوس
   if (!isTouch && maskG) { maskG.setAttribute('cx', '-50%'); maskG.setAttribute('cy', '-50%'); }
-  // الكلمة تُرسم عند وصول الشخص للفوتر (آخر الصفحة) — كل الأجهزة
-  if ('IntersectionObserver' in window) {
+  if (reduced) {
+    wrap.classList.add('drawn', 'glow-start', 'w5-ready');
+  } else if ('IntersectionObserver' in window) {
     var io = new IntersectionObserver(function(es){
       es.forEach(function(en){
         if (en.isIntersecting) {
           wrap.classList.add('drawn'); io.disconnect();
           setTimeout(function(){ wrap.classList.add('glow-start'); }, 3800);
+          // تفاعل بروز الحروف يُفتح بعد اكتمال وهج الحروف كله (~5.55ث): رسم 2.6 + كتابة 1.4 + وهج 1.75
+          setTimeout(function(){ wrap.classList.add('w5-ready'); }, 5650);
         }
       });
     }, { threshold: 0.2 });
     io.observe(wrap);
-  } else { wrap.classList.add('drawn'); setTimeout(function(){ wrap.classList.add('glow-start'); }, 3800); }
+  } else {
+    wrap.classList.add('drawn');
+    setTimeout(function(){ wrap.classList.add('glow-start'); }, 3800);
+    setTimeout(function(){ wrap.classList.add('w5-ready'); }, 5650);
+  }
   // الهاتف: إظهار التدرج كامل بدون قناع الماوس (إصلاح التشوه/الاختفاء)
   if (isTouch) {
     var w3 = svg.querySelector('.ftv2-w3');

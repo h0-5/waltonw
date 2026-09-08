@@ -375,6 +375,41 @@
     100% { opacity: 1; stroke-width: var(--w4w); filter: drop-shadow(0 0 4px rgba(188, 19, 254, 0.45)); }
 }
 
+/* ── طبقة 5: بروز + توهج أقوى للحرف تحت المؤشر ──
+   تُفتح فقط بعد اكتمال كل الأنميشنات (w5-ready: رسم + كتابة + وهج الحروف)
+   وعلى أجهزة الماوس فقط. صفر JS: العنصر نفسه هدف التحويم عبر pointer-events
+   على خلايا الحروف (glyph cells)، والتفعيل transition transform/opacity فقط */
+.ftv2-w5 { pointer-events: none; }
+
+.ftv2-w5i {
+    stroke: url(#ftv2TextGradient);
+    stroke-width: 1.15;
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    transition: opacity 0.22s ease, transform 0.32s cubic-bezier(0.2, 0.7, 0.3, 1.25), filter 0.22s ease, stroke-width 0.22s ease;
+    filter: drop-shadow(0 0 0 rgba(210, 77, 255, 0));
+    will-change: transform, opacity;
+    cursor: default;
+}
+
+/* قبل الجاهزية الكاملة: لا التقاط مؤشر إطلاقاً */
+.ftv2-word:not(.w5-ready) .ftv2-w5i { pointer-events: none; }
+
+@media (hover: hover) and (pointer: fine) {
+    .ftv2-word.w5-ready .ftv2-w5i:hover {
+        opacity: 1;
+        transform: scale(1.14);
+        stroke-width: 1.55;
+        filter: drop-shadow(0 0 5px rgba(210, 77, 255, 0.95)) drop-shadow(0 0 20px rgba(188, 19, 254, 0.55));
+    }
+}
+
+/* أجهزة اللمس: طبقة البروز معطلة كلياً (لا معنى لها بدون ماوس) */
+@media (hover: none) {
+    .ftv2-w5 { display: none; }
+}
+
 /* أجهزة اللمس: التدرج كامل بدون قناع الماوس (احتياط لجانب JS) */
 @media (hover: none) {
     .ftv2-w3 { mask: none; }
@@ -442,6 +477,8 @@
     .ftv2-word .ftv2-w3 { opacity: 1; }
     .ftv2-word .ftv2-w4 { opacity: 1; }
     .ftv2-word .ftv2-w4 tspan { animation: none; opacity: 1; filter: none; }
+    .ftv2-w5i { transition: none; }
+    .ftv2-word.w5-ready .ftv2-w5i:hover { transform: none; } /* توهج بلا حركة من يفضّل تقليلها */
     .ftv2-pulse { animation: none; }
     .ftv2-link,
     .ftv2-w1 { transition: none; }
