@@ -1,106 +1,148 @@
 <%- include('../partials/header') %>
 <%- include('../partials/navbar') %>
 
-<div class="cy-rules-page">
-    <!-- Hero Section -->
-    <div class="cy-rules-hero">
-        <div class="cy-rules-hero-icon">
-            <div class="hex-ring"></div>
-            <div class="hex-ring-inner"></div>
-            <i class="fas fa-gavel"></i>
-        </div>
-        <h1 class="page-heading">قوانين المجتمع</h1>
-        <p class="cy-rules-hero-sub">يرجى الالتزام بهذه القوانين للحفاظ على بيئة آمنة ومحترمة</p>
-        <div class="cy-rules-hero-line"></div>
+<%
+  /* ===== تجميع القوانين حسب القسم (نفس منطق النسخة السابقة + حماية من اختلاف الأعمدة) ===== */
+  var wrGrouped = {}, wrOrder = [], wrStatic = false;
+  if (typeof rules !== 'undefined' && rules && rules.length) {
+    rules.forEach(function(r) {
+      var cat = (r && r.category) ? r.category : 'أخرى';
+      if (!wrGrouped[cat]) { wrGrouped[cat] = []; wrOrder.push(cat); }
+      wrGrouped[cat].push(r);
+    });
+  }
+  /* نص القانون: يدعم rule_text و content معاً (اختلاف مخطط الجدول بين النسخ) */
+  var wrText = function(it) {
+    if (typeof it === 'string') return it;
+    return (it && (it.rule_text || it.content)) ? (it.rule_text || it.content) : '';
+  };
+  /* خريطة أيقونات الأقسام من جدول rule_categories */
+  var wrCatIcons = {};
+  if (typeof categories !== 'undefined' && categories && categories.length) {
+    categories.forEach(function(c) { if (c && c.name) wrCatIcons[c.name] = c.icon || ''; });
+  }
+  var wrFallbackIcons = ['fa-shield-alt','fa-gavel','fa-globe','fa-user-shield','fa-ban','fa-balance-scale','fa-comment-slash','fa-check-circle'];
+  /* وضع بلا قوانين بالقاعدة: قوانين ثابتة (نفس نصوص النسخة السابقة) */
+  if (!wrOrder.length) {
+    wrStatic = true;
+    wrGrouped = {
+      'قوانين عامة': [
+        'احترم جميع الأعضاء وتجنب الإساءة أو الإهانة في المحادثات',
+        'يمنع السبام أو المنشن المزعج',
+        'يجب أن يكون اسم المستخدم لائقاً',
+        'يمنع الخوض في النقاشات الحساسة أو الجدلية.',
+        'يمنع الابتزاز ممنوع منعاً باتاً ويعرضك للحظر'
+      ],
+      'العقوبات': [
+        'المخالفة الأولى : تحذير',
+        'المخالفة الثانية : ميوت ( 1h - 7days)',
+        'مخالفة الثالثة : طرد مؤقت',
+        'مخالفة الرابعة : حظر مؤقت',
+        'مخالفة الخامسة : حظر دائم من المجتمع'
+      ]
+    };
+    wrOrder = ['قوانين عامة', 'العقوبات'];
+  }
+  var wrTotal = 0;
+  wrOrder.forEach(function(c) { wrTotal += wrGrouped[c].length; });
+  var wrPad = function(n) { return (n < 10 ? '0' : '') + n; };
+%>
+
+<div class="wr-page">
+  <!-- ═══ هيرو الميثاق ═══ -->
+  <div class="wr-hero">
+    <div class="wr-hero-icon">
+      <span class="wr-hex"></span>
+      <span class="wr-hex wr-hex-in"></span>
+      <i class="fas fa-gavel"></i>
     </div>
-
-    <!-- Main Content -->
-    <div class="cy-rules-main">
-        <% if (typeof rules !== 'undefined' && rules && rules.length > 0) { %>
-        <div class="rules-outer">
-            <div class="rules-grid-wrapper">
-                <%
-                // Group rules by category
-                const grouped = {};
-                rules.forEach(function(r) {
-                    const cat = r.category || 'أخرى';
-                    if (!grouped[cat]) grouped[cat] = [];
-                    grouped[cat].push(r);
-                });
-                %>
-
-                <% Object.keys(grouped).forEach(function(cat, ci) { %>
-                <div class="rules-category wf-reveal" style="transition-delay:<%= ci * 0.1 %>s">
-                    <div class="corner-tl"></div>
-                    <div class="corner-br"></div>
-
-                    <div class="category-header">
-                        <div class="category-icon">
-                            <i class="fas fa-shield-alt"></i>
-                        </div>
-                        <h2 class="category-title"><%= cat %></h2>
-                        <span class="cat-count"><%= grouped[cat].length %></span>
-                    </div>
-
-                    <div class="rules-grid">
-                        <% grouped[cat].forEach(function(rule, index) { %>
-                        <div class="rule-card" style="transition-delay:<%= ci * 0.08 + index * 0.04 %>s">
-                            <div class="rule-number"><%= index + 1 %></div>
-                            <div class="rule-content"><%= rule.rule_text %></div>
-                        </div>
-                        <% }); %>
-                    </div>
-                </div>
-                <% }); %>
-            </div>
-        </div>
-        <% } else { %>
-        <!-- Static Rules -->
-        <div class="rules-outer">
-            <div class="rules-grid-wrapper">
-                <div class="rules-category wf-reveal">
-                    <div class="corner-tl"></div>
-                    <div class="corner-br"></div>
-                    <div class="category-header">
-                        <div class="category-icon"><i class="fas fa-globe"></i></div>
-                        <h2 class="category-title">قوانين عامة</h2>
-                        <span class="cat-count">5</span>
-                    </div>
-                    <div class="rules-grid">
-                        <div class="rule-card"><div class="rule-number">1</div><div class="rule-content">احترم جميع الأعضاء وتجنب الإساءة أو الإهانة في المحادثات</div></div>
-                        <div class="rule-card"><div class="rule-number">2</div><div class="rule-content">يمنع السبام أو المنشن المزعج</div></div>
-                        <div class="rule-card"><div class="rule-number">3</div><div class="rule-content">يجب أن يكون اسم المستخدم لائقاً</div></div>
-                        <div class="rule-card"><div class="rule-number">4</div><div class="rule-content">يمنع الخوض في النقاشات الحساسة أو الجدلية.</div></div>
-                        <div class="rule-card"><div class="rule-number">5</div><div class="rule-content">يمنع الابتزاز ممنوع منعاً باتاً ويعرضك للحظر</div></div>
-                    </div>
-                </div>
-                <div class="rules-category wf-reveal" style="transition-delay:0.1s">
-                    <div class="corner-tl"></div>
-                    <div class="corner-br"></div>
-                    <div class="category-header">
-                        <div class="category-icon"><i class="fas fa-exclamation-triangle"></i></div>
-                        <h2 class="category-title">العقوبات</h2>
-                        <span class="cat-count">5</span>
-                    </div>
-                    <div class="rules-grid">
-                        <div class="rule-card"><div class="rule-number">1</div><div class="rule-content">المخالفة الأولى : تحذير</div></div>
-                        <div class="rule-card"><div class="rule-number">2</div><div class="rule-content">المخالفة الثانية : ميوت ( 1h - 7days)</div></div>
-                        <div class="rule-card"><div class="rule-number">3</div><div class="rule-content">مخالفة الثالثة : طرد مؤقت</div></div>
-                        <div class="rule-card"><div class="rule-number">4</div><div class="rule-content">مخالفة الرابعة : حظر مؤقت</div></div>
-                        <div class="rule-card"><div class="rule-number">5</div><div class="rule-content">مخالفة الخامسة : حظر دائم من المجتمع</div></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <% } %>
-
-        <div class="cy-rules-footer wf-reveal">
-            <p><i class="fas fa-info-circle"></i>آخر تحديث: <%= new Date().toISOString().split('T')[0] %></p>
-        </div>
+    <h1 class="wr-title">قوانين المجتمع</h1>
+    <p class="wr-sub">ميثاق والتون — اقرأ القوانين والتزم بها لنحافظ على بيئة آمنة ومحترمة للجميع</p>
+    <div class="wr-hero-chips">
+      <span class="wr-chip"><i class="fas fa-layer-group"></i><%= wrOrder.length %> أقسام</span>
+      <span class="wr-chip"><i class="fas fa-file-lines"></i><%= wrTotal %> مادة</span>
     </div>
+    <div class="wr-hero-line"></div>
+  </div>
+
+  <!-- ═══ شرائح الأقسام (هاتف — لاصقة تحت الهدر) ═══ -->
+  <nav class="wr-chips" aria-label="فهرس الأقسام">
+    <div class="wr-chips-track">
+      <% wrOrder.forEach(function(cat, ci) { %>
+      <a href="#wr-cat-<%= ci %>" class="wr-chip-link<%= ci === 0 ? ' active' : '' %>">
+        <i class="fas <%= wrCatIcons[cat] || wrFallbackIcons[ci % wrFallbackIcons.length] %>"></i><%= cat %>
+      </a>
+      <% }); %>
+    </div>
+  </nav>
+
+  <!-- ═══ المحتوى: فهرس جانبي (ديسكتوب) + الأقسام ═══ -->
+  <div class="wr-main">
+    <aside class="wr-aside">
+      <div class="wr-aside-box">
+        <div class="wr-aside-title"><i class="fas fa-list-check"></i> فهرس الميثاق</div>
+        <% wrOrder.forEach(function(cat, ci) { %>
+        <a href="#wr-cat-<%= ci %>" class="wr-aside-link<%= ci === 0 ? ' active' : '' %>">
+          <span class="wr-aside-num"><%= wrPad(ci + 1) %></span>
+          <span class="wr-aside-name"><%= cat %></span>
+          <span class="wr-aside-count"><%= wrGrouped[cat].length %></span>
+        </a>
+        <% }); %>
+      </div>
+    </aside>
+
+    <div class="wr-sections">
+      <% wrOrder.forEach(function(cat, ci) { %>
+      <section class="wr-cat wf-reveal" id="wr-cat-<%= ci %>" style="transition-delay:<%= Math.min(ci * 0.08, 0.4) %>s">
+        <div class="wr-cat-glow"></div>
+        <header class="wr-cat-head">
+          <span class="wr-cat-idx"><%= wrPad(ci + 1) %></span>
+          <span class="wr-cat-ico"><i class="fas <%= wrCatIcons[cat] || wrFallbackIcons[ci % wrFallbackIcons.length] %>"></i></span>
+          <h2 class="wr-cat-name"><%= cat %></h2>
+          <span class="wr-cat-count"><%= wrGrouped[cat].length %> مواد</span>
+        </header>
+        <div class="wr-rules">
+          <% wrGrouped[cat].forEach(function(rule, index) { %>
+          <div class="wr-rule" style="transition-delay:<%= Math.min(index * 0.05, 0.5) %>s">
+            <span class="wr-rule-no"><%= index + 1 %></span>
+            <p class="wr-rule-text"><%= wrText(rule) %></p>
+          </div>
+          <% }); %>
+        </div>
+      </section>
+      <% }); %>
+
+      <div class="wr-foot wf-reveal">
+        <p><i class="fas fa-circle-info"></i> آخر تحديث للميثاق: <%= new Date().toISOString().split('T')[0] %></p>
+        <p class="wr-foot-note"><i class="fas fa-shield-heart"></i> الالتزام بالقوانين مسؤولية الجميع — مخالفتها عرضة للعقوبات الموضحة أعلاه</p>
+      </div>
+    </div>
+  </div>
 </div>
 
 <%- include('../partials/footer') %>
 <script src="/js/main.js"></script>
+<script>
+/* Scroll-spy — متتبع خفيف بـ IntersectionObserver (بدون أي مستمع سكرول) */
+(function(){
+  var links = document.querySelectorAll('.wr-chip-link, .wr-aside-link');
+  var secs = [].slice.call(document.querySelectorAll('.wr-cat'));
+  if (!links.length || secs.length < 2 || !('IntersectionObserver' in window)) return;
+  var map = {};
+  links.forEach(function(a){
+    var id = (a.getAttribute('href') || '').slice(1);
+    if (!id) return;
+    (map[id] = map[id] || []).push(a);
+  });
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if (!e.isIntersecting) return;
+      links.forEach(function(a){ a.classList.remove('active'); });
+      (map[e.target.id] || []).forEach(function(a){ a.classList.add('active'); });
+    });
+  }, { rootMargin: '-40% 0px -55% 0px', threshold: 0 });
+  secs.forEach(function(s){ io.observe(s); });
+})();
+</script>
 </body>
 </html>

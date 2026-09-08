@@ -1,151 +1,235 @@
 <%- include('../partials/header') %>
 <%- include('../partials/navbar') %>
 
-<main class="profile-page">
-  <section class="profile-hero">
-    <div class="container">
-      <div class="profile-cover">
-        <img src="<%= user.cover_photo || '/images/default-cover.jpg' %>" alt="cover" class="cover-image">
-        <div class="cover-overlay"></div>
+<%
+  /* ===== بيانات محمية من غياب أي locals (ترجمة الاختبار/بيانات ناقصة) ===== */
+  var _pfUser = (typeof user !== 'undefined' && user) ? user : {};
+  var _pfPts = 0, _pfEarned = 0;
+  if (typeof userPoints !== 'undefined') {
+    if (typeof userPoints === 'number') { _pfPts = userPoints || 0; }
+    else if (userPoints && typeof userPoints === 'object') {
+      _pfPts = userPoints.points || 0;
+      _pfEarned = userPoints.total_earned || 0;
+    }
+  }
+  var _pfAch = (typeof achievements !== 'undefined' && achievements && achievements.length) ? achievements : [];
+  var _pfNotif = (typeof notifCount !== 'undefined' && notifCount) ? notifCount : 0;
+  var _pfGamePts = _pfUser.total_game_points || 0;
+  var _pfTickets = _pfUser.tickets_closed || 0;
+  var _pfWarns = _pfUser.warn_count || 0;
+  var _pfLevel = Math.floor(_pfPts / 100) + 1;
+  var _pfProg = _pfPts % 100;
+  var _pfRoleMap = {
+    'owner': 'المالك', 'founder': 'المؤسس', 'developer': 'المطور',
+    'admin': 'إداري', 'moderator': 'مشرف', 'support': 'الدعم', 'user': 'عضو'
+  };
+  var _pfRoleIconMap = {
+    'owner': 'fa-crown', 'founder': 'fa-flag', 'developer': 'fa-code',
+    'admin': 'fa-user-shield', 'moderator': 'fa-shield-halved',
+    'support': 'fa-headset', 'user': 'fa-user'
+  };
+  var _pfRoleKey = _pfUser.role || 'user';
+  var _pfRoleName = _pfRoleMap[_pfRoleKey] || _pfRoleKey;
+  var _pfRoleIcon = _pfRoleIconMap[_pfRoleKey] || 'fa-user';
+  var _pfInitial = (_pfUser.username || 'و').charAt(0).toUpperCase();
+  var _pfJoined = '', _pfLastLogin = '';
+  try { _pfJoined = _pfUser.created_at ? new Date(_pfUser.created_at).toLocaleDateString('ar-SA') : ''; } catch (e) { _pfJoined = ''; }
+  try { _pfLastLogin = _pfUser.last_login ? new Date(_pfUser.last_login).toLocaleString('ar-SA') : ''; } catch (e) { _pfLastLogin = ''; }
+%>
+
+<main class="pfw-page">
+  <div class="pfw-wrap">
+
+    <!-- ═══ بطاقة الهوية ═══ -->
+    <section class="pfw-id wf-reveal">
+      <div class="pfw-cover">
+        <% if (_pfUser.cover_photo) { %>
+        <img src="<%= _pfUser.cover_photo %>" alt="cover" class="pfw-cover-img">
+        <% } %>
+        <div class="pfw-cover-fx"></div>
+        <div class="pfw-cover-grid"></div>
       </div>
-      <div class="profile-header">
-        <div class="profile-avatar-wrapper">
-          <img src="<%= user.profile_picture || '/images/default-avatar.png' %>" alt="avatar" class="profile-avatar">
-          <% if (user.role) { %>
-            <span class="role-badge role-<%= user.role %>"><%= user.role %></span>
+      <div class="pfw-id-body">
+        <div class="pfw-avatar">
+          <% if (_pfUser.profile_picture) { %>
+          <img src="<%= _pfUser.profile_picture %>" alt="avatar" class="pfw-avatar-img">
+          <% } else { %>
+          <div class="pfw-avatar-ph"><%= _pfInitial %></div>
           <% } %>
         </div>
-        <div class="profile-info">
-          <h1 class="profile-name"><%= user.username %></h1>
-          <p class="profile-id">ID: <%= user.id %> | Discord: <%= user.discord_id %></p>
-          <div class="profile-joined">
-            <i class="fas fa-calendar"></i>
-            انضم في: <%= new Date(user.created_at).toLocaleDateString('ar-SA') %>
+        <div class="pfw-id-main">
+          <h1 class="pfw-name"><%= _pfUser.username || 'عضو' %></h1>
+          <div class="pfw-meta">
+            <span class="pfw-role pfw-role-<%= _pfRoleKey %>"><i class="fas <%= _pfRoleIcon %>"></i><%= _pfRoleName %></span>
+            <span class="pfw-meta-item"><i class="fas fa-hashtag"></i>ID: <%= _pfUser.id %></span>
+            <% if (_pfJoined) { %>
+            <span class="pfw-meta-item"><i class="fas fa-calendar"></i>انضم في <%= _pfJoined %></span>
+            <% } %>
+            <% if (_pfNotif > 0) { %>
+            <span class="pfw-notif-chip"><i class="fas fa-bell"></i><%= _pfNotif %> إشعار جديد</span>
+            <% } %>
+          </div>
+          <div class="pfw-level">
+            <div class="pfw-level-head">
+              <span class="pfw-level-lbl"><i class="fas fa-bolt"></i>المستوى <%= _pfLevel %></span>
+              <span class="pfw-level-pts"><%= _pfPts %> نقطة</span>
+            </div>
+            <div class="pfw-level-bar"><span class="pfw-level-fill" data-width="<%= _pfProg %>" style="width:<%= _pfProg %>%"></span></div>
+            <div class="pfw-level-sub"><%= _pfProg %> / 100 نحو المستوى <%= _pfLevel + 1 %></div>
           </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="profile-content">
-    <div class="container">
-      <div class="profile-grid">
-        <!-- Main Content -->
-        <div class="profile-main">
-          <!-- Edit Profile Card -->
-          <div class="profile-card">
-            <h3>
-              <i class="fas fa-edit"></i>
-              تعديل الملف الشخصي
-            </h3>
-            <form id="profileForm">
-              <div class="form-group">
-                <label for="username">
-                  <i class="fas fa-user"></i>
-                  اسم المستخدم
-                </label>
-                <input type="text" id="username" value="<%= user.username %>" 
-                       minlength="3" maxlength="30" required>
-              </div>
-              <button type="submit" class="save-btn">
-                <i class="fas fa-save"></i>
-                حفظ التغييرات
-              </button>
-            </form>
-          </div>
-
-          <!-- Stats Card -->
-          <div class="profile-card">
-            <h3>
-              <i class="fas fa-chart-bar"></i>
-              إحصائياتي
-            </h3>
-            <div class="stats-grid">
-              <div class="stat-item">
-                <i class="fas fa-coins"></i>
-                <span class="stat-value"><%= user.total_game_points || 0 %></span>
-                <span class="stat-label">نقطة</span>
-              </div>
-              <div class="stat-item">
-                <i class="fas fa-shopping-bag"></i>
-                <span class="stat-value"><%= user.orders_count || 0 %></span>
-                <span class="stat-label">طلب</span>
-              </div>
-              <div class="stat-item">
-                <i class="fas fa-ticket"></i>
-                <span class="stat-value"><%= user.tickets_closed || 0 %></span>
-                <span class="stat-label">تذكرة</span>
-              </div>
-              <div class="stat-item">
-                <i class="fas fa-trophy"></i>
-                <span class="stat-value"><%= user.achievements_count || 0 %></span>
-                <span class="stat-label">إنجاز</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Sidebar -->
-        <div class="profile-sidebar">
-          <!-- Quick Links -->
-          <div class="profile-card">
-            <h3>
-              <i class="fas fa-link"></i>
-              روابط سريعة
-            </h3>
-            <div class="quick-links">
-              <a href="/orders" class="quick-link">
-                <i class="fas fa-box"></i>
-                طلباتي
-              </a>
-              <a href="/cart" class="quick-link">
-                <i class="fas fa-shopping-cart"></i>
-                سلة المشتريات
-              </a>
-              <a href="/my_discounts" class="quick-link">
-                <i class="fas fa-tag"></i>
-                خصوماتي
-              </a>
-              <a href="/applications/my" class="quick-link">
-                <i class="fas fa-file-alt"></i>
-                طلباتي المقدمة
-              </a>
-              <a href="/support/my-tickets" class="quick-link">
-                <i class="fas fa-headset"></i>
-                تذاكري
-              </a>
-            </div>
-          </div>
-
-          <!-- Account Info -->
-          <div class="profile-card">
-            <h3>
-              <i class="fas fa-info-circle"></i>
-              معلومات الحساب
-            </h3>
-            <div class="account-info">
-              <div class="info-item">
-                <span class="info-label">البريد:</span>
-                <span class="info-value"><%= user.email || 'غير محدد' %></span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">الرتبة:</span>
-                <span class="info-value role-color"><%= user.role %></span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">آخر دخول:</span>
-                <span class="info-value"><%= user.last_login ? new Date(user.last_login).toLocaleString('ar-SA') : 'غير معروف' %></span>
-              </div>
-            </div>
-          </div>
-        </div>
+    <!-- ═══ شريط الإحصائيات (بيانات حقيقية من الراوت) ═══ -->
+    <section class="pfw-stats wf-reveal" style="transition-delay:.08s">
+      <div class="pfw-stat">
+        <span class="pfw-stat-icon"><i class="fas fa-coins"></i></span>
+        <span class="pfw-stat-num" data-count="<%= _pfPts %>"><%= _pfPts %></span>
+        <span class="pfw-stat-lbl">نقاطي</span>
       </div>
+      <div class="pfw-stat">
+        <span class="pfw-stat-icon"><i class="fas fa-sack-dollar"></i></span>
+        <span class="pfw-stat-num" data-count="<%= _pfEarned %>"><%= _pfEarned %></span>
+        <span class="pfw-stat-lbl">إجمالي المكتسب</span>
+      </div>
+      <div class="pfw-stat">
+        <span class="pfw-stat-icon"><i class="fas fa-gamepad"></i></span>
+        <span class="pfw-stat-num" data-count="<%= _pfGamePts %>"><%= _pfGamePts %></span>
+        <span class="pfw-stat-lbl">نقاط الألعاب</span>
+      </div>
+      <div class="pfw-stat">
+        <span class="pfw-stat-icon"><i class="fas fa-headset"></i></span>
+        <span class="pfw-stat-num" data-count="<%= _pfTickets %>"><%= _pfTickets %></span>
+        <span class="pfw-stat-lbl">تذاكر مغلقة</span>
+      </div>
+      <div class="pfw-stat">
+        <span class="pfw-stat-icon"><i class="fas fa-trophy"></i></span>
+        <span class="pfw-stat-num" data-count="<%= _pfAch.length %>"><%= _pfAch.length %></span>
+        <span class="pfw-stat-lbl">إنجازات</span>
+      </div>
+      <div class="pfw-stat<%= _pfWarns > 0 ? ' pfw-stat-warn' : '' %>">
+        <span class="pfw-stat-icon"><i class="fas fa-triangle-exclamation"></i></span>
+        <span class="pfw-stat-num" data-count="<%= _pfWarns %>"><%= _pfWarns %></span>
+        <span class="pfw-stat-lbl">تحذيرات</span>
+      </div>
+    </section>
+
+    <!-- ═══ الشبكة: المحتوى + الجانب ═══ -->
+    <div class="pfw-grid">
+      <div class="pfw-main">
+        <!-- تعديل الملف -->
+        <section class="pfw-card wf-reveal" style="transition-delay:.12s">
+          <h3 class="pfw-card-title"><i class="fas fa-user-pen"></i>تعديل الملف الشخصي</h3>
+          <form id="profileForm" class="pfw-form">
+            <div class="pfw-field">
+              <label for="username"><i class="fas fa-user"></i>اسم المستخدم</label>
+              <input type="text" id="username" value="<%= _pfUser.username || '' %>" minlength="3" maxlength="30" required>
+            </div>
+            <button type="submit" class="pfw-save"><i class="fas fa-floppy-disk"></i>حفظ التغييرات</button>
+          </form>
+        </section>
+
+        <!-- الإنجازات -->
+        <section class="pfw-card wf-reveal" style="transition-delay:.18s">
+          <h3 class="pfw-card-title"><i class="fas fa-trophy"></i>الإنجازات<span class="pfw-card-badge"><%= _pfAch.length %></span></h3>
+          <% if (_pfAch.length) { %>
+          <div class="pfw-achs">
+            <% _pfAch.forEach(function(a) { %>
+            <div class="pfw-ach">
+              <span class="pfw-ach-ico"><i class="fas fa-medal"></i></span>
+              <div class="pfw-ach-body">
+                <div class="pfw-ach-name"><%= a.achievement_name || 'إنجاز' %></div>
+                <% if (a.earned_at) { %>
+                <div class="pfw-ach-date"><i class="fas fa-clock"></i><%= new Date(a.earned_at).toLocaleDateString('ar-SA') %></div>
+                <% } %>
+              </div>
+            </div>
+            <% }); %>
+          </div>
+          <% } else { %>
+          <div class="pfw-empty">
+            <span class="pfw-empty-ico"><i class="fas fa-medal"></i></span>
+            <p>لا إنجازات بعد — العب الألعاب واجمع النقاط لتحصل على إنجازاتك</p>
+            <a href="/games" class="pfw-empty-btn"><i class="fas fa-gamepad"></i>اذهب للألعاب</a>
+          </div>
+          <% } %>
+        </section>
+      </div>
+
+      <aside class="pfw-side">
+        <!-- روابط سريعة -->
+        <section class="pfw-card wf-reveal" style="transition-delay:.24s">
+          <h3 class="pfw-card-title"><i class="fas fa-link"></i>روابط سريعة</h3>
+          <div class="pfw-links">
+            <a href="/orders" class="pfw-link"><i class="fas fa-box"></i><span>طلباتي</span><i class="fas fa-chevron-left pfw-link-arrow"></i></a>
+            <a href="/cart" class="pfw-link"><i class="fas fa-cart-shopping"></i><span>سلة المشتريات</span><i class="fas fa-chevron-left pfw-link-arrow"></i></a>
+            <a href="/my_discounts" class="pfw-link"><i class="fas fa-tag"></i><span>خصوماتي</span><i class="fas fa-chevron-left pfw-link-arrow"></i></a>
+            <a href="/applications/my" class="pfw-link"><i class="fas fa-file-lines"></i><span>طلباتي المقدمة</span><i class="fas fa-chevron-left pfw-link-arrow"></i></a>
+            <a href="/support/my-tickets" class="pfw-link"><i class="fas fa-headset"></i><span>تذاكري</span><i class="fas fa-chevron-left pfw-link-arrow"></i></a>
+          </div>
+        </section>
+
+        <!-- معلومات الحساب -->
+        <section class="pfw-card wf-reveal" style="transition-delay:.3s">
+          <h3 class="pfw-card-title"><i class="fas fa-id-card"></i>معلومات الحساب</h3>
+          <div class="pfw-info">
+            <div class="pfw-info-row"><span class="pfw-info-lbl"><i class="fas fa-envelope"></i>البريد</span><span class="pfw-info-val"><%= _pfUser.email || 'غير محدد' %></span></div>
+            <div class="pfw-info-row"><span class="pfw-info-lbl"><i class="fas fa-crown"></i>الرتبة</span><span class="pfw-info-val pfw-role-text-<%= _pfRoleKey %>"><%= _pfRoleName %></span></div>
+            <% if (_pfUser.discord_id) { %>
+            <div class="pfw-info-row"><span class="pfw-info-lbl"><i class="fab fa-discord"></i>ديسكورد</span><span class="pfw-info-val" dir="ltr"><%= _pfUser.discord_id %></span></div>
+            <% } %>
+            <div class="pfw-info-row"><span class="pfw-info-lbl"><i class="fas fa-right-to-bracket"></i>آخر دخول</span><span class="pfw-info-val"><%= _pfLastLogin || 'غير معروف' %></span></div>
+          </div>
+        </section>
+      </aside>
     </div>
-  </section>
+  </div>
 </main>
 
 <%- include('../partials/footer') %>
 <script src="/js/main.js"></script>
+<script>
+/* عدّاد الإحصائيات + شريط المستوى — rAF واحد، بلا مكتبات */
+(function(){
+  var reduced = false;
+  try { reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+  var fmt = function(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); };
+
+  /* شريط المستوى: من 0 إلى العرض الفعلي مرة واحدة */
+  var fill = document.querySelector('.pfw-level-fill');
+  if (fill && !reduced) {
+    var w = fill.getAttribute('data-width') || '0';
+    fill.style.width = '0%';
+    requestAnimationFrame(function(){
+      setTimeout(function(){ fill.style.width = w + '%'; }, 120);
+    });
+  }
+
+  var els = [].slice.call(document.querySelectorAll('.pfw-stat-num[data-count]'));
+  if (!els.length) return;
+  var run = function(el){
+    var target = parseInt(el.getAttribute('data-count'), 10) || 0;
+    if (reduced || target <= 0) { el.textContent = fmt(target); return; }
+    var t0 = null, dur = 950;
+    var step = function(ts){
+      if (!t0) t0 = ts;
+      var p = Math.min((ts - t0) / dur, 1);
+      p = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmt(Math.round(target * p));
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  };
+  if (!('IntersectionObserver' in window)) { els.forEach(run); return; }
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if (e.isIntersecting) { run(e.target); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.3 });
+  els.forEach(function(el){ io.observe(el); });
+})();
+</script>
 <script>
 document.getElementById('profileForm').addEventListener('submit', async function(e) {
   e.preventDefault();
