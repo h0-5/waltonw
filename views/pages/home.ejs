@@ -1,179 +1,262 @@
 <%- include('../partials/header') %>
 <%- include('../partials/navbar') %>
 
-<!-- Particle Background -->
-<div class="particle-bg" id="particleBg"></div>
+<%
+  /* ===== تجهيزات خفيفة بمنطق الصفحة (بلا أي استعلام) ===== */
+  var hwUser = typeof user !== 'undefined' ? user : null;
+  var hwMy = (typeof myStats !== 'undefined' && myStats) ? myStats : null;
+  var hwStore = (typeof storePreview !== 'undefined' && storePreview) ? storePreview : [];
+  var hwSettings = typeof settings !== 'undefined' ? settings : {};
+  var hwDiscord = hwSettings.discord_server_url || '#';
 
-<div class="custom-container">
-<!-- Hero Section - 3D Animated -->
-<section class="hero-section-modern" id="heroSection">
-        <div class="logo-wrapper-modern" id="heroLogo">
-            <div class="logo-inner-glow"></div>
-            <img src="<%= settings.site_logo_url || '/images/logo.png' %>" alt="Walton Family">
-        </div>
-        <h1 class="hero-title-modern">مرحباً بك في Walton Family</h1>
-        <p class="hero-sub-modern" id="heroSubText">أكثر من مجرد عائلة - مجتمع متكامل من الدعم والإبداع</p>
-        <div class="btn-group">
-            <a href="/applications" class="btn-primary-modern ripple-btn">
-                <i class="fas fa-user-plus"></i> انضم الآن
-            </a>
-            <% if (user) { %>
-            <a href="/community" class="btn-outline-modern ripple-btn">
-                <i class="fas fa-comments"></i> المجتمع
-            </a>
-            <% } else { %>
-            <a href="/store" class="btn-outline-modern ripple-btn">
-                <i class="fas fa-store"></i> المتجر
-            </a>
-            <% } %>
-        </div>
+  /* معاينة القوانين: تجميع أول 3 أقسام من نتائج LIMIT 8 */
+  var hwRules = (typeof rulesPreview !== 'undefined' && rulesPreview) ? rulesPreview : [];
+  var hwRuleGroups = [], hwSeen = {};
+  hwRules.forEach(function(r) {
+    if (!r || !r.rule_text) return;
+    var cat = r.category || 'قوانين عامة';
+    if (!hwSeen[cat]) { hwSeen[cat] = { name: cat, items: [] }; hwRuleGroups.push(hwSeen[cat]); }
+    if (hwSeen[cat].items.length < 4) hwSeen[cat].items.push(r.rule_text);
+  });
+  hwRuleGroups = hwRuleGroups.slice(0, 3);
+
+  /* آخر خبر للشريط الإعلاني */
+  var hwFeed = (typeof news !== 'undefined' && news && news.length) ? news[0] : null;
+
+  /* شارة نوع المنتج (نفس تعبير صفحة المتجر) */
+  var hwType = function(t) {
+    if (t === 'bot_item') return 'منتجات البوت';
+    if (t === 'purchase' || t === 'purchase_money') return 'شراء منتج';
+    if (t === 'random_box') return 'صندوق عشوائي';
+    return 'متجر';
+  };
+  var hwTypeIcon = function(t) {
+    if (t === 'bot_item') return 'fa-sack-dollar';
+    if (t === 'purchase' || t === 'purchase_money') return 'fa-cart-shopping';
+    if (t === 'random_box') return 'fa-gift';
+    return 'fa-bag-shopping';
+  };
+%>
+
+<div class="hw-page">
+  <!-- توهجات الخلفية الثابتة: عناصر CSS فقط — بلا جسيمات ولا JS (أخف بكثير من النسخة السابقة) -->
+  <div class="hw-glow hw-glow-a" aria-hidden="true"></div>
+  <div class="hw-glow hw-glow-b" aria-hidden="true"></div>
+
+  <div class="custom-container">
+
+    <!-- ══ Hero ══ -->
+    <section class="hw-hero" id="heroSection">
+      <span class="hw-pill wf-reveal"><i class="fas fa-bolt" aria-hidden="true"></i> مجتمع اللاعبين الرقمي الأول</span>
+      <h1 class="hw-title wf-reveal" style="transition-delay:.06s">أكثر من مجرد عائلة،<br><span class="hw-grad">نصنع صدارة الألعاب</span></h1>
+      <p class="hw-sub wf-reveal" style="transition-delay:.12s">العب ألعابك المفضلة، اجمع النقاط التنافسية التلقائية، واستبدلها بجوائز وميزات حقيقية داخل سيرفر الديسكورد الخاص بنا.</p>
+      <div class="hw-cta wf-reveal" style="transition-delay:.18s">
+        <a href="/applications" class="hw-btn hw-btn-primary"><i class="fas fa-user-plus" aria-hidden="true"></i> انضم إلينا الآن</a>
+        <a href="/store" class="hw-btn hw-btn-ghost"><i class="fas fa-bag-shopping" aria-hidden="true"></i> تصفح المتجر</a>
+      </div>
     </section>
 
-    <!-- Stats Cards - 3D Tilt -->
-    <div class="stats-grid-modern">
-        <div class="stat-card-modern wf-reveal">
-            <i class="fas fa-headset stat-icon-modern"></i>
-            <div class="stat-content">
-                <div class="stat-number-modern stat-number"><%= stats.support %></div>
-                <div class="stat-label-modern">دعم فني</div>
+    <!-- ══ لوحة تحكم العائلة — Bento Grid ══ -->
+    <section class="hw-dash" id="stats">
+      <div class="hw-dash-head wf-reveal">
+        <h2 class="hw-h2">لوحة تحكم العائلة</h2>
+        <span class="hw-live"><span class="hw-live-dot" aria-hidden="true"></span><i class="fas fa-users" aria-hidden="true"></i> <%= stats.members %> عضو</span>
+      </div>
+
+      <div class="hw-bento">
+        <!-- Box A: الإحصائيات الشخصية (مسجل) / إحصائيات العائلة (زائر) -->
+        <div class="hw-box hw-box-stats wf-reveal">
+          <% if (hwUser && hwMy) { %>
+          <h3 class="hw-box-title"><i class="fas fa-trophy hw-ic hw-ic-violet" aria-hidden="true"></i> إحصائياتك الشخصية</h3>
+          <div class="hw-minis">
+            <div class="hw-mini">
+              <i class="fas fa-medal hw-mini-ic hw-c-amber" aria-hidden="true"></i>
+              <div class="hw-mini-val">#<%= hwMy.rank %></div>
+              <div class="hw-mini-lbl">رتبتك بالنقاط</div>
             </div>
-        </div>
-        <div class="stat-card-modern wf-reveal">
-            <i class="fas fa-users-cog stat-icon-modern"></i>
-            <div class="stat-content">
-                <div class="stat-number-modern stat-number"><%= stats.staff %></div>
-                <div class="stat-label-modern">فريق إداري</div>
+            <div class="hw-mini">
+              <i class="fas fa-coins hw-mini-ic hw-c-violet" aria-hidden="true"></i>
+              <div class="hw-mini-val"><%= hwMy.points.toLocaleString('en') %></div>
+              <div class="hw-mini-lbl">نقاطك الحالية</div>
             </div>
-        </div>
-        <div class="stat-card-modern wf-reveal">
-            <i class="fas fa-users stat-icon-modern"></i>
-            <div class="stat-content">
-                <div class="stat-number-modern stat-number"><%= stats.members %></div>
-                <div class="stat-label-modern">عضو في العائلة</div>
+            <div class="hw-mini">
+              <i class="fas fa-arrow-trend-up hw-mini-ic hw-c-pink" aria-hidden="true"></i>
+              <div class="hw-mini-val"><%= hwMy.total_earned.toLocaleString('en') %></div>
+              <div class="hw-mini-lbl">إجمالي المكتسب</div>
             </div>
+          </div>
+          <div class="hw-box-foot">
+            <a href="/profile" class="hw-foot-link">ملفي الشخصي <i class="fas fa-angle-left" aria-hidden="true"></i></a>
+            <span class="hw-auto"><span class="hw-live-dot" aria-hidden="true"></span> تحديث تلقائي</span>
+          </div>
+          <% } else { %>
+          <h3 class="hw-box-title"><i class="fas fa-chart-simple hw-ic hw-ic-violet" aria-hidden="true"></i> إحصائيات العائلة</h3>
+          <div class="hw-minis">
+            <div class="hw-mini">
+              <i class="fas fa-users hw-mini-ic hw-c-violet" aria-hidden="true"></i>
+              <div class="hw-mini-val"><%= stats.members %></div>
+              <div class="hw-mini-lbl">عضو في العائلة</div>
+            </div>
+            <div class="hw-mini">
+              <i class="fas fa-users-gear hw-mini-ic hw-c-pink" aria-hidden="true"></i>
+              <div class="hw-mini-val"><%= stats.staff %></div>
+              <div class="hw-mini-lbl">فريق إداري</div>
+            </div>
+            <div class="hw-mini">
+              <i class="fas fa-headset hw-mini-ic hw-c-amber" aria-hidden="true"></i>
+              <div class="hw-mini-val"><%= stats.support %></div>
+              <div class="hw-mini-lbl">دعم فني</div>
+            </div>
+          </div>
+          <div class="hw-box-foot">
+            <a href="/auth/discord" class="hw-foot-link"><i class="fab fa-discord" aria-hidden="true"></i> سجّل واظهر نقاطك</a>
+            <span class="hw-auto"><span class="hw-live-dot" aria-hidden="true"></span> مجتمع نشط</span>
+          </div>
+          <% } %>
         </div>
+
+        <!-- Box B: مقتطفات المتجر -->
+        <div class="hw-box hw-box-store wf-reveal" style="transition-delay:.07s">
+          <div class="hw-box-top">
+            <h3 class="hw-box-title"><i class="fas fa-bag-shopping hw-ic hw-ic-pink" aria-hidden="true"></i> مقتطفات المتجر</h3>
+            <a href="/store" class="hw-more">عرض الكل <i class="fas fa-arrow-left" aria-hidden="true"></i></a>
+          </div>
+          <% if (hwStore.length) { %>
+          <div class="hw-shop-grid">
+            <% hwStore.forEach(function(it) { %>
+            <a href="/store" class="hw-item">
+              <div class="hw-item-head">
+                <span class="hw-item-name"><%= it.name %></span>
+                <span class="hw-item-type"><i class="fas <%= hwTypeIcon(it.category_type) %>" aria-hidden="true"></i> <%= hwType(it.category_type) %></span>
+              </div>
+              <% if (it.description) { %><p class="hw-item-desc"><%= it.description.substring(0, 90) %></p><% } %>
+              <div class="hw-item-foot">
+                <% if (it.price_points) { %>
+                <span class="hw-item-price"><i class="fas fa-coins" aria-hidden="true"></i> <%= it.price_points.toLocaleString('en') %> نقطة</span>
+                <% } else if (it.price_money) { %>
+                <span class="hw-item-price"><i class="fas fa-dollar-sign" aria-hidden="true"></i> <%= it.price_money %></span>
+                <% } %>
+                <span class="hw-buy">شراء</span>
+              </div>
+            </a>
+            <% }); %>
+          </div>
+          <% } else { %>
+          <a href="/store" class="hw-shop-empty">
+            <i class="fas fa-gift" aria-hidden="true"></i>
+            <div><strong>متجر العائلة بانتظارك</strong><span>استبدل نقاطك بجوائز وميزات حقيقية</span></div>
+            <i class="fas fa-angle-left" aria-hidden="true"></i>
+          </a>
+          <% } %>
+        </div>
+
+        <!-- Box C: آخر الإعلانات -->
+        <div class="hw-box hw-box-feed wf-reveal" style="transition-delay:.14s">
+          <div class="hw-feed-ic" aria-hidden="true"><i class="fas fa-bell"></i></div>
+          <% if (hwFeed) { %>
+          <div class="hw-feed-body">
+            <div class="hw-feed-meta">
+              <span class="hw-feed-badge <%= hwFeed.type === 'giveaway' ? 'hw-badge-gift' : 'hw-badge-info' %>">
+                <i class="fas <%= hwFeed.type === 'giveaway' ? 'fa-gift' : 'fa-circle-info' %>" aria-hidden="true"></i>
+                <%= hwFeed.type === 'giveaway' ? 'مسابقة' : 'إعلان' %>
+              </span>
+              <span class="hw-feed-date"><i class="fas fa-clock" aria-hidden="true"></i> <%= new Date(hwFeed.created_at).toLocaleDateString('ar-SA') %></span>
+            </div>
+            <h3 class="hw-feed-title"><%= hwFeed.title %></h3>
+            <% if (hwFeed.content) { %><p class="hw-feed-txt"><%= hwFeed.content.substring(0, 140) %></p><% } %>
+          </div>
+          <a href="/community" class="hw-btn hw-btn-ghost hw-btn-sm">كل الأخبار <i class="fas fa-angle-left" aria-hidden="true"></i></a>
+          <% } else { %>
+          <div class="hw-feed-body">
+            <h3 class="hw-feed-title">آخر الأخبار على الديسكورد</h3>
+            <p class="hw-feed-txt">كن أول من يعرف عن المسابقات والتحديثات — انضم لسيرفر العائلة.</p>
+          </div>
+          <a href="<%= hwDiscord %>" target="_blank" rel="noopener" class="hw-btn hw-btn-discord hw-btn-sm"><i class="fab fa-discord" aria-hidden="true"></i> انضم</a>
+          <% } %>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ نبذة من الميثاق — أكورديون أصلي <details> بصفر JS ══ -->
+    <% if (hwRuleGroups.length) { %>
+    <section class="hw-rules" id="rules-preview">
+      <div class="hw-dash-head wf-reveal">
+        <h2 class="hw-h2">نبذة من الميثاق</h2>
+        <a href="/rules" class="hw-more">القوانين الكاملة <i class="fas fa-arrow-left" aria-hidden="true"></i></a>
+      </div>
+      <div class="hw-acc">
+        <% hwRuleGroups.forEach(function(g, gi) { %>
+        <details class="hw-acc-item wf-reveal" style="transition-delay:<%= gi * 0.06 %>s"<%= gi === 0 ? ' open' : '' %>>
+          <summary class="hw-acc-head">
+            <span class="hw-acc-title"><i class="fas fa-scale-balanced hw-ic hw-ic-violet" aria-hidden="true"></i> <%= g.name %></span>
+            <span class="hw-acc-meta"><%= g.items.length %> قوانين <i class="fas fa-chevron-down hw-acc-chev" aria-hidden="true"></i></span>
+          </summary>
+          <ul class="hw-acc-list">
+            <% g.items.forEach(function(txt) { %><li><%= txt %></li><% }); %>
+          </ul>
+        </details>
+        <% }); %>
+      </div>
+    </section>
+    <% } %>
+
+    <!-- ══ آخر الأخبار والمسابقات ══ -->
+    <section class="hw-news" id="news">
+      <div class="hw-dash-head wf-reveal">
+        <h2 class="hw-h2"><i class="fas fa-newspaper hw-ic hw-ic-pink" aria-hidden="true"></i> آخر الأخبار والمسابقات</h2>
+      </div>
+      <div class="hw-news-grid">
+        <% if (typeof news !== 'undefined' && news && news.length > 0) { %>
+          <% news.forEach(function(item, index) { %>
+          <article class="hw-card hw-news-card wf-reveal" style="transition-delay:<%= Math.min(index, 4) * 0.06 %>s">
+            <div class="hw-news-body">
+              <div class="hw-feed-badge <%= item.type === 'giveaway' ? 'hw-badge-gift' : 'hw-badge-info' %>">
+                <i class="fas <%= item.type === 'giveaway' ? 'fa-gift' : 'fa-circle-info' %>" aria-hidden="true"></i>
+                <%= item.type === 'giveaway' ? 'مسابقة' : 'خبر' %>
+              </div>
+              <h3 class="hw-news-title"><%= item.title %></h3>
+              <div class="hw-feed-date"><i class="fas fa-clock" aria-hidden="true"></i> <%= new Date(item.created_at).toLocaleDateString('ar-SA') %></div>
+              <% if (item.content) { %><p class="hw-news-txt"><%= item.content.substring(0, 180) %></p><% } %>
+            </div>
+            <% if (item.image) { %>
+            <picture class="hw-news-img">
+              <img src="<%= item.image %>" alt="<%= item.title %>" loading="lazy" decoding="async">
+            </picture>
+            <% } %>
+          </article>
+          <% }); %>
+        <% } else { %>
+        <div class="hw-empty wf-reveal">
+          <i class="fas fa-newspaper" aria-hidden="true"></i>
+          <p>لا توجد أخبار أو مسابقات حالياً</p>
+        </div>
+        <% } %>
+      </div>
+    </section>
+
+    <!-- ══ بانرات: ديسكورد + الألعاب ══ -->
+    <div class="hw-banners">
+      <section class="hw-banner wf-reveal">
+        <div class="hw-banner-ic hw-bi-discord" aria-hidden="true"><i class="fab fa-discord"></i></div>
+        <div class="hw-banner-body">
+          <h3>ادخل إلى Discord</h3>
+          <p>تواصل مع المجتمع وابقَ على اطلاع بآخر الأخبار لحظة بلحظة</p>
+        </div>
+        <a href="<%= hwDiscord %>" target="_blank" rel="noopener" class="hw-btn hw-btn-discord hw-btn-sm"><i class="fab fa-discord" aria-hidden="true"></i> انضم الآن</a>
+      </section>
+
+      <section class="hw-banner hw-banner-games wf-reveal" style="transition-delay:.07s">
+        <div class="hw-banner-ic hw-bi-games" aria-hidden="true"><i class="fas fa-gamepad"></i></div>
+        <div class="hw-banner-body">
+          <h3>منطقة الألعاب</h3>
+          <p>العب واكسب نقاط يومياً — ألعاب متنوعة تنتظرك مع أعضاء العائلة</p>
+        </div>
+        <a href="/games" class="hw-btn hw-btn-primary hw-btn-sm"><i class="fas fa-gamepad" aria-hidden="true"></i> اذهب للألعاب</a>
+      </section>
     </div>
 
-    <!-- News Section -->
-    <section style="margin: 3rem 0;">
-        <div class="section-header wf-reveal">
-            <h2 class="section-title-modern">
-                <i class="fas fa-newspaper"></i> آخر الأخبار والمسابقات
-            </h2>
-        </div>
-        
-        <div class="news-grid-modern">
-            <% if (typeof news !== 'undefined' && news && news.length > 0) { %>
-                <% news.forEach(function(item, index) { %>
-                <div class="news-card-modern wf-reveal" style="animation-delay: <%= index * 0.1 %>s">
-                    <div class="news-card-content">
-                        <div class="news-badge <%= item.type === 'giveaway' ? 'news-badge-giveaway' : 'news-badge-info' %>">
-                            <i class="fas fa-<%= item.type === 'giveaway' ? 'gift' : 'info-circle' %>"></i>
-                            <%= item.type === 'giveaway' ? 'مسابقة' : 'خبر' %>
-                        </div>
-                        <h3 class="news-title-modern"><%= item.title %></h3>
-                        <div class="news-date-modern">
-                            <i class="fas fa-clock"></i> <%= new Date(item.created_at).toLocaleDateString('ar-SA') %>
-                        </div>
-                        <div class="news-content-modern"><%= item.content ? item.content.substring(0, 200) : '' %></div>
-                    </div>
-                    <% if (item.image) { %>
-                    <picture class="img-preloader">
-                        <img src="<%= item.image %>" alt="صورة الخبر" class="fast-img" loading="lazy" decoding="async">
-                    </picture>
-                    <% } %>
-                </div>
-                <% }); %>
-            <% } else { %>
-            <div style="text-align: center; padding: 3rem; background: rgba(26, 27, 46,0.7); border-radius: 24px; border: 1px solid var(--border); grid-column: 1/-1;">
-                <i class="fas fa-newspaper" style="font-size: 3rem; color: rgba(var(--ac-rgb),0.4); margin-bottom: 1rem; display: block;"></i>
-                <p style="color: var(--text-dim);">لا توجد أخبار أو مسابقات حالياً</p>
-            </div>
-            <% } %>
-        </div>
-    </section>
-
-    <!-- Discord Section - Neon Glow -->
-    <section class="discord-section-modern wf-reveal">
-        <div class="discord-card-modern">
-            <i class="fab fa-discord discord-icon-modern"></i>
-            <div class="discord-online-indicator">
-                <span class="discord-online-dot"></span>
-                <span>متصل الآن</span>
-            </div>
-            <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.5rem; color: white;">ادخل إلى Discord</h2>
-            <p style="color: var(--text-dim); margin-bottom: 1.5rem; font-size: 0.88rem;">تواصل مع المجتمع والبقاء على اطلاع بآخر الأخبار</p>
-            <a href="<%= settings.discord_server_url || '#' %>" target="_blank" class="btn-primary-modern" style="background: #5865F2; box-shadow: 0 8px 25px rgba(88,101,242,0.4); margin: 0 auto; justify-content: center;">
-                <i class="fab fa-discord"></i> انضم الآن
-            </a>
-        </div>
-    </section>
-
-    <!-- Games Section -->
-    <section class="discord-section-modern wf-reveal" style="margin-top: 1rem;">
-        <div class="discord-card-modern games-card-modern">
-            <div class="games-icons-row">
-                <span class="games-float-icon" style="animation-delay:0s">&#127920;</span>
-                <span class="games-float-icon" style="animation-delay:0.4s">&#127919;</span>
-                <span class="games-float-icon" style="animation-delay:0.8s">&#127922;</span>
-                <span class="games-float-icon" style="animation-delay:1.2s">&#127183;</span>
-                <span class="games-float-icon" style="animation-delay:1.6s">&#127942;</span>
-            </div>
-            <h2 style="font-size: 1.4rem; font-weight: 800; margin-bottom: 0.5rem; color: white;">منطقة الألعاب</h2>
-            <p style="color: var(--text-dim); margin-bottom: 1.5rem; font-size: 0.88rem;">العب واكسب نقاط يومياً — ألعاب متنوعة تنتظرك!</p>
-            <a href="/games" class="btn-primary-modern" style="margin: 0 auto; justify-content: center;">
-                <i class="fas fa-gamepad"></i> اذهب للألعاب
-            </a>
-        </div>
-    </section>
+  </div>
 </div>
-
-<script>
-// Particle System
-(function() {
-    const container = document.getElementById('particleBg');
-    if (!container) return;
-    const count = window.innerWidth < 768 ? 15 : 30;
-    for (let i = 0; i < count; i++) {
-        const p = document.createElement('div');
-        p.className = 'particle';
-        p.style.left = Math.random() * 100 + '%';
-        p.style.animationDuration = (8 + Math.random() * 12) + 's';
-        p.style.animationDelay = Math.random() * 8 + 's';
-        p.style.width = p.style.height = (2 + Math.random() * 3) + 'px';
-        container.appendChild(p);
-    }
-})();
-
-// 3D Tilt on mouse move for stat cards
-document.querySelectorAll('.stat-card-modern').forEach(card => {
-    card.addEventListener('mousemove', e => {
-        const rect = card.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const centerX = rect.width / 2;
-        const centerY = rect.height / 2;
-        const rotateX = (y - centerY) / 15;
-        const rotateY = (centerX - x) / 15;
-        card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-8px)`;
-    });
-    card.addEventListener('mouseleave', () => {
-        card.style.transform = 'perspective(800px) rotateX(0) rotateY(0) translateY(0)';
-    });
-});
-
-// Hero parallax on scroll
-window.addEventListener('scroll', () => {
-    const hero = document.getElementById('heroSection');
-    const logo = document.getElementById('heroLogo');
-    if (!hero || !logo) return;
-    const scrollY = window.scrollY;
-    const opacity = Math.max(0, 1 - scrollY / 500);
-    const scale = Math.max(0.8, 1 - scrollY / 3000);
-    logo.style.opacity = opacity;
-    logo.style.transform = `scale(${scale})`;
-});
-</script>
 
 <%- include('../partials/footer') %>
 <script src="/js/main.js"></script>

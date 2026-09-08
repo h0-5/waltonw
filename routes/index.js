@@ -27,16 +27,33 @@ router.get('/', isAuthenticated, isInGuild, checkPageAccess('/'), async (req, re
   const news = await safeQuery('SELECT * FROM news WHERE is_hidden = 0 ORDER BY created_at DESC LIMIT 10');
   const memberCount = await safeQuery('SELECT COUNT(*) as c FROM users');
   const giveaways = await safeQuery("SELECT * FROM news WHERE type = 'giveaway' AND expires_at > NOW() AND is_hidden = 0");
-  
+
   const stats = {
     members: settings.stat_members || (memberCount[0] ? memberCount[0].c : '50+'),
     staff: settings.stat_staff || '15+',
     support: settings.stat_support || '24/7'
   };
 
+  /* معاينات خفيفة للوحة bento: LIMIT محدد، بلا JOIN — تفشل بأمان لقائمة فارغة */
+  const storePreview = await safeQuery('SELECT id, name, price_points, price_money, category_type, description FROM fs_products ORDER BY id ASC LIMIT 2');
+  const rulesPreview = await safeQuery('SELECT category, rule_text FROM rules ORDER BY sort_order ASC LIMIT 8');
+
+  /* نقاطي ورتبتي (للمسجّل فقط) — استعلامان صغيران بنمط صفحة البروفايل */
+  let myStats = null;
+  if (req.user) {
+    const pts = await safeQuery('SELECT points, total_earned FROM bot_points WHERE discord_id = ? LIMIT 1', [req.user.discord_id]);
+    const myPoints = pts.length ? (pts[0].points || 0) : 0;
+    const rk = await safeQuery('SELECT COUNT(*) + 1 AS pos FROM bot_points WHERE points > ?', [myPoints]);
+    myStats = {
+      points: myPoints,
+      total_earned: pts.length ? (pts[0].total_earned || 0) : 0,
+      rank: rk.length ? rk[0].pos : 1
+    };
+  }
+
   res.render('pages/home', {
     title: settings.site_name || 'الرئيسية',
-    news, stats, activeGiveaways: giveaways, settings
+    news, stats, activeGiveaways: giveaways, settings, storePreview, rulesPreview, myStats
   });
 });
 

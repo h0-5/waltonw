@@ -37,9 +37,11 @@
   <link rel="stylesheet" href="/css/main.css">
   <link rel="stylesheet" href="/css/site-header.css">
   <link rel="stylesheet" href="/css/footer.css">
-  <link rel="stylesheet" href="/css/home.css">
-  <link rel="stylesheet" href="/css/page-hero.css">
   <% var _pCss = (typeof currentPath === 'string' ? currentPath : ''); %>
+  <% if (_pCss === '/' || _pCss === '/home') { %>
+  <link rel="stylesheet" href="/css/home-v4.css">
+  <% } %>
+  <link rel="stylesheet" href="/css/page-hero.css">
   <% if (_pCss.indexOf('/store') === 0 || _pCss.indexOf('/products') === 0) { %>
   <link rel="stylesheet" href="/css/store.css">
   <link rel="stylesheet" href="/css/products.css">
