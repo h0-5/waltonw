@@ -118,20 +118,8 @@
     <!-- ═══ الشبكة: المحتوى + الجانب ═══ -->
     <div class="pfw-grid">
       <div class="pfw-main">
-        <!-- تعديل الملف -->
-        <section class="pfw-card wf-reveal" style="transition-delay:.12s">
-          <h3 class="pfw-card-title"><i class="fas fa-user-pen"></i>تعديل الملف الشخصي</h3>
-          <form id="profileForm" class="pfw-form">
-            <div class="pfw-field">
-              <label for="username"><i class="fas fa-user"></i>اسم المستخدم</label>
-              <input type="text" id="username" value="<%= _pfUser.username || '' %>" minlength="3" maxlength="30" required>
-            </div>
-            <button type="submit" class="pfw-save"><i class="fas fa-floppy-disk"></i>حفظ التغييرات</button>
-          </form>
-        </section>
-
-        <!-- الإنجازات -->
-        <section class="pfw-card wf-reveal" style="transition-delay:.18s">
+        <!-- الإنجازات (أول كارت محتوى) -->
+        <section class="pfw-card pfw-card-achs wf-reveal" style="transition-delay:.12s">
           <h3 class="pfw-card-title"><i class="fas fa-trophy"></i>الإنجازات<span class="pfw-card-badge"><%= _pfAch.length %></span></h3>
           <% if (_pfAch.length) { %>
           <div class="pfw-achs">
@@ -155,11 +143,23 @@
           </div>
           <% } %>
         </section>
+
+        <!-- تعديل الملف (آخر كارت — أمر نادر) -->
+        <section class="pfw-card pfw-card-edit wf-reveal" style="transition-delay:.16s">
+          <h3 class="pfw-card-title"><i class="fas fa-user-pen"></i>تعديل الملف الشخصي</h3>
+          <form id="profileForm" class="pfw-form">
+            <div class="pfw-field">
+              <label for="username"><i class="fas fa-user"></i>اسم المستخدم</label>
+              <input type="text" id="username" value="<%= _pfUser.username || '' %>" minlength="3" maxlength="30" required>
+            </div>
+            <button type="submit" class="pfw-save"><i class="fas fa-floppy-disk"></i>حفظ التغييرات</button>
+          </form>
+        </section>
       </div>
 
       <aside class="pfw-side">
         <!-- روابط سريعة -->
-        <section class="pfw-card wf-reveal" style="transition-delay:.24s">
+        <section class="pfw-card pfw-card-qs wf-reveal" style="transition-delay:.2s">
           <h3 class="pfw-card-title"><i class="fas fa-link"></i>روابط سريعة</h3>
           <div class="pfw-links">
             <a href="/orders" class="pfw-link"><i class="fas fa-box"></i><span>طلباتي</span><i class="fas fa-chevron-left pfw-link-arrow"></i></a>
@@ -171,7 +171,7 @@
         </section>
 
         <!-- معلومات الحساب -->
-        <section class="pfw-card wf-reveal" style="transition-delay:.3s">
+        <section class="pfw-card pfw-card-info wf-reveal" style="transition-delay:.24s">
           <h3 class="pfw-card-title"><i class="fas fa-id-card"></i>معلومات الحساب</h3>
           <div class="pfw-info">
             <div class="pfw-info-row"><span class="pfw-info-lbl"><i class="fas fa-envelope"></i>البريد</span><span class="pfw-info-val"><%= _pfUser.email || 'غير محدد' %></span></div>
