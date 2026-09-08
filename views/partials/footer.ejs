@@ -3,6 +3,35 @@
   var _ftYear = new Date().getFullYear();
   var _ftDiscord = _ftSettings.discord_server_url || '#';
 %>
+<!-- ═══ نظام حماية المحتوى: منع النسخ/القص/الزر الأيمن/سحب الصور/اختصارات المتصفح ═══
+     في الفوتر المشترك ليغطي كل الصفحات (حتى دخول/404 التي بلا هيدر مشترك).
+     خفيف عمداً: ستة مستمعات فقط، بلا حلقات ولا مؤقتات ولا مراقبين = أثر لا يُذكر
+     على الأداء والاستضافة، ومدمج inline فلا أي ملف أو طلب إضافي.
+     الحقول القابلة للكتابة (إدخال/تعبئة/قوائم/محادثة) مستثناة بالكامل حتى لا تنكسر أي فورمة -->
+<script>
+  (function() {
+    var free = function(t) {
+      while (t && t !== document) {
+        if (t.nodeType === 1 && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return true;
+        t = t.parentNode;
+      }
+      return false;
+    };
+    ['copy', 'cut', 'contextmenu', 'dragstart', 'selectstart'].forEach(function(ev) {
+      document.addEventListener(ev, function(e) {
+        if (free(e.target)) return;
+        e.preventDefault();
+      });
+    });
+    document.addEventListener('keydown', function(e) {
+      if (free(e.target)) return;
+      var k = (e.key || '').toLowerCase();
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (k === 'i' || k === 'j' || k === 'c')) { e.preventDefault(); return; }
+      if ((e.ctrlKey || e.metaKey) && (k === 'c' || k === 'x' || k === 'a' || k === 's' || k === 'p' || k === 'u')) e.preventDefault();
+      else if (k === 'f12') e.preventDefault();
+    });
+  })();
+</script>
 <footer class="wf-footer ftv2">
   <div class="ftv2-card">
     <div class="ftv2-bg" aria-hidden="true"></div>
