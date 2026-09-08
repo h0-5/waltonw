@@ -38,11 +38,29 @@ document.addEventListener('DOMContentLoaded', function() {
   updateClock();
   setInterval(updateClock, 1000);
 
-  // Navbar scroll
+  // Navbar scroll — بلا كتابة inline styles (كلاسات فقط)
+  // يختفي عند النزول ويرجع عند الصعود (transform فقط = تركيب GPU، صفر إعادة رسم)
   const navbar = document.querySelector('.navbar');
   if (navbar) {
+    let navLastY = window.pageYOffset || 0;
+    let navTicking = false;
+    const navUpdate = function() {
+      navTicking = false;
+      const y = window.pageYOffset || 0;
+      navbar.classList.toggle('scrolled', y > 80);
+      const mob = document.getElementById('mobileNav');
+      const mobileOpen = !!(mob && (mob.classList.contains('open') || mob.classList.contains('show')));
+      if (mobileOpen || y <= 100) {
+        navbar.classList.remove('hidden-nav');
+      } else {
+        const dy = y - navLastY;
+        if (dy > 8) navbar.classList.add('hidden-nav');
+        else if (dy < -8) navbar.classList.remove('hidden-nav');
+      }
+      navLastY = y;
+    };
     window.addEventListener('scroll', function() {
-      navbar.style.background = window.pageYOffset > 80 ? 'rgba(13, 14, 26, 0.95)' : 'rgba(13, 14, 26, 0.88)';
+      if (!navTicking) { navTicking = true; requestAnimationFrame(navUpdate); }
     }, { passive: true });
   }
 
