@@ -125,11 +125,20 @@
     min-width: 0;
 }
 
-/* تفريد الأعمدة على الشاشات الكبيرة (طلب المستخدم):
-   البراند يمين، القائمة بمنتصفها، التواصل يسار — حتى يشغلوا عرض البطاقة كله */
+/* تجميع الأعمدة (طلب المستخدم — عكس «التفريد بعرض البطاقة»):
+   كانت القائمة طائفة بمنتصف البطاقة والتواصل ملتصق بالحافة اليسرى = قوائم متباعدة كثير.
+   الآن: حد أقصى مريح للمحتوى كله — البراند يمين ومزاح لليسار شوية (داخل الحد)،
+   القائمة تلحق البراند بمسافة مهذبة، وتواصل معنا تلحق القائمة — القوائم قريب من بعض
+   بدون التصاق، والفراغ الزائد يوزع على الجانب الخارجي فقط */
 @media (min-width: 769px) {
-    .ftv2-inner .ftv2-col { align-items: center; }
-    .ftv2-inner .ftv2-contact { align-items: flex-end; }
+    .ftv2-inner {
+        max-width: 1060px;
+        padding: 2.8rem 2.5rem 1.2rem;
+        grid-template-columns: 1fr auto auto;
+        gap: 1.8rem 2.4rem;
+    }
+    .ftv2-inner .ftv2-col,
+    .ftv2-inner .ftv2-contact { align-items: flex-start; }
 }
 
 .ftv2-title {
@@ -384,10 +393,20 @@
 .ftv2-w5i {
     stroke: url(#ftv2TextGradient);
     stroke-width: 1.15;
+    fill: transparent;
     opacity: 0;
     transform-box: fill-box;
     transform-origin: center;
-    transition: opacity 0.22s ease, transform 0.32s cubic-bezier(0.2, 0.7, 0.3, 1.25), filter 0.22s ease, stroke-width 0.22s ease;
+    /* إصلاح حرج: pointer-events يورَّث «none» من المجموعة ftv2-w5 — بدون هذه السطر
+       الحروف لا تستقبل التحويم إطلاقاً حتى على كمبيوتر حقيقي (المجموعة نفسها تبقى شفافة للتمرير) */
+    pointer-events: auto;
+    /* منحنى نابض بتجاوز (overshoot): الحرف «يقفز» لقدام بأبعاد ثلاثية ثم يستقر،
+       وعند إزالة الماوس أو تنقله لحرف ثانٍ ينشال بنفس النابضة بسلاسة */
+    transition: opacity 0.22s ease,
+                transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.6),
+                filter 0.28s ease,
+                stroke-width 0.25s ease,
+                fill 0.28s ease;
     filter: drop-shadow(0 0 0 rgba(210, 77, 255, 0));
     will-change: transform, opacity;
     cursor: default;
@@ -399,9 +418,14 @@
 @media (hover: hover) and (pointer: fine) {
     .ftv2-word.w5-ready .ftv2-w5i:hover {
         opacity: 1;
-        transform: scale(1.14);
-        stroke-width: 1.55;
-        filter: drop-shadow(0 0 5px rgba(210, 77, 255, 0.95)) drop-shadow(0 0 20px rgba(188, 19, 254, 0.55));
+        /* بروز ثلاثي الأبعاد: يكبر + يرتفع لقدام + ميلان خفيف — إحساس إخراج الحرف من الشاشة،
+           مع تعبئة زجاجية خفيفة ووهج ثلاثي الطبقات أقوى من وهج الكتابة التلقائي */
+        transform: scale(1.24) translateY(-0.8px) rotate(-1.6deg);
+        stroke-width: 1.7;
+        fill: rgba(210, 77, 255, 0.12);
+        filter: drop-shadow(0 0 6px rgba(210, 77, 255, 1))
+                drop-shadow(0 0 24px rgba(188, 19, 254, 0.7))
+                drop-shadow(0 3px 12px rgba(0, 0, 0, 0.5));
     }
 }
 

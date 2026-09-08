@@ -8,6 +8,7 @@
   var hwStore = (typeof storePreview !== 'undefined' && storePreview) ? storePreview : [];
   var hwSettings = typeof settings !== 'undefined' ? settings : {};
   var hwDiscord = hwSettings.discord_server_url || '#';
+  var hwLogo = hwSettings.site_logo_url || '/images/logo.png';
 
   /* معاينة القوانين: تجميع أول 3 أقسام من نتائج LIMIT 8 */
   var hwRules = (typeof rulesPreview !== 'undefined' && rulesPreview) ? rulesPreview : [];
@@ -39,20 +40,43 @@
 %>
 
 <div class="hw-page">
-  <!-- توهجات الخلفية الثابتة: عناصر CSS فقط — بلا جسيمات ولا JS (أخف بكثير من النسخة السابقة) -->
+  <!-- توهجات الخلفية الثابتة: عناصر CSS فقط — بلا جسيمات ولا JS -->
   <div class="hw-glow hw-glow-a" aria-hidden="true"></div>
   <div class="hw-glow hw-glow-b" aria-hidden="true"></div>
 
   <div class="custom-container">
 
-    <!-- ══ Hero ══ -->
+    <!-- ══ Hero: نص ضخم + مدار دوّار بمركز متوهج (بلا JS — دوران transform فقط) ══ -->
     <section class="hw-hero" id="heroSection">
-      <span class="hw-pill wf-reveal"><span class="hw-pill-dot" aria-hidden="true"></span><i class="fas fa-bolt" aria-hidden="true"></i> مجتمع اللاعبين الرقمي الأول</span>
-      <h1 class="hw-title wf-reveal" style="transition-delay:.06s">أكثر من مجرد عائلة،<br><span class="hw-grad">نصنع صدارة الألعاب</span></h1>
-      <p class="hw-sub wf-reveal" style="transition-delay:.12s">العب ألعابك المفضلة، اجمع النقاط التنافسية التلقائية، واستبدلها بجوائز وميزات حقيقية داخل سيرفر الديسكورد الخاص بنا.</p>
-      <div class="hw-cta wf-reveal" style="transition-delay:.18s">
-        <a href="/applications" class="hw-btn hw-btn-primary"><i class="fas fa-user-plus" aria-hidden="true"></i> انضم إلينا الآن</a>
-        <a href="/store" class="hw-btn hw-btn-ghost"><i class="fas fa-bag-shopping" aria-hidden="true"></i> تصفح المتجر</a>
+      <div class="hw-hero-txt">
+        <span class="hw-pill wf-reveal"><span class="hw-pill-dot" aria-hidden="true"></span><i class="fas fa-bolt" aria-hidden="true"></i> مجتمع اللاعبين الرقمي الأول</span>
+        <h1 class="hw-title wf-reveal" style="transition-delay:.05s">أكثر من مجرد عائلة،<br><span class="hw-grad">نصنع صدارة الألعاب</span></h1>
+        <p class="hw-sub wf-reveal" style="transition-delay:.1s">العب ألعابك المفضلة، اجمع النقاط التنافسية التلقائية، واستبدلها بجوائز وميزات حقيقية داخل سيرفر الديسكورد الخاص بنا.</p>
+        <div class="hw-cta wf-reveal" style="transition-delay:.15s">
+          <a href="/applications" class="hw-btn hw-btn-primary"><i class="fas fa-user-plus" aria-hidden="true"></i> انضم إلينا الآن</a>
+          <a href="/store" class="hw-btn hw-btn-outline"><i class="fas fa-bag-shopping" aria-hidden="true"></i> تصفح المتجر</a>
+        </div>
+      </div>
+
+      <!-- المدار: حلقتان تدوران عكس بعض + لوغو متوهج يطفو + شرائح عائمة بأرقام حقيقية -->
+      <div class="hw-orb wf-reveal" style="transition-delay:.12s" aria-hidden="true">
+        <div class="hw-ring hw-ring-a"><span class="hw-ring-dot"></span></div>
+        <div class="hw-ring hw-ring-b"><span class="hw-ring-dot"></span></div>
+        <div class="hw-orb-core">
+          <img src="<%= hwLogo %>" alt="" loading="lazy" decoding="async">
+        </div>
+        <div class="hw-chip hw-chip-a">
+          <i class="fas fa-users" aria-hidden="true"></i>
+          <div><b><%= stats.members %></b><span>عضو بالعائلة</span></div>
+        </div>
+        <div class="hw-chip hw-chip-b">
+          <i class="fas fa-gamepad" aria-hidden="true"></i>
+          <div><b>ألعاب</b><span>نقاط يومية</span></div>
+        </div>
+        <div class="hw-chip hw-chip-c">
+          <i class="fas fa-gift" aria-hidden="true"></i>
+          <div><b>جوائز</b><span>حقيقية</span></div>
+        </div>
       </div>
     </section>
 
@@ -73,6 +97,37 @@
         <span class="hw-tick-lbl">دعم فني</span>
       </div>
     </div>
+
+    <!-- ══ كيف تصعد للقمة؟ — ثلاث خطوات بزوايا مضيئة وعقد مرقمة (صفر JS) ══ -->
+    <section class="hw-steps" id="how">
+      <div class="hw-dash-head wf-reveal">
+        <h2 class="hw-h2">كيف تصعد للقمة؟</h2>
+        <span class="hw-live"><span class="hw-live-dot" aria-hidden="true"></span> ثلاث خطوات فقط</span>
+      </div>
+      <div class="hw-steps-grid">
+        <article class="hw-step wf-reveal">
+          <span class="hw-step-no" aria-hidden="true">01</span>
+          <div class="hw-step-ic"><i class="fas fa-user-plus" aria-hidden="true"></i></div>
+          <h3 class="hw-step-title">انضم للعائلة</h3>
+          <p class="hw-step-txt">قدّم طلب الانضمام من صفحة التقديمات وادخل سيرفر الديسكورد — بضع دقائق وتصير منّا.</p>
+          <i class="fas fa-crown hw-step-bg" aria-hidden="true"></i>
+        </article>
+        <article class="hw-step wf-reveal" style="transition-delay:.07s">
+          <span class="hw-step-no" aria-hidden="true">02</span>
+          <div class="hw-step-ic"><i class="fas fa-gamepad" aria-hidden="true"></i></div>
+          <h3 class="hw-step-title">العب واجمع</h3>
+          <p class="hw-step-txt">العب مع الأعضاء يومياً — النقاط تُحسب تلقائياً مع كل فوز ونشاط داخل السيرفر.</p>
+          <i class="fas fa-gamepad hw-step-bg" aria-hidden="true"></i>
+        </article>
+        <article class="hw-step wf-reveal" style="transition-delay:.14s">
+          <span class="hw-step-no" aria-hidden="true">03</span>
+          <div class="hw-step-ic"><i class="fas fa-gift" aria-hidden="true"></i></div>
+          <h3 class="hw-step-title">اكسب واستبدل</h3>
+          <p class="hw-step-txt">استبدل نقاطك من متجر العائلة بجوائز وميزات حقيقية — كل نقطة توحك حساب.</p>
+          <i class="fas fa-gem hw-step-bg" aria-hidden="true"></i>
+        </article>
+      </div>
+    </section>
 
     <!-- ══ لوحة تحكم العائلة — Bento Grid ══ -->
     <section class="hw-dash" id="stats">
@@ -183,7 +238,7 @@
             <h3 class="hw-feed-title"><%= hwFeed.title %></h3>
             <% if (hwFeed.content) { %><p class="hw-feed-txt"><%= hwFeed.content.substring(0, 140) %></p><% } %>
           </div>
-          <a href="/community" class="hw-btn hw-btn-ghost hw-btn-sm">كل الأخبار <i class="fas fa-angle-left" aria-hidden="true"></i></a>
+          <a href="/community" class="hw-btn hw-btn-outline hw-btn-sm">كل الأخبار <i class="fas fa-angle-left" aria-hidden="true"></i></a>
           <% } else { %>
           <div class="hw-feed-body">
             <h3 class="hw-feed-title">آخر الأخبار على الديسكورد</h3>
