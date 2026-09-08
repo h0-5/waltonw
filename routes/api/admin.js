@@ -303,7 +303,7 @@ router.post('/properties', checkPermission('properties_edit'), async (req, res) 
   try {
     const { title, category, sort_order, image_url } = req.body;
     let image = image_url || '';
-    if (req.files && req.files.image_file) {
+    if (req.files && req.files.image_file && req.files.image_file.size > 0) {
       const file = req.files.image_file;
       const ext = file.name.split('.').pop();
       const fname = 'prop_' + Date.now() + '.' + ext;
@@ -323,7 +323,8 @@ router.put('/properties/:id', checkPermission('properties_edit'), async (req, re
     const { title, category, sort_order, image_url } = req.body;
     const [existing] = await db.execute('SELECT image FROM properties WHERE id = ?', [req.params.id]);
     let image = existing.length ? existing[0].image : '';
-    if (req.files && req.files.image_file) {
+    const hasNewFile = req.files && req.files.image_file && req.files.image_file.size > 0;
+    if (hasNewFile) {
       if (image && image.startsWith('/uploads/')) {
         const fp = require('path').join(__dirname, '../../public', image);
         try { require('fs').unlinkSync(fp); } catch(_) {}
@@ -335,8 +336,12 @@ router.put('/properties/:id', checkPermission('properties_edit'), async (req, re
       require('fs').mkdirSync(uploadDir, { recursive: true });
       await file.mv(uploadDir + '/' + fname);
       image = '/uploads/properties/' + fname;
-    } else if (image_url) {
-      image = image_url;
+    } else if (image_url && image_url.trim()) {
+      if (image && image.startsWith('/uploads/')) {
+        const fp = require('path').join(__dirname, '../../public', image);
+        try { require('fs').unlinkSync(fp); } catch(_) {}
+      }
+      image = image_url.trim();
     }
     await db.execute('UPDATE properties SET title=?, image=?, category=?, sort_order=? WHERE id=?',
       [title, image, category || 'palaces', sort_order || 0, req.params.id]);
