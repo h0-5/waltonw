@@ -35,6 +35,17 @@
     margin: 2.5rem 1.25rem 1.25rem;
 }
 
+/* الكمبيوتر: الفوتر بعرض الشاشة كاملاً */
+@media (min-width: 769px) {
+    .wf-footer.ftv2 {
+        margin: 2.5rem 0 0;
+    }
+    .wf-footer.ftv2 .ftv2-card {
+        max-width: none;
+        border-radius: 28px 28px 0 0;
+    }
+}
+
 .ftv2-card {
     position: relative;
     overflow: hidden;
@@ -64,7 +75,7 @@
     margin: 0 auto;
     padding: 2.8rem 3rem 1.2rem;
     display: grid;
-    grid-template-columns: 1.3fr 1fr 1fr 1.25fr;
+    grid-template-columns: 1.3fr 1fr 1.25fr;
     gap: 1.8rem 2.4rem;
     direction: rtl;
 }
@@ -139,12 +150,20 @@
 .ftv2-link {
     display: inline-flex;
     align-items: center;
+    gap: 0.55rem;
     width: fit-content;
     color: rgba(255, 255, 255, 0.45);
     font-size: 0.82rem;
     text-decoration: none;
     padding: 0.3rem 0;
     transition: color 0.25s, transform 0.25s;
+}
+
+.ftv2-link i {
+    color: var(--fts);
+    font-size: 0.85rem;
+    width: 18px;
+    text-align: center;
 }
 
 .ftv2-link:hover {
@@ -200,52 +219,18 @@
     background: linear-gradient(90deg, transparent, rgba(var(--ftp-rgb), 0.28), rgba(var(--fts-rgb), 0.16), transparent);
 }
 
-/* ── الشريط السفلي ── */
-.ftv2-bottom {
+/* ── الحقوق: بمنتصف أسفل القوائم فوق الكلمة ── */
+.ftv2-legal {
     position: relative;
     z-index: 2;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    flex-wrap: wrap;
-    padding: 1.3rem 3rem 1.5rem;
-    max-width: 1024px;
-    margin: 0 auto;
-}
-
-.ftv2-social {
-    display: flex;
-    gap: 0.7rem;
-}
-
-.ftv2-soc {
-    width: 38px;
-    height: 38px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(61, 61, 92, 0.7);
-    background: rgba(26, 27, 46, 0.55); /* #1A1B2E */
-    transition: color 0.25s, border-color 0.25s, background 0.25s, transform 0.25s, box-shadow 0.25s;
-}
-
-.ftv2-soc:hover {
-    color: #fff;
-    border-color: rgba(var(--ftp-rgb), 0.5);
-    background: rgba(var(--ftp-rgb), 0.08);
-    box-shadow: 0 0 18px rgba(var(--ftp-rgb), 0.25);
-    transform: translateY(-2px);
-}
-
-.ftv2-cr {
-    display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.45rem;
+    gap: 0.5rem;
     text-align: center;
+    padding: 1.2rem 3rem 0.4rem;
+    max-width: 1024px;
+    margin: 0 auto;
 }
 
 .ftv2-cr-badge {
@@ -293,7 +278,7 @@
     position: relative;
     z-index: 1;
     height: 17rem;
-    margin: -6.5rem -1rem -4.5rem;
+    margin: -2rem -1rem -4.5rem;
 }
 
 .ftv2-word svg {
@@ -324,12 +309,14 @@
 /* احتياط: JS يضيف .hovered عندما يقترب المؤشر من منطقة الكلمة */
 .ftv2-word.hovered .ftv2-w1 { opacity: 0.65; }
 
-/* الطبقة السماوية — ترسم نفسها مرة واحدة عند التحميل
-   (أهدأ من التدرج حتى يبرز كشف الماوس) */
+/* الطبقة السماوية — تُرسم عند وصول الزائر للفوتر (كلاس drawn يضيفه JS) */
 .ftv2-w2 {
     stroke: rgba(var(--fts-rgb), 0.42);
     stroke-dasharray: 1000;
     stroke-dashoffset: 1000;
+}
+
+.ftv2-word.drawn .ftv2-w2 {
     animation: ftv2Draw 3.6s ease-in-out 0.2s forwards;
 }
 
@@ -342,10 +329,15 @@
     stroke: url(#ftv2TextGradient);
 }
 
+/* أجهزة اللمس: التدرج كامل بدون قناع الماوس (احتياط لجانب JS) */
+@media (hover: none) {
+    .ftv2-w3 { mask: none; }
+}
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
     .wf-footer.ftv2 {
-        margin: 1.25rem 0.6rem 0.9rem;
+        margin: 1.25rem 0.6rem 0;
     }
 
     .ftv2-card { border-radius: 18px; }
@@ -364,21 +356,18 @@
 
     .ftv2-brand-logo { justify-content: center; }
 
-    .ftv2-contact { grid-column: 1 / -1; }
-
     .ftv2-divider { margin: 0.3rem 1.4rem 0; }
 
-    .ftv2-bottom {
-        flex-direction: column;
-        padding: 1.1rem 1.4rem 1.3rem;
-    }
-
-    .ftv2-cr { align-items: center; }
+    .ftv2-legal { padding: 1rem 1.4rem 0.2rem; }
 
     .ftv2-word {
-        height: 7.5rem;
-        margin: -2.2rem -0.5rem -1.6rem;
+        height: 9rem;
+        margin: -0.9rem -0.5rem -1.2rem;
     }
+
+    .ftv2-word text { stroke-width: 1.2; }
+
+    .ftv2-w2 { stroke: rgba(var(--fts-rgb), 0.65); }
 
     .ftv2-w1 { display: none; }
 }
@@ -389,12 +378,12 @@
 
 /* احترام تقليل الحركة */
 @media (prefers-reduced-motion: reduce) {
-    .ftv2-w2 {
+    .ftv2-word.drawn .ftv2-w2,
+    .ftv2-word .ftv2-w2 {
         animation: none;
         stroke-dashoffset: 0;
     }
     .ftv2-pulse { animation: none; }
     .ftv2-link,
-    .ftv2-soc,
     .ftv2-w1 { transition: none; }
 }
