@@ -15,30 +15,47 @@
     var _mobileBgUrl = typeof mobileBgUrl !== 'undefined' ? mobileBgUrl : '';
   %>
   <meta name="description" content="<%= _siteName %> - مجتمعنا الرقمي">
+  <meta name="theme-color" content="<%= _accentColor %>">
   <title><%= title %> | <%= _siteName %></title>
   
-  <!-- Fonts -->
+  <!-- Fonts — أوزان مستخدمة فعلياً فقط (تقليم ٦ ملفات خطوط عربية ثقيلة ≈ ‎250KB+‎ من أول تحميل) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&family=Tajawal:wght@400;500;700&family=Cinzel+Decorative:wght@700&family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Cinzel+Decorative:wght@700&family=Noto+Sans+Arabic:wght@400;600;700;900&display=swap" rel="stylesheet">
   
   <!-- Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   
-  <!-- Styles - Old site CSS files -->
+  <!-- Styles — الأساسيات على كل صفحة، وCSS كل صفحة يُحمّل بصفحته فقط (أخف بـ ‎~150KB‎ للصفحة) -->
   <link rel="stylesheet" href="/css/main.css">
   <link rel="stylesheet" href="/css/site-header.css">
   <link rel="stylesheet" href="/css/footer.css">
   <link rel="stylesheet" href="/css/home.css">
-  <link rel="stylesheet" href="/css/store.css">
-  <link rel="stylesheet" href="/css/games-page.css">
   <link rel="stylesheet" href="/css/page-hero.css">
-  <link rel="stylesheet" href="/css/rules-page.css">
-  <link rel="stylesheet" href="/css/about.css">
-  <link rel="stylesheet" href="/css/applications-page.css">
-  <link rel="stylesheet" href="/css/community.css">
-  <link rel="stylesheet" href="/css/profile.css">
+  <% var _pCss = (typeof currentPath === 'string' ? currentPath : ''); %>
+  <% if (_pCss.indexOf('/store') === 0 || _pCss.indexOf('/products') === 0) { %>
+  <link rel="stylesheet" href="/css/store.css">
   <link rel="stylesheet" href="/css/products.css">
+  <% } %>
+  <% if (_pCss.indexOf('/games') === 0) { %>
+  <link rel="stylesheet" href="/css/games-page.css">
+  <% } %>
+  <% if (_pCss.indexOf('/rules') === 0) { %>
+  <link rel="stylesheet" href="/css/rules-page.css">
+  <% } %>
+  <% if (_pCss.indexOf('/about') === 0) { %>
+  <link rel="stylesheet" href="/css/about.css">
+  <% } %>
+  <% if (_pCss.indexOf('/applications') === 0) { %>
+  <link rel="stylesheet" href="/css/applications-page.css">
+  <% } %>
+  <% if (_pCss.indexOf('/community') === 0) { %>
+  <link rel="stylesheet" href="/css/community.css">
+  <% } %>
+  <% if (_pCss.indexOf('/profile') === 0) { %>
+  <link rel="stylesheet" href="/css/profile.css">
+  <% } %>
   
   <style>
     :root {
@@ -59,6 +76,8 @@
     @media (max-width: 768px) {
       body {
         background-image: var(--mobile-bg-url);
+        /* scroll بدل fixed: الخلفية الثابتة تسبب إعادة رسم كاملة كل إطار على الهاتف = تقطيع بالتمرير */
+        background-attachment: scroll;
       }
     }
   </style>
@@ -79,7 +98,7 @@
     .loading-bar-progress {
       height: 100%;
       width: 0%;
-      background: linear-gradient(90deg, var(--ac), #f97316, var(--ac));
+      background: linear-gradient(90deg, var(--ac), var(--ac-light), var(--ac));
       background-size: 200% 100%;
       animation: loadingBarShimmer 1.5s linear infinite;
       border-radius: 0 2px 2px 0;

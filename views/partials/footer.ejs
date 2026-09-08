@@ -11,7 +11,7 @@
       <!-- ══ Brand — اللوغو بمكانه كما هو (بطلب المستخدم) ══ -->
       <div class="ftv2-brand">
         <div class="ftv2-brand-logo">
-          <img src="<%= _ftSettings.site_logo_url || '/images/logo.png' %>" alt="WF">
+          <img src="<%= _ftSettings.site_logo_url || '/images/logo.png' %>" alt="WF" loading="lazy" decoding="async">
         </div>
         <div class="ftv2-brand-name">Walton Family</div>
         <p class="ftv2-brand-desc">مجتمع والتون فاميلي — أكثر من مجرد عائلة</p>
@@ -35,8 +35,8 @@
         <a href="/support" class="ftv2-contact-item">
           <i class="fas fa-headset" aria-hidden="true"></i><span>الدعم الفني</span>
         </a>
-        <a href="/support" class="ftv2-contact-item">
-          <i class="fas fa-circle-question" aria-hidden="true"></i><span>مركز المساعدة</span><span class="ftv2-pulse" aria-hidden="true"></span>
+        <a href="/about" class="ftv2-contact-item">
+          <i class="fas fa-circle-info" aria-hidden="true"></i><span>من نحن</span>
         </a>
       </div>
     </div>
@@ -49,9 +49,9 @@
         <i class="fas fa-lock ftv2-lock" aria-hidden="true"></i>
         <span>والتون فاميلي &copy; <%= _ftYear %>. جميع الحقوق محفوظة.</span>
       </div>
-      <div class="ftv2-dev">
-        <span>تم التطوير بواسطة <strong>KHARBOSH · h05</strong></span>
-        <span class="ftv2-dev-label">Developer Team</span>
+      <div class="ftv2-dev" dir="ltr">
+        <span class="ftv2-dev-label">Developed by</span>
+        <strong>KHARBOSH · h05</strong>
       </div>
     </div>
 
@@ -59,13 +59,11 @@
     <div class="ftv2-word" aria-hidden="true">
       <svg id="ftv2WordSvg" viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg" role="presentation" focusable="false">
         <defs>
+          <!-- تدرج الثيم البنفسجي الرسمي فقط — بدون ألوان مبرقعة -->
           <linearGradient id="ftv2TextGradient" gradientUnits="userSpaceOnUse" cx="50%" cy="50%" r="25%">
-            <stop offset="0%" stop-color="#bc13fe"/>
-            <stop offset="20%" stop-color="#ff0055"/>
-            <stop offset="40%" stop-color="#f7ff00"/>
-            <stop offset="60%" stop-color="#00ff9f"/>
-            <stop offset="80%" stop-color="#00b8ff"/>
-            <stop offset="100%" stop-color="#bc13fe"/>
+            <stop offset="0%" stop-color="#d24dff"/>
+            <stop offset="50%" stop-color="#bc13fe"/>
+            <stop offset="100%" stop-color="#930fc6"/>
           </linearGradient>
           <radialGradient id="ftv2RevealMask" gradientUnits="userSpaceOnUse" cx="50%" cy="50%" r="20%">
             <stop offset="0%" stop-color="white"/>
@@ -93,6 +91,8 @@
   var card = svg.closest('.ftv2-card');
   var maskG = document.getElementById('ftv2RevealMask');
   var isTouch = !window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  // الكمبيوتر: القناع يبدأ خارج الشاشة — صفر كشف قبل الوصول للفوتر وحركة الماوس
+  if (!isTouch && maskG) { maskG.setAttribute('cx', '-50%'); maskG.setAttribute('cy', '-50%'); }
   // الكلمة تُرسم عند وصول الشخص للفوتر (آخر الصفحة) — كل الأجهزة
   if ('IntersectionObserver' in window) {
     var io = new IntersectionObserver(function(es){

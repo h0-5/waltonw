@@ -254,22 +254,22 @@
 .ftv2-dev {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    font-size: 0.65rem;
-    color: rgba(255, 255, 255, 0.28);
+    gap: 0.55rem;
+    font-size: 0.74rem;
+    color: rgba(255, 255, 255, 0.62);
 }
 
 .ftv2-dev strong {
     font-weight: 800;
-    background: linear-gradient(90deg, var(--ftp), rgba(var(--ftp-rgb), 0.55));
+    background: linear-gradient(90deg, #d24dff, var(--ftp));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
 
 .ftv2-dev-label {
-    font-size: 0.58rem;
-    color: rgba(255, 255, 255, 0.16);
+    font-size: 0.68rem;
+    color: rgba(255, 255, 255, 0.5);
     letter-spacing: 0.05em;
 }
 
@@ -309,9 +309,9 @@
 /* احتياط: JS يضيف .hovered عندما يقترب المؤشر من منطقة الكلمة */
 .ftv2-word.hovered .ftv2-w1 { opacity: 0.65; }
 
-/* الطبقة السماوية — تُرسم عند وصول الزائر للفوتر (كلاس drawn يضيفه JS) */
+/* الطبقة البنفسجية — تُرسم عند وصول الزائر للفوتر (كلاس drawn يضيفه JS) */
 .ftv2-w2 {
-    stroke: rgba(var(--fts-rgb), 0.42);
+    stroke: rgba(var(--ftp-rgb), 0.5);
     stroke-dasharray: 1000;
     stroke-dashoffset: 1000;
 }
@@ -324,10 +324,14 @@
     to { stroke-dashoffset: 0; }
 }
 
-/* طبقة التدرج — تُكشف حول المؤشر عبر القناع */
+/* طبقة التدرج — مخفية تماماً حتى الوصول للفوتر (drawn)، ثم تُكشف حول المؤشر */
 .ftv2-w3 {
     stroke: url(#ftv2TextGradient);
+    opacity: 0;
+    transition: opacity 0.6s ease;
 }
+
+.ftv2-word.drawn .ftv2-w3 { opacity: 1; }
 
 /* أجهزة اللمس: التدرج كامل بدون قناع الماوس (احتياط لجانب JS) */
 @media (hover: none) {
@@ -367,7 +371,7 @@
 
     .ftv2-word text { stroke-width: 1.2; }
 
-    .ftv2-w2 { stroke: rgba(var(--fts-rgb), 0.65); }
+    .ftv2-w2 { stroke: rgba(var(--ftp-rgb), 0.7); }
 
     .ftv2-w1 { display: none; }
 }
@@ -386,4 +390,5 @@
     .ftv2-pulse { animation: none; }
     .ftv2-link,
     .ftv2-w1 { transition: none; }
+    .ftv2-w3 { transition: none; }
 }
