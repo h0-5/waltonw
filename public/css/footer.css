@@ -386,8 +386,10 @@
 
 /* ── طبقة 5: بروز + توهج أقوى للحرف تحت المؤشر ──
    تُفتح فقط بعد اكتمال كل الأنميشنات (w5-ready: رسم + كتابة + وهج الحروف)
-   وعلى أجهزة الماوس فقط. صفر JS: العنصر نفسه هدف التحويم عبر pointer-events
-   على خلايا الحروف (glyph cells)، والتفعيل transition transform/opacity فقط */
+   وعلى أجهزة الماوس فقط. العنصر نفسه هدف التحويم عبر pointer-events على خلايا
+   الحروف (glyph cells): CSS يتكفل بالتوهج والبروز الافتراضي، وJS صغير (~25 سطر
+   في الفوتر) يضيف ميلان البطاقة التفاعلي rotateX/rotateY تبع موضع المؤشر —
+   transform/opacity فقط، بلا مكتبات ولا قياسات ثقيلة */
 .ftv2-w5 { pointer-events: none; }
 
 .ftv2-w5i {
@@ -414,6 +416,17 @@
 
 /* قبل الجاهزية الكاملة: لا التقاط مؤشر إطلاقاً */
 .ftv2-word:not(.w5-ready) .ftv2-w5i { pointer-events: none; }
+
+/* أثناء تتبّع الماوس (بطاقة 3D التفاعلية): متابعة شبه فورية للميلان بدل المنحنى النابض،
+   فالحرف يتبع المؤشر كما كانت تفعل بطاقات الرئيسية القديمة تماماً،
+   وعند الخروج تُزال هذه الكلاس فيعود المنحنى النابض فينشال التأثير ويستقر بنعومة */
+.ftv2-w5i.ftv2-tilting {
+    transition: opacity 0.22s ease,
+                transform 0.08s linear,
+                filter 0.28s ease,
+                stroke-width 0.25s ease,
+                fill 0.28s ease;
+}
 
 @media (hover: hover) and (pointer: fine) {
     .ftv2-word.w5-ready .ftv2-w5i:hover {

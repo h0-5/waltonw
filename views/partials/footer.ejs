@@ -163,6 +163,34 @@
     if (!pending) { pending = true; requestAnimationFrame(apply); }
   }, { passive: true });
   card.addEventListener('mouseleave', function(){ wrap.classList.remove('hovered'); });
+  // ── بطاقة 3D تفاعلية للحروف (نفس تفاعل بطاقات الرئيسية القديمة) ──
+  // الحرف يميل rotateX/rotateY تبعاً لموضع المؤشر داخل الحرف (transform فقط — بلا مكتبات)،
+  // وعند إزالة الماوس أو الانتقال لحرف آخر يُنشال التأثير ويرجع الحرف مسطحاً بنعومة.
+  // rect يُخبأ عند دخول الماوس (الحرف مسطح بعد) حتى لا يُفسد قياسه ميلان الحرف نفسه
+  if (!reduced) {
+    var TILT = 12;
+    Array.prototype.forEach.call(svg.querySelectorAll('.ftv2-w5i'), function(lt){
+      var rect = null;
+      lt.addEventListener('mouseenter', function(){
+        if (wrap.classList.contains('w5-ready')) rect = lt.getBoundingClientRect();
+      });
+      lt.addEventListener('mousemove', function(e){
+        if (!rect || !wrap.classList.contains('w5-ready')) return;
+        // تتبّع شبه فوري أثناء الحركة (كالبطاقات القديمة) — الإنعاش يعود للمنحنى النابض عند الخروج
+        lt.classList.add('ftv2-tilting');
+        var px = (e.clientX - rect.left) / rect.width  - 0.5;
+        var py = (e.clientY - rect.top)  / rect.height - 0.5;
+        var ry = (px * 2 * TILT).toFixed(2);
+        var rx = (-py * 2 * TILT).toFixed(2);
+        lt.style.transform = 'perspective(320px) rotateX(' + rx + 'deg) rotateY(' + ry + 'deg) translateY(-2px) scale(1.2)';
+      });
+      lt.addEventListener('mouseleave', function(){
+        lt.classList.remove('ftv2-tilting');
+        lt.style.transform = '';
+        rect = null;
+      });
+    });
+  }
 })();</script>
 
 <!-- ═══ Scroll Progress Bar + Back To Top ═══ -->
