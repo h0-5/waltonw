@@ -120,7 +120,7 @@ async function viewTicket(id) {
       html += '<small style="color:rgba(255,255,255,0.4)">' + new Date(t.created_at).toLocaleString('ar-EG') + '</small>';
       html += '</div>';
       replies.forEach(r => {
-        html += '<div style="margin-bottom:0.5rem;padding:0.75rem;background:rgba(' + (r.is_admin ? '120,14,207,0.15' : '255,255,255,0.05') + ');border-radius:10px;border-right:3px solid ' + (r.is_admin ? '#780ecf' : '#3b82f6') + '">';
+        html += '<div style="margin-bottom:0.5rem;padding:0.75rem;background:rgba(' + (r.is_admin ? '188, 19, 254,0.15' : '255,255,255,0.05') + ');border-radius:10px;border-right:3px solid ' + (r.is_admin ? '#bc13fe' : '#3b82f6') + '">';
         html += '<small style="color:rgba(255,255,255,0.5)">' + (r.is_admin ? 'الإدارة' : 'المستخدم') + ' - ' + new Date(r.created_at).toLocaleString('ar-EG') + '</small>';
         html += '<p style="margin-top:0.25rem">' + r.message + '</p>';
         html += '</div>';

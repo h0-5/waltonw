@@ -88,7 +88,9 @@ app.use(async (req, res, next) => {
   res.locals.user = req.user || null;
   res.locals.siteName = settings.site_name || process.env.SITE_NAME || 'Walton Family';
   res.locals.siteUrl = settings.site_url || process.env.SITE_URL || 'http://localhost:3000';
-  res.locals.accentColor = settings.site_accent_color || process.env.SITE_ACCENT_COLOR || '#780ecf';
+  var _accent = settings.site_accent_color || process.env.SITE_ACCENT_COLOR || '#bc13fe';
+  if (String(_accent).toLowerCase() === '#780ecf') _accent = '#bc13fe'; // ترحيل الثيم القديم للرسمي
+  res.locals.accentColor = _accent;
   res.locals.currentPath = req.path;
   res.locals.settings = settings;
   res.locals.bgUrl = settings.site_bg_url || '';
@@ -224,7 +226,7 @@ app.use(maintenanceMode);
 app.use((req, res, next) => {
   res.locals.user = res.locals.user || null;
   res.locals.siteName = res.locals.siteName || 'Walton Family';
-  res.locals.accentColor = res.locals.accentColor || '#780ecf';
+  res.locals.accentColor = res.locals.accentColor || '#bc13fe';
   res.locals.currentPath = res.locals.currentPath || req.path;
   res.locals.settings = res.locals.settings || {};
   res.locals.bgUrl = res.locals.bgUrl || '';

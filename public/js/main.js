@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const navbar = document.querySelector('.navbar');
   if (navbar) {
     window.addEventListener('scroll', function() {
-      navbar.style.background = window.pageYOffset > 80 ? 'rgba(10, 8, 22, 0.95)' : 'rgba(10, 8, 22, 0.88)';
+      navbar.style.background = window.pageYOffset > 80 ? 'rgba(13, 14, 26, 0.95)' : 'rgba(13, 14, 26, 0.88)';
     }, { passive: true });
   }
 
@@ -104,6 +104,6 @@ window.WaltonAPI = {
 // Notification styles
 (function() {
   const s = document.createElement('style');
-  s.textContent = '.notification{position:fixed;top:85px;left:50%;transform:translateX(-50%) translateY(-16px);padding:10px 20px;background:rgba(18,15,30,0.95);border:1px solid rgba(249,115,22,0.2);border-radius:50px;display:flex;align-items:center;gap:8px;opacity:0;transition:all .3s;z-index:9999;backdrop-filter:blur(12px);font-size:14px}.notification.show{opacity:1;transform:translateX(-50%) translateY(0)}.notification-success{border-color:rgba(34,197,94,0.5);color:#22c55e}.notification-error{border-color:rgba(239,68,68,0.5);color:#ef4444}.notification-info{border-color:rgba(249,115,22,0.5);color:var(--ac)}';
+  s.textContent = '.notification{position:fixed;top:85px;left:50%;transform:translateX(-50%) translateY(-16px);padding:10px 20px;background:rgba(26, 27, 46,0.95);border:1px solid rgba(249,115,22,0.2);border-radius:50px;display:flex;align-items:center;gap:8px;opacity:0;transition:all .3s;z-index:9999;backdrop-filter:blur(12px);font-size:14px}.notification.show{opacity:1;transform:translateX(-50%) translateY(0)}.notification-success{border-color:rgba(34,197,94,0.5);color:#22c55e}.notification-error{border-color:rgba(239,68,68,0.5);color:#ef4444}.notification-info{border-color:rgba(249,115,22,0.5);color:var(--ac)}';
   document.head.appendChild(s);
 })();

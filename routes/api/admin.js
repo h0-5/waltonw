@@ -631,7 +631,7 @@ router.post('/roles', checkPermission('roles_config_edit'), async (req, res) => 
     const { name, display_name, color, icon, description } = req.body;
     const [result] = await db.execute(
       'INSERT INTO roles (name, display_name, color, icon, description) VALUES (?, ?, ?, ?, ?)',
-      [name, display_name, color || '#780ecf', icon || 'fa-user', description || '']
+      [name, display_name, color || '#bc13fe', icon || 'fa-user', description || '']
     );
     const [role] = await db.execute('SELECT * FROM roles WHERE id = ?', [result.insertId]);
     res.json({ success: true, role: role[0] });
@@ -871,7 +871,7 @@ router.post('/side-roles', checkPermission('roles_config_edit'), async (req, res
     if (!name || !display_name) return res.status(400).json({ error: 'الاسم مطلوب' });
     const [result] = await db.execute(
       'INSERT INTO side_roles (name, display_name, color, icon, emoji) VALUES (?, ?, ?, ?, ?)',
-      [name, display_name, color || '#780ecf', icon || 'fa-tag', emoji || '']
+      [name, display_name, color || '#bc13fe', icon || 'fa-tag', emoji || '']
     );
     const [role] = await db.execute('SELECT * FROM side_roles WHERE id = ?', [result.insertId]);
     res.json({ success: true, sideRole: role[0] });
@@ -887,7 +887,7 @@ router.put('/side-roles/:id', checkPermission('roles_config_edit'), async (req, 
     const { name, display_name, color, icon, emoji, is_active, sort_order } = req.body;
     await db.execute(
       'UPDATE side_roles SET name=?, display_name=?, color=?, icon=?, emoji=?, is_active=?, sort_order=? WHERE id=?',
-      [name, display_name, color || '#780ecf', icon || 'fa-tag', emoji || '', is_active !== undefined ? is_active : 1, sort_order || 0, req.params.id]
+      [name, display_name, color || '#bc13fe', icon || 'fa-tag', emoji || '', is_active !== undefined ? is_active : 1, sort_order || 0, req.params.id]
     );
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }

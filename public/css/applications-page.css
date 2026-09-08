@@ -4,7 +4,7 @@
 
 .cy-apps-page {
     min-height: 100vh;
-    background-color: var(--void-deep, #0a0910);
+    background-color: var(--void-deep, #0f101d);
     background-image:
         repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(var(--ac-rgb), 0.03) 59px, rgba(var(--ac-rgb), 0.03) 60px),
         repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(var(--ac-rgb), 0.03) 59px, rgba(var(--ac-rgb), 0.03) 60px);
@@ -662,7 +662,7 @@
     border-radius: 12px;
     font-weight: 700;
     font-size: 0.85rem;
-    color: #0a0910;
+    color: #0f101d;
     text-align: center;
     text-decoration: none;
     cursor: pointer;
@@ -1155,7 +1155,7 @@
 
 /* ── SCROLLBAR ── */
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--void-deep, #0a0910); }
+::-webkit-scrollbar-track { background: var(--void-deep, #0f101d); }
 ::-webkit-scrollbar-thumb { background: rgba(var(--ac-rgb), 0.2); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(var(--ac-rgb), 0.4); }
 

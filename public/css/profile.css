@@ -9,15 +9,15 @@
 
 :root {
     --void: #010102;
-    --void-deep: #0a0910;
+    --void-deep: #0f101d;
     --surface: rgba(255,255,255,0.025);
     --primary: var(--ac, #ecf780);
     --primary-dim: var(--ac-dark, #d4e45a);
     --primary-glow: var(--ac-light, #f0fb9a);
     --primary-rgb: var(--ac-rgb, 236, 247, 128);
-    --purple: #780ecf;
+    --purple: #bc13fe;
     --purple-light: #8b5cf6;
-    --purple-rgb: 120, 14, 207;
+    --purple-rgb: 188, 19, 254;
     --purple-light-rgb: 139, 92, 246;
     --text: #f0f0f5;
     --text-dim: rgba(240,240,245,0.6);

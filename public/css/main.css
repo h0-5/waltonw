@@ -5,22 +5,22 @@
 
 /* --- CSS Variables --- */
 :root {
-  --ac: #780ecf;
-  --ac-rgb: 120, 14, 207;
-  --ac-dark: #600ba5;
-  --ac-light: #9b30ff;
-  --purple: #780ecf;
-  --purple-rgb: 120, 14, 207;
-  --bg-body: #0a0808;
-  --bg-deep: #0a0910;
-  --bg-card: rgba(18, 15, 30, 0.7);
-  --bg-card-solid: #120f1e;
-  --bg-glass: rgba(10, 8, 22, 0.85);
+  --ac: #bc13fe;
+  --ac-rgb: 188, 19, 254;
+  --ac-dark: #930fc6;
+  --ac-light: #d24dff;
+  --purple: #bc13fe;
+  --purple-rgb: 188, 19, 254;
+  --bg-body: #0b0c18;
+  --bg-deep: #0f101d;
+  --bg-card: rgba(26, 27, 46, 0.7);
+  --bg-card-solid: #1a1b2e;
+  --bg-glass: rgba(13, 14, 26, 0.85);
   --text: #f0eef6;
   --text-dim: rgba(240, 238, 246, 0.5);
   --text-faint: rgba(240, 240, 245, 0.3);
-  --border: rgba(120, 14, 207, 0.15);
-  --border-glow: rgba(120, 14, 207, 0.3);
+  --border: rgba(61, 61, 92, 0.5); /* #3D3D5C */
+  --border-glow: rgba(188, 19, 254, 0.35);
   --shadow-sm: 0 4px 20px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 15px 40px rgba(0, 0, 0, 0.5);
@@ -37,7 +37,7 @@
 html { scroll-behavior: smooth; }
 body {
   font-family: 'Cairo', 'Tajawal', system-ui, sans-serif;
-  background-color: #0a0808;
+  background-color: #0b0c18;
   color: var(--text);
   line-height: 1.7;
   min-height: 100vh;
@@ -50,7 +50,7 @@ body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background: rgba(10, 8, 22, 0.82);
+  background: rgba(13, 14, 26, 0.82);
   z-index: -2;
   pointer-events: none;
 }
@@ -89,7 +89,7 @@ button { cursor: pointer; font-family: inherit; }
   top: 0; left: 0; right: 0;
   height: 70px;
   z-index: 100;
-  background: rgba(10, 8, 22, 0.92);
+  background: rgba(13, 14, 26, 0.92);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border-bottom: 1px solid var(--border);
@@ -346,7 +346,7 @@ button { cursor: pointer; font-family: inherit; }
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: #0a0808;
+  background: #0b0c18;
   z-index: 0;
 }
 .page-hero-icon i {
@@ -639,7 +639,7 @@ button { cursor: pointer; font-family: inherit; }
 .status-bar {
   position: fixed;
   bottom: 0; left: 0; right: 0;
-  background: rgba(10, 8, 22, 0.92);
+  background: rgba(13, 14, 26, 0.92);
   backdrop-filter: var(--glass-blur);
   border-top: 1px solid var(--border);
   padding: 6px 20px;
@@ -819,7 +819,7 @@ button { cursor: pointer; font-family: inherit; }
 .chat-header {
   display: flex; justify-content: space-between; align-items: center;
   padding: 14px 20px;
-  background: rgba(10, 8, 22, 0.9);
+  background: rgba(13, 14, 26, 0.9);
   border-bottom: 1px solid var(--border);
 }
 .chat-title { display: flex; align-items: center; gap: 10px; }
@@ -841,7 +841,7 @@ button { cursor: pointer; font-family: inherit; }
 .chat-welcome i { font-size: 44px; margin-bottom: 14px; }
 .chat-input-area {
   padding: 14px 20px;
-  background: rgba(10, 8, 22, 0.9);
+  background: rgba(13, 14, 26, 0.9);
   border-top: 1px solid var(--border);
 }
 .chat-input-wrapper { display: flex; gap: 8px; }

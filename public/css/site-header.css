@@ -94,7 +94,7 @@ img[src*="logo"].fast-img {
 *,*::before,*::after{box-sizing:border-box}
 html{margin:0;padding:0;min-height:100vh}
 body{margin:0;padding:0;font-family:'Cairo',sans-serif;direction:rtl;min-height:100vh;color:#fff}
-body{background:#0a0000;padding-top:70px}
+body{background:#0b0c18;padding-top:70px}
 ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:rgba(0,0,0,0.3)}
 ::-webkit-scrollbar-thumb{background:rgba(249,115,22,0.5);border-radius:3px}
 ::-webkit-scrollbar-thumb:hover{background:rgba(249,115,22,0.8)}

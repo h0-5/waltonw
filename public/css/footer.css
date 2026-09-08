@@ -12,17 +12,24 @@
 
 /* ═══════════════════════════════════════════════════════════
    Hover Footer — Neon Cyber theme (بطاقة عائمة + كلمة كشف بالماوس)
-   الثيم: بنفسجي #b026ff · سماوي #29c9ff · فوشيا #ff2d6f · خلفية #0a0a10
+   الثيم الرسمي (من لوحة الألوان المرسلة):
+   بنفسجي/Ring #BC13FE · سماوي #00B8FF · فوشيا #FF0055 · أخضر #00FF9F · أصفر #F7FF00
+   حد #3D3D5C · خلفية داكنة #1A1B2E
    مترجم من مكوّن React (TextHoverEffect) إلى EJS/CSS/JS خالص
    ═══════════════════════════════════════════════════════════ */
 .wf-footer.ftv2 {
-    --ftp: #b026ff;
-    --ftp-rgb: 176, 38, 255;
-    --fts: #29c9ff;
-    --fts-rgb: 41, 201, 255;
-    --fta: #ff2d6f;
-    --fta-rgb: 255, 45, 111;
-    --ftline: rgba(255, 255, 255, 0.07);
+    --ftp: #bc13fe;            /* Ring — البنفسجي الأساسي */
+    --ftp-rgb: 188, 19, 254;
+    --fts: #00b8ff;            /* Chart 3 — السماوي */
+    --fts-rgb: 0, 184, 255;
+    --fta: #ff0055;            /* Chart 4 — الفوشيا */
+    --fta-rgb: 255, 0, 85;
+    --ftg: #00ff9f;            /* Chart 2 — الأخضر النيون */
+    --ftg-rgb: 0, 255, 159;
+    --fty: #f7ff00;            /* Chart 5 — الأصفر */
+    --ftborder: #3d3d5c;       /* Border الرسمي */
+    --ftinput: #1a1b2e;        /* Input — الخلفية الداكنة الرسمية */
+    --ftline: rgba(61, 61, 92, 0.55); /* حد الثيم بشفافية ناعمة */
 
     position: relative;
     margin: 2.5rem 1.25rem 1.25rem;
@@ -34,8 +41,8 @@
     max-width: 1100px;
     margin: 0 auto;
     border-radius: 24px;
-    border: 1px solid var(--ftline);
-    background: linear-gradient(180deg, rgba(18, 18, 28, 0.78), rgba(8, 8, 14, 0.94));
+    border: 1px solid rgba(61, 61, 92, 0.65); /* #3D3D5C */
+    background: linear-gradient(180deg, rgba(26, 27, 46, 0.82), rgba(10, 10, 20, 0.95));
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 0 90px rgba(var(--ftp-rgb), 0.08);
@@ -145,13 +152,13 @@
     transform: translateX(-3px);
 }
 
-/* نقطة "الدعم المباشر" النابضة — من التصميم المرجعي */
+/* نقطة "الدعم المباشر" النابضة — خضراء (حالة متصل) بلون الثيم الرسمي */
 .ftv2-pulse {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: var(--fts);
-    box-shadow: 0 0 8px rgba(var(--fts-rgb), 0.8);
+    background: var(--ftg);
+    box-shadow: 0 0 8px rgba(var(--ftg-rgb), 0.8);
     margin-right: 0.4rem;
     animation: ftv2Pulse 2.4s ease-in-out infinite;
 }
@@ -220,8 +227,8 @@
     align-items: center;
     justify-content: center;
     color: rgba(255, 255, 255, 0.5);
-    border: 1px solid var(--ftline);
-    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(61, 61, 92, 0.7);
+    background: rgba(26, 27, 46, 0.55); /* #1A1B2E */
     transition: color 0.25s, border-color 0.25s, background 0.25s, transform 0.25s, box-shadow 0.25s;
 }
 

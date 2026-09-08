@@ -5,8 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <%
     var _siteName = typeof siteName !== 'undefined' ? siteName : 'Walton Family';
-    var _accentColor = typeof accentColor !== 'undefined' ? accentColor : '#780ecf';
-    var _acRgb = _accentColor.replace('#', '').match(/.{2}/g).map(function(h){ return parseInt(h, 16); }).join(', ');
+    var _accentColor = typeof accentColor !== 'undefined' ? accentColor : '#bc13fe';
+    var _rgbArr = _accentColor.replace('#', '').match(/.{2}/g).map(function(h){ return parseInt(h, 16); });
+    var _acRgb = _rgbArr.join(', ');
+    var _clampC = function(v){ return Math.max(0, Math.min(255, Math.round(v))); };
+    var _acDark = _rgbArr.map(function(v){ return _clampC(v * 0.72); }).join(', ');
+    var _acLight = _rgbArr.map(function(v){ return _clampC(v * 1.18 + 22); }).join(', ');
     var _bgUrl = typeof bgUrl !== 'undefined' ? bgUrl : '';
     var _mobileBgUrl = typeof mobileBgUrl !== 'undefined' ? mobileBgUrl : '';
   %>
@@ -40,8 +44,8 @@
     :root {
       --ac: <%= _accentColor %>;
       --ac-rgb: <%= _acRgb %>;
-      --ac-dark: <%= _accentColor %>;
-      --ac-light: <%= _accentColor %>;
+      --ac-dark: rgb(<%= _acDark %>);
+      --ac-light: rgb(<%= _acLight %>);
       --bg-url: url('<%= _bgUrl %>');
       --mobile-bg-url: url('<%= _mobileBgUrl %>');
     }

@@ -3,10 +3,10 @@
    ═══════════════════════════════════════════════════════════════ */
 .cy-form-page {
     min-height: 100vh;
-    background-color: var(--bg-deep, #0a0910);
+    background-color: var(--bg-deep, #0f101d);
     background-image:
-        repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(var(--purple-rgb,120,14,207),0.03) 59px, rgba(var(--purple-rgb,120,14,207),0.03) 60px),
-        repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(var(--purple-rgb,120,14,207),0.03) 59px, rgba(var(--purple-rgb,120,14,207),0.03) 60px);
+        repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(var(--purple-rgb,188, 19, 254),0.03) 59px, rgba(var(--purple-rgb,188, 19, 254),0.03) 60px),
+        repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(var(--purple-rgb,188, 19, 254),0.03) 59px, rgba(var(--purple-rgb,188, 19, 254),0.03) 60px);
     position: relative;
     padding-bottom: 3rem;
 }
@@ -19,7 +19,7 @@
     transform: translateX(-50%);
     width: 60%;
     height: 50%;
-    background: radial-gradient(ellipse, rgba(var(--purple-rgb,120,14,207),0.06) 0%, transparent 70%);
+    background: radial-gradient(ellipse, rgba(var(--purple-rgb,188, 19, 254),0.06) 0%, transparent 70%);
     pointer-events: none;
     z-index: 0;
 }
@@ -42,7 +42,7 @@
     padding: 3.5rem 1.5rem 2.5rem;
     text-align: center;
     position: relative;
-    background: linear-gradient(180deg, rgba(var(--purple-rgb,120,14,207),0.15) 0%, rgba(var(--purple-rgb,120,14,207),0.05) 40%, transparent 100%);
+    background: linear-gradient(180deg, rgba(var(--purple-rgb,188, 19, 254),0.15) 0%, rgba(var(--purple-rgb,188, 19, 254),0.05) 40%, transparent 100%);
     overflow: hidden;
     z-index: 1;
 }
@@ -53,7 +53,7 @@
     top: 0; left: 50%;
     transform: translateX(-50%);
     width: 1px; height: 60px;
-    background: linear-gradient(180deg, var(--accent, #a78bfa), transparent);
+    background: linear-gradient(180deg, var(--accent, #d24dff), transparent);
     opacity: 0.4;
 }
 
@@ -62,8 +62,8 @@
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
     background-image:
-        repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(var(--purple-rgb,120,14,207),0.04) 39px, rgba(var(--purple-rgb,120,14,207),0.04) 40px),
-        repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(var(--purple-rgb,120,14,207),0.04) 39px, rgba(var(--purple-rgb,120,14,207),0.04) 40px);
+        repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(var(--purple-rgb,188, 19, 254),0.04) 39px, rgba(var(--purple-rgb,188, 19, 254),0.04) 40px),
+        repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(var(--purple-rgb,188, 19, 254),0.04) 39px, rgba(var(--purple-rgb,188, 19, 254),0.04) 40px);
     pointer-events: none;
 }
 
@@ -99,7 +99,7 @@
 
 .cy-form-hero-icon i {
     font-size: 2.2rem;
-    color: var(--accent, #a78bfa);
+    color: var(--accent, #d24dff);
     text-shadow: 0 0 12px rgba(var(--accent-rgb,167,139,250),0.6);
     position: relative;
     z-index: 2;
@@ -113,13 +113,13 @@
     letter-spacing: -0.02em;
     position: relative;
     z-index: 2;
-    background: linear-gradient(135deg, #ffffff 10%, var(--accent-light, #c4b5fd) 40%, var(--accent, #a78bfa) 70%, var(--purple, #780ecf) 100%);
+    background: linear-gradient(135deg, #ffffff 10%, var(--accent-light, #c4b5fd) 40%, var(--accent, #d24dff) 70%, var(--purple, #bc13fe) 100%);
     background-size: 200% auto;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 
-    filter: drop-shadow(0 0 20px rgba(var(--purple-rgb,120,14,207),0.2));
+    filter: drop-shadow(0 0 20px rgba(var(--purple-rgb,188, 19, 254),0.2));
 }
 
 @keyframes heroTitleShine {
@@ -140,7 +140,7 @@
     width: 120px;
     height: 2px;
     margin: 0 auto;
-    background: linear-gradient(90deg, var(--accent, #a78bfa), var(--purple, #780ecf));
+    background: linear-gradient(90deg, var(--accent, #d24dff), var(--purple, #bc13fe));
     border-radius: 2px;
     position: relative;
     z-index: 2;
@@ -150,7 +150,7 @@
     content: '';
     position: absolute;
     inset: -3px;
-    background: linear-gradient(90deg, var(--accent, #a78bfa), var(--purple, #780ecf));
+    background: linear-gradient(90deg, var(--accent, #d24dff), var(--purple, #bc13fe));
     border-radius: 4px;
     filter: blur(6px);
     opacity: 0.4;
@@ -168,7 +168,7 @@
 /* ── Cyber Card ── */
 .cy-form-card {
     position: relative;
-    background: linear-gradient(160deg, rgba(18, 15, 30, 0.98), rgba(10, 9, 16, 0.95));
+    background: linear-gradient(160deg, rgba(26, 27, 46, 0.98), rgba(10, 9, 16, 0.95));
     border: 1px solid rgba(var(--accent-rgb,167,139,250),0.12);
     border-radius: 14px;
     overflow: hidden;
@@ -185,7 +185,7 @@
     inset: 0;
     padding: 1px;
     border-radius: inherit;
-    background: linear-gradient(160deg, rgba(var(--accent-rgb,167,139,250),0.35), transparent 40%, transparent 60%, rgba(var(--purple-rgb,120,14,207),0.35));
+    background: linear-gradient(160deg, rgba(var(--accent-rgb,167,139,250),0.35), transparent 40%, transparent 60%, rgba(var(--purple-rgb,188, 19, 254),0.35));
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
@@ -197,8 +197,8 @@
     position: absolute;
     top: 0; left: 0;
     width: 20px; height: 20px;
-    border-top: 2px solid var(--accent, #a78bfa);
-    border-left: 2px solid var(--accent, #a78bfa);
+    border-top: 2px solid var(--accent, #d24dff);
+    border-left: 2px solid var(--accent, #d24dff);
     border-radius: 14px 0 0 0;
     opacity: 0.4;
     transition: opacity 0.3s;
@@ -210,8 +210,8 @@
     position: absolute;
     bottom: 0; right: 0;
     width: 20px; height: 20px;
-    border-bottom: 2px solid var(--purple, #780ecf);
-    border-right: 2px solid var(--purple, #780ecf);
+    border-bottom: 2px solid var(--purple, #bc13fe);
+    border-right: 2px solid var(--purple, #bc13fe);
     border-radius: 0 0 14px 0;
     opacity: 0.4;
     transition: opacity 0.3s;
@@ -221,14 +221,14 @@
 
 .cy-form-card:hover {
     border-color: rgba(var(--accent-rgb,167,139,250),0.35);
-    box-shadow: 0 8px 30px rgba(0,0,0,0.3), 0 0 15px rgba(var(--purple-rgb,120,14,207),0.08);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3), 0 0 15px rgba(var(--purple-rgb,188, 19, 254),0.08);
 }
 
 .cy-form-card:hover .corner-tl,
 .cy-form-card:hover .corner-br { opacity: 1; }
 
 .cy-form-card:hover::before {
-    background: linear-gradient(160deg, rgba(var(--accent-rgb,167,139,250),0.5), transparent 30%, transparent 70%, rgba(var(--purple-rgb,120,14,207),0.5));
+    background: linear-gradient(160deg, rgba(var(--accent-rgb,167,139,250),0.5), transparent 30%, transparent 70%, rgba(var(--purple-rgb,188, 19, 254),0.5));
 }
 
 /* ── Card Header ── */
@@ -251,7 +251,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--accent, #a78bfa);
+    color: var(--accent, #d24dff);
     font-size: 1.1rem;
     flex-shrink: 0;
 }
@@ -291,7 +291,7 @@
     border-radius: 6px;
     background: rgba(var(--accent-rgb,167,139,250),0.12);
     border: 1px solid rgba(var(--accent-rgb,167,139,250),0.2);
-    color: var(--accent, #a78bfa);
+    color: var(--accent, #d24dff);
     font-size: 0.7rem;
     font-weight: 800;
     flex-shrink: 0;
@@ -327,7 +327,7 @@
 .cy-textarea:focus,
 .cy-select:focus {
     outline: none;
-    border-color: var(--accent, #a78bfa);
+    border-color: var(--accent, #d24dff);
     box-shadow: 0 0 0 3px rgba(var(--accent-rgb,167,139,250),0.1);
     background: rgba(255,255,255,0.06);
 }
@@ -371,7 +371,7 @@
 
 .cy-radio input,
 .cy-check input {
-    accent-color: var(--accent, #a78bfa);
+    accent-color: var(--accent, #d24dff);
 }
 
 .cy-radio label,
@@ -394,7 +394,7 @@
 }
 
 .cy-upload-zone:hover {
-    border-color: var(--accent, #a78bfa);
+    border-color: var(--accent, #d24dff);
     background: rgba(var(--accent-rgb,167,139,250),0.03);
 }
 
@@ -406,7 +406,7 @@
     font-size: 2rem;
     margin-bottom: 0.5rem;
     display: block;
-    color: var(--accent, #a78bfa);
+    color: var(--accent, #d24dff);
 }
 
 .cy-upload-zone p {
@@ -417,7 +417,7 @@
 .cy-submit-btn {
     width: 100%;
     padding: 1rem;
-    background: linear-gradient(135deg, var(--accent, #a78bfa), var(--purple, #780ecf));
+    background: linear-gradient(135deg, var(--accent, #d24dff), var(--purple, #bc13fe));
     color: #fff;
     border: none;
     border-radius: 12px;
@@ -458,7 +458,7 @@
 /* ── Alert Cards (block, pending, cooldown) ── */
 .cy-alert {
     position: relative;
-    background: linear-gradient(160deg, rgba(18, 15, 30, 0.98), rgba(10, 9, 16, 0.95));
+    background: linear-gradient(160deg, rgba(26, 27, 46, 0.98), rgba(10, 9, 16, 0.95));
     border-radius: 14px;
     padding: 1.8rem;
     text-align: center;
@@ -626,7 +626,7 @@
 /* ── History ── */
 .cy-history {
     position: relative;
-    background: linear-gradient(160deg, rgba(18, 15, 30, 0.98), rgba(10, 9, 16, 0.95));
+    background: linear-gradient(160deg, rgba(26, 27, 46, 0.98), rgba(10, 9, 16, 0.95));
     border: 1px solid rgba(var(--accent-rgb,167,139,250),0.12);
     border-radius: 14px;
     padding: 1.2rem;
@@ -642,7 +642,7 @@
     inset: 0;
     padding: 1px;
     border-radius: inherit;
-    background: linear-gradient(160deg, rgba(var(--accent-rgb,167,139,250),0.2), transparent 40%, transparent 60%, rgba(var(--purple-rgb,120,14,207),0.2));
+    background: linear-gradient(160deg, rgba(var(--accent-rgb,167,139,250),0.2), transparent 40%, transparent 60%, rgba(var(--purple-rgb,188, 19, 254),0.2));
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
@@ -743,7 +743,7 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.65rem 1.5rem;
-    background: linear-gradient(135deg, var(--accent, #a78bfa), var(--purple, #780ecf));
+    background: linear-gradient(135deg, var(--accent, #d24dff), var(--purple, #bc13fe));
     color: #fff;
     border-radius: 10px;
     text-decoration: none;
@@ -777,7 +777,7 @@
    ═══════════════════════════════════════════════════════════════ */
 .cy-progress-wrap {
     position: relative;
-    background: linear-gradient(160deg, rgba(18, 15, 30, 0.98), rgba(10, 9, 16, 0.95));
+    background: linear-gradient(160deg, rgba(26, 27, 46, 0.98), rgba(10, 9, 16, 0.95));
     border: 1px solid rgba(var(--accent-rgb,167,139,250),0.12);
     border-radius: 14px;
     padding: 1rem 1.2rem;
@@ -794,7 +794,7 @@
     inset: 0;
     padding: 1px;
     border-radius: inherit;
-    background: linear-gradient(160deg, rgba(var(--accent-rgb,167,139,250),0.25), transparent 40%, transparent 60%, rgba(var(--purple-rgb,120,14,207),0.25));
+    background: linear-gradient(160deg, rgba(var(--accent-rgb,167,139,250),0.25), transparent 40%, transparent 60%, rgba(var(--purple-rgb,188, 19, 254),0.25));
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
@@ -821,14 +821,14 @@
 }
 
 .cy-progress-label i {
-    color: var(--accent, #a78bfa);
+    color: var(--accent, #d24dff);
     font-size: 0.8rem;
 }
 
 .cy-progress-count {
     font-size: 0.8rem;
     font-weight: 800;
-    color: var(--accent, #a78bfa);
+    color: var(--accent, #d24dff);
     font-variant-numeric: tabular-nums;
 }
 
@@ -844,7 +844,7 @@
 
 .cy-progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--accent, #a78bfa), var(--purple, #780ecf));
+    background: linear-gradient(90deg, var(--accent, #d24dff), var(--purple, #bc13fe));
     border-radius: 10px;
     transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;

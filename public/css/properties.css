@@ -2,21 +2,21 @@
    CYBERPUNK & GAMING UI — PROPERTIES PAGE — WALTON FAMILY
    ═══════════════════════════════════════════════════════════════ */
 :root {
-    --bg-deep: #0a0910;
-    --bg: #120f1e;
-    --bg-card: rgba(18, 15, 30, 0.7);
-    --bg-card-solid: #120f1e;
-    --accent: var(--ac, #a78bfa);
+    --bg-deep: #0f101d;
+    --bg: #1a1b2e;
+    --bg-card: rgba(26, 27, 46, 0.7);
+    --bg-card-solid: #1a1b2e;
+    --accent: var(--ac, #d24dff);
     --accent-rgb: var(--ac-rgb, 167, 139, 250);
     --accent-dim: rgba(var(--accent-rgb), 0.12);
     --accent-glow: rgba(var(--accent-rgb), 0.25);
     --accent-light: var(--ac-light, #c4b5fd);
     --accent-light-rgb: var(--ac-light-rgb, 196, 181, 253);
-    --purple: #780ecf;
-    --purple-rgb: 120, 14, 207;
-    --purple-dark: #600ba5;
-    --purple-dim: rgba(120, 14, 207, 0.15);
-    --purple-glow: rgba(120, 14, 207, 0.3);
+    --purple: #bc13fe;
+    --purple-rgb: 188, 19, 254;
+    --purple-dark: #930fc6;
+    --purple-dim: rgba(188, 19, 254, 0.15);
+    --purple-glow: rgba(188, 19, 254, 0.3);
     --border: rgba(167, 139, 250, 0.12);
     --border-hover: rgba(167, 139, 250, 0.35);
     --text: #f0eef6;
@@ -147,7 +147,7 @@
     letter-spacing: -0.02em;
     position: relative;
     z-index: 2;
-    background: linear-gradient(135deg, #ffffff 10%, var(--accent-light, #c4b5fd) 40%, var(--accent, #a78bfa) 70%, var(--purple, #780ecf) 100%);
+    background: linear-gradient(135deg, #ffffff 10%, var(--accent-light, #c4b5fd) 40%, var(--accent, #d24dff) 70%, var(--purple, #bc13fe) 100%);
     background-size: 200% auto;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -246,7 +246,7 @@
 /* ── Property Card — Inventory Slot Style ── */
 .cy-prop-card {
     position: relative;
-    background: linear-gradient(160deg, rgba(18, 15, 30, 0.98), rgba(10, 9, 16, 0.95));
+    background: linear-gradient(160deg, rgba(26, 27, 46, 0.98), rgba(10, 9, 16, 0.95));
     border: 1px solid var(--border);
     border-radius: 14px;
     overflow: hidden;

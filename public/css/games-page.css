@@ -5,7 +5,7 @@
 }
 
 body {
-    background: #0a0000;
+    background: #0b0c18;
     background-image:
         radial-gradient(ellipse 80% 60% at 50% -10%, rgba(var(--ac-rgb),0.18) 0%, transparent 70%),
         linear-gradient(rgba(var(--ac-rgb),0.04) 1px, transparent 1px),
@@ -205,7 +205,7 @@ body {
 
 /* ==================== Game Card ==================== */
 .game-card {
-    background: linear-gradient(135deg, #0a0a0a, #120800, #0a0500);
+    background: linear-gradient(135deg, #101126, #1a1b2e, #0f101d);
     background-size: 200% 200%;
     border-radius: 20px;
     border: 1px solid rgba(var(--ac-rgb),0.12);
@@ -288,7 +288,7 @@ body {
     position: absolute;
     inset: 3px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #0a0a0a, #1a0a00);
+    background: linear-gradient(135deg, #0b0c18, #1a1b2e);
 }
 
 .game-icon-wrap i {

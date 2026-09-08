@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <%
-    var _admAc = typeof accentColor !== 'undefined' && accentColor ? accentColor : '#780ecf';
+    var _admAc = typeof accentColor !== 'undefined' && accentColor ? accentColor : '#bc13fe';
     var _admAcMatch = _admAc.replace('#', '').match(/.{2}/g);
-    var _admAcRgb = _admAcMatch ? _admAcMatch.map(function(h){ return parseInt(h, 16); }).join(', ') : '120, 14, 207';
+    var _admAcRgb = _admAcMatch ? _admAcMatch.map(function(h){ return parseInt(h, 16); }).join(', ') : '188, 19, 254';
     var _admBg = typeof bgUrl !== 'undefined' ? bgUrl : '';
     var _admMobBg = typeof mobileBgUrl !== 'undefined' ? mobileBgUrl : '';
     var _admSettings = typeof settings !== 'undefined' ? settings : {};
