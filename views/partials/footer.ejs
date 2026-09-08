@@ -155,6 +155,8 @@
       var inside = lastX >= r.left - 24 && lastX <= r.right + 24 &&
                    lastY >= r.top - 24 && lastY <= r.bottom + 24;
       if (inside) { wrap.classList.add('hovered'); } else { wrap.classList.remove('hovered'); }
+      // نفس الإطار: توجيه بطاقة الـ 3D للحروف — صفر مستمعات إضافية وصفر قياسات
+      if (tiltAt) tiltAt((lastX - r.left) / r.width * 300, (lastY - r.top) / r.height * 100);
     }
     pending = false;
   }
@@ -164,32 +166,55 @@
   }, { passive: true });
   card.addEventListener('mouseleave', function(){ wrap.classList.remove('hovered'); });
   // ── بطاقة 3D تفاعلية للحروف (نفس تفاعل بطاقات الرئيسية القديمة) ──
-  // الحرف يميل rotateX/rotateY تبعاً لموضع المؤشر داخل الحرف (transform فقط — بلا مكتبات)،
-  // وعند إزالة الماوس أو الانتقال لحرف آخر يُنشال التأثير ويرجع الحرف مسطحاً بنعومة.
-  // rect يُخبأ عند دخول الماوس (الحرف مسطح بعد) حتى لا يُفسد قياسه ميلان الحرف نفسه
+  // تتبّع مركزي واحد على مستوى الـ SVG بدل مستمع لكل حرف:
+  // · نطاقات الحروف محسوبة مرة واحدة من إحداثياتها المطبوعة (x/textLength) — صفر قياس وقت تشغيل
+  // · التغطية متصلة بلا فراغات فالمؤشر لا يفقد الحرف بين الحروف ولا عند حوافه (حساسية أعلى بلا أخطاء)
+  // · الميلان يُحدَّث داخل نفس rAF الخاص بكشف التدرج، فيتبع المؤشر فوراً بلا تأخير
+  // · الحرف المرفوع: نسخ الطبقات 1-4 تحته تُخفت (ftv2-lift) فينطلق الحرف كله كبطاقة واحدة
+  //   بدل «حرفين»، وعند الابتعاد ينشال الميلان بالمنحنى النابض وترجع الطبقات بنعومة
+  var tiltAt = null;
   if (!reduced) {
-    var TILT = 12;
-    Array.prototype.forEach.call(svg.querySelectorAll('.ftv2-w5i'), function(lt){
-      var rect = null;
-      lt.addEventListener('mouseenter', function(){
-        if (wrap.classList.contains('w5-ready')) rect = lt.getBoundingClientRect();
-      });
-      lt.addEventListener('mousemove', function(e){
-        if (!rect || !wrap.classList.contains('w5-ready')) return;
-        // تتبّع شبه فوري أثناء الحركة (كالبطاقات القديمة) — الإنعاش يعود للمنحنى النابض عند الخروج
-        lt.classList.add('ftv2-tilting');
-        var px = (e.clientX - rect.left) / rect.width  - 0.5;
-        var py = (e.clientY - rect.top)  / rect.height - 0.5;
-        var ry = (px * 2 * TILT).toFixed(2);
-        var rx = (-py * 2 * TILT).toFixed(2);
-        lt.style.transform = 'perspective(320px) rotateX(' + rx + 'deg) rotateY(' + ry + 'deg) translateY(-2px) scale(1.2)';
-      });
-      lt.addEventListener('mouseleave', function(){
-        lt.classList.remove('ftv2-tilting');
-        lt.style.transform = '';
-        rect = null;
-      });
+    var TILT = 18;
+    var letters = svg.querySelectorAll('.ftv2-w5i');
+    var bands = [];
+    Array.prototype.forEach.call(letters, function(lt){
+      var x = parseFloat(lt.getAttribute('x'));
+      var tl = parseFloat(lt.getAttribute('textLength'));
+      bands.push([x - tl / 2, x + tl / 2, x, tl]);
     });
+    var baseRows = [];
+    Array.prototype.forEach.call(['ftv2-w1', 'ftv2-w2', 'ftv2-w3', 'ftv2-w4'], function(cls){
+      baseRows.push(svg.querySelector('.' + cls).querySelectorAll('tspan'));
+    });
+    var cur = -1;
+    var lift = function(i){
+      if (i === cur) return;
+      if (cur >= 0) {
+        letters[cur].classList.remove('ftv2-tilting');
+        letters[cur].style.transform = '';
+        for (var r = 0; r < 4; r++) baseRows[r][cur].classList.remove('ftv2-lift');
+      }
+      cur = i;
+      if (i >= 0) for (var r2 = 0; r2 < 4; r2++) baseRows[r2][i].classList.add('ftv2-lift');
+    };
+    tiltAt = function(xSvg, ySvg){
+      var hit = -1;
+      if (wrap.classList.contains('w5-ready') && ySvg > 12 && ySvg < 72) {
+        for (var b = 0; b < bands.length; b++) {
+          if (xSvg >= bands[b][0] && xSvg < bands[b][1]) { hit = b; break; }
+        }
+      }
+      if (hit >= 0) {
+        var bd = bands[hit];
+        var px = Math.max(-0.5, Math.min(0.5, (xSvg - bd[2]) / bd[3]));
+        var py = Math.max(-0.5, Math.min(0.5, (ySvg - 10) / 44 - 0.5));
+        letters[hit].classList.add('ftv2-tilting');
+        letters[hit].style.transform = 'perspective(320px) rotateX(' + (-py * 2 * TILT).toFixed(2) +
+          'deg) rotateY(' + (px * 2 * TILT).toFixed(2) + 'deg) translateY(-4px) scale(1.2)';
+      }
+      lift(hit);
+    };
+    svg.addEventListener('mouseleave', function(){ lift(-1); });
   }
 })();</script>
 
