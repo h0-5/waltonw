@@ -236,6 +236,14 @@ router.post('/rules', checkPermission('rules_add'), async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+router.put('/rules/:id', checkPermission('rules_add'), async (req, res) => {
+  try {
+    const { category, rule_text, sort_order } = req.body;
+    await db.execute('UPDATE rules SET category=?, rule_text=?, sort_order=? WHERE id=?', [category, rule_text, sort_order || 0, req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 router.delete('/rules/:id', checkPermission('rules_delete'), async (req, res) => {
   try {
     await db.execute('DELETE FROM rules WHERE id = ?', [req.params.id]);
@@ -366,7 +374,7 @@ router.post('/company/items', checkPermission('company_edit'), async (req, res) 
   try {
     const { title, description, category, video_url, service_status } = req.body;
     let image = '';
-    if (req.files && req.files.image_file) {
+    if (req.files && req.files.image_file && req.files.image_file.size > 0) {
       const file = req.files.image_file;
       const ext = file.name.split('.').pop();
       const fname = 'co_' + Date.now() + '.' + ext;
@@ -377,6 +385,31 @@ router.post('/company/items', checkPermission('company_edit'), async (req, res) 
     }
     await db.execute('INSERT INTO company_items (title, description, image, video_url, category, service_status, sort_order) VALUES (?, ?, ?, ?, ?, ?, 0)',
       [title, description || '', image, video_url || '', category || 'info', service_status || null]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.put('/company/items/:id', checkPermission('company_edit'), async (req, res) => {
+  try {
+    const { title, description, category, video_url, service_status } = req.body;
+    const [existing] = await db.execute('SELECT image FROM company_items WHERE id = ?', [req.params.id]);
+    let image = existing.length ? existing[0].image : '';
+    const hasNewFile = req.files && req.files.image_file && req.files.image_file.size > 0;
+    if (hasNewFile) {
+      if (image && image.startsWith('/uploads/')) {
+        const fp = require('path').join(__dirname, '../../public', image);
+        try { require('fs').unlinkSync(fp); } catch(_) {}
+      }
+      const file = req.files.image_file;
+      const ext = file.name.split('.').pop();
+      const fname = 'co_' + Date.now() + '.' + ext;
+      const uploadDir = require('path').join(__dirname, '../../public/uploads/company');
+      require('fs').mkdirSync(uploadDir, { recursive: true });
+      await file.mv(uploadDir + '/' + fname);
+      image = '/uploads/company/' + fname;
+    }
+    await db.execute('UPDATE company_items SET title=?, description=?, image=?, video_url=?, category=?, service_status=? WHERE id=?',
+      [title, description || '', image, video_url || '', category || 'info', service_status || null, req.params.id]);
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });

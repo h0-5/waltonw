@@ -14,7 +14,10 @@
           <td><span class="badge"><%= r.category || 'عام' %></span></td>
           <td><%= r.rule_text %></td>
           <td><%= r.sort_order || 0 %></td>
-          <td><button onclick="deleteRule(<%= r.id %>)" class="admin-btn danger small"><i class="fas fa-trash"></i></button></td>
+          <td style="display:flex;gap:6px">
+            <button onclick="showEditRule(<%= r.id %>)" class="admin-btn small"><i class="fas fa-edit"></i></button>
+            <button onclick="deleteRule(<%= r.id %>)" class="admin-btn danger small"><i class="fas fa-trash"></i></button>
+          </td>
         </tr>
         <% }); %>
       <% } else { %>
@@ -39,13 +42,48 @@
   </div>
 </div>
 
+<div id="editRuleModal" class="admin-modal" style="display:none">
+  <div class="modal-content">
+    <h3>تعديل القانون</h3>
+    <form id="editRuleForm">
+      <input type="hidden" name="id" id="edit_rule_id">
+      <div class="form-group"><label>التصنيف</label><input type="text" name="category" id="edit_rule_category" required></div>
+      <div class="form-group"><label>نص القانون</label><textarea name="rule_text" id="edit_rule_text" rows="3" required></textarea></div>
+      <div class="form-group"><label>الترتيب</label><input type="number" name="sort_order" id="edit_rule_sort" value="0"></div>
+      <div class="modal-actions">
+        <button type="button" onclick="closeModal('editRuleModal')" class="admin-btn">إلغاء</button>
+        <button type="submit" class="admin-btn primary">تحديث</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
+var allRules = <%- JSON.stringify(rules) %>;
 function showAddRule() { document.getElementById('addRuleModal').style.display = 'flex'; }
+function showEditRule(id) {
+  var rule = allRules.find(r => r.id === id);
+  if (!rule) return;
+  document.getElementById('edit_rule_id').value = rule.id;
+  document.getElementById('edit_rule_category').value = rule.category || '';
+  document.getElementById('edit_rule_text').value = rule.rule_text || '';
+  document.getElementById('edit_rule_sort').value = rule.sort_order || 0;
+  document.getElementById('editRuleModal').style.display = 'flex';
+}
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 document.getElementById('addRuleForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const fd = new FormData(e.target);
   const res = await fetch('/api/admin/rules', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(Object.fromEntries(fd)) });
+  const data = await res.json();
+  if (data.success) location.reload(); else alert(data.error || 'خطأ');
+});
+document.getElementById('editRuleForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id = document.getElementById('edit_rule_id').value;
+  const fd = new FormData(e.target);
+  fd.delete('id');
+  const res = await fetch('/api/admin/rules/' + id, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(Object.fromEntries(fd)) });
   const data = await res.json();
   if (data.success) location.reload(); else alert(data.error || 'خطأ');
 });
