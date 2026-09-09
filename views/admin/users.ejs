@@ -10,22 +10,23 @@
 .users-search i{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:13px}
 .users-stats{display:flex;gap:16px;font-size:12px;color:var(--text-dim)}
 .users-stats span{display:flex;align-items:center;gap:4px}
-.users-grid{display:flex;flex-direction:column;gap:10px}
-.user-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 18px;display:flex;align-items:center;gap:16px;transition:all .3s;cursor:default}
-.user-card:hover{border-color:rgba(var(--ac-rgb),.3);box-shadow:0 4px 20px rgba(0,0,0,.2)}
-.user-card.banned{border-color:rgba(239,68,68,.3);opacity:.75}
-.user-card-avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid var(--ac);flex-shrink:0}
-.user-card.banned .user-card-avatar{border-color:#ef4444}
-.user-card-info{flex:1;min-width:0;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.user-card-name{font-weight:700;font-size:14px;white-space:nowrap}
-.user-card-role{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700}
-.user-card-banned{color:#ef4444;font-size:11px;font-weight:600}
-.user-card-stats{display:flex;gap:14px;font-size:12px;color:var(--text-dim);align-items:center;flex-shrink:0}
-.user-card-stats i{font-size:11px}
-.user-card-flags{display:flex;gap:6px;flex-shrink:0}
-.flag-badge{padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;background:rgba(var(--ac-rgb),.1);color:var(--ac);border:1px solid rgba(var(--ac-rgb),.2)}
-.user-card-actions{display:flex;gap:6px;flex-shrink:0}
-.card-btn{padding:7px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-dim);cursor:pointer;font-size:12px;transition:all .3s;display:flex;align-items:center;gap:4px}
+.users-table{width:100%;border-collapse:separate;border-spacing:0 6px}
+.users-table th{text-align:right;padding:8px 14px;font-size:11px;font-weight:700;color:var(--ac);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border)}
+.users-table td{padding:10px 14px;background:var(--bg-card);font-size:13px;transition:background .3s}
+.users-table tr td:first-child{border-radius:0 var(--radius-sm) var(--radius-sm) 0}
+.users-table tr td:last-child{border-radius:var(--radius-sm) 0 0 var(--radius-sm)}
+.users-table tbody tr:hover td{background:rgba(var(--ac-rgb),.08)}
+.users-table .banned td{opacity:.7}
+.user-td-avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--ac)}
+.user-td-name{font-weight:700}
+.user-td-role{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700}
+.user-td-id{color:var(--text-dim);font-size:12px;font-family:monospace}
+.user-td-email{color:var(--text-dim);font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-td-date{color:var(--text-dim);font-size:11px;white-space:nowrap}
+.user-td-flags{display:flex;gap:4px}
+.flag-badge{padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;background:rgba(var(--ac-rgb),.1);color:var(--ac);border:1px solid rgba(var(--ac-rgb),.2)}
+.user-td-actions{display:flex;gap:4px}
+.card-btn{padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-dim);cursor:pointer;font-size:11px;transition:all .3s;display:flex;align-items:center;gap:4px}
 .card-btn:hover{background:rgba(var(--ac-rgb),.1);color:var(--text);border-color:var(--ac)}
 .card-btn.danger:hover{background:rgba(239,68,68,.1);color:#ef4444;border-color:#ef4444}
 .card-btn.success:hover{background:rgba(34,197,94,.1);color:#22c55e;border-color:#22c55e}
@@ -53,7 +54,7 @@
 .side-role-chip{padding:4px 10px;border-radius:12px;font-size:11px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text-dim);transition:all .2s}
 .side-role-chip.active{background:rgba(var(--ac-rgb),.15);color:var(--ac);border-color:var(--ac)}
 #editRole option{background:#1a1525;color:var(--text)}
-@media(max-width:900px){.user-card{flex-wrap:wrap;gap:10px}.user-card-stats,.user-card-flags{width:100%}}
+@media(max-width:900px){.users-table{display:block;overflow-x:auto}.users-table thead{display:none}.users-table tbody tr{display:block;margin-bottom:8px;border:1px solid var(--border);border-radius:var(--radius-sm)}.users-table tbody tr td{display:flex;justify-content:space-between;align-items:center;border-radius:0;border-bottom:1px solid var(--border)}.users-table tbody tr td:last-child{border-bottom:none}}
 </style>
 
 <div class="users-topbar">
@@ -68,38 +69,64 @@
   </div>
 </div>
 
-<div class="users-grid" id="usersGrid">
-  <% users.forEach(u => { %>
-    <div class="user-card<%= u.is_banned ? ' banned' : '' %>" data-id="<%= u.id %>" data-search="<%= (u.username||'').toLowerCase() %> <%= u.id %> <%= (u.email||'').toLowerCase() %>">
-      <img src="<%= u.profile_picture || '/images/default-avatar.png' %>" class="user-card-avatar" alt="">
-      <div class="user-card-info">
-        <div class="user-card-name"><%= u.username %></div>
-        <span class="user-card-role" style="background:<%= u.role === 'owner' ? '#ef4444' : u.role === 'admin' ? '#f97316' : u.role === 'moderator' ? '#eab308' : u.role === 'support' ? '#22c55e' : '#6b7280' %>20;color:<%= u.role === 'owner' ? '#ef4444' : u.role === 'admin' ? '#f97316' : u.role === 'moderator' ? '#eab308' : u.role === 'support' ? '#22c55e' : '#6b7280' %>"><%= u.role %></span>
-        <% if (u.is_banned) { %><span class="user-card-banned"><i class="fas fa-ban"></i> محظور</span><% } %>
-      </div>
-      <div class="user-card-stats">
-        <span><i class="fas fa-coins"></i> <%= u.points || u.total_game_points || 0 %></span>
-        <span><i class="fas fa-shopping-bag"></i> <%= u.tickets_closed || 0 %> تذاكر</span>
-        <% if (u.in_guild) { %><span><i class="fas fa-check-circle" style="color:#22c55e"></i> في السيرفر</span><% } %>
-      </div>
-      <div class="user-card-flags">
-        <% if (u.manage_role) { %><span class="flag-badge"><i class="fas fa-shield"></i> MR</span><% } %>
-        <% if (u.event_manager) { %><span class="flag-badge"><i class="fas fa-calendar"></i> EM</span><% } %>
-      </div>
-      <div class="user-card-actions">
-        <button class="card-btn" data-action="edit" data-id="<%= u.id %>" data-name="<%= u.username %>" data-role="<%= u.role %>" data-managerole="<%= u.manage_role ? 1 : 0 %>" data-eventmanager="<%= u.event_manager ? 1 : 0 %>"><i class="fas fa-edit"></i></button>
-        <% if (u.is_banned) { %>
-          <button class="card-btn success" data-action="unban" data-id="<%= u.id %>"><i class="fas fa-unlock"></i></button>
-        <% } else { %>
-          <button class="card-btn danger" data-action="ban" data-id="<%= u.id %>" data-name="<%= u.username %>"><i class="fas fa-ban"></i></button>
-        <% } %>
-      </div>
-    </div>
-  <% }) %>
-  <% if (!users.length) { %>
-    <div class="empty-state"><i class="fas fa-users"></i><p>لا يوجد مستخدمين</p></div>
-  <% } %>
-</div>
+<table class="users-table" id="usersTable">
+  <thead>
+    <tr>
+      <th></th>
+      <th>المستخدم</th>
+      <th>الرتبة</th>
+      <th>النقاط</th>
+      <th>الأدوار</th>
+      <th>الحالة</th>
+      <th>إجراءات</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% users.forEach(u => { %>
+      <tr class="<%= u.is_banned ? 'banned' : '' %>" data-search="<%= (u.username||'').toLowerCase() %> <%= u.id %> <%= (u.email||'').toLowerCase() %>">
+        <td style="width:40px;text-align:center"><code style="color:var(--ac);font-size:11px">#<%= u.id %></code></td>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px">
+            <img src="<%= u.profile_picture || '/images/default-avatar.png' %>" class="user-td-avatar" alt="">
+            <div>
+              <div class="user-td-name"><%= u.username %></div>
+              <div class="user-td-email"><%= u.email || '-' %></div>
+            </div>
+          </div>
+        </td>
+        <td><span class="user-td-role" style="background:<%= u.role === 'owner' ? '#ef4444' : u.role === 'admin' ? '#f97316' : u.role === 'moderator' ? '#eab308' : u.role === 'support' ? '#22c55e' : '#6b7280' %>20;color:<%= u.role === 'owner' ? '#ef4444' : u.role === 'admin' ? '#f97316' : u.role === 'moderator' ? '#eab308' : u.role === 'support' ? '#22c55e' : '#6b7280' %>"><%= u.role %></span></td>
+        <td style="font-weight:700;color:var(--ac)"><i class="fas fa-coins" style="font-size:10px"></i> <%= u.points || u.total_game_points || 0 %></td>
+        <td>
+          <div class="user-td-flags">
+            <% if (u.manage_role) { %><span class="flag-badge"><i class="fas fa-shield"></i> MR</span><% } %>
+            <% if (u.event_manager) { %><span class="flag-badge"><i class="fas fa-calendar"></i> EM</span><% } %>
+            <% if (u.in_guild) { %><span class="flag-badge" style="background:rgba(34,197,94,.1);color:#22c55e;border-color:rgba(34,197,94,.3)"><i class="fas fa-check"></i> Guild</span><% } %>
+          </div>
+        </td>
+        <td>
+          <% if (u.is_banned) { %>
+            <span style="color:#ef4444;font-size:12px;font-weight:700"><i class="fas fa-ban"></i> محظور</span>
+          <% } else { %>
+            <span style="color:#22c55e;font-size:12px"><i class="fas fa-check-circle"></i> نشط</span>
+          <% } %>
+        </td>
+        <td>
+          <div class="user-td-actions">
+            <button class="card-btn" data-action="edit" data-id="<%= u.id %>" data-name="<%= u.username %>" data-role="<%= u.role %>" data-managerole="<%= u.manage_role ? 1 : 0 %>" data-eventmanager="<%= u.event_manager ? 1 : 0 %>"><i class="fas fa-edit"></i></button>
+            <% if (u.is_banned) { %>
+              <button class="card-btn success" data-action="unban" data-id="<%= u.id %>"><i class="fas fa-unlock"></i></button>
+            <% } else { %>
+              <button class="card-btn danger" data-action="ban" data-id="<%= u.id %>" data-name="<%= u.username %>"><i class="fas fa-ban"></i></button>
+            <% } %>
+          </div>
+        </td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>
+<% if (!users.length) { %>
+  <div class="empty-state"><i class="fas fa-users"></i><p>لا يوجد مستخدمين</p></div>
+<% } %>
 
 <!-- Edit Modal -->
 <div id="editModal" class="admin-modal">
@@ -146,11 +173,11 @@ const ROLE_RANK = {owner:0,developer:1,founder:2,vice_founder:3,chairman:4,prese
 function getRank(r){return ROLE_RANK[r]!==undefined?ROLE_RANK[r]:99}
 const MY_RANK = getRank(MY_ROLE);
 
-// Build role select once — only roles LOWER than mine
+// Build role select — only roles LOWER than mine
 (function() {
   const sel = document.getElementById('editRole');
   ROLES.forEach(r => {
-    if (getRank(r.name) <= MY_RANK) return; // skip equal or higher
+    if (getRank(r.name) <= MY_RANK) return;
     const opt = document.createElement('option');
     opt.value = r.name;
     opt.textContent = (r.display_name || r.name);
@@ -159,14 +186,16 @@ const MY_RANK = getRank(MY_ROLE);
   });
 })();
 
+// Live search
 document.getElementById('userSearch').addEventListener('input', function() {
   const q = this.value.toLowerCase();
-  document.querySelectorAll('.user-card').forEach(card => {
-    card.style.display = (card.dataset.search || '').includes(q) ? '' : 'none';
+  document.querySelectorAll('#usersTable tbody tr').forEach(r => {
+    r.style.display = (r.dataset.search || '').includes(q) ? '' : 'none';
   });
 });
 
-document.getElementById('usersGrid').addEventListener('click', function(e) {
+// Event delegation
+document.getElementById('usersTable').addEventListener('click', function(e) {
   const btn = e.target.closest('[data-action]');
   if (!btn) return;
   const action = btn.dataset.action;
@@ -180,20 +209,40 @@ function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
 function openEdit(btn) {
   const id = btn.dataset.id;
+  const currentRole = btn.dataset.role;
   document.getElementById('editUserId').value = id;
   document.getElementById('editUsername').value = btn.dataset.name;
-  document.getElementById('editRole').value = btn.dataset.role;
   document.getElementById('editManageRole').checked = btn.dataset.managerole === '1';
   document.getElementById('editEventManager').checked = btn.dataset.eventmanager === '1';
-  // Color the select border to match current role
-  const roleObj = ROLES.find(r => r.name === btn.dataset.role);
+
+  // Rebuild select with current role as first option
   const sel = document.getElementById('editRole');
+  sel.innerHTML = '';
+  const roleObj = ROLES.find(r => r.name === currentRole);
+  if (roleObj) {
+    const opt = document.createElement('option');
+    opt.value = roleObj.name;
+    opt.textContent = (roleObj.display_name || roleObj.name) + ' (الحالية)';
+    opt.style.color = roleObj.color || '#fff';
+    sel.appendChild(opt);
+  }
+  ROLES.forEach(r => {
+    if (getRank(r.name) <= MY_RANK) return;
+    if (r.name === currentRole) return;
+    const opt = document.createElement('option');
+    opt.value = r.name;
+    opt.textContent = (r.display_name || r.name);
+    opt.style.color = r.color || '#fff';
+    sel.appendChild(opt);
+  });
+  sel.value = currentRole;
   sel.style.borderColor = roleObj ? roleObj.color : 'var(--border)';
   sel.onchange = function() {
     const r = ROLES.find(x => x.name === this.value);
     this.style.borderColor = r ? r.color : 'var(--border)';
   };
-  // Fetch current side roles + points
+
+  // Fetch side roles + points
   fetch('/api/admin/users/' + id).then(r => r.json()).then(data => {
     const active = (data.sideRoles || []).map(sr => sr.id);
     const container = document.getElementById('sideRoleChips');
