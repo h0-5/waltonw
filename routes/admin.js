@@ -313,6 +313,196 @@ router.get('/settings', checkPermission('site_settings_view'), async (req, res) 
   }
 });
 
+// Admin Profile Page
+router.get('/profile', checkPermission('admin_profile_view'), async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const [users] = await db.execute(`
+      SELECT u.*, r.display_name as role_display, r.color as role_color, r.icon as role_icon
+      FROM users u LEFT JOIN roles r ON u.role = r.name
+      WHERE u.id = ?
+    `, [userId]);
+    if (!users[0]) return res.redirect('/admin');
+    const user = users[0];
+
+    // Stats
+    const [ticketCount] = await db.execute('SELECT COUNT(*) as c FROM support_tickets WHERE admin_id = ?', [userId]);
+    const [appCount] = await db.execute('SELECT COUNT(*) as c FROM submitted_applications WHERE reviewed_by = ?', [userId]);
+    const [orderCount] = await db.execute('SELECT COUNT(*) as c FROM orders WHERE user_id = ?', [userId]);
+    const [todayCount] = await db.execute('SELECT COUNT(*) as c FROM admin_logs WHERE user_id = ? AND DATE(created_at) = CURDATE()', [userId]);
+    const [weekCount] = await db.execute('SELECT COUNT(*) as c FROM admin_logs WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)', [userId]);
+
+    // Chart data (last 7 days)
+    const [chartRows] = await db.execute(`
+      SELECT DATE(created_at) as day, COUNT(*) as actions
+      FROM admin_logs WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+      GROUP BY DATE(created_at)
+    `, [userId]);
+    const [chartTickets] = await db.execute(`
+      SELECT DATE(created_at) as day, COUNT(*) as c
+      FROM support_tickets WHERE admin_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+      GROUP BY DATE(created_at)
+    `, [userId]);
+    const [chartApps] = await db.execute(`
+      SELECT DATE(created_at) as day, COUNT(*) as c
+      FROM submitted_applications WHERE reviewed_by = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+      GROUP BY DATE(created_at)
+    `, [userId]);
+
+    var chartData = [];
+    for (var i = 6; i >= 0; i--) {
+      var d = new Date(); d.setDate(d.getDate() - i);
+      var dateStr = d.toISOString().slice(0, 10);
+      var dayNames = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+      chartData.push({
+        day: dayNames[d.getDay()],
+        actions: (chartRows.find(r => new Date(r.day).toISOString().slice(0,10) === dateStr) || {}).actions || 0,
+        tickets: (chartTickets.find(r => new Date(r.day).toISOString().slice(0,10) === dateStr) || {}).c || 0,
+        applications: (chartApps.find(r => new Date(r.day).toISOString().slice(0,10) === dateStr) || {}).c || 0
+      });
+    }
+
+    // Warnings
+    const [warnings] = await db.execute('SELECT * FROM admin_warnings WHERE user_id = ? AND is_deleted = 0 ORDER BY created_at DESC', [userId]);
+
+    // Excuses
+    const [excuses] = await db.execute('SELECT * FROM admin_excuses WHERE user_id = ? ORDER BY created_at DESC', [userId]);
+
+    // Logs
+    const [allLogs] = await db.execute('SELECT * FROM admin_profile_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT 50', [userId]);
+    const [tickets] = await db.execute('SELECT * FROM support_tickets WHERE admin_id = ? ORDER BY created_at DESC LIMIT 20', [userId]);
+    const [applications] = await db.execute('SELECT * FROM submitted_applications WHERE reviewed_by = ? ORDER BY created_at DESC LIMIT 20', [userId]);
+    const [orders] = await db.execute('SELECT o.*, p.name as product_name FROM orders o LEFT JOIN products p ON o.product_id = p.id WHERE o.user_id = ? ORDER BY o.created_at DESC LIMIT 20', [userId]);
+
+    // Staff list
+    const [staff] = await db.execute(`
+      SELECT u.id, u.username, u.profile_picture, u.role, r.display_name as role_display, r.color as role_color, r.icon as role_icon, r.sort_order
+      FROM users u LEFT JOIN roles r ON u.role = r.name
+      WHERE r.is_admin_role = 1 OR u.role IN ('owner','admin','moderator','support')
+      ORDER BY r.sort_order ASC, u.id ASC
+    `);
+
+    // Check permissions
+    const [canWarnRows] = await db.execute('SELECT 1 FROM role_role_permissions WHERE role_id = (SELECT id FROM roles WHERE name = ?) AND permission_key = "admin_profile_warn" AND enabled = 1', [req.user.role]);
+    const canWarn = req.user.role === 'owner' || canWarnRows.length > 0;
+    const canExcuse = true;
+
+    res.render('admin/profile', {
+      title: 'البروفايل',
+      user, stats: {
+        tickets: ticketCount[0].c,
+        applications: appCount[0].c,
+        orders: orderCount[0].c,
+        todayActions: todayCount[0].c,
+        weekActions: weekCount[0].c,
+        avgRating: '—'
+      },
+      chartData, warnings, excuses, allLogs, tickets, applications, orders, staff,
+      canWarn, canExcuse, currentPath: req.path
+    });
+  } catch(err) {
+    console.error('[Admin/Profile]', err);
+    res.redirect('/admin');
+  }
+});
+
+// View another admin's profile
+router.get('/profile/:userId', checkPermission('admin_profile_view'), async (req, res) => {
+  try {
+    const targetId = req.params.userId;
+    const currentId = req.user.id;
+
+    // Check role hierarchy - can't view higher or equal role (except owner)
+    if (req.user.role !== 'owner') {
+      const ROLE_RANK = { owner: 0, admin: 1, moderator: 2, support: 3, member: 14 };
+      const [targetUser] = await db.execute('SELECT role FROM users WHERE id = ?', [targetId]);
+      if (targetUser[0]) {
+        const targetRank = ROLE_RANK[targetUser[0].role] || 14;
+        const myRank = ROLE_RANK[req.user.role] || 14;
+        if (targetRank <= myRank) return res.redirect('/admin/profile');
+      }
+    }
+
+    const [users] = await db.execute(`
+      SELECT u.*, r.display_name as role_display, r.color as role_color, r.icon as role_icon
+      FROM users u LEFT JOIN roles r ON u.role = r.name
+      WHERE u.id = ?
+    `, [targetId]);
+    if (!users[0]) return res.redirect('/admin/profile');
+    const user = users[0];
+
+    const [ticketCount] = await db.execute('SELECT COUNT(*) as c FROM support_tickets WHERE admin_id = ?', [targetId]);
+    const [appCount] = await db.execute('SELECT COUNT(*) as c FROM submitted_applications WHERE reviewed_by = ?', [targetId]);
+    const [orderCount] = await db.execute('SELECT COUNT(*) as c FROM orders WHERE user_id = ?', [targetId]);
+    const [todayCount] = await db.execute('SELECT COUNT(*) as c FROM admin_logs WHERE user_id = ? AND DATE(created_at) = CURDATE()', [targetId]);
+    const [weekCount] = await db.execute('SELECT COUNT(*) as c FROM admin_logs WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)', [targetId]);
+
+    const [chartRows] = await db.execute(`
+      SELECT DATE(created_at) as day, COUNT(*) as actions
+      FROM admin_logs WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+      GROUP BY DATE(created_at)
+    `, [targetId]);
+    const [chartTickets] = await db.execute(`
+      SELECT DATE(created_at) as day, COUNT(*) as c
+      FROM support_tickets WHERE admin_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+      GROUP BY DATE(created_at)
+    `, [targetId]);
+    const [chartApps] = await db.execute(`
+      SELECT DATE(created_at) as day, COUNT(*) as c
+      FROM submitted_applications WHERE reviewed_by = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+      GROUP BY DATE(created_at)
+    `, [targetId]);
+
+    var chartData = [];
+    for (var i = 6; i >= 0; i--) {
+      var d = new Date(); d.setDate(d.getDate() - i);
+      var dateStr = d.toISOString().slice(0, 10);
+      var dayNames = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+      chartData.push({
+        day: dayNames[d.getDay()],
+        actions: (chartRows.find(r => new Date(r.day).toISOString().slice(0,10) === dateStr) || {}).actions || 0,
+        tickets: (chartTickets.find(r => new Date(r.day).toISOString().slice(0,10) === dateStr) || {}).c || 0,
+        applications: (chartApps.find(r => new Date(r.day).toISOString().slice(0,10) === dateStr) || {}).c || 0
+      });
+    }
+
+    const [warnings] = await db.execute('SELECT * FROM admin_warnings WHERE user_id = ? AND is_deleted = 0 ORDER BY created_at DESC', [targetId]);
+    const [excuses] = await db.execute('SELECT * FROM admin_excuses WHERE user_id = ? ORDER BY created_at DESC', [targetId]);
+    const [allLogs] = await db.execute('SELECT * FROM admin_profile_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT 50', [targetId]);
+    const [tickets] = await db.execute('SELECT * FROM support_tickets WHERE admin_id = ? ORDER BY created_at DESC LIMIT 20', [targetId]);
+    const [applications] = await db.execute('SELECT * FROM submitted_applications WHERE reviewed_by = ? ORDER BY created_at DESC LIMIT 20', [targetId]);
+    const [orders] = await db.execute('SELECT o.*, p.name as product_name FROM orders o LEFT JOIN products p ON o.product_id = p.id WHERE o.user_id = ? ORDER BY o.created_at DESC LIMIT 20', [targetId]);
+
+    const [staff] = await db.execute(`
+      SELECT u.id, u.username, u.profile_picture, u.role, r.display_name as role_display, r.color as role_color, r.icon as role_icon, r.sort_order
+      FROM users u LEFT JOIN roles r ON u.role = r.name
+      WHERE r.is_admin_role = 1 OR u.role IN ('owner','admin','moderator','support')
+      ORDER BY r.sort_order ASC, u.id ASC
+    `);
+
+    const [canWarnRows] = await db.execute('SELECT 1 FROM role_role_permissions WHERE role_id = (SELECT id FROM roles WHERE name = ?) AND permission_key = "admin_profile_warn" AND enabled = 1', [req.user.role]);
+    const canWarn = req.user.role === 'owner' || canWarnRows.length > 0;
+    const canExcuse = true;
+
+    res.render('admin/profile', {
+      title: 'بروفايل ' + user.username,
+      user, stats: {
+        tickets: ticketCount[0].c,
+        applications: appCount[0].c,
+        orders: orderCount[0].c,
+        todayActions: todayCount[0].c,
+        weekActions: weekCount[0].c,
+        avgRating: '—'
+      },
+      chartData, warnings, excuses, allLogs, tickets, applications, orders, staff,
+      canWarn, canExcuse, currentPath: req.path
+    });
+  } catch(err) {
+    console.error('[Admin/Profile/:id]', err);
+    res.redirect('/admin/profile');
+  }
+});
+
 // Roles
 router.get('/roles', checkPermission('roles_config_view'), async (req, res) => {
   try {

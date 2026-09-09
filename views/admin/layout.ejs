@@ -68,6 +68,16 @@
       <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
     </div>
     <nav class="sidebar-nav">
+      <% if (_canAccess('admin_profile_view')) { %>
+      <a href="/admin/profile" class="nav-item profile-nav-item<%= _admPath === '/admin/profile' || _admPath.startsWith('/admin/profile/') ? ' active' : '' %>" style="margin-bottom:8px; padding:10px 14px; display:flex; align-items:center; gap:10px; background:rgba(188,19,254,0.08); border-radius:10px; border:1px solid rgba(188,19,254,0.15);">
+        <img src="<%= (typeof _admUser !== 'undefined' && _admUser.profile_picture) ? _admUser.profile_picture : '/images/default-avatar.png' %>" style="width:32px; height:32px; border-radius:50%; border:2px solid var(--ac, #bc13fe); object-fit:cover;" alt="">
+        <div style="flex:1; min-width:0">
+          <div style="font-size:0.8rem; font-weight:600; color:var(--text, #fff); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><%= typeof _admUser !== 'undefined' ? _admUser.username : '' %></div>
+          <div style="font-size:0.65rem; color:var(--text-dim, #8888aa);"><%= typeof _admUser !== 'undefined' ? (_admUser.role_display || _admUser.role) : '' %></div>
+        </div>
+        <i class="fas fa-user-circle" style="color:var(--ac, #bc13fe); font-size:0.9rem;"></i>
+      </a>
+      <% } %>
       <% if (_canAccess('users_view')) { %>
       <a href="/admin" class="nav-item<%= _admPath === '/admin' ? ' active' : '' %>">
         <i class="fas fa-tachometer-alt"></i><span>لوحة التحكم</span>

@@ -134,7 +134,10 @@ async function migrate() {
     `CREATE TABLE IF NOT EXISTS bot_visits (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, visit_date DATE NOT NULL, path VARCHAR(191) NOT NULL, views INT UNSIGNED NOT NULL DEFAULT 0, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, UNIQUE KEY uq_bot_date_path (visit_date, path), INDEX idx_bot_visit_date (visit_date)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
     `CREATE TABLE IF NOT EXISTS blocked_ips (ip VARCHAR(64) PRIMARY KEY, reason VARCHAR(191) NOT NULL DEFAULT 'unknown', user_agent VARCHAR(255) DEFAULT '', blocked_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, expires_at DATETIME NULL, INDEX idx_blocked_expires (expires_at)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
     `CREATE TABLE IF NOT EXISTS bot_inventory (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, item_key VARCHAR(100) NOT NULL, item_name VARCHAR(255) NOT NULL, quantity INT DEFAULT 1, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, UNIQUE KEY unique_user_item (user_id, item_key))`,
-    `CREATE TABLE IF NOT EXISTS user_boxes (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, box_name VARCHAR(255) NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`
+    `CREATE TABLE IF NOT EXISTS user_boxes (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, box_name VARCHAR(255) NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE TABLE IF NOT EXISTS admin_warnings (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, username VARCHAR(100), issued_by INT, issuer_name VARCHAR(100), reason TEXT, severity VARCHAR(20) DEFAULT 'medium', is_read TINYINT(1) DEFAULT 0, is_deleted TINYINT(1) DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE TABLE IF NOT EXISTS admin_excuses (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, username VARCHAR(100), reason TEXT, start_date DATE, end_date DATE, status VARCHAR(20) DEFAULT 'pending', reviewer_id INT, reviewer_name VARCHAR(100), reviewer_note TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, reviewed_at DATETIME)`,
+    `CREATE TABLE IF NOT EXISTS admin_profile_logs (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, username VARCHAR(100), action VARCHAR(100), target_name VARCHAR(255), details TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`
   ];
 
   for (const sql of tables) {

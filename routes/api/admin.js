@@ -1331,4 +1331,47 @@ router.post('/side-roles/:id/page-access', checkPermission('roles_config_edit'),
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// Profile API - Send Warning
+router.post('/profile/warnings', checkPermission('admin_profile_warn'), async (req, res) => {
+  try {
+    const { user_id, reason, severity } = req.body;
+    const [target] = await db.execute('SELECT username FROM users WHERE id = ?', [user_id]);
+    await db.execute('INSERT INTO admin_warnings (user_id, username, issued_by, issuer_name, reason, severity) VALUES (?, ?, ?, ?, ?, ?)',
+      [user_id, target[0]?.username || '', req.user.id, req.user.username, reason, severity || 'medium']);
+    // Log action
+    await db.execute('INSERT INTO admin_profile_logs (user_id, username, action, target_name, details) VALUES (?, ?, ?, ?, ?)',
+      [user_id, target[0]?.username || '', 'تحذير', req.user.username, reason]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Profile API - Delete Warning
+router.delete('/profile/warnings/:id', checkPermission('admin_profile_warn'), async (req, res) => {
+  try {
+    await db.execute('UPDATE admin_warnings SET is_deleted = 1 WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Profile API - Submit Excuse
+router.post('/profile/excuses', async (req, res) => {
+  try {
+    const { user_id, reason, start_date, end_date } = req.body;
+    const [target] = await db.execute('SELECT username FROM users WHERE id = ?', [user_id]);
+    await db.execute('INSERT INTO admin_excuses (user_id, username, reason, start_date, end_date) VALUES (?, ?, ?, ?, ?)',
+      [user_id, target[0]?.username || '', reason, start_date, end_date]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Profile API - Review Excuse
+router.post('/profile/excuses/:id/review', checkPermission('admin_profile_view'), async (req, res) => {
+  try {
+    const { status, reviewer_note } = req.body;
+    await db.execute('UPDATE admin_excuses SET status = ?, reviewer_id = ?, reviewer_name = ?, reviewer_note = ?, reviewed_at = NOW() WHERE id = ?',
+      [status, req.user.id, req.user.username, reviewer_note || '', req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 module.exports = router;

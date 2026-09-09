@@ -1,0 +1,313 @@
+<%- include('../admin/layout') %>
+<link rel="stylesheet" href="/css/profile.css">
+
+<div style="max-width:900px; margin:0 auto; padding:20px">
+
+  <!-- Profile Header -->
+  <div class="prof-header">
+    <img class="prof-avatar" src="<%= user.profile_picture || '/images/default-avatar.png' %>" alt="<%= user.username %>">
+    <div class="prof-info">
+      <h1 class="prof-name"><%= user.username %></h1>
+      <span class="prof-role-badge" style="color:<%= user.role_color || '#fff' %>; border-color:<%= user.role_color || '#fff' %>">
+        <i class="fas <%= user.role_icon || 'fa-user' %>"></i>
+        <%= user.role_display || user.role %>
+      </span>
+      <div class="prof-meta">
+        <span><i class="fas fa-calendar"></i> انضم <%= user.created_at ? new Date(user.created_at).toLocaleDateString('ar-EG') : 'غير معروف' %></span>
+        <span><i class="fas fa-clock"></i> آخر تواجد <%= user.last_login ? timeSince(user.last_login) : 'غير معروف' %></span>
+        <span><i class="fas fa-ticket"></i> <%= user.tickets_closed || 0 %> تذاكر مغلقة</span>
+      </div>
+    </div>
+    <button class="prof-btn secondary" onclick="openModal('staffModal')"><i class="fas fa-users"></i> فريق الإدارة</button>
+  </div>
+
+  <!-- Tabs -->
+  <div class="prof-tabs">
+    <button class="prof-tab active" data-tab="reports"><i class="fas fa-chart-bar"></i> التقارير</button>
+    <button class="prof-tab" data-tab="warnings"><i class="fas fa-exclamation-triangle"></i> التحذيرات</button>
+    <button class="prof-tab" data-tab="excuses"><i class="fas fa-calendar-minus"></i> الأعذار</button>
+    <button class="prof-tab" data-tab="logs"><i class="fas fa-list-ul"></i> السجل</button>
+  </div>
+
+  <!-- Reports Panel -->
+  <div class="prof-panel active" id="panel-reports">
+    <div class="stat-grid">
+      <div class="stat-card" data-icon="&#xf0e0;">
+        <div class="stat-value"><%= stats.tickets || 0 %></div>
+        <div class="stat-label">التذاكر المستلمة</div>
+      </div>
+      <div class="stat-card" data-icon="&#xf058;">
+        <div class="stat-value"><%= stats.applications || 0 %></div>
+        <div class="stat-label">التقديمات المراجعة</div>
+      </div>
+      <div class="stat-card" data-icon="&#xf07a;">
+        <div class="stat-value"><%= stats.orders || 0 %></div>
+        <div class="stat-label">طلبات الشراء</div>
+      </div>
+      <div class="stat-card" data-icon="&#xf017;">
+        <div class="stat-value"><%= stats.todayActions || 0 %></div>
+        <div class="stat-label">إجراءات اليوم</div>
+      </div>
+      <div class="stat-card" data-icon="&#xf2b5;">
+        <div class="stat-value"><%= stats.avgRating || '—' %></div>
+        <div class="stat-label">متوسط التقييم</div>
+      </div>
+      <div class="stat-card" data-icon="&#xf073;">
+        <div class="stat-value"><%= stats.weekActions || 0 %></div>
+        <div class="stat-label">إجراءات الأسبوع</div>
+      </div>
+    </div>
+    <div class="chart-container">
+      <h4><i class="fas fa-chart-line"></i> نشاط آخر 7 أيام</h4>
+      <canvas id="activityChart" height="200"></canvas>
+    </div>
+  </div>
+
+  <!-- Warnings Panel -->
+  <div class="prof-panel" id="panel-warnings">
+    <% if (canWarn) { %>
+    <div style="margin-bottom:20px; padding:16px; background:var(--prof-card); border:1px solid var(--prof-border); border-radius:12px;">
+      <h4 style="margin:0 0 12px; color:var(--prof-text)"><i class="fas fa-exclamation-triangle"></i> إرسال تحذير</h4>
+      <div class="prof-form-group">
+        <label>سبب التحذير</label>
+        <textarea class="prof-form-textarea" id="warnReason" rows="2" placeholder="اكتب سبب التحذير..."></textarea>
+      </div>
+      <div style="display:flex; gap:10px; align-items:end">
+        <div class="prof-form-group" style="flex:1">
+          <label>الخطورة</label>
+          <select class="prof-form-select" id="warnSeverity">
+            <option value="low">منخفضة</option>
+            <option value="medium" selected>متوسطة</option>
+            <option value="high">عالية</option>
+          </select>
+        </div>
+        <button class="prof-btn primary" onclick="sendWarning(<%= user.id %>)"><i class="fas fa-paper-plane"></i> إرسال</button>
+      </div>
+    </div>
+    <% } %>
+
+    <% if (warnings.length === 0) { %>
+    <div class="prof-empty"><i class="fas fa-check-circle"></i><p>لا يوجد تحذيرات</p></div>
+    <% } else { %>
+    <div class="timeline">
+      <% warnings.forEach(function(w) { %>
+      <div class="timeline-item severity-<%= w.severity %>">
+        <div class="timeline-header">
+          <div>
+            <span class="severity-badge <%= w.severity %>"><%= w.severity === 'high' ? 'عالية' : w.severity === 'medium' ? 'متوسطة' : 'منخفضة' %></span>
+            <span class="by">بواسطة <%= w.issuer_name || 'غير معروف' %></span>
+          </div>
+          <span class="date"><%= new Date(w.created_at).toLocaleDateString('ar-EG') %></span>
+        </div>
+        <div class="timeline-body"><%= w.reason %></div>
+        <% if (canWarn) { %>
+        <div style="margin-top:8px">
+          <button class="prof-btn danger" onclick="deleteWarning(<%= w.id %>)"><i class="fas fa-trash"></i></button>
+        </div>
+        <% } %>
+      </div>
+      <% }); %>
+    </div>
+    <% } %>
+  </div>
+
+  <!-- Excuses Panel -->
+  <div class="prof-panel" id="panel-excuses">
+    <% if (canExcuse) { %>
+    <div style="margin-bottom:20px; padding:16px; background:var(--prof-card); border:1px solid var(--prof-border); border-radius:12px;">
+      <h4 style="margin:0 0 12px; color:var(--prof-text)"><i class="fas fa-calendar-minus"></i> تقديم عذر</h4>
+      <div class="prof-form-group">
+        <label>سبب الغياب</label>
+        <textarea class="prof-form-textarea" id="excuseReason" rows="2" placeholder="اكتب سبب الغياب..."></textarea>
+      </div>
+      <div style="display:flex; gap:10px">
+        <div class="prof-form-group" style="flex:1">
+          <label>من تاريخ</label>
+          <input type="date" class="prof-form-input" id="excuseStart">
+        </div>
+        <div class="prof-form-group" style="flex:1">
+          <label>إلى تاريخ</label>
+          <input type="date" class="prof-form-input" id="excuseEnd">
+        </div>
+      </div>
+      <button class="prof-btn primary" onclick="submitExcuse(<%= user.id %>)"><i class="fas fa-paper-plane"></i> تقديم العذر</button>
+    </div>
+    <% } %>
+
+    <% if (excuses.length === 0) { %>
+    <div class="prof-empty"><i class="fas fa-calendar-check"></i><p>لا يوجد أعذار</p></div>
+    <% } else { %>
+    <% excuses.forEach(function(e) { %>
+    <div class="excuse-card status-<%= e.status %>">
+      <div style="display:flex; justify-content:space-between; align-items:center">
+        <span class="excuse-status <%= e.status %>"><%= e.status === 'pending' ? 'قيد المراجعة' : e.status === 'approved' ? 'مقبول' : e.status === 'rejected' ? 'مرفوض' : 'منتهي' %></span>
+        <span class="excuse-dates"><%= e.start_date %> → <%= e.end_date %></span>
+      </div>
+      <div style="margin-top:8px; color:var(--prof-text); font-size:0.9rem"><%= e.reason %></div>
+      <% if (e.reviewer_note) { %>
+      <div class="excuse-note"><i class="fas fa-reply"></i> <%= e.reviewer_name %>: <%= e.reviewer_note %></div>
+      <% } %>
+      <% if (e.status === 'pending' && canExcuse) { %>
+      <div style="margin-top:10px; display:flex; gap:8px">
+        <button class="prof-btn primary" onclick="reviewExcuse(<%= e.id %>, 'approved')"><i class="fas fa-check"></i> قبول</button>
+        <button class="prof-btn danger" onclick="reviewExcuse(<%= e.id %>, 'rejected')"><i class="fas fa-times"></i> رفض</button>
+      </div>
+      <% } %>
+    </div>
+    <% }); %>
+    <% } %>
+  </div>
+
+  <!-- Logs Panel -->
+  <div class="prof-panel" id="panel-logs">
+    <div class="log-tabs">
+      <button class="log-tab active" data-log="all">الكل</button>
+      <button class="log-tab" data-log="tickets">التذاكر</button>
+      <button class="log-tab" data-log="applications">التقديمات</button>
+      <button class="log-tab" data-log="orders">الطلبات</button>
+    </div>
+
+    <div class="log-content" id="log-all">
+      <% if (allLogs.length === 0) { %>
+      <div class="prof-empty"><i class="fas fa-list"></i><p>لا يوجد سجل</p></div>
+      <% } else { %>
+      <table class="log-table">
+        <thead><tr><th>الإجراء</th><th>الهدف</th><th>التفاصيل</th><th>التاريخ</th></tr></thead>
+        <tbody>
+        <% allLogs.forEach(function(l) { %>
+        <tr>
+          <td><span class="log-action" style="background:rgba(188,19,254,0.1); color:var(--prof-accent)"><i class="fas fa-circle" style="font-size:6px"></i> <%= l.action %></span></td>
+          <td><%= l.target_name || '—' %></td>
+          <td style="color:var(--prof-text-dim); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap"><%= l.details || '—' %></td>
+          <td style="color:var(--prof-text-dim); white-space:nowrap"><%= new Date(l.created_at).toLocaleDateString('ar-EG') %></td>
+        </tr>
+        <% }); %>
+        </tbody>
+      </table>
+      <% } %>
+    </div>
+
+    <div class="log-content" id="log-tickets" style="display:none">
+      <% if (tickets.length === 0) { %>
+      <div class="prof-empty"><i class="fas fa-ticket"></i><p>لا توجد تذاكر</p></div>
+      <% } else { %>
+      <table class="log-table">
+        <thead><tr><th>الموضوع</th><th>الحالة</th><th>التاريخ</th></tr></thead>
+        <tbody>
+        <% tickets.forEach(function(t) { %>
+        <tr>
+          <td><%= t.subject %></td>
+          <td><span class="excuse-status <%= t.status === 'open' ? 'pending' : t.status === 'closed' ? 'approved' : 'rejected' %>"><%= t.status %></span></td>
+          <td style="color:var(--prof-text-dim)"><%= new Date(t.created_at).toLocaleDateString('ar-EG') %></td>
+        </tr>
+        <% }); %>
+        </tbody>
+      </table>
+      <% } %>
+    </div>
+
+    <div class="log-content" id="log-applications" style="display:none">
+      <% if (applications.length === 0) { %>
+      <div class="prof-empty"><i class="fas fa-file-alt"></i><p>لا توجد تقديمات</p></div>
+      <% } else { %>
+      <table class="log-table">
+        <thead><tr><th>النوع</th><th>الحالة</th><th>التاريخ</th></tr></thead>
+        <tbody>
+        <% applications.forEach(function(a) { %>
+        <tr>
+          <td><%= a.application_type %></td>
+          <td><span class="excuse-status <%= a.status === 'pending' ? 'pending' : a.status === 'approved' ? 'approved' : 'rejected' %>"><%= a.status %></span></td>
+          <td style="color:var(--prof-text-dim)"><%= new Date(a.created_at).toLocaleDateString('ar-EG') %></td>
+        </tr>
+        <% }); %>
+        </tbody>
+      </table>
+      <% } %>
+    </div>
+
+    <div class="log-content" id="log-orders" style="display:none">
+      <% if (orders.length === 0) { %>
+      <div class="prof-empty"><i class="fas fa-shopping-cart"></i><p>لا توجد طلبات</p></div>
+      <% } else { %>
+      <table class="log-table">
+        <thead><tr><th>المنتج</th><th>الحالة</th><th>التاريخ</th></tr></thead>
+        <tbody>
+        <% orders.forEach(function(o) { %>
+        <tr>
+          <td><%= o.product_name || 'منتج #' + o.product_id %></td>
+          <td><span class="excuse-status <%= o.status === 'pending' ? 'pending' : o.status === 'delivered' ? 'approved' : 'rejected' %>"><%= o.status %></span></td>
+          <td style="color:var(--prof-text-dim)"><%= new Date(o.created_at).toLocaleDateString('ar-EG') %></td>
+        </tr>
+        <% }); %>
+        </tbody>
+      </table>
+      <% } %>
+    </div>
+  </div>
+
+</div>
+
+<!-- Staff Modal -->
+<div class="prof-modal-overlay" id="staffModal">
+  <div class="prof-modal">
+    <h3>
+      <button class="prof-modal-close" onclick="closeModal('staffModal')"><i class="fas fa-times"></i></button>
+      <i class="fas fa-users"></i> فريق الإدارة
+    </h3>
+    <div class="staff-grid">
+      <% staff.forEach(function(s) { %>
+      <a class="staff-card" href="/admin/profile/<%= s.id %>">
+        <img src="<%= s.profile_picture || '/images/default-avatar.png' %>" alt="<%= s.username %>">
+        <div>
+          <div class="staff-name"><%= s.username %></div>
+          <div class="staff-role" style="color:<%= s.role_color || '#888' %>"><%= s.role_display || s.role %></div>
+        </div>
+      </a>
+      <% }); %>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="/js/profile.js"></script>
+<script>
+// Activity Chart
+var chartData = <%- JSON.stringify(chartData) %>;
+var ctx = document.getElementById('activityChart');
+if (ctx) {
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: chartData.map(function(d) { return d.day; }),
+      datasets: [
+        { label: 'إجراءات', data: chartData.map(function(d) { return d.actions; }), borderColor: '#bc13fe', backgroundColor: 'rgba(188,19,254,0.1)', fill: true, tension: 0.4 },
+        { label: 'تذاكر', data: chartData.map(function(d) { return d.tickets; }), borderColor: '#60a5fa', backgroundColor: 'rgba(96,165,250,0.1)', fill: true, tension: 0.4 },
+        { label: 'تقديمات', data: chartData.map(function(d) { return d.applications; }), borderColor: '#4ade80', backgroundColor: 'rgba(74,222,128,0.1)', fill: true, tension: 0.4 }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { labels: { color: '#8888aa', font: { size: 12 } } } },
+      scales: {
+        x: { ticks: { color: '#8888aa' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        y: { ticks: { color: '#8888aa' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+      }
+    }
+  });
+}
+</script>
+
+<%- include('../admin_footer') %>
+
+<%
+function timeSince(date) {
+  var seconds = Math.floor((new Date() - new Date(date)) / 1000);
+  if (seconds < 60) return 'الآن';
+  var minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return 'منذ ' + minutes + ' دقيقة';
+  var hours = Math.floor(minutes / 60);
+  if (hours < 24) return 'منذ ' + hours + ' ساعة';
+  var days = Math.floor(hours / 24);
+  return 'منذ ' + days + ' يوم';
+}
+%>

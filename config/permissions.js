@@ -369,6 +369,18 @@ const PERMISSION_GROUPS = {
     },
   },
 
+  admin_profiles: {
+    label: 'بروفايلات الإداريين',
+    icon: 'fa-user-shield',
+    is_site: true,
+    permissions: {
+      admin_profile_view:     { label: 'عرض بروفايل إداري',   desc: 'رؤية بروفايل الإداريين' },
+      admin_profile_warn:     { label: 'إرسال تحذير',        desc: 'إرسال تحذير لإداري' },
+      admin_profile_excuse:   { label: 'تقديم عذر',          desc: 'تقديم عذر للغياب' },
+      admin_profile_staff_list: { label: 'قائمة فريق الإدارة', desc: 'رؤية قائمة فريق الإدارة' },
+    },
+  },
+
   // ════════════════════════════════════════════════════════════
   // الموقع الرئيسي — المتجر
   // ════════════════════════════════════════════════════════════
