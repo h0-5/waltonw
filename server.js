@@ -228,6 +228,7 @@ async function migrate() {
     { table: 'users', col: 'banned_by', sql: "ALTER TABLE users ADD COLUMN banned_by INT" },
     { table: 'users', col: 'tickets_closed', sql: "ALTER TABLE users ADD COLUMN tickets_closed INT DEFAULT 0" },
     { table: 'rules', col: 'rule_text', sql: "ALTER TABLE rules ADD COLUMN rule_text TEXT" },
+    { table: 'rules', col: 'title', sql: "ALTER TABLE rules MODIFY COLUMN title VARCHAR(255) DEFAULT ''" },
   ];
   for (const { table, col, sql } of alterStatements) {
     try {

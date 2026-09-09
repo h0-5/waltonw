@@ -401,7 +401,7 @@ router.post('/orders/create', require('../../middleware/auth').isAuthenticated, 
 router.post('/rules', checkPermission('rules_add'), async (req, res) => {
   try {
     const { category, rule_text, sort_order } = req.body;
-    await db.execute('INSERT INTO rules (category, rule_text, sort_order) VALUES (?, ?, ?)', [category, rule_text, sort_order || 0]);
+    await db.execute('INSERT INTO rules (category, title, rule_text, sort_order) VALUES (?, ?, ?, ?)', [category, '', rule_text, sort_order || 0]);
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });

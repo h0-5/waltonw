@@ -99,6 +99,8 @@
                 <span class="rule-text" id="rule-display-<%= rule.id %>"><%= rule.rule_text || rule.content || '' %></span>
                 <span class="rule-order">#<%= rule.sort_order || 0 %></span>
                 <div class="rule-actions" id="rule-actions-<%= rule.id %>">
+                  <% if (ri > 0) { %><button class="sm-btn" onclick="moveRule(<%= rule.id %>, 'up')" title="تحريك لأعلى"><i class="fas fa-arrow-up"></i></button><% } %>
+                  <% if (ri < catRules.length - 1) { %><button class="sm-btn" onclick="moveRule(<%= rule.id %>, 'down')" title="تحريك لأسفل"><i class="fas fa-arrow-down"></i></button><% } %>
                   <button class="sm-btn edit" onclick="editRuleInline(<%= rule.id %>)" title="تعديل"><i class="fas fa-pen"></i></button>
                   <button class="sm-btn del" onclick="deleteRule(<%= rule.id %>)" title="حذف"><i class="fas fa-trash"></i></button>
                 </div>
@@ -194,6 +196,31 @@ async function saveNewRule(catId, catName) {
   var res = await fetch('/api/admin/rules', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ category: catName, rule_text: text, sort_order: 0 }) });
   var r = await res.json();
   if (r.success) location.reload(); else alert(r.error || 'خطأ');
+}
+
+// Move rule up/down
+async function moveRule(id, dir) {
+  var rule = allRules.find(function(r){ return r.id === id; });
+  if (!rule) return;
+  var catRules = allRules.filter(function(r){ return r.category === rule.category; }).sort(function(a,b){ return (a.sort_order||0)-(b.sort_order||0); });
+  var idx = catRules.findIndex(function(r){ return r.id === id; });
+  if (dir === 'up' && idx > 0) {
+    var prev = catRules[idx-1];
+    var tmpSort = rule.sort_order;
+    rule.sort_order = prev.sort_order;
+    prev.sort_order = tmpSort;
+    await fetch('/api/admin/rules/' + id, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ category: rule.category, rule_text: rule.rule_text||rule.content||'', sort_order: rule.sort_order }) });
+    await fetch('/api/admin/rules/' + prev.id, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ category: prev.category, rule_text: prev.rule_text||prev.content||'', sort_order: prev.sort_order }) });
+    location.reload();
+  } else if (dir === 'down' && idx < catRules.length - 1) {
+    var next = catRules[idx+1];
+    var tmpSort2 = rule.sort_order;
+    rule.sort_order = next.sort_order;
+    next.sort_order = tmpSort2;
+    await fetch('/api/admin/rules/' + id, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ category: rule.category, rule_text: rule.rule_text||rule.content||'', sort_order: rule.sort_order }) });
+    await fetch('/api/admin/rules/' + next.id, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ category: next.category, rule_text: next.rule_text||next.content||'', sort_order: next.sort_order }) });
+    location.reload();
+  }
 }
 
 // Edit rule inline
