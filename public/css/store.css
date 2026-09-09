@@ -3,7 +3,9 @@
    ═══════════════════════════════════════════════════════════════ */
 :root {
     --bg-deep: #0f101d;
-    --bg: #1a1b2e;
+    /* --bg = خلفية الجسم الأساسية #0b0c18 مثل باقي الصفحات (كانت #1a1b2e تسحق ثيم
+       الجسم الموحد فتصير صفحة المتجر أفتح من الموقع كله — شكوى ثيم الصفحات الموحد) */
+    --bg: #0b0c18;
     --bg-card: rgba(26, 27, 46, 0.7);
     --bg-card-solid: #1a1b2e;
     --accent: var(--ac, #d24dff);
@@ -58,7 +60,8 @@ img { pointer-events: none; user-select: none; -webkit-user-drag: none; }
 /* ── Hero Section ── */
 .cy-hero {
     width: 100%;
-    padding: 3.5rem 1.5rem 2.5rem;
+    /* تصفير الهدر الثابت — أول المحتوى ما يبدأ من تحت شريط التنقل */
+    padding: calc(var(--nav-h, 70px) + 18px) 1.5rem 2.5rem;
     text-align: center;
     position: relative;
     background: linear-gradient(180deg, rgba(var(--purple-rgb),0.15) 0%, rgba(var(--purple-rgb),0.05) 40%, transparent 100%);
@@ -1256,7 +1259,7 @@ img { pointer-events: none; user-select: none; -webkit-user-drag: none; }
     .cy-buy-btn:hover { transform: none !important; }
 
     .cy-product-grid { grid-template-columns: 1fr; gap: 16px; }
-    .cy-hero { padding: 2rem 1rem 1.5rem; }
+    .cy-hero { padding: calc(var(--nav-h, 56px) + 12px) 1rem 1.5rem; }
     .cy-hero-icon { width: 60px; height: 60px; }
     .cy-hero-icon i { font-size: 1.6rem; }
     .cy-tabs { gap: 0.5rem; }

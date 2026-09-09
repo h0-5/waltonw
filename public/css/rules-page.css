@@ -63,7 +63,8 @@ html { scroll-behavior: smooth; }
 .wr-hero {
     position: relative;
     text-align: center;
-    padding: 3.4rem 1.5rem 2.2rem;
+    /* تصفير الهدر الثابت — أول المحتوى ما يبدأ من تحت شريط التنقل */
+    padding: calc(var(--nav-h, 70px) + 18px) 1.5rem 2.2rem;
     z-index: 1;
     background: linear-gradient(180deg, rgba(var(--wr-purple-rgb),0.14) 0%, rgba(var(--wr-purple-rgb),0.04) 55%, transparent 100%);
     overflow: hidden;
@@ -470,7 +471,7 @@ html { scroll-behavior: smooth; }
 
 /* ═══ هاتف ═══ */
 @media (max-width: 640px) {
-    .wr-hero { padding: 2.6rem 1rem 1.8rem; }
+    .wr-hero { padding: calc(var(--nav-h, 56px) + 12px) 1rem 1.8rem; }
     .wr-hero-icon { width: 64px; height: 64px; }
     .wr-hero-icon i { font-size: 1.65rem; }
     .wr-sub { font-size: 0.86rem; }

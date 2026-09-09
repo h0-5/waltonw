@@ -3,7 +3,8 @@
    ═══════════════════════════════════════════════════ */
 :root {
     --bg-deep: #0f101d;
-    --bg: #1a1b2e;
+    /* --bg = خلفية الجسم الأساسية #0b0c18 مثل باقي الصفحات (كانت تسحق ثيم الجسم الموحد) */
+    --bg: #0b0c18;
     --bg-card: rgba(26, 27, 46, 0.7);
     --bg-card-solid: #1a1b2e;
     --accent: var(--ac, #ecf780);
@@ -69,7 +70,9 @@ body { font-family: 'Cairo', 'Segoe UI', sans-serif; }
 /* ── Hero Section (Unified) ── */
 .cy-about-hero {
     width: 100%;
-    padding: 3.5rem 1.5rem 2.5rem;
+    /* تصفير الهدر الثابت: أول محتوى بالصفحة يبدأ تحت شريط التنقل بمسافة مريحة
+       (كان 3.5rem فتُقضم أيقونة الهيرو تحت الشريط 70px — نفس مشكلة الهاتف) */
+    padding: calc(var(--nav-h, 70px) + 18px) 1.5rem 2.5rem;
     text-align: center;
     position: relative;
     background: linear-gradient(180deg, rgba(var(--purple-rgb),0.15) 0%, rgba(var(--purple-rgb),0.05) 40%, transparent 100%);
@@ -614,7 +617,7 @@ body { font-family: 'Cairo', 'Segoe UI', sans-serif; }
 /* ── Responsive ── */
 @media (max-width: 768px) {
     .about-nav { display: none; }
-    .cy-about-hero { padding: 2.5rem 1rem 2rem; }
+    .cy-about-hero { padding: calc(var(--nav-h, 56px) + 12px) 1rem 2rem; }
     .cy-about-hero-icon { width: 64px; height: 64px; }
     .cy-about-hero-icon i { font-size: 1.8rem; }
     .cy-about-hero h1 { font-size: 1.8rem; }

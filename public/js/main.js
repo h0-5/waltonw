@@ -30,13 +30,15 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Clock
+  // Clock — لا مؤقت بلا عنصر: صفحات بلا ساعة ما توقظ الرئيسي كل ثانية بلا فائدة (ثقل بلا داع)
   function updateClock() {
     const el = document.getElementById('statusClock');
     if (el) el.textContent = new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   }
-  updateClock();
-  setInterval(updateClock, 1000);
+  if (document.getElementById('statusClock')) {
+    updateClock();
+    setInterval(updateClock, 1000);
+  }
 
   // Navbar scroll — بلا كتابة inline styles (كلاسات فقط)
   // يختفي عند النزول ويرجع عند الصعود (transform فقط = تركيب GPU، صفر إعادة رسم)

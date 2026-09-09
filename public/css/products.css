@@ -1,5 +1,5 @@
 ﻿
-:root{--bg-deep:#0f101d;--bg:#1a1b2e;--bg-card:rgba(26, 27, 46,0.7);--bg-card-solid:#1a1b2e;--accent:var(--ac,#d24dff);--accent-rgb:var(--ac-rgb,167,139,250);--accent-dim:rgba(var(--accent-rgb),0.12);--accent-glow:rgba(var(--accent-rgb),0.25);--accent-light:var(--ac-light,#c4b5fd);--accent-light-rgb:var(--ac-light-rgb,196,181,253);--purple:var(--ac-dark,#930fc6);--purple-rgb:var(--ac-dark-rgb,96,11,165);--purple-dim:rgba(var(--purple-rgb),0.15);--purple-glow:rgba(var(--purple-rgb),0.3);--border:rgba(var(--accent-rgb),0.12);--border-hover:rgba(var(--accent-rgb),0.35);--text:#f0eef6;--text-dim:rgba(240,238,246,0.5);--danger:#ff3860;--neon-green:#39ff14;--amber:#f59e0b}
+:root{--bg-deep:#0f101d;--bg:#0b0c18;--bg-card:rgba(26, 27, 46,0.7);--bg-card-solid:#1a1b2e;--accent:var(--ac,#d24dff);--accent-rgb:var(--ac-rgb,167,139,250);--accent-dim:rgba(var(--accent-rgb),0.12);--accent-glow:rgba(var(--accent-rgb),0.25);--accent-light:var(--ac-light,#c4b5fd);--accent-light-rgb:var(--ac-light-rgb,196,181,253);--purple:var(--ac-dark,#930fc6);--purple-rgb:var(--ac-dark-rgb,96,11,165);--purple-dim:rgba(var(--purple-rgb),0.15);--purple-glow:rgba(var(--purple-rgb),0.3);--border:rgba(var(--accent-rgb),0.12);--border-hover:rgba(var(--accent-rgb),0.35);--text:#f0eef6;--text-dim:rgba(240,238,246,0.5);--danger:#ff3860;--neon-green:#39ff14;--amber:#f59e0b}
 .wl-container{max-width:1100px;margin:2rem auto;padding:0 1rem}
 .wl-header{background:var(--bg-card);border:1px solid var(--border);border-radius:20px;padding:1.5rem 2rem;margin-bottom:2rem;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
 .wl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.5rem}
@@ -17,7 +17,8 @@
    ═══════════════════════════════════════════════════════════════ */
 :root {
     --bg-deep: #0f101d;
-    --bg: #1a1b2e;
+    /* --bg = خلفية الجسم الأساسية #0b0c18 مثل باقي الصفحات (كانت تسحق ثيم الجسم الموحد) */
+    --bg: #0b0c18;
     --bg-card: rgba(26, 27, 46, 0.7);
     --bg-card-solid: #1a1b2e;
     --accent: var(--ac, #d24dff);
@@ -69,7 +70,8 @@
 /* ── Hero Section ── */
 .cy-hero {
     width: 100%;
-    padding: 3.5rem 1.5rem 2.5rem;
+    /* تصفير الهدر الثابت — أول المحتوى ما يبدأ من تحت شريط التنقل */
+    padding: calc(var(--nav-h, 70px) + 18px) 1.5rem 2.5rem;
     text-align: center;
     position: relative;
     background: linear-gradient(180deg, rgba(var(--purple-rgb),0.15) 0%, rgba(var(--purple-rgb),0.05) 40%, transparent 100%);
@@ -1312,7 +1314,7 @@
         grid-template-columns: 1fr;
         gap: 16px;
     }
-    .cy-hero { padding: 2rem 1rem 1.5rem; }
+    .cy-hero { padding: calc(var(--nav-h, 56px) + 12px) 1rem 1.5rem; }
     .cy-hero-icon { width: 60px; height: 60px; }
     .cy-hero-icon i { font-size: 1.6rem; }
     .cy-tabs { gap: 0.5rem; }

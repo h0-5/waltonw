@@ -39,7 +39,8 @@
 /* ── HERO ── */
 .cy-apps-hero {
     width: 100%;
-    padding: 3.5rem 1.5rem 2.5rem;
+    /* تصفير الهدر الثابت — أول المحتوى ما يبدأ من تحت شريط التنقل */
+    padding: calc(var(--nav-h, 70px) + 18px) 1.5rem 2.5rem;
     text-align: center;
     position: relative;
     background: linear-gradient(180deg, rgba(var(--ac-rgb), 0.15) 0%, rgba(var(--ac-rgb), 0.05) 40%, transparent 100%);
@@ -910,7 +911,7 @@
 
 /* ── RESPONSIVE ── */
 @media (max-width: 768px) {
-    .cy-apps-hero { padding: 2.5rem 1rem 2rem; }
+    .cy-apps-hero { padding: calc(var(--nav-h, 56px) + 12px) 1rem 2rem; }
     .cy-apps-hero-icon { width: 64px; height: 64px; }
     .cy-apps-hero-icon i { font-size: 1.8rem; }
     .cy-apps-hero h1 { font-size: 1.8rem; }

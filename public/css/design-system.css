@@ -590,6 +590,21 @@ a.ds-card:hover, .ds-card-hover:hover {
   .ds-menubtn { display: inline-flex; }
   .ds-brand-sub { display: none; }
 }
+/* الهاتف: النافبار أقصر (طلب المستخدم: الهدر ع الهاتف صار طويل يأكل بداية الصفحة) —
+   70px نسبة كبيرة من شاشة الهاتف؛ 56px ارتفاع قياسي مريح وكل عناصر الشريط (38px) تتسع فيه،
+   وكل ما مبني على --nav-h (ارتفاع الشريط، درج mobileNav، تصفير الصفحات) يتبعه تلقائياً */
+@media (max-width: 768px) {
+  :root { --nav-h: 56px; }
+}
+/* الهاتف: تعطيل backdrop-filter كلياً — أثقل مؤثر على أداء التمرير بأجهزة ضعيفة
+   (كل بطاقة زجاجية تُعيد البلور كل إطار أثناء السكرول). الخلفيات الشفافة تبقى كما هي
+   وفارق المنظر على الخلفية الداكنة غير محسوس، والديسكتوب يحتفظ بالزجاج كاملاً */
+@media (max-width: 768px) {
+  *, *::before, *::after {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
 /* الهواتف: الاسم يختفي ويبقى الأفاتار — يمنع فيض النافبار عن 390px */
 @media (max-width: 599px) {
   .ds-userbtn .ds-user-name { display: none; }

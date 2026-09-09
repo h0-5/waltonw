@@ -26,7 +26,8 @@
 /* ── الصفحة ── */
 .pfw-page {
     min-height: 100vh;
-    padding: 1.6rem 1rem 3.5rem;
+    /* تصفير الهدر الثابت: غلاف البروفايل كان يبدأ من تحت الشريط مباشرة ويُقضم 43px بالديسكتوب */
+    padding: calc(var(--nav-h, 70px) + 18px) 1rem 3.5rem;
     background-color: var(--pfw-bg-deep);
     background-image:
         repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(var(--pfw-purple-rgb),0.025) 59px, rgba(var(--pfw-purple-rgb),0.025) 60px),
@@ -671,7 +672,7 @@
     .pfw-side { position: static; }
 }
 @media (max-width: 768px) {
-    .pfw-page { padding: 1rem 0.7rem 3rem; }
+    .pfw-page { padding: calc(var(--nav-h, 56px) + 12px) 0.7rem 3rem; }
     .pfw-shell { gap: 12px; }
     .pfw-side { border-radius: 15px; }
     .pfw-side-cover { height: 76px; }
