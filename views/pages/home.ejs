@@ -35,10 +35,15 @@
       </span>
 
       <h1 class="hx-title wf-reveal" style="transition-delay:.1s" id="hxHeroTitle">
-        أكثر من <span class="hx-grad">مجرد عائلة</span>
+        مرحباً بك في <span class="hx-grad">Walton Family</span>
       </h1>
 
-      <% /* سطر الوصف تحت العنوان حُذف كلياً بطلب المستخدم («شيل كتابة ذي كلها بدون ما تحرك شي ثاني») — لا عناصر أخرى تُمس */ %>
+      <% /* سطر الوصف الآلي (طلب المستخدم بصورة مرجعية): يُكتب حرفاً حرفاً أمام اللاعب بعد
+            تحميل الصفحة — النص كامل داخل الـ DOM فلو تعطل JS يظهر فوراً (تحسين تدريجي)،
+            ومقاس أدنى ثابت يحفظ مكان السطر فلا يقفز التصميم أثناء الكتابة */ %>
+      <p class="hx-type wf-reveal" style="transition-delay:.15s" aria-label="أكثر من مجرد عائلة - مجتمع متكامل من الدعم والترفيه">
+        <span class="hx-type-txt" aria-hidden="true">أكثر من مجرد عائلة - مجتمع متكامل من الدعم والترفيه</span><span class="hx-type-caret" aria-hidden="true"></span>
+      </p>
 
       <div class="hx-cta wf-reveal" style="transition-delay:.2s">
         <% if (hxUser) { %>

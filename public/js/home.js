@@ -88,4 +88,39 @@
       }, { passive: true });
     }
   }
+  // ── سطر الوصف الآلي (آلة كاتبة) — يبدأ بعد تحميل الصفحة كاملة بطلب المستخدم:
+  // «ينكتب بعد ما تحمل صفحة ينكتب كذا قدام اللاعب» — النص كامل بالـ DOM أولاً
+  // (يظهر لو تعطل JS)، ينمسح ثم يُكتب حرفاً حرفاً، والمؤشر يظهر أثناء الكتابة فقط.
+  // مع تقليل الحركة: النص يظهر كاملاً فوراً بلا كتابة ولا مؤشر ──
+  var typeWrap = document.querySelector('.hx-type');
+  if (typeWrap) {
+    var typeTxt = typeWrap.querySelector('.hx-type-txt');
+    if (typeTxt) {
+      var typeFull = (typeTxt.textContent || '').trim();
+      if (!typeFull || reduced || !('setTimeout' in window)) {
+        // بلا حركة: النص يبقى كما هو والسطر يعتبر منتهياً
+        typeWrap.classList.add('done');
+      } else {
+        typeTxt.textContent = '';
+        var typeStarted = false;
+        var startTyping = function () {
+          if (typeStarted) return;
+          typeStarted = true;
+          var i = 0;
+          typeWrap.classList.add('typing');
+          var typeTimer = setInterval(function () {
+            i++;
+            typeTxt.textContent = typeFull.slice(0, i);
+            if (i >= typeFull.length) {
+              clearInterval(typeTimer);
+              typeWrap.classList.remove('typing');
+              typeWrap.classList.add('done');
+            }
+          }, 38);
+        };
+        if (document.readyState === 'complete') setTimeout(startTyping, 600);
+        else window.addEventListener('load', function () { setTimeout(startTyping, 600); });
+      }
+    }
+  }
 })();
