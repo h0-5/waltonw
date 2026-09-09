@@ -460,7 +460,15 @@ router.get('/discounts', checkPermission('discounts_manage'), async (req, res) =
 // Banned Users
 router.get('/banned', checkPermission('users_ban'), async (req, res) => {
   try {
-    const [banned] = await db.execute('SELECT * FROM users WHERE is_banned = 1 ORDER BY id DESC');
+    const [banned] = await db.execute(`
+      SELECT u.*, 
+        banner.username AS banned_by_name,
+        CASE WHEN u.banned_until IS NOT NULL AND u.banned_until > NOW() THEN 'مؤقت' ELSE 'دائم' END AS ban_type
+      FROM users u 
+      LEFT JOIN users banner ON u.banned_by = banner.id 
+      WHERE u.is_banned = 1 
+      ORDER BY u.banned_at DESC
+    `);
     res.render('admin/banned', { title: 'المحظورين', banned, currentPath: req.path });
   } catch(err) {
     res.render('admin/banned', { title: 'المحظورين', banned: [], currentPath: req.path });

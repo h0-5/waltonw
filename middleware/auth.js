@@ -3,6 +3,23 @@ const JOIN_LINK = 'https://discord.gg/dkhSKu8hHF';
 
 const isAuthenticated = (req, res, next) => {
   if (req.user) {
+    // Check if user is banned
+    if (req.user.is_banned) {
+      const db = require('../config/database');
+      const bannerPromise = req.user.banned_by
+        ? db.execute('SELECT username FROM users WHERE id = ?', [req.user.banned_by]).then(([r]) => r.length ? r[0].username : 'غير معروف')
+        : Promise.resolve(null);
+      return bannerPromise.then(bannerName => {
+        return res.render('pages/banned', {
+          title: 'محظور',
+          username: req.user.username,
+          banReason: req.user.ban_reason || 'لا يوجد سبب محدد',
+          bannedAt: req.user.banned_at,
+          bannedUntil: req.user.banned_until,
+          bannedBy: bannerName
+        });
+      });
+    }
     return next();
   }
   req.session.returnTo = req.originalUrl;
@@ -13,6 +30,24 @@ const isInGuild = async (req, res, next) => {
   if (!req.user) {
     req.session.returnTo = req.originalUrl;
     return res.redirect('/auth/login');
+  }
+
+  // Check if user is banned
+  if (req.user.is_banned) {
+    const db = require('../config/database');
+    const bannerPromise = req.user.banned_by
+      ? db.execute('SELECT username FROM users WHERE id = ?', [req.user.banned_by]).then(([r]) => r.length ? r[0].username : 'غير معروف')
+      : Promise.resolve(null);
+    return bannerPromise.then(bannerName => {
+      return res.render('pages/banned', {
+        title: 'محظور',
+        username: req.user.username,
+        banReason: req.user.ban_reason || 'لا يوجد سبب محدد',
+        bannedAt: req.user.banned_at,
+        bannedUntil: req.user.banned_until,
+        bannedBy: bannerName
+      });
+    });
   }
 
   try {
