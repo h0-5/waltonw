@@ -375,7 +375,9 @@ const PERMISSION_GROUPS = {
     is_site: true,
     permissions: {
       admin_profile_view:     { label: 'عرض بروفايل إداري',   desc: 'رؤية بروفايل الإداريين' },
-      admin_profile_warn:     { label: 'إرسال تحذير',        desc: 'إرسال تحذير لإداري' },
+      admin_profile_warn_low:     { label: 'تحذير منخفض الخطورة',    desc: 'إرسال تحذير منخفض الخطورة لإداري' },
+      admin_profile_warn_medium:  { label: 'تحذير متوسط الخطورة',    desc: 'إرسال تحذير متوسط الخطورة لإداري' },
+      admin_profile_warn_high:    { label: 'تحذير عالي الخطورة',     desc: 'إرسال تحذير عالي الخطورة لإداري' },
       admin_profile_excuse:   { label: 'تقديم عذر',          desc: 'تقديم عذر للغياب' },
       admin_profile_staff_list: { label: 'قائمة فريق الإدارة', desc: 'رؤية قائمة فريق الإدارة' },
     },

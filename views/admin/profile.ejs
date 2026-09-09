@@ -76,9 +76,9 @@
         <div class="prof-form-group" style="flex:1">
           <label>الخطورة</label>
           <select class="prof-form-select" id="warnSeverity">
-            <option value="low">منخفضة</option>
-            <option value="medium" selected>متوسطة</option>
-            <option value="high">عالية</option>
+            <% if (canWarnLow) { %><option value="low">منخفضة</option><% } %>
+            <% if (canWarnMedium) { %><option value="medium" selected>متوسطة</option><% } %>
+            <% if (canWarnHigh) { %><option value="high">عالية</option><% } %>
           </select>
         </div>
         <button class="prof-btn primary" onclick="sendWarning(<%= user.id %>)"><i class="fas fa-paper-plane"></i> إرسال</button>

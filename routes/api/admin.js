@@ -1332,12 +1332,29 @@ router.post('/side-roles/:id/page-access', checkPermission('roles_config_edit'),
 });
 
 // Profile API - Send Warning
-router.post('/profile/warnings', checkPermission('admin_profile_warn'), async (req, res) => {
+router.post('/profile/warnings', async (req, res) => {
   try {
     const { user_id, reason, severity } = req.body;
+    const validSeverity = ['low', 'medium', 'high'].includes(severity) ? severity : 'medium';
+
+    // Owner can do anything
+    if (req.user.role !== 'owner') {
+      // Check if user has admin role (all perms)
+      const [role] = await db.execute('SELECT id, is_admin_role FROM roles WHERE name = ?', [req.user.role]);
+      if (!role.length) return res.status(403).json({ error: 'غير مصرح' });
+      if (!role[0].is_admin_role) {
+        // Check specific severity permission
+        const permKey = 'admin_profile_warn_' + validSeverity;
+        const [perm] = await db.execute('SELECT enabled FROM role_role_permissions WHERE role_id = ? AND permission_key = ?', [role[0].id, permKey]);
+        if (!perm.length || !perm[0].enabled) {
+          return res.status(403).json({ error: 'ليس لديك صلاحية لإرسال تحذير بخطورة ' + (validSeverity === 'high' ? 'عالية' : validSeverity === 'medium' ? 'متوسطة' : 'منخفضة') });
+        }
+      }
+    }
+
     const [target] = await db.execute('SELECT username FROM users WHERE id = ?', [user_id]);
     await db.execute('INSERT INTO admin_warnings (user_id, username, issued_by, issuer_name, reason, severity) VALUES (?, ?, ?, ?, ?, ?)',
-      [user_id, target[0]?.username || '', req.user.id, req.user.username, reason, severity || 'medium']);
+      [user_id, target[0]?.username || '', req.user.id, req.user.username, reason, validSeverity]);
     // Log action
     await db.execute('INSERT INTO admin_profile_logs (user_id, username, action, target_name, details) VALUES (?, ?, ?, ?, ?)',
       [user_id, target[0]?.username || '', 'تحذير', req.user.username, reason]);
@@ -1346,8 +1363,16 @@ router.post('/profile/warnings', checkPermission('admin_profile_warn'), async (r
 });
 
 // Profile API - Delete Warning
-router.delete('/profile/warnings/:id', checkPermission('admin_profile_warn'), async (req, res) => {
+router.delete('/profile/warnings/:id', async (req, res) => {
   try {
+    if (req.user.role !== 'owner') {
+      const [role] = await db.execute('SELECT id, is_admin_role FROM roles WHERE name = ?', [req.user.role]);
+      if (!role.length) return res.status(403).json({ error: 'غير مصرح' });
+      if (!role[0].is_admin_role) {
+        const [perm] = await db.execute('SELECT enabled FROM role_role_permissions WHERE role_id = ? AND permission_key IN ("admin_profile_warn_low","admin_profile_warn_medium","admin_profile_warn_high")', [role[0].id]);
+        if (!perm.length) return res.status(403).json({ error: 'ليس لديك صلاحية لحذف تحذيرات' });
+      }
+    }
     await db.execute('UPDATE admin_warnings SET is_deleted = 1 WHERE id = ?', [req.params.id]);
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
