@@ -72,7 +72,7 @@
 
   <div id="categoriesContainer">
     <% if (categories.length > 0) { %>
-      <% categories.forEach(function(cat) { %>
+      <% categories.forEach(function(cat, ci) { %>
         <% var catRules = rules.filter(function(r) { return r.category === cat.name; }); %>
         <div class="cat-section" id="cat-<%= cat.id %>">
           <div class="cat-header">
@@ -80,6 +80,8 @@
             <h3 id="cat-name-<%= cat.id %>"><%= cat.name %></h3>
             <span class="cat-count"><%= catRules.length %> قوانين</span>
             <div class="cat-actions">
+              <% if (ci > 0) { %><button class="sm-btn" onclick="moveCat(<%= cat.id %>, 'up')" title="تحريك لأعلى"><i class="fas fa-arrow-up"></i></button><% } %>
+              <% if (ci < categories.length - 1) { %><button class="sm-btn" onclick="moveCat(<%= cat.id %>, 'down')" title="تحريك لأسفل"><i class="fas fa-arrow-down"></i></button><% } %>
               <button class="sm-btn edit" onclick="editCatInline(<%= cat.id %>)" title="تعديل"><i class="fas fa-pen"></i></button>
               <button class="sm-btn del" onclick="deleteCat(<%= cat.id %>)" title="حذف"><i class="fas fa-trash"></i></button>
             </div>
@@ -156,6 +158,31 @@ async function saveNewCat() {
   var res = await fetch('/api/admin/rule-categories', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name, icon: icon||'fa-gavel', sort_order: 0 }) });
   var r = await res.json();
   if (r.success) location.reload(); else alert(r.error || 'خطأ');
+}
+
+// Move category up/down
+async function moveCat(id, dir) {
+  var sorted = allCats.slice().sort(function(a,b){ return (a.sort_order||0)-(b.sort_order||0); });
+  var idx = sorted.findIndex(function(c){ return c.id === id; });
+  if (dir === 'up' && idx > 0) {
+    var prev = sorted[idx-1];
+    var cur = sorted[idx];
+    var tmp = cur.sort_order;
+    cur.sort_order = prev.sort_order;
+    prev.sort_order = tmp;
+    await fetch('/api/admin/rule-categories/' + cur.id, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name: cur.name, icon: cur.icon||'fa-gavel', sort_order: cur.sort_order }) });
+    await fetch('/api/admin/rule-categories/' + prev.id, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name: prev.name, icon: prev.icon||'fa-gavel', sort_order: prev.sort_order }) });
+    location.reload();
+  } else if (dir === 'down' && idx < sorted.length - 1) {
+    var next = sorted[idx+1];
+    var cur2 = sorted[idx];
+    var tmp2 = cur2.sort_order;
+    cur2.sort_order = next.sort_order;
+    next.sort_order = tmp2;
+    await fetch('/api/admin/rule-categories/' + cur2.id, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name: cur2.name, icon: cur2.icon||'fa-gavel', sort_order: cur2.sort_order }) });
+    await fetch('/api/admin/rule-categories/' + next.id, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name: next.name, icon: next.icon||'fa-gavel', sort_order: next.sort_order }) });
+    location.reload();
+  }
 }
 
 // Edit category inline
@@ -250,5 +277,6 @@ async function deleteRule(id) {
 }
 
 var allRules = <%- JSON.stringify(rules) %>;
+var allCats = <%- JSON.stringify(categories) %>;
 </script>
 <%- include('admin_footer') %>
