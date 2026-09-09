@@ -595,7 +595,9 @@
   margin: 0;
   text-shadow: 0 4px 26px rgba(0, 0, 0, 0.5);
 }
-/* .hx-banner-sub حُذف من home.ejs (كان يكرر جملة العنوان) — قاعدته أزيلت معه */
+/* السطر الصغير تحت العنوان (بطلب المستخدم): بنفس قاعدة النسخة القديمة — لون خافت muted
+   وحجم أصغر من العنوان ونفس العرض 520px، حتى يبقى العنوان الأبيض العريض هو البطل */
+.hx-banner-sub { margin: -2px 0 0; color: var(--muted); font-size: 14.5px; max-width: 520px; line-height: 1.8; }
 .hx-banner-btns { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 8px; }
 .hx-banner .ds-btn-primary { box-shadow: 0 10px 30px rgba(188, 19, 254, 0.4); }
 .hx-banner .ds-btn-primary:hover { transform: translateY(-2px); }
