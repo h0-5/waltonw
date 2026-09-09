@@ -223,22 +223,26 @@ body { font-family: 'Cairo', 'Segoe UI', sans-serif; }
     z-index: 1;
 }
 
-/* ── Stats Section ── */
+/* ── Stats Section ──
+   نفس شكل شريط إحصائيات الرئيسية (hx-stats): أيقونة بمربع بنفسجي متدرج + رقم بنفسجي + تسمية خافتة،
+   لكن بطاقات منفصلة عن بعض (فجوة بينها بطلب المستخدم) والمستطيل زجاج بلور بنفس وصفة الهدر
+   (glass-bg/line/shadow منتصورة حرفياً لأن متغيرات الزجاج محصورة بنطاق .navbar) */
 .about-stats {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
     gap: 16px;
     margin-bottom: 3rem;
 }
 
 .stat-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 1.5rem 1rem;
+    background: rgba(17, 14, 32, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 18px;
+    padding: 22px 14px 18px;
     text-align: center;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.3);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
@@ -249,42 +253,50 @@ body { font-family: 'Cairo', 'Segoe UI', sans-serif; }
     position: absolute;
     top: 0; left: 0; right: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(var(--accent-rgb),0.3), transparent);
+    background: linear-gradient(90deg, transparent, rgba(210, 77, 255, 0.35), transparent);
     opacity: 0;
     transition: opacity 0.3s;
 }
 
 .stat-card:hover {
-    border-color: var(--border-hover);
+    border-color: rgba(210, 77, 255, 0.45);
     transform: translateY(-4px);
-    box-shadow: 0 12px 35px rgba(0,0,0,0.3), 0 0 20px rgba(var(--accent-rgb),0.06);
+    box-shadow: 0 14px 34px rgba(0,0,0,0.35), 0 0 22px rgba(210,77,255,0.12);
 }
 
 .stat-card:hover::before { opacity: 1; }
 
+/* نظام الظهور wf-reveal يثبّت translateY(0) بخصوصية (0,3,0) أعلى من أي :hover (0,2,0)
+   فقُتل تأثير الرفع أساساً بهذه البطاقات — القاعدة التالية أعلى خصوصية تعيد الرفع عند التحويم */
+.wf-reveal-armed .wf-reveal.stat-card:hover { transform: translateY(-4px); }
+
+/* المربع البنفسجي للأيقونة — نسخة hx-stat-ic من الرئيسية */
 .stat-icon {
-    font-size: 1.4rem;
-    color: var(--accent);
-    margin-bottom: 0.6rem;
-    display: block;
-    text-shadow: 0 0 10px rgba(var(--accent-rgb),0.4);
+    width: 40px; height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 13px;
+    font-size: 17px;
+    color: #fff;
+    background: linear-gradient(135deg, #d24dff, #8d0dbc);
+    box-shadow: 0 6px 18px rgba(188, 19, 254, 0.32), inset 0 1px 6px rgba(255, 255, 255, 0.25);
+    margin: 0 auto 4px;
 }
 
 .stat-number {
-    font-family: 'Space Grotesk', monospace;
-    font-size: 2rem;
+    font-family: var(--font-head);
+    font-size: 27px;
     font-weight: 800;
-    color: var(--text);
+    line-height: 1.15;
+    color: var(--accent-hover);
     display: block;
-    margin-bottom: 0.3rem;
+    margin-bottom: 4px;
 }
 
 .stat-label {
-    font-size: 0.7rem;
+    font-size: 12.5px;
     font-weight: 600;
-    color: var(--text-dim);
-    letter-spacing: 1px;
-    text-transform: uppercase;
+    color: var(--muted);
 }
 
 /* ── Section Title ── */
@@ -629,9 +641,11 @@ body { font-family: 'Cairo', 'Segoe UI', sans-serif; }
     .timeline-item .tl-card { padding: 1.25rem 1.25rem; }
     .timeline-item .tl-card .tl-text { font-size: 0.9rem; line-height: 1.8; }
     .timeline-item .tl-card .tl-chapter-label .chapter-num { font-size: 0.6rem; padding: 3px 10px; }
-    .about-stats { gap: 10px; }
-    .stat-card { padding: 1rem 0.75rem; border-radius: 14px; }
-    .stat-number { font-size: 1.6rem; }
+    .about-stats { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    /* البلور معطل بالجوال (قاعدة الأداء العامة) — تُكثّف خلفية الزجاج مثل ما سوينا بالهدر
+       حتى تبقى البطاقات مقروءة فوق الخلفية */
+    .stat-card { background: rgba(14, 12, 26, 0.86); padding: 16px 10px 14px; border-radius: 16px; }
+    .stat-number { font-size: 22px; }
     .members-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .member-card { max-width: 100%; padding: 0.75rem; }
     .member-card .mc-avatar { width: 44px; height: 44px; }
