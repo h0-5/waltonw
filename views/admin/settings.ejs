@@ -147,7 +147,10 @@
           </div>
         </div>
       </div>
-      <button type="submit" class="submit-btn"><i class="fas fa-save"></i> حفظ المظهر</button>
+      <div style="display:flex;gap:10px">
+        <button type="submit" class="submit-btn"><i class="fas fa-save"></i> حفظ المظهر</button>
+        <button type="button" class="submit-btn" style="background:rgba(255,255,255,.08);color:var(--text-dim)" onclick="resetColors()"><i class="fas fa-undo"></i> إعادة الألوان</button>
+      </div>
     </form>
   </div>
 
@@ -274,6 +277,39 @@ function updateColorPreview() {
   var b = parseInt(accent.slice(5,7), 16);
   document.documentElement.style.setProperty('--ac', accent);
   document.documentElement.style.setProperty('--ac-rgb', r + ',' + g + ',' + b);
+}
+
+var defaultColors = {
+  accent_color: '#bc13fe',
+  bg_color: '#06040a',
+  text_color: '#ffffff',
+  card_color: '#0c0816',
+  border_color: '#1a1525',
+  bg_opacity: '0.85'
+};
+
+function resetColors() {
+  if (!confirm('إعادة جميع الألوان للإعدادات الافتراضية؟')) return;
+  Object.keys(defaultColors).forEach(function(key) {
+    var input = document.querySelector('[name="' + key + '"]');
+    if (input) {
+      input.value = defaultColors[key];
+      var valSpan = input.parentElement.querySelector('.color-value');
+      if (valSpan) valSpan.textContent = defaultColors[key];
+    }
+  });
+  updateColorPreview();
+  var form = document.getElementById('appearanceForm');
+  var formData = new FormData(form);
+  var data = {};
+  formData.forEach(function(value, key) { data[key] = value; });
+  fetch('/api/admin/settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  }).then(function(r) { return r.json(); }).then(function(result) {
+    if (result.success) showNotif('تمت إعادة الألوان', 'success');
+  });
 }
 
 // Lockdown roles
