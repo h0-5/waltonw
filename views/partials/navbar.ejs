@@ -4,7 +4,6 @@
   var _nbUser = typeof user !== 'undefined' ? user : null;
   var _nbPath = typeof currentPath !== 'undefined' ? currentPath : '/';
   var _nbPageAccess = typeof pageAccess !== 'undefined' ? pageAccess : {};
-  var _nbUserPerms = typeof userPermissions !== 'undefined' ? userPermissions : {};
   var _nbCanSee = function(path) {
     if (!_nbUser) return true;
     if (_nbUser.role === 'owner') return true;
@@ -12,131 +11,145 @@
     if (!(path in _nbPageAccess)) return true;
     return _nbPageAccess[path] === 1;
   };
+  var _nbLogo = _nbSettings.site_logo_url || '/images/logo.png';
 %>
 <nav class="navbar">
-  <!-- Logo + Mobile Menu -->
-  <div class="nav-logo-group">
-    <a href="/" class="nav-logo">
-      <img src="<%= _nbSettings.site_logo_url || '/images/logo.png' %>" alt="<%= _nbSiteName %>" class="nav-logo-img">
-      <div>
-        <div class="nav-logo-text">Walton Family</div>
-        <div class="nav-logo-sub">Community</div>
-      </div>
-    </a>
-    <button id="mobileMenuBtn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
-  </div>
+  <!-- الختم + اسم العائلة -->
+  <a href="/" class="ds-brand" aria-label="<%= _nbSiteName %> — الرئيسية">
+    <img src="<%= _nbLogo %>" alt="ختم <%= _nbSiteName %>" width="40" height="40" decoding="async">
+    <span>
+      <span class="ds-brand-name">Walton Family</span><br>
+      <span class="ds-brand-sub">Community</span>
+    </span>
+  </a>
 
-  <!-- Desktop Links - Centered -->
-  <div class="nav-links">
-    <a href="/" class="nav-link<%= _nbPath === '/' || _nbPath === '/home' ? ' active' : '' %>"><i class="fas fa-home"></i>الرئيسية</a>
+  <!-- روابط الديسكتوب -->
+  <div class="ds-navlinks" aria-label="التنقل الرئيسي">
+    <a href="/" class="ds-navlink<%= _nbPath === '/' || _nbPath === '/home' ? ' active' : '' %>"><i class="fas fa-home" aria-hidden="true"></i>الرئيسية</a>
     <% if (_nbCanSee('/rules')) { %>
-    <a href="/rules" class="nav-link<%= _nbPath === '/rules' ? ' active' : '' %>"><i class="fas fa-gavel"></i>القوانين</a>
+    <a href="/rules" class="ds-navlink<%= _nbPath === '/rules' ? ' active' : '' %>"><i class="fas fa-gavel" aria-hidden="true"></i>القوانين</a>
     <% } %>
     <% if (_nbCanSee('/applications')) { %>
-    <a href="/applications" class="nav-link<%= _nbPath === '/applications' ? ' active' : '' %>"><i class="fas fa-file-alt"></i>التقديمات</a>
+    <a href="/applications" class="ds-navlink<%= _nbPath === '/applications' ? ' active' : '' %>"><i class="fas fa-file-alt" aria-hidden="true"></i>التقديمات</a>
     <% } %>
     <% if (_nbCanSee('/store')) { %>
-    <a href="/store" class="nav-link<%= _nbPath === '/store' ? ' active' : '' %>"><i class="fas fa-store"></i>المتجر</a>
+    <a href="/store" class="ds-navlink<%= _nbPath === '/store' ? ' active' : '' %>"><i class="fas fa-store" aria-hidden="true"></i>المتجر</a>
     <% } %>
     <% if (_nbCanSee('/games')) { %>
-    <a href="/games" class="nav-link<%= _nbPath === '/games' ? ' active' : '' %>"><i class="fas fa-gamepad" style="color:var(--ac)"></i>الألعاب</a>
+    <a href="/games" class="ds-navlink<%= _nbPath === '/games' ? ' active' : '' %>"><i class="fas fa-gamepad" aria-hidden="true"></i>الألعاب</a>
     <% } %>
     <% if (_nbCanSee('/properties')) { %>
-    <a href="/properties" class="nav-link<%= _nbPath === '/properties' ? ' active' : '' %>"><i class="fas fa-building"></i>الممتلكات</a>
+    <a href="/properties" class="ds-navlink<%= _nbPath === '/properties' ? ' active' : '' %>"><i class="fas fa-building" aria-hidden="true"></i>الممتلكات</a>
     <% } %>
     <% if (_nbCanSee('/company')) { %>
-    <a href="/company" class="nav-link<%= _nbPath === '/company' ? ' active' : '' %>"><i class="fas fa-briefcase"></i>الشركة</a>
+    <a href="/company" class="ds-navlink<%= _nbPath === '/company' ? ' active' : '' %>"><i class="fas fa-briefcase" aria-hidden="true"></i>الشركة</a>
     <% } %>
-    <a href="/community" class="nav-link<%= _nbPath === '/community' ? ' active' : '' %>"><i class="fas fa-comments"></i>المجتمع</a>
-    <a href="/about" class="nav-link<%= _nbPath === '/about' ? ' active' : '' %>"><i class="fas fa-info-circle"></i>من نحن</a>
+    <a href="/community" class="ds-navlink<%= _nbPath === '/community' ? ' active' : '' %>"><i class="fas fa-comments" aria-hidden="true"></i>المجتمع</a>
+    <a href="/about" class="ds-navlink<%= _nbPath === '/about' ? ' active' : '' %>"><i class="fas fa-circle-info" aria-hidden="true"></i>من نحن</a>
+    <a href="/support" class="ds-navlink<%= _nbPath === '/support' ? ' active' : '' %>"><i class="fas fa-headset" aria-hidden="true"></i>الدعم</a>
     <% if (_nbUser && ['owner', 'developer', 'founder', 'moderator', 'support', 'admin'].includes(_nbUser.role)) { %>
-      <a href="/admin" class="nav-link" style="color:var(--ac)"><i class="fas fa-shield-alt" style="color:var(--ac)"></i>الإدارة</a>
+    <a href="/admin" class="ds-navlink ds-navlink-ds"><i class="fas fa-shield-halved" aria-hidden="true"></i>الإدارة</a>
     <% } %>
   </div>
 
-  <!-- Actions - Right side -->
-  <div class="nav-actions">
+  <!-- الإجراءات: ثيم + إشعارات + مستخدم -->
+  <div class="ds-actions">
+    <button class="ds-iconbtn" id="themeToggle" onclick="toggleTheme()" aria-label="تبديل الوضع الفاتح والداكن" aria-pressed="false">
+      <i class="fas fa-moon" aria-hidden="true"></i>
+    </button>
+
     <% if (_nbUser) { %>
-      <!-- Notifications -->
+      <!-- الإشعارات -->
       <div style="position:relative">
-        <button class="icon-btn" id="notifToggle" onclick="toggleNotifications()">
-          <i class="fas fa-bell"></i>
-          <span id="notificationBadge" class="<%= (typeof unreadCount !== 'undefined' && unreadCount > 0) ? '' : 'hidden' %>"><%= typeof unreadCount !== 'undefined' ? unreadCount : '' %></span>
+        <button class="ds-iconbtn" id="notifToggle" onclick="toggleNotifications()" aria-label="الإشعارات">
+          <i class="fas fa-bell" aria-hidden="true"></i>
+          <span id="notificationBadge" class="ds-notif-badge<%= (typeof unreadCount !== 'undefined' && unreadCount > 0) ? '' : ' hidden' %>"><%= typeof unreadCount !== 'undefined' ? unreadCount : '' %></span>
         </button>
         <div id="notificationDropdown" class="hidden">
-          <div style="padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,107,26,0.12)">
-            <span style="font-weight:800;font-size:.85rem;color:#fff">الإشعارات</span>
-            <div style="display:flex;gap:6px;">
-              <button onclick="markAllRead()" style="font-size:.7rem;padding:.2rem .5rem;border-radius:6px;background:rgba(var(--ac-rgb),0.15);color:var(--ac);border:1px solid rgba(var(--ac-rgb),0.3);cursor:pointer;transition:all 0.2s;">قراءة الكل</button>
-              <button onclick="deleteAllNotifications()" title="حذف الكل" style="font-size:.7rem;padding:.2rem .5rem;border-radius:6px;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3);cursor:pointer;transition:all 0.2s;"><i class="fas fa-trash"></i></button>
-            </div>
+          <div class="ds-drop-head">
+            <b>الإشعارات</b>
+            <span class="ds-drop-actions">
+              <button onclick="markAllRead()" class="ds-drop-mini">قراءة الكل</button>
+              <button onclick="deleteAllNotifications()" class="ds-drop-mini ds-drop-mini-danger" title="حذف الكل"><i class="fas fa-trash" aria-hidden="true"></i></button>
+            </span>
           </div>
           <div id="notificationList">
-            <div style="padding:1.5rem;text-align:center;color:rgba(255,255,255,0.35);font-size:.8rem">لا توجد إشعارات</div>
+            <div class="ds-drop-empty">لا توجد إشعارات</div>
           </div>
         </div>
       </div>
 
-      <!-- User menu -->
+      <!-- قائمة المستخدم -->
       <div style="position:relative" id="userMenuWrap">
-        <button class="user-btn" id="userMenuBtn" onclick="toggleUserMenu()">
-          <span class="user-name"><%= _nbUser.username %></span>
-          <i class="fas fa-chevron-down user-chevron"></i>
+        <button class="ds-userbtn" id="userMenuBtn" onclick="toggleUserMenu()" aria-haspopup="true">
+          <span class="ds-user-name"><%= _nbUser.username %></span>
+          <i class="fas fa-chevron-down ds-user-chev" aria-hidden="true"></i>
           <% if (_nbUser.profile_picture) { %>
-            <img src="<%= _nbUser.profile_picture %>" alt="avatar" class="user-avatar no-lightbox skip-lightbox profile-skip nav-avatar" data-lightbox-skip="true" data-profile-protected="true" style="pointer-events: none !important;">
+            <img src="<%= _nbUser.profile_picture %>" alt="صورة <%= _nbUser.username %>" class="no-lightbox skip-lightbox profile-skip nav-avatar" data-lightbox-skip="true" data-profile-protected="true" width="26" height="26">
           <% } else { %>
-            <div class="user-avatar-placeholder"><%= _nbUser.username.charAt(0).toUpperCase() %></div>
+            <span class="ds-user-avatar-ph"><%= _nbUser.username.charAt(0).toUpperCase() %></span>
           <% } %>
         </button>
         <div id="userMenuDropdown" class="hidden">
-          <a href="/profile" class="user-drop-item"><i class="fas fa-user"></i>الملف الشخصي</a>
-          <a href="/auth/logout" class="user-drop-item" style="color:#f87171"><i class="fas fa-sign-out-alt"></i>تسجيل خروج</a>
+          <a href="/profile" class="ds-drop-item"><i class="fas fa-user" aria-hidden="true"></i>الملف الشخصي</a>
+          <a href="/orders" class="ds-drop-item"><i class="fas fa-box" aria-hidden="true"></i>طلباتي</a>
+          <a href="/my_discounts" class="ds-drop-item"><i class="fas fa-tag" aria-hidden="true"></i>خصوماتي</a>
+          <% if (_nbUser && ['owner', 'developer', 'founder', 'moderator', 'support', 'admin'].includes(_nbUser.role)) { %>
+          <a href="/admin" class="ds-drop-item"><i class="fas fa-shield-halved" aria-hidden="true"></i>الإدارة</a>
+          <% } %>
+          <div class="ds-drop-sep" role="separator"></div>
+          <a href="/auth/logout" class="ds-drop-item ds-drop-item-logout"><i class="fas fa-arrow-right-from-bracket" aria-hidden="true"></i>تسجيل خروج</a>
         </div>
       </div>
     <% } else { %>
-      <a href="/auth/discord" class="login-btn">
-        <i class="fab fa-discord"></i>
+      <a href="/auth/discord" class="ds-btn ds-btn-primary ds-btn-sm">
+        <i class="fab fa-discord" aria-hidden="true"></i>
         <span>تسجيل الدخول</span>
       </a>
     <% } %>
+
+    <button id="mobileMenuBtn" class="ds-menubtn" onclick="toggleMobileMenu()" aria-label="القائمة" aria-expanded="false"><i class="fas fa-bars" aria-hidden="true"></i></button>
   </div>
 </nav>
 
-<!-- Mobile Nav -->
+<!-- درج الجوال (نفس id ونفس آلية open/show القديمة) -->
 <div id="mobileNav">
-  <a href="/" class="nav-link<%= _nbPath === '/' ? ' active' : '' %>"><i class="fas fa-home"></i>الرئيسية</a>
+  <a href="/" class="ds-mlink<%= _nbPath === '/' ? ' active' : '' %>"><i class="fas fa-home" aria-hidden="true"></i>الرئيسية</a>
   <% if (_nbCanSee('/rules')) { %>
-  <a href="/rules" class="nav-link<%= _nbPath === '/rules' ? ' active' : '' %>"><i class="fas fa-gavel"></i>القوانين</a>
+  <a href="/rules" class="ds-mlink<%= _nbPath === '/rules' ? ' active' : '' %>"><i class="fas fa-gavel" aria-hidden="true"></i>القوانين</a>
   <% } %>
   <% if (_nbCanSee('/applications')) { %>
-  <a href="/applications" class="nav-link<%= _nbPath === '/applications' ? ' active' : '' %>"><i class="fas fa-file-alt"></i>التقديمات</a>
+  <a href="/applications" class="ds-mlink<%= _nbPath === '/applications' ? ' active' : '' %>"><i class="fas fa-file-alt" aria-hidden="true"></i>التقديمات</a>
   <% } %>
   <% if (_nbCanSee('/store')) { %>
-  <a href="/store" class="nav-link<%= _nbPath === '/store' ? ' active' : '' %>"><i class="fas fa-store"></i>المتجر</a>
+  <a href="/store" class="ds-mlink<%= _nbPath === '/store' ? ' active' : '' %>"><i class="fas fa-store" aria-hidden="true"></i>المتجر</a>
   <% } %>
   <% if (_nbCanSee('/games')) { %>
-  <a href="/games" class="nav-link<%= _nbPath === '/games' ? ' active' : '' %>" style="color:var(--ac)"><i class="fas fa-gamepad" style="color:var(--ac)"></i>الألعاب</a>
+  <a href="/games" class="ds-mlink<%= _nbPath === '/games' ? ' active' : '' %>"><i class="fas fa-gamepad" aria-hidden="true"></i>الألعاب</a>
   <% } %>
   <% if (_nbCanSee('/properties')) { %>
-  <a href="/properties" class="nav-link<%= _nbPath === '/properties' ? ' active' : '' %>"><i class="fas fa-building"></i>الممتلكات</a>
+  <a href="/properties" class="ds-mlink<%= _nbPath === '/properties' ? ' active' : '' %>"><i class="fas fa-building" aria-hidden="true"></i>الممتلكات</a>
   <% } %>
   <% if (_nbCanSee('/company')) { %>
-  <a href="/company" class="nav-link<%= _nbPath === '/company' ? ' active' : '' %>"><i class="fas fa-briefcase"></i>الشركة</a>
+  <a href="/company" class="ds-mlink<%= _nbPath === '/company' ? ' active' : '' %>"><i class="fas fa-briefcase" aria-hidden="true"></i>الشركة</a>
   <% } %>
-  <a href="/community" class="nav-link<%= _nbPath === '/community' ? ' active' : '' %>"><i class="fas fa-comments"></i>المجتمع</a>
-  <a href="/about" class="nav-link<%= _nbPath === '/about' ? ' active' : '' %>"><i class="fas fa-info-circle"></i>من نحن</a>
+  <a href="/community" class="ds-mlink<%= _nbPath === '/community' ? ' active' : '' %>"><i class="fas fa-comments" aria-hidden="true"></i>المجتمع</a>
+  <a href="/about" class="ds-mlink<%= _nbPath === '/about' ? ' active' : '' %>"><i class="fas fa-circle-info" aria-hidden="true"></i>من نحن</a>
+  <a href="/support" class="ds-mlink<%= _nbPath === '/support' ? ' active' : '' %>"><i class="fas fa-headset" aria-hidden="true"></i>الدعم الفني</a>
   <% if (!_nbUser) { %>
-    <a href="/auth/discord" class="nav-link" style="color:var(--ac)"><i class="fab fa-discord" style="color:var(--ac)"></i>تسجيل الدخول</a>
+  <a href="/auth/discord" class="ds-mlink ds-mlink-accent"><i class="fab fa-discord" aria-hidden="true"></i>تسجيل الدخول</a>
   <% } %>
   <% if (_nbUser && ['owner', 'developer', 'founder', 'moderator', 'support', 'admin'].includes(_nbUser.role)) { %>
-    <a href="/admin" class="nav-link" style="color:var(--ac)"><i class="fas fa-shield-alt" style="color:var(--ac)"></i>الإدارة</a>
+  <a href="/admin" class="ds-mlink ds-mlink-accent"><i class="fas fa-shield-halved" aria-hidden="true"></i>الإدارة</a>
   <% } %>
 </div>
 
 <script>
 function toggleMobileMenu() {
   const nav = document.getElementById('mobileNav');
+  const btn = document.getElementById('mobileMenuBtn');
   nav.classList.toggle('open');
+  if (btn) btn.setAttribute('aria-expanded', nav.classList.contains('open') ? 'true' : 'false');
 }
 function toggleNotifications() {
   const dd = document.getElementById('notificationDropdown');
@@ -148,4 +161,28 @@ function toggleUserMenu() {
 }
 function markAllRead() {}
 function deleteAllNotifications() {}
+/* الوضع الفاتح/الداكن — يُحفظ محلياً ويعمل فوراً بلا إعادة تحميل */
+function toggleTheme() {
+  var root = document.documentElement;
+  var toLight = root.getAttribute('data-theme') !== 'light';
+  if (toLight) root.setAttribute('data-theme', 'light');
+  else root.removeAttribute('data-theme');
+  try { localStorage.setItem('wfTheme', toLight ? 'light' : 'dark'); } catch (e) {}
+  var btn = document.getElementById('themeToggle');
+  if (btn) {
+    var ic = btn.querySelector('i');
+    if (ic) ic.className = toLight ? 'fas fa-sun' : 'fas fa-moon';
+    btn.setAttribute('aria-pressed', toLight ? 'true' : 'false');
+  }
+}
+(function() {
+  var light = false;
+  try { light = localStorage.getItem('wfTheme') === 'light'; } catch (e) {}
+  var btn = document.getElementById('themeToggle');
+  if (btn && light) {
+    var ic = btn.querySelector('i');
+    if (ic) ic.className = 'fas fa-sun';
+    btn.setAttribute('aria-pressed', 'true');
+  }
+})();
 </script>

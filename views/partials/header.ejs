@@ -15,7 +15,13 @@
     var _mobileBgUrl = typeof mobileBgUrl !== 'undefined' ? mobileBgUrl : '';
   %>
   <meta name="description" content="<%= _siteName %> - مجتمعنا الرقمي">
-  <meta name="theme-color" content="<%= _accentColor %>">
+  <%
+    /* الرئيسية بالهوية الجديدة (خلفية داكنة مسطحة) — باقي الصفحات على لون الثيم الحالي */
+    var _pCss0 = (typeof currentPath === 'string' ? currentPath : '');
+    var _isHome = (_pCss0 === '/' || _pCss0 === '/home');
+  %>
+  <meta name="theme-color" content="<%= _isHome ? '#0E1116' : _accentColor %>">
+  <script>try { if (localStorage.getItem('wfTheme') === 'light') document.documentElement.setAttribute('data-theme', 'light'); } catch (e) {}</script>
   <%
     /* عنوان التبويب: «اسم الصفحة | اسم الموقع» — لكن لو عنوان الصفحة هو اسم الموقع
        نفسه (الرئيسية تُمرر site_name كعنوان) يُعرض مرة واحدة بلا تكرار */
@@ -33,18 +39,20 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Cinzel+Decorative:wght@700&family=Noto+Sans+Arabic:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <!-- خطان للهوية الجديدة (Cairo عناوين + IBM Plex Sans Arabic نصوص) — Space Grotesk وCinzel تبقى لصفحات/أنميشن قديمة حتى مرحلتها — حذف Noto Sans Arabic وفّر 4 ملفات -->
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet">
   
   <!-- Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   
-  <!-- Styles — الأساسيات على كل صفحة، وCSS كل صفحة يُحمّل بصفحته فقط (أخف بـ ‎~150KB‎ للصفحة) -->
+  <!-- Styles — الأساسيات على كل صفحة، وCSS كل صفحة يُحمّل بصفحته فقط (أخف بـ ‎~150KB‎ للصفحة)
+       نظام التصميم الموحد بعد main/footer ليحسم أي تعارض بأسماء قديمة، وقبل CSS الصفحات المتبقية -->
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="stylesheet" href="/css/site-header.css">
   <link rel="stylesheet" href="/css/footer.css">
+  <link rel="stylesheet" href="/css/design-system.css">
   <% var _pCss = (typeof currentPath === 'string' ? currentPath : ''); %>
   <% if (_pCss === '/' || _pCss === '/home') { %>
-  <link rel="stylesheet" href="/css/home-v6.css">
+  <link rel="stylesheet" href="/css/home.css">
   <% } %>
   <link rel="stylesheet" href="/css/page-hero.css">
   <% if (_pCss.indexOf('/store') === 0 || _pCss.indexOf('/products') === 0) { %>
@@ -79,6 +87,11 @@
       --bg-url: url('<%= _bgUrl %>');
       --mobile-bg-url: url('<%= _mobileBgUrl %>');
     }
+    <% if (_isHome) { %>
+    /* الرئيسية (الهوية الجديدة): خلفية داكنة مسطحة من منظومة النظام — بلا صور */
+    body { background: var(--bg); }
+    #wfBgFix { display: none !important; }
+    <% } else { %>
     body {
       background-image: var(--bg-url);
       background-size: cover;
@@ -103,6 +116,7 @@
       body { background-image: none; }
       #wfBgFix { display: block; }
     }
+    <% } %>
   </style>
 
   <style>
