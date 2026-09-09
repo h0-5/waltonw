@@ -52,6 +52,7 @@
 .side-role-chips{display:flex;flex-wrap:wrap;gap:6px}
 .side-role-chip{padding:4px 10px;border-radius:12px;font-size:11px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text-dim);transition:all .2s}
 .side-role-chip.active{background:rgba(var(--ac-rgb),.15);color:var(--ac);border-color:var(--ac)}
+#editRole option{background:#1a1525;color:var(--text)}
 @media(max-width:900px){.user-card{flex-wrap:wrap;gap:10px}.user-card-stats,.user-card-flags{width:100%}}
 </style>
 
@@ -107,13 +108,8 @@
     <form id="editForm">
       <input type="hidden" id="editUserId">
       <div class="form-group"><label>اسم المستخدم</label><input type="text" id="editUsername" required></div>
-      <div class="form-group"><label>الرتبة</label><select id="editRole">
-        <option value="owner">مالك</option><option value="developer">مطور</option><option value="founder">مؤسس</option>
-        <option value="vice_founder">نائب المؤسس</option><option value="chairman">رئيس</option><option value="present_member">عضو حاضر</option>
-        <option value="vice_president">نائب رئيس</option><option value="leadership">قيادة</option><option value="family_member">عضو عائلة</option>
-        <option value="admin">مدير</option><option value="moderator">مشرف</option><option value="support">دعم فني</option>
-        <option value="member">عضو</option><option value="trial">تحت التجربة</option><option value="user">مستخدم</option>
-      </select></div>
+      <div class="form-group"><label>الرتبة</label><select id="editRole"></select></div>
+      <div class="form-group"><label>نقاط البوت</label><input type="number" id="editPoints" placeholder="0"></div>
       <label class="form-check"><input type="checkbox" id="editManageRole"><span>Manage Role</span></label>
       <label class="form-check"><input type="checkbox" id="editEventManager"><span>Event Manager</span></label>
       <div class="form-group"><label>الرتب الجانبية</label><div class="side-role-chips" id="sideRoleChips"></div></div>
@@ -144,6 +140,19 @@
 
 <script>
 const SIDE_ROLES = <%- JSON.stringify(sideRoles) %>;
+const ROLES = <%- JSON.stringify(roles) %>;
+
+// Build role select once
+(function() {
+  const sel = document.getElementById('editRole');
+  ROLES.forEach(r => {
+    const opt = document.createElement('option');
+    opt.value = r.name;
+    opt.textContent = (r.display_name || r.name);
+    opt.style.color = r.color || '#fff';
+    sel.appendChild(opt);
+  });
+})();
 
 document.getElementById('userSearch').addEventListener('input', function() {
   const q = this.value.toLowerCase();
@@ -165,12 +174,22 @@ function openModal(id) { document.getElementById(id).style.display = 'flex'; }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
 function openEdit(btn) {
-  document.getElementById('editUserId').value = btn.dataset.id;
+  const id = btn.dataset.id;
+  document.getElementById('editUserId').value = id;
   document.getElementById('editUsername').value = btn.dataset.name;
   document.getElementById('editRole').value = btn.dataset.role;
   document.getElementById('editManageRole').checked = btn.dataset.managerole === '1';
   document.getElementById('editEventManager').checked = btn.dataset.eventmanager === '1';
-  fetch('/api/admin/users/' + btn.dataset.id).then(r => r.json()).then(data => {
+  // Color the select border to match current role
+  const roleObj = ROLES.find(r => r.name === btn.dataset.role);
+  const sel = document.getElementById('editRole');
+  sel.style.borderColor = roleObj ? roleObj.color : 'var(--border)';
+  sel.onchange = function() {
+    const r = ROLES.find(x => x.name === this.value);
+    this.style.borderColor = r ? r.color : 'var(--border)';
+  };
+  // Fetch current side roles + points
+  fetch('/api/admin/users/' + id).then(r => r.json()).then(data => {
     const active = (data.sideRoles || []).map(sr => sr.id);
     const container = document.getElementById('sideRoleChips');
     container.innerHTML = SIDE_ROLES.map(sr =>
@@ -179,6 +198,7 @@ function openEdit(btn) {
     container.querySelectorAll('.side-role-chip').forEach(chip => {
       chip.addEventListener('click', function() { this.classList.toggle('active'); });
     });
+    document.getElementById('editPoints').value = (data.points && data.points.points) || 0;
   });
   openModal('editModal');
 }
@@ -208,7 +228,8 @@ document.getElementById('editForm').addEventListener('submit', async function(e)
     role: document.getElementById('editRole').value,
     manageRole: document.getElementById('editManageRole').checked,
     eventManager: document.getElementById('editEventManager').checked,
-    sideRoles: Array.from(activeChips).map(c => parseInt(c.dataset.srid))
+    sideRoles: Array.from(activeChips).map(c => parseInt(c.dataset.srid)),
+    points: parseInt(document.getElementById('editPoints').value) || 0
   };
   const res = await fetch('/api/admin/users/' + id, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
   const data = await res.json();

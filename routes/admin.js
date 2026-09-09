@@ -209,9 +209,10 @@ router.get('/users', checkPermission('users_view'), async (req, res) => {
   try {
     const [users] = await db.execute("SELECT u.*, bp.points, bp.total_earned FROM users u LEFT JOIN bot_points bp ON u.discord_id = bp.discord_id ORDER BY FIELD(u.role, 'owner','developer','founder','vice_founder','chairman','present_member','vice_president','leadership','family_member','admin','moderator','support','member','trial','user') ASC, u.id DESC");
     const [sideRoles] = await db.execute('SELECT * FROM side_roles WHERE is_active = 1');
-    res.render('admin/users', { title: 'إدارة المستخدمين', users, sideRoles, currentPath: req.path });
+    const [roles] = await db.execute('SELECT name, display_name, color, icon FROM roles ORDER BY is_admin_role DESC, sort_order ASC, id ASC');
+    res.render('admin/users', { title: 'إدارة المستخدمين', users, sideRoles, roles, currentPath: req.path });
   } catch(err) {
-    res.render('admin/users', { title: 'إدارة المستخدمين', users: [], sideRoles: [], currentPath: req.path });
+    res.render('admin/users', { title: 'إدارة المستخدمين', users: [], sideRoles: [], roles: [], currentPath: req.path });
   }
 });
 

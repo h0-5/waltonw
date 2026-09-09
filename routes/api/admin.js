@@ -54,7 +54,7 @@ router.get('/users/:id', checkPermission('users_view'), async (req, res) => {
 // ===== Unified User Update =====
 router.patch('/users/:id', checkPermission('users_edit'), async (req, res) => {
   try {
-    const { username, role, manageRole, eventManager, sideRoles } = req.body;
+    const { username, role, manageRole, eventManager, sideRoles, points } = req.body;
     const updates = [];
     const params = [];
     if (username !== undefined) { updates.push('username = ?'); params.push(username); }
@@ -70,6 +70,12 @@ router.patch('/users/:id', checkPermission('users_edit'), async (req, res) => {
     if (updates.length) {
       params.push(req.params.id);
       await db.execute(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, params);
+    }
+    if (points !== undefined) {
+      const [users] = await db.execute('SELECT discord_id FROM users WHERE id = ?', [req.params.id]);
+      if (users.length && users[0].discord_id) {
+        await db.execute('UPDATE bot_points SET points = ? WHERE discord_id = ?', [parseInt(points) || 0, users[0].discord_id]);
+      }
     }
     if (sideRoles && Array.isArray(sideRoles)) {
       await db.execute('DELETE FROM user_side_roles WHERE user_id = ?', [req.params.id]);
