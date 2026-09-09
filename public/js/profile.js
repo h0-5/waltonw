@@ -34,12 +34,11 @@ function closeModal(id) {
 // Send Warning
 async function sendWarning(userId) {
   var reason = document.getElementById('warnReason').value.trim();
-  var severity = document.getElementById('warnSeverity').value;
   if (!reason) return alert('اكتب سبب التحذير');
   var res = await fetch('/api/admin/profile/warnings', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_id: userId, reason: reason, severity: severity })
+    body: JSON.stringify({ user_id: userId, reason: reason })
   });
   var data = await res.json();
   if (data.success) location.reload();

@@ -470,25 +470,22 @@ router.get('/profile', isAuthenticated, async (req, res) => {
 
     const myRole = req.user.role;
     const isOwner = myRole === 'owner';
-    let canWarnLow = isOwner, canWarnMedium = isOwner, canWarnHigh = isOwner, canExcuse = isOwner;
+    let canWarn = isOwner, canExcuse = isOwner;
     if (!isOwner) {
       try {
         const [role] = await db.execute('SELECT id, is_admin_role FROM roles WHERE name = ?', [myRole]);
         if (role.length && role[0].is_admin_role) {
-          canWarnLow = canWarnMedium = canWarnHigh = canExcuse = true;
+          canWarn = canExcuse = true;
         } else if (role.length) {
-          const [perms] = await db.execute('SELECT permission_key, enabled FROM role_role_permissions WHERE role_id = ? AND permission_key IN ("admin_profile_warn_low","admin_profile_warn_medium","admin_profile_warn_high","admin_profile_excuse")', [role[0].id]);
+          const [perms] = await db.execute('SELECT permission_key, enabled FROM role_role_permissions WHERE role_id = ? AND permission_key IN ("admin_profile_warn","admin_profile_excuse")', [role[0].id]);
           perms.forEach(p => {
             if (!p.enabled) return;
-            if (p.permission_key === 'admin_profile_warn_low') canWarnLow = true;
-            if (p.permission_key === 'admin_profile_warn_medium') canWarnMedium = true;
-            if (p.permission_key === 'admin_profile_warn_high') canWarnHigh = true;
+            if (p.permission_key === 'admin_profile_warn') canWarn = true;
             if (p.permission_key === 'admin_profile_excuse') canExcuse = true;
           });
         }
       } catch(e) { console.error('[Admin/Profile] Perm check:', e.message); }
     }
-    const canWarn = canWarnLow || canWarnMedium || canWarnHigh;
 
     res.render('admin/profile', {
       title: 'البروفايل',
@@ -501,7 +498,7 @@ router.get('/profile', isAuthenticated, async (req, res) => {
         avgRating: '—'
       },
       chartData, warnings, excuses, allLogs, tickets, applications, orders, staff,
-      canWarn, canWarnLow, canWarnMedium, canWarnHigh, canExcuse, currentPath: req.path
+      canWarn, canExcuse, currentPath: req.path
     });
   } catch(err) {
     console.error('[Admin/Profile]', err);
@@ -591,25 +588,22 @@ router.get('/profile/:userId', isAuthenticated, async (req, res) => {
 
     const myRole = req.user.role;
     const isOwner = myRole === 'owner';
-    let canWarnLow = isOwner, canWarnMedium = isOwner, canWarnHigh = isOwner, canExcuse = isOwner;
+    let canWarn = isOwner, canExcuse = isOwner;
     if (!isOwner) {
       try {
         const [role] = await db.execute('SELECT id, is_admin_role FROM roles WHERE name = ?', [myRole]);
         if (role.length && role[0].is_admin_role) {
-          canWarnLow = canWarnMedium = canWarnHigh = canExcuse = true;
+          canWarn = canExcuse = true;
         } else if (role.length) {
-          const [perms] = await db.execute('SELECT permission_key, enabled FROM role_role_permissions WHERE role_id = ? AND permission_key IN ("admin_profile_warn_low","admin_profile_warn_medium","admin_profile_warn_high","admin_profile_excuse")', [role[0].id]);
+          const [perms] = await db.execute('SELECT permission_key, enabled FROM role_role_permissions WHERE role_id = ? AND permission_key IN ("admin_profile_warn","admin_profile_excuse")', [role[0].id]);
           perms.forEach(p => {
             if (!p.enabled) return;
-            if (p.permission_key === 'admin_profile_warn_low') canWarnLow = true;
-            if (p.permission_key === 'admin_profile_warn_medium') canWarnMedium = true;
-            if (p.permission_key === 'admin_profile_warn_high') canWarnHigh = true;
+            if (p.permission_key === 'admin_profile_warn') canWarn = true;
             if (p.permission_key === 'admin_profile_excuse') canExcuse = true;
           });
         }
       } catch(e) {}
     }
-    const canWarn = canWarnLow || canWarnMedium || canWarnHigh;
 
     res.render('admin/profile', {
       title: 'بروفايل ' + user.username,
@@ -619,7 +613,7 @@ router.get('/profile/:userId', isAuthenticated, async (req, res) => {
         weekActions: weekCount[0]?.c || 0, avgRating: '—'
       },
       chartData, warnings, excuses, allLogs, tickets, applications, orders, staff,
-      canWarn, canWarnLow, canWarnMedium, canWarnHigh, canExcuse, currentPath: req.path
+      canWarn, canExcuse, currentPath: req.path
     });
   } catch(err) {
     console.error('[Admin/Profile/:userId]', err);

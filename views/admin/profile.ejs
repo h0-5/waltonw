@@ -72,17 +72,7 @@
         <label>سبب التحذير</label>
         <textarea class="prof-form-textarea" id="warnReason" rows="2" placeholder="اكتب سبب التحذير..."></textarea>
       </div>
-      <div style="display:flex; gap:10px; align-items:end">
-        <div class="prof-form-group" style="flex:1">
-          <label>الخطورة</label>
-          <select class="prof-form-select" id="warnSeverity">
-            <% if (canWarnLow) { %><option value="low">منخفضة</option><% } %>
-            <% if (canWarnMedium) { %><option value="medium" selected>متوسطة</option><% } %>
-            <% if (canWarnHigh) { %><option value="high">عالية</option><% } %>
-          </select>
-        </div>
-        <button class="prof-btn primary" onclick="sendWarning(<%= user.id %>)"><i class="fas fa-paper-plane"></i> إرسال</button>
-      </div>
+      <button class="prof-btn primary" onclick="sendWarning(<%= user.id %>)"><i class="fas fa-paper-plane"></i> إرسال</button>
     </div>
     <% } %>
 
@@ -91,10 +81,9 @@
     <% } else { %>
     <div class="timeline">
       <% warnings.forEach(function(w) { %>
-      <div class="timeline-item severity-<%= w.severity %>">
+      <div class="timeline-item">
         <div class="timeline-header">
           <div>
-            <span class="severity-badge <%= w.severity %>"><%= w.severity === 'high' ? 'عالية' : w.severity === 'medium' ? 'متوسطة' : 'منخفضة' %></span>
             <span class="by">بواسطة <%= w.issuer_name || 'غير معروف' %></span>
           </div>
           <span class="date"><%= new Date(w.created_at).toLocaleDateString('ar-EG') %></span>
