@@ -135,13 +135,7 @@
 }
 @keyframes hx-shine { to { background-position: 200% center; } }
 
-.hx-sub {
-  max-width: 580px;
-  margin: 0;
-  font-size: clamp(14.5px, 2vw, 16.5px);
-  line-height: 1.8;
-  color: var(--muted);
-}
+/* سطر الوصف (.hx-sub) حُذف من home.ejs بطلب المستخدم — قاعدته أزيلت معه (كود ميت) */
 
 /* أزرار الهيرو — أكبر من المعتاد */
 .hx-cta { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
