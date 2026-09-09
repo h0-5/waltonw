@@ -228,8 +228,6 @@ async function migrate() {
     { table: 'users', col: 'banned_by', sql: "ALTER TABLE users ADD COLUMN banned_by INT" },
     { table: 'users', col: 'tickets_closed', sql: "ALTER TABLE users ADD COLUMN tickets_closed INT DEFAULT 0" },
     { table: 'rules', col: 'rule_text', sql: "ALTER TABLE rules ADD COLUMN rule_text TEXT" },
-    { table: 'rules', col: 'title', sql: "ALTER TABLE rules MODIFY COLUMN title VARCHAR(255) DEFAULT ''" },
-    { table: 'rules', col: 'content', sql: "ALTER TABLE rules MODIFY COLUMN content TEXT" },
     { table: 'rules', col: 'icon', sql: "ALTER TABLE rules ADD COLUMN icon VARCHAR(50) DEFAULT ''" },
     { table: 'rules', col: 'icon_color', sql: "ALTER TABLE rules ADD COLUMN icon_color VARCHAR(20) DEFAULT ''" },
   ];
@@ -241,6 +239,16 @@ async function migrate() {
         console.log(`✅ ${table}.${col} added`);
       }
     } catch(e) {}
+  }
+  // Fix existing columns that have no DEFAULT (run unconditionally)
+  const modifyStatements = [
+    "ALTER TABLE rules MODIFY COLUMN title VARCHAR(255) DEFAULT ''",
+    "ALTER TABLE rules MODIFY COLUMN content TEXT",
+    "ALTER TABLE rules MODIFY COLUMN icon VARCHAR(50) DEFAULT ''",
+    "ALTER TABLE rules MODIFY COLUMN icon_color VARCHAR(20) DEFAULT ''",
+  ];
+  for (const sql of modifyStatements) {
+    try { await db.query(sql); } catch(e) {}
   }
   console.log('✅ Schema fixes done');
 
