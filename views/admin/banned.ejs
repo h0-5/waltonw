@@ -87,7 +87,7 @@ document.getElementById('bannedTable').addEventListener('click', async function(
     if (!confirm('إلغاء حظر هذا المستخدم؟')) return;
     const res = await fetch('/api/admin/users/' + btn.dataset.id + '/unban', { method: 'POST', headers: {'Content-Type':'application/json'} });
     const data = await res.json();
-    if (data.success) location.reload();
+    if (data.success) location.href = '/admin/banned';
     else alert(data.error || 'خطأ');
   }
 });

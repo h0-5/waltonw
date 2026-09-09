@@ -41,6 +41,7 @@
     .info-label{font-size:0.8rem;color:rgba(255,255,255,0.4);font-weight:600}
     .info-value{font-size:0.88rem;color:rgba(255,255,255,0.8);font-weight:700}
     .info-value.danger{color:var(--danger)}
+    .countdown-value{color:#f59e0b !important;font-size:1rem !important;font-weight:800 !important;letter-spacing:0.5px}
     .logout-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px 24px;background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.1);border-radius:14px;font-family:'Cairo',sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;transition:all 0.3s;text-decoration:none}
     .logout-btn:hover{background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.2)}
     .particles{position:fixed;inset:0;pointer-events:none;z-index:0}
@@ -83,8 +84,8 @@
         <% } %>
         <% if (bannedUntil) { %>
         <div class="info-row">
-          <span class="info-label">ينتهي الحظر</span>
-          <span class="info-value"><%= new Date(bannedUntil).toLocaleDateString('ar-SA', {year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'}) %></span>
+          <span class="info-label">ينتهي الحظر بعد</span>
+          <span class="info-value countdown-value" id="countdown" data-until="<%= new Date(bannedUntil).toISOString() %>"></span>
         </div>
         <% } else { %>
         <div class="info-row">
@@ -120,6 +121,34 @@
         c.appendChild(p);
       }
     })();
+
+    // Countdown timer
+    var countdownEl = document.getElementById('countdown');
+    if (countdownEl) {
+      var until = new Date(countdownEl.dataset.until).getTime();
+      function pad(n) { return n < 10 ? '0' + n : n; }
+      function updateCountdown() {
+        var diff = until - Date.now();
+        if (diff <= 0) {
+          countdownEl.textContent = 'انتهى الحظر — جاري التحديث...';
+          countdownEl.style.color = '#22c55e';
+          setTimeout(function() { location.reload(); }, 3000);
+          return;
+        }
+        var days = Math.floor(diff / 86400000);
+        var hours = Math.floor((diff % 86400000) / 3600000);
+        var mins = Math.floor((diff % 3600000) / 60000);
+        var secs = Math.floor((diff % 60000) / 1000);
+        var parts = [];
+        if (days > 0) parts.push(days + ' يوم');
+        if (hours > 0 || days > 0) parts.push(pad(hours) + ' ساعة');
+        parts.push(pad(mins) + ' دقيقة');
+        parts.push(pad(secs) + ' ثانية');
+        countdownEl.textContent = parts.join(' : ');
+      }
+      updateCountdown();
+      setInterval(updateCountdown, 1000);
+    }
   </script>
 </body>
 </html>
