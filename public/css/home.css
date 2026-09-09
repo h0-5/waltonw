@@ -33,78 +33,10 @@
   padding: var(--nav-h) 0 76px;
 }
 
-/* الشفق: ثلاث كتل ضوئية بنفسجية تتموج ببطء (فلتر البلور ثابت والعناصر لا تُعاد رسمها — transform فقط) */
-.hx-aurora { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
-.hx-blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(70px);
-  will-change: transform;
-}
-.hx-b1 {
-  width: 540px; height: 540px;
-  top: -170px; inset-inline-start: -130px;
-  background: radial-gradient(circle, rgba(188, 19, 254, 0.5), transparent 68%);
-  opacity: .55;
-  animation: hx-drift1 22s ease-in-out infinite alternate;
-}
-.hx-b2 {
-  width: 460px; height: 460px;
-  bottom: -150px; inset-inline-end: -110px;
-  background: radial-gradient(circle, rgba(210, 77, 255, 0.42), transparent 68%);
-  opacity: .5;
-  animation: hx-drift2 26s ease-in-out infinite alternate;
-}
-.hx-b3 {
-  width: 380px; height: 380px;
-  top: 26%; inset-inline-start: 46%;
-  background: radial-gradient(circle, rgba(104, 22, 168, 0.5), transparent 70%);
-  opacity: .38;
-  animation: hx-drift3 30s ease-in-out infinite alternate;
-}
-@keyframes hx-drift1 { to { transform: translate(70px, 46px) scale(1.16); } }
-@keyframes hx-drift2 { to { transform: translate(-64px, -40px) scale(1.12); } }
-@keyframes hx-drift3 { to { transform: translate(-40px, 52px) scale(1.2); } }
-
-/* شبكة خفيفة تختفي تدريجياً نحو الأطراف (ساكنة تماماً — رسمة واحدة) */
-.hx-grid {
-  position: absolute; inset: 0;
-  pointer-events: none; z-index: 0;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.032) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.032) 1px, transparent 1px);
-  background-size: 44px 44px;
-  -webkit-mask-image: radial-gradient(ellipse 72% 62% at 50% 42%, #000 28%, transparent 74%);
-  mask-image: radial-gradient(ellipse 72% 62% at 50% 42%, #000 28%, transparent 74%);
-}
-
-/* نجوم متلألئة — عناصر صغيرة، حركة opacity/transform فقط */
-.hx-stars { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
-.hx-stars i {
-  position: absolute;
-  width: 3px; height: 3px;
-  border-radius: 50%;
-  background: rgba(238, 222, 255, 0.85);
-  box-shadow: 0 0 6px rgba(210, 77, 255, 0.8);
-  opacity: .15;
-  animation: hx-twinkle 4.2s ease-in-out infinite;
-}
-.hx-stars i:nth-child(1)  { top: 14%; inset-inline-start: 12%; animation-delay: 0s; }
-.hx-stars i:nth-child(2)  { top: 22%; inset-inline-start: 78%; animation-delay: .5s; width: 2px; height: 2px; }
-.hx-stars i:nth-child(3)  { top: 64%; inset-inline-start: 8%;  animation-delay: 1.1s; }
-.hx-stars i:nth-child(4)  { top: 70%; inset-inline-start: 88%; animation-delay: .8s; width: 2px; height: 2px; }
-.hx-stars i:nth-child(5)  { top: 38%; inset-inline-start: 22%; animation-delay: 1.6s; }
-.hx-stars i:nth-child(6)  { top: 12%; inset-inline-start: 55%; animation-delay: 2s; width: 2px; height: 2px; }
-.hx-stars i:nth-child(7)  { top: 48%; inset-inline-start: 92%; animation-delay: 1.3s; }
-.hx-stars i:nth-child(8)  { top: 82%; inset-inline-start: 30%; animation-delay: 2.4s; width: 2px; height: 2px; }
-.hx-stars i:nth-child(9)  { top: 30%; inset-inline-start: 42%; animation-delay: 2.9s; }
-.hx-stars i:nth-child(10) { top: 58%; inset-inline-start: 62%; animation-delay: .3s; width: 2px; height: 2px; }
-.hx-stars i:nth-child(11) { top: 86%; inset-inline-start: 70%; animation-delay: 1.9s; }
-.hx-stars i:nth-child(12) { top: 8%;  inset-inline-start: 32%; animation-delay: 3.3s; width: 2px; height: 2px; }
-@keyframes hx-twinkle {
-  0%, 100% { opacity: .12; transform: translateY(0) scale(1); }
-  50%      { opacity: .9;  transform: translateY(-6px) scale(1.25); }
-}
+/* الشفق/الشبكة/النجوم أُزيلت كلها بطلب المستخدم (Task 42): «في وهج بنفسجي بزاوية يمين
+   اعلى وبنص اليسار شيلهم + شي غريب ورا الاحصائيات شيله» — كانت كتل بلور 540px
+   (واحة يمين-اعلى b1 ويسار-اسفل b2 بالـ RTL) تتمدد خلف بطاقة الإحصائيات
+   (margin-top سالب) مع شبكة خطوط ونجوم متلألئة — الخلفية الآن صورة الموقع فقط */
 
 /* محتوى الهيرو */
 .hx-hero-inner {
@@ -653,9 +585,7 @@
 
 /* ══════════════════ الجوال ══════════════════ */
 @media (max-width: 768px) {
-  /* أداء الهاتف: بلا أنميشن شفق/نجوم — كتل ساكنة خافتة تكفي للعمق */
-  .hx-blob { animation: none !important; opacity: .3; filter: blur(56px); }
-  .hx-stars { display: none; }
+  /* أداء الهاتف: زخارف الخلفية أُزيلت كلياً (Task 42) — لا شيء يُعاد هنا */
   .hx-hero { min-height: auto; padding-bottom: 64px; }
   .hx-hero-inner { gap: 16px; }
   .hx-grad { animation: none; }
@@ -679,8 +609,7 @@
 /* ══════════════════ احترام تقليل الحركة ══════════════════ */
 @media (prefers-reduced-motion: reduce) {
   .hx-page .wf-reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
-  .hx-blob, .hx-stars i, .hx-orb-ring, .hx-orb-glow, .hx-grad,
-  .hx-eyebrow-dot, .hx-scrollhint, .hx-card-media img { animation: none !important; }
+  .hx-orb-ring, .hx-orb-glow, .hx-grad, .hx-eyebrow-dot, .hx-scrollhint, .hx-card-media img { animation: none !important; }
   .hx-page .wf-reveal,
   .hx-card, .hx-step, .hx-card-media img, .hx-card-go { transition: none !important; }
 }

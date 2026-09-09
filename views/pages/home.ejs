@@ -14,22 +14,14 @@
   var hxReqs = (typeof joinReqs !== 'undefined' && joinReqs && joinReqs.length)
     ? joinReqs.slice(0, 5)
     : ['حساب ديسكورد فعّال', 'قراءة قوانين العائلة والالتزام بها', 'احترام الأعضاء والنشاط الإيجابي'];
-  /* عناصر نجوم الهيرو — عناصر زخرفية ثابتة بلا JS */
-  var hxStarCount = 12;
+  /* عناصر نجوم الهيرو أُزيلت نهائياً بطلب المستخدم (Task 42): الوهج البنفسجي بالزوايا
+     والزخرفة خلف الإحصائيات شُلت كلها — الخلفية الآن صورة الموقع فقط */
 %>
 
 <main class="hx-page" id="main">
 
-  <!-- ═══════════ الهيرو — شاشة أولى حية: شفق + نجوم + ختم بحلقة دوّارة + عنوان متدرج ═══════════ -->
+  <!-- ═══════════ الهيرو — ختم بحلقة دوّارة + عنوان متدرج (الوهج والنجوم أُزيلت بطلب المستخدم) ═══════════ -->
   <section class="hx-hero" aria-labelledby="hxHeroTitle">
-    <div class="hx-aurora" aria-hidden="true">
-      <span class="hx-blob hx-b1"></span>
-      <span class="hx-blob hx-b2"></span>
-      <span class="hx-blob hx-b3"></span>
-    </div>
-    <div class="hx-grid" aria-hidden="true"></div>
-    <div class="hx-stars" aria-hidden="true"><% for (var s = 0; s < hxStarCount; s++) { %><i></i><% } %></div>
-
     <div class="ds-container hx-hero-inner">
       <div class="hx-orb wf-reveal">
         <span class="hx-orb-ring" aria-hidden="true"></span>
