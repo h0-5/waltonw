@@ -303,9 +303,11 @@ router.get('/settings', checkPermission('site_settings_view'), async (req, res) 
     const settings = {};
     const [rows] = await db.execute('SELECT setting_key, setting_value FROM site_settings');
     rows.forEach(r => { settings[r.setting_key] = r.setting_value; });
-    res.render('admin/settings', { title: 'الإعدادات', settings, currentPath: req.path });
+    const [roles] = await db.execute('SELECT name, display_name, icon FROM roles ORDER BY sort_order ASC, id ASC');
+    res.render('admin/settings', { title: 'الإعدادات', settings, roles, currentPath: req.path });
   } catch(err) {
-    res.render('admin/settings', { title: 'الإعدادات', settings: {}, currentPath: req.path });
+    console.error('[Admin/Settings]', err);
+    res.render('admin/settings', { title: 'الإعدادات', settings: {}, roles: [], currentPath: req.path });
   }
 });
 
