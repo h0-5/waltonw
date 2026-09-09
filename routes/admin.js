@@ -399,13 +399,26 @@ router.get('/profile', isAuthenticated, async (req, res) => {
       return res.redirect('/admin');
     }
     const userId = req.user.id;
-    const [users] = await db.execute(`
-      SELECT u.*, r.display_name as role_display, r.color as role_color, r.icon as role_icon
-      FROM users u LEFT JOIN roles r ON u.role = r.name
-      WHERE u.id = ?
-    `, [userId]);
-    if (!users[0]) return res.redirect('/admin');
-    const user = users[0];
+    let user;
+    try {
+      const [users] = await db.execute(`
+        SELECT u.*, r.display_name as role_display, r.color as role_color, r.icon as role_icon
+        FROM users u LEFT JOIN roles r ON u.role = r.name
+        WHERE u.id = ?
+      `, [userId]);
+      user = users[0];
+    } catch(joinErr) {
+      console.error('[Admin/Profile] JOIN failed, trying simple query:', joinErr.message);
+      const [users] = await db.execute('SELECT * FROM users WHERE id = ?', [userId]);
+      user = users[0] || null;
+      if (user) {
+        try {
+          const [role] = await db.execute('SELECT display_name, color, icon FROM roles WHERE name = ?', [user.role]);
+          if (role[0]) { user.role_display = role[0].display_name; user.role_color = role[0].color; user.role_icon = role[0].icon; }
+        } catch(e2) { user.role_display = user.role; }
+      }
+    }
+    if (!user) return res.redirect('/admin');
 
     const safeQuery = async (sql, params) => {
       try { return (await db.execute(sql, params))[0]; } catch(e) { return []; }
@@ -439,14 +452,21 @@ router.get('/profile', isAuthenticated, async (req, res) => {
     const allLogs = await safeQuery('SELECT * FROM admin_profile_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT 50', [userId]);
     const tickets = await safeQuery('SELECT * FROM support_tickets WHERE admin_id = ? ORDER BY created_at DESC LIMIT 20', [userId]);
     const applications = await safeQuery('SELECT * FROM submitted_applications WHERE reviewed_by = ? ORDER BY created_at DESC LIMIT 20', [userId]);
-    const orders = await safeQuery('SELECT o.*, p.name as product_name FROM orders o LEFT JOIN products p ON o.product_id = p.id WHERE o.user_id = ? ORDER BY o.created_at DESC LIMIT 20', [userId]);
+    const orders = await safeQuery('SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC LIMIT 20', [userId]);
 
     const staff = await safeQuery(`
-      SELECT u.id, u.username, u.profile_picture, u.role, r.display_name as role_display, r.color as role_color, r.icon as role_icon, r.sort_order
-      FROM users u LEFT JOIN roles r ON u.role = r.name
-      WHERE r.is_admin_role = 1 OR u.role IN ('owner','admin','moderator','support')
-      ORDER BY r.sort_order ASC, u.id ASC
+      SELECT u.id, u.username, u.profile_picture, u.role
+      FROM users u
+      WHERE u.role IN ('owner','admin','moderator','support')
+      ORDER BY u.id ASC
     `);
+    try {
+      for (const s of staff) {
+        const [role] = await db.execute('SELECT display_name, color, icon FROM roles WHERE name = ?', [s.role]);
+        if (role[0]) { s.role_display = role[0].display_name; s.role_color = role[0].color; s.role_icon = role[0].icon; }
+        else { s.role_display = s.role; s.role_color = '#fff'; s.role_icon = 'fa-user'; }
+      }
+    } catch(e) { console.error('[Admin/Profile] Staff role fetch:', e.message); }
 
     res.render('admin/profile', {
       title: 'البروفايل',
@@ -489,12 +509,25 @@ router.get('/profile/:userId', isAuthenticated, async (req, res) => {
       try { return (await db.execute(sql, params))[0]; } catch(e) { return []; }
     };
 
-    const [users] = await db.execute(`
-      SELECT u.*, r.display_name as role_display, r.color as role_color, r.icon as role_icon
-      FROM users u LEFT JOIN roles r ON u.role = r.name WHERE u.id = ?
-    `, [targetId]);
-    if (!users[0]) return res.redirect('/admin/profile');
-    const user = users[0];
+    let user;
+    try {
+      const [users] = await db.execute(`
+        SELECT u.*, r.display_name as role_display, r.color as role_color, r.icon as role_icon
+        FROM users u LEFT JOIN roles r ON u.role = r.name WHERE u.id = ?
+      `, [targetId]);
+      user = users[0];
+    } catch(joinErr) {
+      console.error('[Admin/Profile/:userId] JOIN failed:', joinErr.message);
+      const [users] = await db.execute('SELECT * FROM users WHERE id = ?', [targetId]);
+      user = users[0] || null;
+      if (user) {
+        try {
+          const [role] = await db.execute('SELECT display_name, color, icon FROM roles WHERE name = ?', [user.role]);
+          if (role[0]) { user.role_display = role[0].display_name; user.role_color = role[0].color; user.role_icon = role[0].icon; }
+        } catch(e2) { user.role_display = user.role; }
+      }
+    }
+    if (!user) return res.redirect('/admin/profile');
 
     const ticketCount = await safeQuery('SELECT COUNT(*) as c FROM support_tickets WHERE admin_id = ?', [targetId]);
     const appCount = await safeQuery('SELECT COUNT(*) as c FROM submitted_applications WHERE reviewed_by = ?', [targetId]);
@@ -524,8 +557,15 @@ router.get('/profile/:userId', isAuthenticated, async (req, res) => {
     const allLogs = await safeQuery('SELECT * FROM admin_profile_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT 50', [targetId]);
     const tickets = await safeQuery('SELECT * FROM support_tickets WHERE admin_id = ? ORDER BY created_at DESC LIMIT 20', [targetId]);
     const applications = await safeQuery('SELECT * FROM submitted_applications WHERE reviewed_by = ? ORDER BY created_at DESC LIMIT 20', [targetId]);
-    const orders = await safeQuery('SELECT o.*, p.name as product_name FROM orders o LEFT JOIN products p ON o.product_id = p.id WHERE o.user_id = ? ORDER BY o.created_at DESC LIMIT 20', [targetId]);
-    const staff = await safeQuery(`SELECT u.id, u.username, u.profile_picture, u.role, r.display_name as role_display, r.color as role_color, r.icon as role_icon FROM users u LEFT JOIN roles r ON u.role = r.name WHERE r.is_admin_role = 1 OR u.role IN ('owner','admin','moderator','support') ORDER BY r.sort_order ASC, u.id ASC`);
+    const orders = await safeQuery('SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC LIMIT 20', [targetId]);
+    const staff = await safeQuery(`SELECT u.id, u.username, u.profile_picture, u.role FROM users u WHERE u.role IN ('owner','admin','moderator','support') ORDER BY u.id ASC`);
+    try {
+      for (const s of staff) {
+        const [role] = await db.execute('SELECT display_name, color, icon FROM roles WHERE name = ?', [s.role]);
+        if (role[0]) { s.role_display = role[0].display_name; s.role_color = role[0].color; s.role_icon = role[0].icon; }
+        else { s.role_display = s.role; s.role_color = '#fff'; s.role_icon = 'fa-user'; }
+      }
+    } catch(e) {}
 
     res.render('admin/profile', {
       title: 'بروفايل ' + user.username,

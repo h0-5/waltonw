@@ -255,6 +255,25 @@ async function migrate() {
   }
   console.log('✅ Schema fixes done');
 
+  // Fix collation mismatch between users and roles tables
+  try {
+    await db.query("ALTER TABLE users CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+    console.log('✅ users collation fixed');
+  } catch(e) { console.log('users collation:', e.message); }
+  try {
+    await db.query("ALTER TABLE roles CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+    console.log('✅ roles collation fixed');
+  } catch(e) { console.log('roles collation:', e.message); }
+
+  // Ensure orders.product_id exists (was missing from old DB)
+  try {
+    const [cols] = await db.query("SHOW COLUMNS FROM orders LIKE 'product_id'");
+    if (cols.length === 0) {
+      await db.query("ALTER TABLE orders ADD COLUMN product_id INT");
+      console.log('✅ orders.product_id added');
+    }
+  } catch(e) { console.log('orders.product_id:', e.message); }
+
   // Seed default roles
   try {
     const [existing] = await db.query('SELECT COUNT(*) as c FROM roles');
@@ -286,7 +305,7 @@ async function migrate() {
 }
 
 // Bump this when tables/ALTERs change in migrate() — '6' adds analytics + guard tables
-const SCHEMA_VERSION = '7';
+const SCHEMA_VERSION = '8';
 
 async function start() {
   // Skip the ~50-table migration when schema is already current:
