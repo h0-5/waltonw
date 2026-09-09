@@ -35,14 +35,17 @@
 /* الشعار — دائرة بنفسجية كاملة (تدرج الثيم يملأ القرص كله بدل الخط فقط)
    والشعار يطفو وسطها — ثابت، بلا أنميشن */
 .hw2-orb {
-  width: min(280px, 64vw);
+  /* قرص أصغر قليلاً والشعار يملأ داخله مساحة أكبر — هامش ثابت 8px (النسبة المئوية
+     للـ padding تُحسب من عرض الأب فتتقلب مع الشاشة، الـ px ثابت ومضمون).
+     يبقى contain يضمن بقاء الشعار كاملاً ضمن حدود القرص مهما كانت أبعاد الصورة */
+  width: min(240px, 56vw);
   aspect-ratio: 1;
   border-radius: 50%;
-  padding: 9%;
+  padding: 8px;
   background: linear-gradient(145deg, #d24dff 0%, #bc13fe 48%, #7d0cb0 100%);
   box-shadow:
-    0 0 46px rgba(188, 19, 254, 0.5),
-    0 0 130px rgba(188, 19, 254, 0.2),
+    0 0 38px rgba(188, 19, 254, 0.5),
+    0 0 110px rgba(188, 19, 254, 0.2),
     inset 0 2px 16px rgba(255, 255, 255, 0.3),
     inset 0 -14px 36px rgba(45, 0, 70, 0.4);
 }
@@ -290,6 +293,6 @@
 .hw2-step-btn { margin-top: auto; width: 100%; }
 
 @media (max-width: 480px) {
-  .hw2-orb { width: min(220px, 58vw); }
+  .hw2-orb { width: min(190px, 51vw); }
   .hw2-hero { gap: 24px; }
 }
