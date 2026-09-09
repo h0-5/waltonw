@@ -33,6 +33,15 @@ router.get('/test-banned', (req, res) => {
   });
 });
 
+// Test lockdown page (temp route - remove after testing)
+router.get('/test-lockdown', (req, res) => {
+  res.render('pages/lockdown', {
+    title: 'الموقع مقفول',
+    message: 'الموقع مقفول حالياً للصيانة. يرجى المحاولة لاحقاً.',
+    image: ''
+  });
+});
+
 // Home
 router.get('/', isAuthenticated, isInGuild, checkPageAccess('/'), async (req, res) => {
   const settings = await getSettings();
