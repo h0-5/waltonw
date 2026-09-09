@@ -34,45 +34,53 @@
 </script>
 <footer class="wf-footer ftv2">
   <div class="ftv2-card">
-    <div class="ftv2-inner ds-ft-inner">
-      <div class="ds-ft-grid">
-        <!-- ══ Brand — ختم العائلة ══ -->
-        <div class="ds-ft-brand">
-          <img src="<%= _ftSettings.site_logo_url || '/images/logo.png' %>" alt="ختم Walton Family" width="52" height="52" loading="lazy" decoding="async">
-          <div>
-            <div class="ds-ft-name">Walton Family</div>
-            <p class="ds-ft-desc">مجتمع والتون فاميلي — أكثر من مجرد عائلة</p>
-          </div>
-        </div>
+    <div class="ftv2-bg" aria-hidden="true"></div>
 
-        <!-- روابط -->
-        <nav class="ds-ft-col" aria-label="روابط الموقع">
-          <h4 class="ds-ft-col-title">القائمة</h4>
-          <a href="/" class="ds-ft-link"><i class="fas fa-house" aria-hidden="true"></i><span>الرئيسية</span></a>
-          <a href="/applications" class="ds-ft-link"><i class="fas fa-file-signature" aria-hidden="true"></i><span>التقديمات</span></a>
-          <a href="/rules" class="ds-ft-link"><i class="fas fa-scale-balanced" aria-hidden="true"></i><span>القوانين</span></a>
-          <a href="/store" class="ds-ft-link"><i class="fas fa-bag-shopping" aria-hidden="true"></i><span>المتجر</span></a>
-        </nav>
-
-        <!-- تواصل -->
-        <div class="ds-ft-col">
-          <h4 class="ds-ft-col-title">تواصل معنا</h4>
-          <a href="<%= _ftDiscord %>" target="_blank" rel="noopener" class="ds-ft-link">
-            <i class="fab fa-discord" aria-hidden="true"></i><span>سيرفر الديسكورد</span>
-          </a>
-          <a href="/support" class="ds-ft-link">
-            <i class="fas fa-headset" aria-hidden="true"></i><span>الدعم الفني</span>
-          </a>
-          <a href="/about" class="ds-ft-link">
-            <i class="fas fa-circle-info" aria-hidden="true"></i><span>من نحن</span>
-          </a>
+    <div class="ftv2-inner">
+      <!-- ══ Brand — اللوغو بمكانه كما هو (بطلب المستخدم) ══ -->
+      <div class="ftv2-brand">
+        <div class="ftv2-brand-logo">
+          <img src="<%= _ftSettings.site_logo_url || '/images/logo.png' %>" alt="WF" loading="lazy" decoding="async">
         </div>
+        <div class="ftv2-brand-name">Walton Family</div>
+        <p class="ftv2-brand-desc">مجتمع والتون فاميلي — أكثر من مجرد عائلة</p>
       </div>
 
-      <!-- الحقوق + التطوير -->
-      <div class="ds-ft-legal">
-        <span><i class="fas fa-lock" aria-hidden="true"></i>والتون فاميلي &copy; <%= _ftYear %>. جميع الحقوق محفوظة.</span>
-        <span class="ds-ft-dev" dir="ltr">Developed by <strong>KHARBOSH · h05</strong></span>
+      <!-- روابط -->
+      <nav class="ftv2-col" aria-label="روابط الموقع">
+        <h4 class="ftv2-title">القائمة</h4>
+        <a href="/" class="ftv2-link"><i class="fas fa-house" aria-hidden="true"></i><span>الرئيسية</span></a>
+        <a href="/applications" class="ftv2-link"><i class="fas fa-file-signature" aria-hidden="true"></i><span>التقديمات</span></a>
+        <a href="/rules" class="ftv2-link"><i class="fas fa-scale-balanced" aria-hidden="true"></i><span>القوانين</span></a>
+        <a href="/store" class="ftv2-link"><i class="fas fa-bag-shopping" aria-hidden="true"></i><span>المتجر</span></a>
+      </nav>
+
+      <!-- تواصل -->
+      <div class="ftv2-col ftv2-contact">
+        <h4 class="ftv2-title">تواصل معنا</h4>
+        <a href="<%= _ftDiscord %>" target="_blank" rel="noopener" class="ftv2-contact-item">
+          <i class="fab fa-discord" aria-hidden="true"></i><span>سيرفر الديسكورد</span>
+        </a>
+        <a href="/support" class="ftv2-contact-item">
+          <i class="fas fa-headset" aria-hidden="true"></i><span>الدعم الفني</span>
+        </a>
+        <a href="/about" class="ftv2-contact-item">
+          <i class="fas fa-circle-info" aria-hidden="true"></i><span>من نحن</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="ftv2-divider" aria-hidden="true"></div>
+
+    <!-- الحقوق + التطوير: بمنتصف أسفل القوائم فوق الكلمة الكبيرة -->
+    <div class="ftv2-legal">
+      <div class="ftv2-cr-badge">
+        <i class="fas fa-lock ftv2-lock" aria-hidden="true"></i>
+        <span>والتون فاميلي &copy; <%= _ftYear %>. جميع الحقوق محفوظة.</span>
+      </div>
+      <div class="ftv2-dev" dir="ltr">
+        <span class="ftv2-dev-label">Developed by</span>
+        <strong>KHARBOSH · h05</strong>
       </div>
     </div>
 
@@ -274,8 +282,9 @@
     var lastHit = -2, lastStr = '';
     tiltAt = function(xSvg, ySvg){
       var hit = -1;
-      // النطاق العمودي يغطي الحروف كاملة (القمم ~9.4 والقواعد ~54) مع هامش فوق/تحت
-      if (wrap.classList.contains('w5-ready') && ySvg > 6 && ySvg < 76) {
+      // النطاق العمودي = كامل ارتفاع الـ SVG (0..100): لا منطقة ميتة فوق أو تحت الكلمة —
+      // الوصول من تحت (حيث كان الفراغ الأكبر) يُشرك الحرف فوراً بنفس حساسية من فوق
+      if (wrap.classList.contains('w5-ready') && ySvg > 0 && ySvg < 100) {
         for (var b = 0; b < bands.length; b++) {
           if (xSvg >= bands[b][0] && xSvg < bands[b][1]) { hit = b; break; }
         }
@@ -289,7 +298,9 @@
         var px = Math.max(-0.5, Math.min(0.5, (xSvg - bd[2]) / bd[3]));
         // 9..65 → ±0.5: قمم الحروف (أحرف كبيرة/الصاعدة ~9.4) حتى أسفل النازل (y ~66 في Family)
         var py = Math.max(-0.5, Math.min(0.5, (ySvg - 9) / 56 - 0.5));
-        var str = 'perspective(320px) rotateX(' + (-py * 2 * TILT).toFixed(2) +
+        // الميلان العمودي «جذب»: الحرف يميل نحو جهة المؤشر — من فوق القمة تتقدم نحوك
+        // ومن تحت ترتفع الحافة القريبة نحوك (كان معكوساً فالحرف «يدخل من فوق» مهما جهة المؤشر)
+        var str = 'perspective(320px) rotateX(' + (py * 2 * TILT).toFixed(2) +
           'deg) rotateY(' + (px * 2 * TILT).toFixed(2) + 'deg) translateY(-4px) scale(1.2)';
         // كتابة للـ DOM فقط عند تغيّر فعلي — والإطار الساكن بلا أي كتابة
         if (hit !== lastHit || str !== lastStr) {
@@ -343,7 +354,7 @@
   }
 })();</script>
 
-<!-- ═══ Scroll Progress Bar + Back To Top — بالهوية الذهبية الموحدة ═══ -->
+<!-- ═══ Scroll Progress Bar + Back To Top ═══ -->
 <style>
     #wfScrollProgress {
         position: fixed;
@@ -352,8 +363,8 @@
         height: 3px;
         width: 0%;
         z-index: 9999;
-        background: var(--accent);
-        box-shadow: none;
+        background: linear-gradient(90deg, #d24dff, #bc13fe, #d24dff);
+        box-shadow: 0 0 12px rgba(188, 19, 254, 0.8), 0 0 24px rgba(188, 19, 254, 0.4);
         border-radius: 0 3px 3px 0;
         transition: width 0.08s linear;
         pointer-events: none;
@@ -365,16 +376,16 @@
         z-index: 9998;
         width: 46px;
         height: 46px;
-        border: 1px solid var(--border);
+        border: 1px solid rgba(210, 77, 255, 0.4);
         border-radius: 50%;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 1.05rem;
-        color: var(--accent);
-        background: var(--surface);
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+        color: #fff;
+        background: linear-gradient(135deg, #bc13fe, #d24dff);
+        box-shadow: 0 6px 20px rgba(188, 19, 254, 0.45);
         opacity: 0;
         visibility: hidden;
         transform: translateY(16px);
@@ -387,8 +398,7 @@
     }
     #wfBackToTop:hover {
         transform: translateY(-4px);
-        border-color: var(--accent);
-        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+        box-shadow: 0 10px 28px rgba(188, 19, 254, 0.65), 0 0 18px rgba(210, 77, 255, 0.4);
     }
     @media (max-width: 640px) {
         #wfBackToTop { bottom: 18px; left: 18px; width: 40px; height: 40px; }

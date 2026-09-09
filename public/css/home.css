@@ -1,8 +1,9 @@
 /* ============================================================
-   WALTON FAMILY — HOME (الرئيسية البسيطة)
-   شعار بإطار دائري بنفسجي + جملة واحدة — فوق خلفية الموقع الموحدة
+   WALTON FAMILY — HOME (الرئيسية)
+   هيرو (شعار دائري بنفسجي + جملة + انضم الآن) + إحصائيات + أخبار
+   + «كيف تنضم للعائلة» ثلاث خطوات بمسطّلات
    تعتمد على design-system.css (الثيم الأساسي) — بلا ألوان خارجها
-   الحركة: تسلسل دخول واحد ≤600ms (wf-reveal) — transform/opacity فقط
+   الحركة: تسلسل دخول واحد (wf-reveal) — transform/opacity فقط
    ============================================================ */
 
 /* تسلسل الدخول: نفس كلاس .wf-reveal الذي يراقبه سكربت الفوتر المشترك */
@@ -17,21 +18,18 @@
   .hw2-page .wf-reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
 }
 
-/* الصفحة: ارتفاع الشاشة كاملاً والمحتوى بالمنتصف */
-.hw2-page {
-  min-height: calc(100vh - var(--nav-h));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: calc(var(--nav-h) + 24px) 16px 48px;
-}
+.hw2-page { padding-top: calc(var(--nav-h) + 24px); padding-bottom: 8px; }
 
+/* ══ الهيرو: شاشة أولى بالمنتصف ══ */
 .hw2-hero {
+  min-height: calc(100vh - var(--nav-h) - 48px);
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   text-align: center;
-  gap: 30px;
+  gap: 28px;
+  padding: 16px 0 24px;
 }
 
 /* الشعار — إطار دائري بحد بنفسجي + توهج بنفسجي خفيف (ثابت، بلا أنميشن) */
@@ -51,7 +49,7 @@
   display: block;
 }
 
-/* الجملة الوحيدة — بيضاء دائماً لأنها تجلس فوق صورة الخلفية الداكنة مباشرة */
+/* الجملة — بيضاء دائماً لأنها تجلس فوق صورة الخلفية الداكنة مباشرة */
 .hw2-title {
   font-family: var(--font-head);
   font-weight: 800;
@@ -60,6 +58,179 @@
   color: #fff;
   margin: 0;
 }
+
+.hw2-cta { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+
+/* ══ شريط الإحصائيات الحقيقية ══ */
+.hw2-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+}
+@media (min-width: 768px) { .hw2-stats { grid-template-columns: repeat(4, 1fr); } }
+.hw2-stat {
+  padding: 18px 16px;
+  text-align: center;
+  border-inline-end: 1px solid var(--border);
+}
+.hw2-stat:nth-child(2n) { border-inline-end: 0; }
+@media (min-width: 768px) {
+  .hw2-stat:last-child { border-inline-end: 0; }
+  .hw2-stat:nth-child(2n) { border-inline-end: 1px solid var(--border); }
+}
+.hw2-stat-val {
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-size: 24px;
+  color: var(--accent);
+  line-height: 1.2;
+}
+.hw2-stat-lbl { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+/* شريط النقاط الشخصية (للمسجل فقط) — بيانات حقيقية */
+.hw2-personal {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 20px;
+  margin-top: 12px;
+  padding: 12px 16px;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+.hw2-personal b { color: var(--text); font-family: var(--font-head); }
+.hw2-personal a { color: var(--accent); text-decoration: none; font-weight: 700; font-family: var(--font-head); }
+.hw2-personal a:hover { color: var(--accent-hover); }
+
+/* ══ الأقسام ══ */
+.hw2-section { padding-block: 30px; }
+@media (min-width: 768px) { .hw2-section { padding-block: 40px; } }
+
+/* الأخبار */
+.hw2-news-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 640px) { .hw2-news-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1024px) { .hw2-news-grid { grid-template-columns: repeat(3, 1fr); } }
+
+.hw2-news-card { display: flex; flex-direction: column; overflow: hidden; }
+.hw2-news-body { padding: 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.hw2-news-title {
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--text);
+  margin: 0;
+}
+.hw2-news-date { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
+.hw2-news-txt { font-size: 14px; color: var(--muted); margin: 0; line-height: 1.6; }
+.hw2-news-img { aspect-ratio: 16 / 9; overflow: hidden; display: block; }
+.hw2-news-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* ══ كيف تنضم للعائلة — ثلاث خطوات بمسطّلات ══ */
+.hw2-join { padding-bottom: 44px; }
+
+.hw2-steps {
+  position: relative;
+  display: grid;
+  gap: 28px;
+  grid-template-columns: 1fr;
+  list-style: none;
+  margin: 0;
+  padding: 22px 0 0;
+}
+@media (min-width: 900px) {
+  .hw2-steps { grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  /* المسطّلة الواصلة بين الخطوات — تمر خلف دوائر الأرقام */
+  .hw2-steps::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 14%;
+    left: 14%;
+    border-top: 2px dashed rgba(188, 19, 254, 0.4);
+    pointer-events: none;
+  }
+}
+
+.hw2-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: 34px 20px 22px;
+  margin-top: 22px;
+}
+
+/* دائرة رقم الخطوة — فوق حافة البطاقة على المسطّلة */
+.hw2-step-no {
+  position: absolute;
+  top: -22px;
+  right: 50%;
+  transform: translateX(50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-size: 19px;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 0 16px rgba(188, 19, 254, 0.28);
+}
+
+.hw2-step-ic { font-size: 26px; color: var(--accent); margin-top: 2px; }
+.hw2-step-title {
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-size: 17px;
+  color: var(--text);
+  margin: 0;
+}
+.hw2-step-txt { font-size: 13.5px; color: var(--muted); margin: 0; line-height: 1.7; max-width: 30ch; }
+
+/* الشروط — عناصر بمسطّرات */
+.hw2-conds {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  text-align: start;
+  display: grid;
+  gap: 7px;
+  font-size: 13.5px;
+  color: var(--text);
+}
+.hw2-conds li { position: relative; padding-inline-start: 20px; line-height: 1.6; }
+.hw2-conds li::before {
+  content: '';
+  position: absolute;
+  top: 0.75em;
+  inset-inline-start: 0;
+  width: 12px;
+  border-top: 2px solid var(--accent);
+}
+
+.hw2-step-link {
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--accent);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.hw2-step-link:hover { color: var(--accent-hover); }
+
+.hw2-step .ds-btn { margin-top: auto; }
 
 @media (max-width: 480px) {
   .hw2-orb { width: min(220px, 58vw); }

@@ -560,67 +560,6 @@ a.ds-card:hover, .ds-card-hover:hover {
   #mobileNav { display: none !important; }
 }
 
-/* ============================================================
-   الفوتر — إعادة تلوين غلاف البطاقة فقط (أنميشن الكلمة كما هو)
-   ============================================================ */
-.wf-footer.ftv2 .ftv2-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px 16px 0 0;
-  box-shadow: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-}
-
-.ds-ft-inner {
-  padding: 40px 24px 0;
-}
-.ds-ft-grid {
-  display: grid;
-  gap: 32px;
-  grid-template-columns: 1fr;
-}
-@media (min-width: 768px) {
-  .ds-ft-grid { grid-template-columns: 2fr 1fr 1fr; }
-}
-.ds-ft-brand { display: flex; align-items: flex-start; gap: 14px; }
-.ds-ft-brand img { width: 52px; height: 52px; object-fit: contain; }
-.ds-ft-name { font-family: var(--font-head); font-weight: 800; font-size: 17px; color: var(--text); }
-.ds-ft-desc { font-size: 14px; color: var(--muted); margin: 4px 0 0; max-width: 34ch; }
-.ds-ft-col-title {
-  font-family: var(--font-head);
-  font-weight: 800;
-  font-size: 14px;
-  color: var(--text);
-  margin: 0 0 12px;
-}
-.ds-ft-link {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 6px 0;
-  font-size: 14px;
-  color: var(--muted);
-  text-decoration: none;
-  transition: color var(--speed);
-}
-.ds-ft-link i { width: 16px; text-align: center; font-size: 13px; }
-.ds-ft-link:hover { color: var(--accent); }
-.ds-ft-legal {
-  margin-top: 32px;
-  padding: 16px 0 20px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 13px;
-  color: var(--muted);
-}
-.ds-ft-legal i { color: var(--accent); margin-inline-end: 6px; }
-.ds-ft-dev strong { color: var(--text); font-weight: 500; }
-
 /* شريط تقدم القراءة + زر العودة للأعلى: ألوانها تُضبط داخل footer.ejs نفسه
    (style في نهاية المستند يسبق هذا الملف بالترتيب) */
 
