@@ -49,6 +49,7 @@
     <button class="settings-tab" onclick="showSettingsTab('appearance')">المظهر والألوان</button>
     <button class="settings-tab" onclick="showSettingsTab('lockdown')">قفل الموقع</button>
     <button class="settings-tab" onclick="showSettingsTab('security')">الأمان</button>
+    <button class="settings-tab" onclick="showSettingsTab('about')">من نحن</button>
   </div>
 
   <!-- General Settings -->
@@ -245,6 +246,42 @@
       <button type="submit" class="submit-btn"><i class="fas fa-save"></i> حفظ إعدادات الأمان</button>
     </form>
   </div>
+
+  <!-- About Page Settings -->
+  <div class="settings-panel" id="panelAbout">
+    <form id="aboutForm">
+      <div class="settings-card">
+        <h3><i class="fas fa-info-circle"></i> إدارة محتوى صفحة "من نحن"</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>العنوان</label>
+            <input type="text" class="form-input" name="title" value="<%= about.title || 'Walton Family' %>">
+          </div>
+          <div class="form-group">
+            <label>الموقع</label>
+            <input type="text" class="form-input" name="location" value="<%= about.location || 'New York City' %>">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>القصة (نص طويل)</label>
+          <textarea class="form-textarea" name="story" rows="6" placeholder="قصة العائلة..."><%= about.story || '' %></textarea>
+        </div>
+        <div class="form-group">
+          <label>أسماء الأعضاء (مفصولة بفواصل)</label>
+          <input type="text" class="form-input" name="members" value="<%= about.members || '' %>" placeholder="Hayder Walton, Robson Walton">
+        </div>
+        <div class="form-group">
+          <label>أسماء Discord (JSON)</label>
+          <textarea class="form-textarea" name="member_discords" rows="2"><%= about.member_discords || '{}' %></textarea>
+        </div>
+        <div class="form-group">
+          <label>صور الأعضاء (JSON)</label>
+          <textarea class="form-textarea" name="member_avatars" rows="2"><%= about.member_avatars || '{}' %></textarea>
+        </div>
+      </div>
+      <button type="submit" class="submit-btn"><i class="fas fa-save"></i> حفظ محتوى "من نحن"</button>
+    </form>
+  </div>
 </div>
 
 <script>
@@ -369,5 +406,6 @@ saveForm('generalForm', '/api/admin/settings');
 saveForm('appearanceForm', '/api/admin/settings');
 saveForm('lockdownForm', '/api/admin/settings');
 saveForm('securityForm', '/api/admin/settings');
+saveForm('aboutForm', '/api/admin/about');
 </script>
 <%- include('admin_footer') %>

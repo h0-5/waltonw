@@ -304,10 +304,12 @@ router.get('/settings', checkPermission('site_settings_view'), async (req, res) 
     const [rows] = await db.execute('SELECT setting_key, setting_value FROM site_settings');
     rows.forEach(r => { settings[r.setting_key] = r.setting_value; });
     const [roles] = await db.execute('SELECT name, display_name, icon FROM roles ORDER BY sort_order ASC, id ASC');
-    res.render('admin/settings', { title: 'الإعدادات', settings, roles, currentPath: req.path });
+    const [aboutRows] = await db.execute('SELECT * FROM about_page LIMIT 1');
+    const about = aboutRows[0] || {};
+    res.render('admin/settings', { title: 'الإعدادات', settings, roles, about, currentPath: req.path });
   } catch(err) {
     console.error('[Admin/Settings]', err);
-    res.render('admin/settings', { title: 'الإعدادات', settings: {}, roles: [], currentPath: req.path });
+    res.render('admin/settings', { title: 'الإعدادات', settings: {}, roles: [], about: {}, currentPath: req.path });
   }
 });
 
