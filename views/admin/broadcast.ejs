@@ -27,6 +27,10 @@
 .bc-badge.expired{background:rgba(239,68,68,0.15);color:#ef4444}
 .bc-empty{text-align:center;padding:40px;color:var(--text-dim);font-size:0.85rem}
 .bc-empty i{font-size:2rem;display:block;margin-bottom:10px;opacity:0.4}
+.bc-durations{display:flex;flex-wrap:wrap;gap:6px}
+.bc-dur-btn{padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-dim);cursor:pointer;font-size:0.75rem;font-family:inherit;font-weight:600;transition:all 0.2s}
+.bc-dur-btn:hover{background:rgba(255,255,255,0.06);color:var(--text)}
+.bc-dur-btn.active{background:rgba(var(--ac-rgb),0.15);color:var(--ac);border-color:var(--ac)}
 </style>
 
 <div class="bc-form">
@@ -51,8 +55,17 @@
           </select>
         </div>
         <div class="form-group" style="flex:1">
-          <label><i class="fas fa-clock"></i> ينتهي في</label>
-          <input type="datetime-local" name="expires_at">
+          <label><i class="fas fa-clock"></i> مدة الظهور</label>
+          <div class="bc-durations" id="bcDurations">
+            <button type="button" class="bc-dur-btn" data-hours="1">ساعة</button>
+            <button type="button" class="bc-dur-btn active" data-hours="4">4 ساعات</button>
+            <button type="button" class="bc-dur-btn" data-hours="8">8 ساعات</button>
+            <button type="button" class="bc-dur-btn" data-hours="24">يوم</button>
+            <button type="button" class="bc-dur-btn" data-hours="72">3 أيام</button>
+            <button type="button" class="bc-dur-btn" data-hours="168">أسبوع</button>
+            <button type="button" class="bc-dur-btn" data-hours="0">دائم</button>
+          </div>
+          <input type="hidden" name="expires_at" id="expiresAtInput">
         </div>
       </div>
       <button type="submit" class="admin-btn primary" style="width:100%"><i class="fas fa-paper-plane"></i> نشر الخبر</button>
@@ -80,7 +93,7 @@ async function loadBroadcasts() {
       const isExpired = b.expires_at && new Date(b.expires_at) < new Date();
       const isActive = b.is_active && !isExpired;
       const date = new Date(b.created_at).toLocaleDateString('ar-SA', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
-      const expires = b.expires_at ? new Date(b.expires_at).toLocaleDateString('ar-SA', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : 'دائم';
+      const expires = b.expires_at ? formatExpires(b.expires_at) : 'دائم';
       return '<div class="bc-item' + (isActive ? '' : ' inactive') + '">' +
         '<div class="bc-info">' +
           '<div class="bc-title">' + (b.title || 'بدون عنوان') + '</div>' +
@@ -112,6 +125,33 @@ async function deleteBroadcast(id) {
   await fetch('/api/admin/broadcasts/' + id, { method: 'DELETE' });
   loadBroadcasts();
 }
+
+// Duration buttons
+var selectedHours = 4;
+function updateExpiresInput() {
+  var input = document.getElementById('expiresAtInput');
+  if (selectedHours === 0) { input.value = ''; return; }
+  var d = new Date(Date.now() + selectedHours * 3600000);
+  input.value = d.toISOString().slice(0, 19).replace('T', ' ');
+}
+function formatExpires(dateStr) {
+  var diff = new Date(dateStr).getTime() - Date.now();
+  if (diff <= 0) return 'منتهي';
+  var h = Math.floor(diff / 3600000);
+  var m = Math.floor((diff % 3600000) / 60000);
+  if (h >= 24) return Math.floor(h / 24) + ' يوم';
+  if (h > 0) return h + ' ساعة';
+  return m + ' دقيقة';
+}
+updateExpiresInput();
+document.getElementById('bcDurations').addEventListener('click', function(e) {
+  var btn = e.target.closest('.bc-dur-btn');
+  if (!btn) return;
+  this.querySelectorAll('.bc-dur-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  selectedHours = parseInt(btn.dataset.hours);
+  updateExpiresInput();
+});
 
 document.getElementById('broadcastForm').addEventListener('submit', async (e) => {
   e.preventDefault();
