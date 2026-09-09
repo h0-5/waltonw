@@ -106,10 +106,14 @@ app.use(async (req, res, next) => {
   var _accent = settings.accent_color || settings.site_accent_color || process.env.SITE_ACCENT_COLOR || '#bc13fe';
   if (String(_accent).toLowerCase() === '#780ecf') _accent = '#bc13fe'; // ترحيل الثيم القديم للرسمي
   res.locals.accentColor = _accent;
-  res.locals.bgColor = settings.bg_color || '#06040a';
-  res.locals.textColor = settings.text_color || '#ffffff';
-  res.locals.cardColor = settings.card_color || '#0c0816';
-  res.locals.borderColor = settings.border_color || '#1a1525';
+  /* ثيم الموقع الأساسي البنفسجي مرجعه main.css/design-system.css — قيم الإعدادات تُمرَّر فقط
+     عند تخصيص فعلي من لوحة الإعدادات. قيم اليوم الأول (#06040a/#0c0816/#ffffff/#1a1525) كانت
+     افتراضيات خاطئة سُجلت site-wide وألغت بنفسجية الثيم — تُعامل كغير مضروبة حتى تُشفى أي قيم محفوظة سابقاً */
+  var _leg = { bg_color: '#06040a', card_color: '#0c0816', text_color: '#ffffff', border_color: '#1a1525' };
+  res.locals.bgColor = (settings.bg_color && settings.bg_color !== _leg.bg_color) ? settings.bg_color : '';
+  res.locals.textColor = (settings.text_color && settings.text_color !== _leg.text_color) ? settings.text_color : '';
+  res.locals.cardColor = (settings.card_color && settings.card_color !== _leg.card_color) ? settings.card_color : '';
+  res.locals.borderColor = (settings.border_color && settings.border_color !== _leg.border_color) ? settings.border_color : '';
   res.locals.currentPath = req.path;
   res.locals.settings = settings;
   res.locals.bgUrl = settings.site_bg_url || '';

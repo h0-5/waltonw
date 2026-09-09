@@ -199,7 +199,7 @@
   // تُعاد تشغيلها كل إطار فوق قيم متقطعة فتظهر خطوات متفاوتة = اهتزاز خفيف أحياناً.
   // الحلقة تعمل فقط عند الحاجة (مؤشر لم يستقر أو حرف مرفوع) وتتوقف كلياً عند السكون،
   // والإطار الساكن صفر كتابات DOM (كتابة فقط عند تغيّر فعلي). مسار اللمس يبقى مباشراً.
-  var tiltAt = null, isEngaged = function(){ return false; };
+  var tiltAt = null, isEngaged = function(){ return false; }, releaseAll = null;
   // «armed»: بوابة أمان ضد الحرف العالق — لما المؤشر يغادر svg بسرعة (فليكر خارج النافذة)
   // تبقى أهداف الـ lerp (tX,tY) آخر نقطة داخل نطاق حرف، والإطارات المتبقية من الحلقة تعيد
   // إشراك الحرف بعد lift(-1) فبقى مائلاً للأبد (الحلقة حية ما دام حرف مرفوع) —
@@ -230,8 +230,15 @@
       }
       if (armed && tiltAt) tiltAt(p[0], p[1]);
     }
-    // الاستمرار عند الداعي فقط: المؤشر لم يبلغ هدفه بعد، أو حرف مرفوع — تُعاد القراءة
-    // كل إطار فتبقى البطاقة ملتصقة بالمؤشر حتى لو تحركت الصفحة (سكرول) تحت المؤشر
+    // الاستمرار عند الداعي فقط: مؤشر لم يستقر، حرف مُشارك، أو حرف قيد الإنشاءل —
+    // وتُدار حروف الإنشاءل هنا (انحدار أسي سريع للراحة ثم مسح الستايل — بديل الـ transition النابض)
+    // العتبة 0.6° (تحت إدراك المنظور 320px) والانحدار 0.72: إنشاءل ~180ms بلا أي ذيل مرئي
+    for (var ri = rel ? rel.length - 1 : -1; ri >= 0; ri--) {
+      var R = rel[ri];
+      R.rx *= 0.72; R.ry *= 0.72;
+      if (Math.abs(R.rx) < 0.6 && Math.abs(R.ry) < 0.6) { R.el.style.transform = ''; rel.splice(ri, 1); }
+      else R.el.style.transform = 'perspective(320px) rotateX(' + R.rx.toFixed(2) + 'deg) rotateY(' + R.ry.toFixed(2) + 'deg)';
+    }
     if (Math.abs(tX - sX) + Math.abs(tY - sY) > 0.4 || isEngaged()) kick();
   }
   if (!isTouch) {
@@ -275,22 +282,34 @@
     Array.prototype.forEach.call(['ftv2-w1', 'ftv2-w2', 'ftv2-w3', 'ftv2-w4'], function(cls){
       baseRows.push(svg.querySelector('.' + cls).querySelectorAll('tspan:not(.ftv2-sp)'));
     });
-    var cur = -1;
-    var lift = function(i){
-      if (i === cur) return;
-      if (cur >= 0) {
-        letters[cur].classList.remove('ftv2-tilting');
-        letters[cur].style.transform = '';
-        for (var r = 0; r < 4; r++) baseRows[r][cur].classList.remove('ftv2-lift');
-      }
-      cur = i;
-      if (i >= 0) for (var r2 = 0; r2 < 4; r2++) baseRows[r2][i].classList.add('ftv2-lift');
-      // تصفير سجل الكتابة (lastHit/lastStr) عند الإنشاءل — وإلا فحص «لا تغيير فعلي»
-      // في tiltAt يتجاهل إعادة إشراك نفس الحرف بنفس القيم بعد ما صارت أصلاته مزالة
-      else { lastHit = -2; lastStr = ''; }
-    };
-    isEngaged = function(){ return cur >= 0; };
-    var lastHit = -2, lastStr = '';
+    // ── معايرة رأسية لكل حرف حسب صنفه (قبعة/وسط/نازل — ثوابت مشتقة من مقاييس الخط) ──
+    // صفر الانضغاط = منتصف الحرف نفسه بالضبط (طلب المستخدم: «لما يكون بنص ما يكون بأي انضغاط»)
+    // getBBox هنا يعطي صندوق الإيم الموحد (ارتفاع ~79 لكل الحروف) فلا يصلح للمعايرة —
+    // الارتفاعات الفعلية للحبر: قبعة/صاعد ~9.4، وسط الأحرف الصغيرة ~20.5، سطر الأساس 54، نازل ~66.5
+    var _inkTop = 9.4, _inkX = 20.5, _inkBase = 54, _inkDesc = 66.5;
+    var geo = null;
+    function letterGeo() {
+      if (geo) return geo;
+      geo = [];
+      Array.prototype.forEach.call(letters, function(lt){
+        var chChar = (lt.textContent || 'W').trim().charAt(0) || 'W';
+        var top = _inkTop, bot = _inkBase; // الافتراضي: قبعة/صاعد (W F l t i)
+        if (/[a-z]/.test(chChar)) { top = _inkX; bot = /[gjpqy]/.test(chChar) ? _inkDesc : _inkBase; }
+        geo.push([(top + bot) / 2, Math.max((bot - top) / 2 * 1.12, 8)]);
+      });
+      return geo;
+    }
+    function tiltStr(rxx, ryy) {
+      return 'perspective(320px) rotateX(' + rxx.toFixed(2) + 'deg) rotateY(' + ryy.toFixed(2) + 'deg)';
+    }
+    var cur = -1, rx = 0, ry = 0, lastStr = '';
+    var rel = []; // حرفات قيد الإنشال: انحدار أسي للراحة تديره حلقة rAF نفسها (بلا transition)
+    function disengage(i) {
+      if (rx || ry) rel.push({ el: letters[i], rx: rx, ry: ry });
+      letters[i].classList.remove('ftv2-tilting');
+      for (var r3 = 0; r3 < 4; r3++) baseRows[r3][i].classList.remove('ftv2-lift');
+      rx = 0; ry = 0;
+    }
     tiltAt = function(xSvg, ySvg){
       var hit = -1;
       // النطاق العمودي = كامل ارتفاع الـ SVG (0..100): لا منطقة ميتة فوق أو تحت الكلمة —
@@ -305,32 +324,41 @@
             (xSvg < bands[hit][0] + 3 || xSvg >= bands[hit][1] - 3)) hit = cur;
       }
       if (hit >= 0) {
-        var bd = bands[hit];
+        var bd = bands[hit], g = letterGeo()[hit];
         var px = Math.max(-0.5, Math.min(0.5, (xSvg - bd[2]) / bd[3]));
-        // 9..65 → ±0.5: قمم الحروف (أحرف كبيرة/الصاعدة ~9.4) حتى أسفل النازل (y ~66 في Family)
-        var py = Math.max(-0.5, Math.min(0.5, (ySvg - 9) / 56 - 0.5));
-        // «الانضغاط للداخل» (طلب المستخدم): المكان الذي يلمسه المؤشر ينغرس للداخل (بعيداً عنك)
+        var py = Math.max(-0.5, Math.min(0.5, (ySvg - g[0]) / g[1]));
+        // «الانضغاط للداخل» (طلب المستخدم): المكان الذي يلمسه المؤشر ينغرس للداخل (بعيداً عنه)
         // لا العكس — من فوق تنغرس القمة، ومن تحت تنغرس القاعدة، ويميناً/يساراً تنغرس الحافة
         // القريبة كذلك، وفي منتصف الحرف بالضبط يكون الميلان صفراً (لا أي انضغاط) —
         // بلا رفع ولا تكبير: الحرف لا يقفز للخارج إطلاقاً، اتجاه الحركة للداخل فقط
-        var str = 'perspective(320px) rotateX(' + (-py * 2 * TILT).toFixed(2) +
-          'deg) rotateY(' + (px * 2 * TILT).toFixed(2) + 'deg)';
-        // كتابة للـ DOM فقط عند تغيّر فعلي — والإطار الساكن بلا أي كتابة
-        if (hit !== lastHit || str !== lastStr) {
+        var tRx = -py * 2 * TILT, tRy = px * 2 * TILT;
+        if (hit !== cur) {
+          if (cur >= 0) disengage(cur);
+          // العودة لحرف قيد الإنشال يكمل انضغاطه من زاويته الحالية (استمرارية بلا قفزة)
+          for (var q = 0; q < rel.length; q++) {
+            if (rel[q].el === letters[hit]) { rx = rel[q].rx; ry = rel[q].ry; rel.splice(q, 1); break; }
+          }
           letters[hit].classList.add('ftv2-tilting');
-          letters[hit].style.transform = str;
-          lastHit = hit; lastStr = str;
+          for (var r2 = 0; r2 < 4; r2++) baseRows[r2][hit].classList.add('ftv2-lift');
+          cur = hit; lastStr = '';
         }
-      } else {
-        lastHit = -2; lastStr = '';
+        // متابعة فورية بلا تأخر: الزوايا تطارد الهدف كل إطار (0.5) — القيمة تُكتب للـ DOM
+        // فقط عند تغيّر فعلي فيستقر الإطار الساكن بلا كتابات. القديم كان يكتب هدفاً جديداً
+        // فوق transition نابض يُعاد كل إطار = منظور متأخر ~300ms يبدو بالجهة المعاكسة
+        rx += (tRx - rx) * 0.5; ry += (tRy - ry) * 0.5;
+        var str = tiltStr(rx, ry);
+        if (str !== lastStr) { letters[cur].style.transform = str; lastStr = str; }
+      } else if (cur >= 0) {
+        disengage(cur);
+        cur = -1; lastStr = '';
       }
-      lift(hit);
     };
+    isEngaged = function(){ return cur >= 0 || rel.length > 0; };
     if (isTouch) {
       // اللمس: الإصبع يحل محل الماوس بنفس التوجيه المركزي —
       // · تمرير الإصبع فوق الكلمة يميل الحروف تباعاً معه (مستمعات passive فلا تعترض سكرول الصفحة أبداً)
       // · نقرة واحدة تنضغط الحرف للداخل وتُبقيه لحظة (900ms) ثم ينشال بنعومة
-      // · رفع الإصبع بعد تمرير ينشال فوراً (المنحنى النابض يتكفل بجمالية الإنشاءل)
+      // · رفع الإصبع بعد تمرير ينشال فوراً (انحدار أسي تديره حلقة rAF بلا أي transition)
       var holdTimer = null, moved = 0, lx = 0, ly = 0;
       var at = function(e){
         var t = e.touches[0];
@@ -357,11 +385,11 @@
     } else {
       svg.addEventListener('mouseleave', function(){
         // الخروج السريع من الكلمة (فليكر خارج النافذة) كان يعيد إشراك الحرف من إحداثيات
-        // lerp قديمة فيبقى مائلاً للأبد — البوابة + تجميد الهدف يقتلان الحالة العالقة:
-        // الإطارات المتبقية تُتجاهل، والحلقة تستقر فوراً وتتوقف (صفر استهلاك)
+        // lerp قديمة فيبقى مائلاً للأبد — البوابة + تجميد الهدف + إنشاءل فوري للحرف النشط:
+        // الإطارات المتبقية تُتجاهل، والحلقة تكمل انحدار الإنشاءل ثم تتوقف (صفر استهلاك)
         armed = false;
         tX = sX; tY = sY;
-        lift(-1);
+        if (releaseAll) releaseAll();
       });
     }
   }

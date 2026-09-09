@@ -13,10 +13,12 @@
     var _acLight = _rgbArr.map(function(v){ return _clampC(v * 1.18 + 22); }).join(', ');
     var _bgUrl = typeof bgUrl !== 'undefined' ? bgUrl : '';
     var _mobileBgUrl = typeof mobileBgUrl !== 'undefined' ? mobileBgUrl : '';
-    var _bgColor = typeof bgColor !== 'undefined' ? bgColor : '#06040a';
-    var _textColor = typeof textColor !== 'undefined' ? textColor : '#ffffff';
-    var _cardColor = typeof cardColor !== 'undefined' ? cardColor : '#0c0816';
-    var _borderColor = typeof borderColor !== 'undefined' ? borderColor : '#1a1525';
+    /* الثيم الأساسي البنفسجي مرجعه main.css :root — قيم الإعدادات تُطبق فقط عند تخصيص فعلي
+       (قيمة فارغة = اترك المتغير لـ main.css، فلا تُكسر بنفسجية الثيم بقيم سوداء افتراضية) */
+    var _bgColor = typeof bgColor === 'string' ? bgColor : '';
+    var _textColor = typeof textColor === 'string' ? textColor : '';
+    var _cardColor = typeof cardColor === 'string' ? cardColor : '';
+    var _borderColor = typeof borderColor === 'string' ? borderColor : '';
   %>
   <meta name="description" content="<%= _siteName %> - مجتمعنا الرقمي">
   <meta name="theme-color" content="<%= _accentColor %>">
@@ -85,19 +87,20 @@
       --ac-light: rgb(<%= _acLight %>);
       --bg-url: url('<%= _bgUrl %>');
       --mobile-bg-url: url('<%= _mobileBgUrl %>');
-      --bg-body: <%= _bgColor %>;
-      --bg-deep: <%= _bgColor %>;
-      --bg-card: <%= _cardColor %>;
+      <% if (_bgColor) { %>--bg-body: <%= _bgColor %>;
+      --bg-deep: <%= _bgColor %>;<% } %>
+      <% if (_cardColor) { %>--bg-card: <%= _cardColor %>;
       --bg-card-solid: <%= _cardColor %>;
-      --bg-glass: <%= _cardColor %>;
-      --text: <%= _textColor %>;
-      --text-dim: <%= _textColor %>99;
-      --border: <%= _borderColor %>;
+      --bg-glass: <%= _cardColor %>;<% } %>
+      <% if (_textColor) { %>--text: <%= _textColor %>;
+      --text-dim: <%= _textColor %>99;<% } %>
+      <% if (_borderColor) { %>--border: <%= _borderColor %>;<% } %>
     }
-    <% /* خلفية الموقع الموحدة لكل الصفحات — الرئيسية مثلها */ %>
+    <% /* خلفية الموقع الموحدة لكل الصفحات — الرئيسية مثلها. لون الخلفية الأساسي يترك لـ main.css
+          (بنفسجي داكن #0b0c18) ما لم يخصص المستخدم لوناً من الإعدادات */ %>
     body {
-      background-color: var(--bg-body);
-      background-image: var(--bg-url);
+      <% if (_bgColor) { %>background-color: var(--bg-body);
+      <% } %>background-image: var(--bg-url);
       background-size: cover;
       background-position: center;
       background-attachment: fixed;

@@ -12,8 +12,12 @@
     return _nbPageAccess[path] === 1;
   };
   var _nbLogo = _nbSettings.site_logo_url || '/images/logo.png';
+  /* طاقم الإدارة — رابط الإدارة يُعرض لهم كزر أيقونة بمنطقة الإجراءات (يسار الزاوية)
+     بدل رابط داخل شريط الروابط: شريط الروابط يفيض أفقياً بلا سكرولبار ظاهر فكان آخر رابط (الإدارة)
+     يُقص ولا يراه الأونر أصلاً */
+  var _nbStaff = !!(_nbUser && ['owner', 'developer', 'founder', 'moderator', 'support', 'admin'].includes(_nbUser.role));
 %>
-<nav class="navbar">
+<nav class="navbar<%= _nbStaff ? ' is-staff' : '' %>">
   <!-- الختم + اسم العائلة -->
   <a href="/" class="ds-brand" aria-label="<%= _nbSiteName %> — الرئيسية">
     <img src="<%= _nbLogo %>" alt="ختم <%= _nbSiteName %>" width="40" height="40" decoding="async">
@@ -47,13 +51,15 @@
     <a href="/community" class="ds-navlink<%= _nbPath === '/community' ? ' active' : '' %>"><i class="fas fa-comments" aria-hidden="true"></i>المجتمع</a>
     <a href="/about" class="ds-navlink<%= _nbPath === '/about' ? ' active' : '' %>"><i class="fas fa-circle-info" aria-hidden="true"></i>من نحن</a>
     <a href="/support" class="ds-navlink<%= _nbPath === '/support' ? ' active' : '' %>"><i class="fas fa-headset" aria-hidden="true"></i>الدعم</a>
-    <% if (_nbUser && ['owner', 'developer', 'founder', 'moderator', 'support', 'admin'].includes(_nbUser.role)) { %>
-    <a href="/admin" class="ds-navlink ds-navlink-ds"><i class="fas fa-shield-halved" aria-hidden="true"></i>الإدارة</a>
-    <% } %>
+    <% /* رابط الإدارة انتقل لزر الأيقونة بمنطقة الإجراءات (is-staff) — كان يُقص بفيض الشريط */ %>
   </div>
 
   <!-- الإجراءات: إشعارات + مستخدم (مود ليل/نهار أُزيل كلياً بطلب المستخدم — الثيم القديم الداكن دائم) -->
   <div class="ds-actions">
+    <% if (_nbStaff) { %>
+      <!-- زر لوحة الإدارة: أيقونة درع بلون الثيم — دائم الظهور للطاقم بلا قصّ بفيض الشريط -->
+      <a href="/admin" class="ds-adminbtn" title="لوحة الإدارة" aria-label="لوحة الإدارة"><i class="fas fa-shield-halved" aria-hidden="true"></i></a>
+    <% } %>
     <% if (_nbUser) { %>
       <!-- الإشعارات -->
       <div style="position:relative">
@@ -90,7 +96,7 @@
           <a href="/profile" class="ds-drop-item"><i class="fas fa-user" aria-hidden="true"></i>الملف الشخصي</a>
           <a href="/orders" class="ds-drop-item"><i class="fas fa-box" aria-hidden="true"></i>طلباتي</a>
           <a href="/my_discounts" class="ds-drop-item"><i class="fas fa-tag" aria-hidden="true"></i>خصوماتي</a>
-          <% if (_nbUser && ['owner', 'developer', 'founder', 'moderator', 'support', 'admin'].includes(_nbUser.role)) { %>
+          <% if (_nbStaff) { %>
           <a href="/admin" class="ds-drop-item"><i class="fas fa-shield-halved" aria-hidden="true"></i>الإدارة</a>
           <% } %>
           <div class="ds-drop-sep" role="separator"></div>
@@ -135,7 +141,7 @@
   <% if (!_nbUser) { %>
   <a href="/auth/discord" class="ds-mlink ds-mlink-accent"><i class="fab fa-discord" aria-hidden="true"></i>تسجيل الدخول</a>
   <% } %>
-  <% if (_nbUser && ['owner', 'developer', 'founder', 'moderator', 'support', 'admin'].includes(_nbUser.role)) { %>
+  <% if (_nbStaff) { %>
   <a href="/admin" class="ds-mlink ds-mlink-accent"><i class="fas fa-shield-halved" aria-hidden="true"></i>الإدارة</a>
   <% } %>
 </div>
