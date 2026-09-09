@@ -371,12 +371,21 @@
     animation: ftv2Letter 0.85s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
 }
 
+/* Walton Family = 12 حرفاً + مسافة (tspan 7 = المسافة بلا رسم) — إيقاع 0.13s
+   فتكتمل المسحة المتوهجة (آخر حرف 1.56 + مدة الوهج 0.85 = 2.41ث) بعد glow-start */
 .ftv2-word.glow-start .ftv2-w4 tspan:nth-child(1) { animation-delay: 0s; }
-.ftv2-word.glow-start .ftv2-w4 tspan:nth-child(2) { animation-delay: 0.18s; }
-.ftv2-word.glow-start .ftv2-w4 tspan:nth-child(3) { animation-delay: 0.36s; }
-.ftv2-word.glow-start .ftv2-w4 tspan:nth-child(4) { animation-delay: 0.54s; }
-.ftv2-word.glow-start .ftv2-w4 tspan:nth-child(5) { animation-delay: 0.72s; }
-.ftv2-word.glow-start .ftv2-w4 tspan:nth-child(6) { animation-delay: 0.9s; }
+.ftv2-word.glow-start .ftv2-w4 tspan:nth-child(2) { animation-delay: 0.13s; }
+.ftv2-word.glow-start .ftv2-w4 tspan:nth-child(3) { animation-delay: 0.26s; }
+.ftv2-word.glow-start .ftv2-w4 tspan:nth-child(4) { animation-delay: 0.39s; }
+.ftv2-word.glow-start .ftv2-w4 tspan:nth-child(5) { animation-delay: 0.52s; }
+.ftv2-word.glow-start .ftv2-w4 tspan:nth-child(6) { animation-delay: 0.65s; }
+.ftv2-word.glow-start .ftv2-w4 tspan:nth-child(7) { animation-delay: 0.78s; }
+.ftv2-word.glow-start .ftv2-w4 tspan:nth-child(8) { animation-delay: 0.91s; }
+.ftv2-word.glow-start .ftv2-w4 tspan:nth-child(9) { animation-delay: 1.04s; }
+.ftv2-word.glow-start .ftv2-w4 tspan:nth-child(10) { animation-delay: 1.17s; }
+.ftv2-word.glow-start .ftv2-w4 tspan:nth-child(11) { animation-delay: 1.3s; }
+.ftv2-word.glow-start .ftv2-w4 tspan:nth-child(12) { animation-delay: 1.43s; }
+.ftv2-word.glow-start .ftv2-w4 tspan:nth-child(13) { animation-delay: 1.56s; }
 
 @keyframes ftv2Letter {
     0%   { opacity: 0; stroke-width: calc(var(--w4w) + 1.5); filter: drop-shadow(0 0 6px rgba(210, 77, 255, 0.9)); }

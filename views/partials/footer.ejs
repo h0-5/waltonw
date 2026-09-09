@@ -86,7 +86,7 @@
 
     <!-- ══ الكلمة الكبيرة: كشف بالماوس على الديسكتوب / ثابتة على الهاتف ══ -->
     <div class="ftv2-word" aria-hidden="true">
-      <svg id="ftv2WordSvg" viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg" role="presentation" focusable="false">
+      <svg id="ftv2WordSvg" viewBox="0 0 457 100" xmlns="http://www.w3.org/2000/svg" role="presentation" focusable="false">
         <defs>
           <!-- تدرج الثيم البنفسجي الرسمي فقط — بدون ألوان مبرقعة -->
           <linearGradient id="ftv2TextGradient" gradientUnits="userSpaceOnUse" cx="50%" cy="50%" r="25%">
@@ -99,7 +99,7 @@
             <stop offset="100%" stop-color="black"/>
           </radialGradient>
           <mask id="ftv2TextMask">
-            <rect x="0" y="0" width="300" height="100" fill="url(#ftv2RevealMask)"/>
+            <rect x="0" y="0" width="457" height="100" fill="url(#ftv2RevealMask)"/>
           </mask>
         </defs>
         <!-- الطبقات الأربع بنفس البنية الحرفية بالضبط (tspans بلا إحداثيات) — التشديد textLength
@@ -107,24 +107,30 @@
          (الطريقة القديمة كانت تبني طبقة الوهج بإحداثيات محسوبة فتظهر حروفها بعرضها الطبيعي
           داخل فتحات الحروف المشدودة = خط مزدوج بعد اكتمال الأنميشنات — أُلغيت نهائياً) -->
         <!-- طبقة 1: حدود رمادية تظهر مع المرور -->
-        <text class="ftv2-w1" x="50%" y="54" text-anchor="middle" textLength="264" lengthAdjust="spacingAndGlyphs"><tspan>W</tspan><tspan>A</tspan><tspan>L</tspan><tspan>T</tspan><tspan>O</tspan><tspan>N</tspan></text>
+        <text class="ftv2-w1" x="50%" y="54" text-anchor="middle" textLength="421" lengthAdjust="spacingAndGlyphs"><tspan>W</tspan><tspan>a</tspan><tspan>l</tspan><tspan>t</tspan><tspan>o</tspan><tspan>n</tspan><tspan class="ftv2-sp"> </tspan><tspan>F</tspan><tspan>a</tspan><tspan>m</tspan><tspan>i</tspan><tspan>l</tspan><tspan>y</tspan></text>
         <!-- طبقة 2: حدود بنفسجية تُرسم مرة واحدة -->
-        <text class="ftv2-w2" x="50%" y="54" text-anchor="middle" textLength="264" lengthAdjust="spacingAndGlyphs"><tspan>W</tspan><tspan>A</tspan><tspan>L</tspan><tspan>T</tspan><tspan>O</tspan><tspan>N</tspan></text>
+        <text class="ftv2-w2" x="50%" y="54" text-anchor="middle" textLength="421" lengthAdjust="spacingAndGlyphs"><tspan>W</tspan><tspan>a</tspan><tspan>l</tspan><tspan>t</tspan><tspan>o</tspan><tspan>n</tspan><tspan class="ftv2-sp"> </tspan><tspan>F</tspan><tspan>a</tspan><tspan>m</tspan><tspan>i</tspan><tspan>l</tspan><tspan>y</tspan></text>
         <!-- طبقة 3: تدرج الثيم يُكشف بمكان المؤشر -->
-        <text class="ftv2-w3" x="50%" y="54" text-anchor="middle" textLength="264" lengthAdjust="spacingAndGlyphs" mask="url(#ftv2TextMask)"><tspan>W</tspan><tspan>A</tspan><tspan>L</tspan><tspan>T</tspan><tspan>O</tspan><tspan>N</tspan></text>
+        <text class="ftv2-w3" x="50%" y="54" text-anchor="middle" textLength="421" lengthAdjust="spacingAndGlyphs" mask="url(#ftv2TextMask)"><tspan>W</tspan><tspan>a</tspan><tspan>l</tspan><tspan>t</tspan><tspan>o</tspan><tspan>n</tspan><tspan class="ftv2-sp"> </tspan><tspan>F</tspan><tspan>a</tspan><tspan>m</tspan><tspan>i</tspan><tspan>l</tspan><tspan>y</tspan></text>
         <!-- طبقة 4: وهج حرف-حرف بعد اكتمال المسحة — بنفس بنية الطبقات تماماً -->
-        <text class="ftv2-w4" x="50%" y="54" text-anchor="middle" textLength="264" lengthAdjust="spacingAndGlyphs"><tspan>W</tspan><tspan>A</tspan><tspan>L</tspan><tspan>T</tspan><tspan>O</tspan><tspan>N</tspan></text>
+        <text class="ftv2-w4" x="50%" y="54" text-anchor="middle" textLength="421" lengthAdjust="spacingAndGlyphs"><tspan>W</tspan><tspan>a</tspan><tspan>l</tspan><tspan>t</tspan><tspan>o</tspan><tspan>n</tspan><tspan class="ftv2-sp"> </tspan><tspan>F</tspan><tspan>a</tspan><tspan>m</tspan><tspan>i</tspan><tspan>l</tspan><tspan>y</tspan></text>
         <!-- طبقة 5: بروز وتوهج أقوى للحرف الموجّه — حرف حرف بعناصر text مستقلة
              (tspan لا يقبل transform لذا الحروف هنا عناصر مستقلة بقيم فتحات مأخوذة من الطبقات المرجعية نفسها:
               getExtentOfChar بعد التشديد — تُخبز literal فلا أي حسابات وقت تشغيل)
              لا تُفعّل إلا بعد اكتمال كل الأنميشنات (w5-ready) — تعمل بالماوس وباللمس معاً -->
         <g class="ftv2-w5">
-          <text class="ftv2-w5i" x="47.57" y="54" text-anchor="middle" textLength="59.15" lengthAdjust="spacingAndGlyphs"><tspan>W</tspan></text>
-          <text class="ftv2-w5i" x="98.03" y="54" text-anchor="middle" textLength="41.76" lengthAdjust="spacingAndGlyphs"><tspan>A</tspan></text>
-          <text class="ftv2-w5i" x="136.76" y="54" text-anchor="middle" textLength="35.7" lengthAdjust="spacingAndGlyphs"><tspan>L</tspan></text>
-          <text class="ftv2-w5i" x="173.98" y="54" text-anchor="middle" textLength="38.73" lengthAdjust="spacingAndGlyphs"><tspan>T</tspan></text>
-          <text class="ftv2-w5i" x="215.61" y="54" text-anchor="middle" textLength="44.53" lengthAdjust="spacingAndGlyphs"><tspan>O</tspan></text>
-          <text class="ftv2-w5i" x="259.93" y="54" text-anchor="middle" textLength="44.13" lengthAdjust="spacingAndGlyphs"><tspan>N</tspan></text>
+          <text class="ftv2-w5i" x="45.82" y="54" text-anchor="middle" textLength="55.64" lengthAdjust="spacingAndGlyphs"><tspan>W</tspan></text>
+          <text class="ftv2-w5i" x="91.56" y="54" text-anchor="middle" textLength="35.82" lengthAdjust="spacingAndGlyphs"><tspan>a</tspan></text>
+          <text class="ftv2-w5i" x="117.71" y="54" text-anchor="middle" textLength="16.48" lengthAdjust="spacingAndGlyphs"><tspan>l</tspan></text>
+          <text class="ftv2-w5i" x="140.07" y="54" text-anchor="middle" textLength="28.25" lengthAdjust="spacingAndGlyphs"><tspan>t</tspan></text>
+          <text class="ftv2-w5i" x="173.17" y="54" text-anchor="middle" textLength="37.93" lengthAdjust="spacingAndGlyphs"><tspan>o</tspan></text>
+          <text class="ftv2-w5i" x="211.22" y="54" text-anchor="middle" textLength="38.17" lengthAdjust="spacingAndGlyphs"><tspan>n</tspan></text>
+          <text class="ftv2-w5i" x="262.59" y="54" text-anchor="middle" textLength="33.09" lengthAdjust="spacingAndGlyphs"><tspan>F</tspan></text>
+          <text class="ftv2-w5i" x="297.05" y="54" text-anchor="middle" textLength="35.82" lengthAdjust="spacingAndGlyphs"><tspan>a</tspan></text>
+          <text class="ftv2-w5i" x="341.41" y="54" text-anchor="middle" textLength="52.91" lengthAdjust="spacingAndGlyphs"><tspan>m</tspan></text>
+          <text class="ftv2-w5i" x="376.11" y="54" text-anchor="middle" textLength="16.48" lengthAdjust="spacingAndGlyphs"><tspan>i</tspan></text>
+          <text class="ftv2-w5i" x="392.59" y="54" text-anchor="middle" textLength="16.48" lengthAdjust="spacingAndGlyphs"><tspan>l</tspan></text>
+          <text class="ftv2-w5i" x="419.91" y="54" text-anchor="middle" textLength="38.17" lengthAdjust="spacingAndGlyphs"><tspan>y</tspan></text>
         </g>
       </svg>
     </div>
@@ -154,8 +160,8 @@
         if (en.isIntersecting) {
           wrap.classList.add('drawn'); io.disconnect();
           setTimeout(function(){ wrap.classList.add('glow-start'); }, 3800);
-          // تفاعل بروز الحروف يُفتح بعد اكتمال وهج الحروف كله (~5.55ث): رسم 2.6 + كتابة 1.4 + وهج 1.75
-          setTimeout(function(){ wrap.classList.add('w5-ready'); }, 5650);
+          // تفاعل بروز الحروف يُفتح بعد اكتمال وهج الحروف كله (~6.2ث): رسم 2.6 + كتابة 1.4 + وهج 12 حرفاً 2.4
+          setTimeout(function(){ wrap.classList.add('w5-ready'); }, 6300);
         }
       });
     }, { threshold: 0.2 });
@@ -163,7 +169,7 @@
   } else {
     wrap.classList.add('drawn');
     setTimeout(function(){ wrap.classList.add('glow-start'); }, 3800);
-    setTimeout(function(){ wrap.classList.add('w5-ready'); }, 5650);
+    setTimeout(function(){ wrap.classList.add('w5-ready'); }, 6300);
   }
   // الهاتف: إظهار التدرج كامل بدون قناع الماوس (إصلاح التشوه/الاختفاء)
   if (isTouch) {
@@ -171,9 +177,8 @@
     if (w3) w3.removeAttribute('mask');
   }
   // تحويل إحداثيات الشاشة إلى إحداثيات viewBox بمراعاة التوسيط (preserveAspectRatio):
-  // الكلمة تتوسّط داخل صندوق svg (عرض الصندوق أكبر من 3× ارتفاعه فالمحتوى محجوز بالارتفاع)،
-  // فقسمة موضع المؤشر على عرض الصندوق مباشرة تنضغط الإحداثيات نحو الوسط —
-  // وتوجيه الميلان يروح للحرف المجاور (تجي على W يتحرك A، وO/N ما تنشّط أصلاً)
+  // الكلمة «Walton Family» بنسبة عرض/ارتفاع 4.6 — الصندوق أعرض منها فالمحتوى محجوز بالارتفاع
+  // على الديسكتوب (وبالعرض على الشاشات الضيقة) — svgPoint يعالج الحالتين بنفس المعادلة
   var vbW = svg.viewBox.baseVal.width, vbH = svg.viewBox.baseVal.height;
   function svgPoint(clientX, clientY) {
     var r = svg.getBoundingClientRect();
@@ -194,7 +199,11 @@
   // الحلقة تعمل فقط عند الحاجة (مؤشر لم يستقر أو حرف مرفوع) وتتوقف كلياً عند السكون،
   // والإطار الساكن صفر كتابات DOM (كتابة فقط عند تغيّر فعلي). مسار اللمس يبقى مباشراً.
   var tiltAt = null, isEngaged = function(){ return false; };
-  var tX = 0, tY = 0, sX = 0, sY = 0, queued = false, wasInside = false, lastCx = '', lastCy = '';
+  // «armed»: بوابة أمان ضد الحرف العالق — لما المؤشر يغادر svg بسرعة (فليكر خارج النافذة)
+  // تبقى أهداف الـ lerp (tX,tY) آخر نقطة داخل نطاق حرف، والإطارات المتبقية من الحلقة تعيد
+  // إشراك الحرف بعد lift(-1) فبقى مائلاً للأبد (الحلقة حية ما دام حرف مرفوع) —
+  // mouseleave يسلّح البوابة فيتجاهل tiltAt أي إطار متبقّي، وmousemove يعيد التسليح
+  var tX = 0, tY = 0, sX = 0, sY = 0, queued = false, wasInside = false, lastCx = '', lastCy = '', armed = true;
   function kick(){ if (!queued) { queued = true; requestAnimationFrame(frame); } }
   function frame(){
     queued = false;
@@ -218,7 +227,7 @@
           if (inside) wrap.classList.add('hovered'); else wrap.classList.remove('hovered');
         }
       }
-      if (tiltAt) tiltAt(p[0], p[1]);
+      if (armed && tiltAt) tiltAt(p[0], p[1]);
     }
     // الاستمرار عند الداعي فقط: المؤشر لم يبلغ هدفه بعد، أو حرف مرفوع — تُعاد القراءة
     // كل إطار فتبقى البطاقة ملتصقة بالمؤشر حتى لو تحركت الصفحة (سكرول) تحت المؤشر
@@ -226,6 +235,7 @@
   }
   if (!isTouch) {
     card.addEventListener('mousemove', function(e){
+      armed = true;
       tX = e.clientX; tY = e.clientY; kick();
     }, { passive: true });
     card.addEventListener('mouseleave', function(){
@@ -249,8 +259,10 @@
       bands.push([x - tl / 2, x + tl / 2, x, tl]);
     });
     var baseRows = [];
+    // :not(.ftv2-sp) — tspan المسافة بين الكلمتين موجود بالطبقات الأربع لكنه بلا بطاقة
+    // (ليس حرفاً) — الاستبعاد يبقي فهرسة baseRows متوافقة مع مصفوفة الحروف 1:1
     Array.prototype.forEach.call(['ftv2-w1', 'ftv2-w2', 'ftv2-w3', 'ftv2-w4'], function(cls){
-      baseRows.push(svg.querySelector('.' + cls).querySelectorAll('tspan'));
+      baseRows.push(svg.querySelector('.' + cls).querySelectorAll('tspan:not(.ftv2-sp)'));
     });
     var cur = -1;
     var lift = function(i){
@@ -262,6 +274,9 @@
       }
       cur = i;
       if (i >= 0) for (var r2 = 0; r2 < 4; r2++) baseRows[r2][i].classList.add('ftv2-lift');
+      // تصفير سجل الكتابة (lastHit/lastStr) عند الإنشاءل — وإلا فحص «لا تغيير فعلي»
+      // في tiltAt يتجاهل إعادة إشراك نفس الحرف بنفس القيم بعد ما صارت أصلاته مزالة
+      else { lastHit = -2; lastStr = ''; }
     };
     isEngaged = function(){ return cur >= 0; };
     var lastHit = -2, lastStr = '';
@@ -280,7 +295,8 @@
       if (hit >= 0) {
         var bd = bands[hit];
         var px = Math.max(-0.5, Math.min(0.5, (xSvg - bd[2]) / bd[3]));
-        var py = Math.max(-0.5, Math.min(0.5, (ySvg - 10) / 44 - 0.5));
+        // 9..65 → ±0.5: قمم الحروف (أحرف كبيرة/الصاعدة ~9.4) حتى أسفل النازل (y ~66 في Family)
+        var py = Math.max(-0.5, Math.min(0.5, (ySvg - 9) / 56 - 0.5));
         var str = 'perspective(320px) rotateX(' + (-py * 2 * TILT).toFixed(2) +
           'deg) rotateY(' + (px * 2 * TILT).toFixed(2) + 'deg) translateY(-4px) scale(1.2)';
         // كتابة للـ DOM فقط عند تغيّر فعلي — والإطار الساكن بلا أي كتابة
@@ -323,7 +339,14 @@
       }, { passive: true });
       svg.addEventListener('touchcancel', function(){ dropHold(); release(); }, { passive: true });
     } else {
-      svg.addEventListener('mouseleave', function(){ lift(-1); });
+      svg.addEventListener('mouseleave', function(){
+        // الخروج السريع من الكلمة (فليكر خارج النافذة) كان يعيد إشراك الحرف من إحداثيات
+        // lerp قديمة فيبقى مائلاً للأبد — البوابة + تجميد الهدف يقتلان الحالة العالقة:
+        // الإطارات المتبقية تُتجاهل، والحلقة تستقر فوراً وتتوقف (صفر استهلاك)
+        armed = false;
+        tX = sX; tY = sY;
+        lift(-1);
+      });
     }
   }
 })();</script>
