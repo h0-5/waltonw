@@ -10,23 +10,22 @@
 .users-search i{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:13px}
 .users-stats{display:flex;gap:16px;font-size:12px;color:var(--text-dim)}
 .users-stats span{display:flex;align-items:center;gap:4px}
-.users-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
-.user-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;gap:10px;transition:all .3s;cursor:default}
-.user-card:hover{border-color:rgba(var(--ac-rgb),.3);box-shadow:0 4px 20px rgba(0,0,0,.2);transform:translateY(-2px)}
+.users-grid{display:flex;flex-direction:column;gap:10px}
+.user-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 18px;display:flex;align-items:center;gap:16px;transition:all .3s;cursor:default}
+.user-card:hover{border-color:rgba(var(--ac-rgb),.3);box-shadow:0 4px 20px rgba(0,0,0,.2)}
 .user-card.banned{border-color:rgba(239,68,68,.3);opacity:.75}
-.user-card-top{display:flex;align-items:center;gap:12px}
-.user-card-avatar{width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid var(--ac);flex-shrink:0}
+.user-card-avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid var(--ac);flex-shrink:0}
 .user-card.banned .user-card-avatar{border-color:#ef4444}
-.user-card-info{flex:1;min-width:0}
-.user-card-name{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.user-card-role{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;margin-top:2px}
+.user-card-info{flex:1;min-width:0;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.user-card-name{font-weight:700;font-size:14px;white-space:nowrap}
+.user-card-role{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700}
 .user-card-banned{color:#ef4444;font-size:11px;font-weight:600}
-.user-card-stats{display:flex;gap:12px;font-size:12px;color:var(--text-dim);align-items:center;flex-wrap:wrap}
+.user-card-stats{display:flex;gap:14px;font-size:12px;color:var(--text-dim);align-items:center;flex-shrink:0}
 .user-card-stats i{font-size:11px}
-.user-card-flags{display:flex;gap:6px;flex-wrap:wrap}
+.user-card-flags{display:flex;gap:6px;flex-shrink:0}
 .flag-badge{padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;background:rgba(var(--ac-rgb),.1);color:var(--ac);border:1px solid rgba(var(--ac-rgb),.2)}
-.user-card-actions{display:flex;gap:6px;margin-top:auto;padding-top:8px;border-top:1px solid var(--border)}
-.card-btn{padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-dim);cursor:pointer;font-size:12px;transition:all .3s;display:flex;align-items:center;gap:4px}
+.user-card-actions{display:flex;gap:6px;flex-shrink:0}
+.card-btn{padding:7px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-dim);cursor:pointer;font-size:12px;transition:all .3s;display:flex;align-items:center;gap:4px}
 .card-btn:hover{background:rgba(var(--ac-rgb),.1);color:var(--text);border-color:var(--ac)}
 .card-btn.danger:hover{background:rgba(239,68,68,.1);color:#ef4444;border-color:#ef4444}
 .card-btn.success:hover{background:rgba(34,197,94,.1);color:#22c55e;border-color:#22c55e}
@@ -50,19 +49,10 @@
 .btn-ghost:hover{color:var(--text);border-color:rgba(255,255,255,.3)}
 .btn-danger{background:#ef4444;color:#fff}
 .btn-danger:hover{opacity:.9}
-.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
-.detail-item{background:rgba(255,255,255,.03);border-radius:8px;padding:10px}
-.detail-item label{display:block;font-size:10px;color:var(--text-dim);margin-bottom:2px}
-.detail-item span{font-weight:700;font-size:13px}
-.detail-section{margin-top:14px}
-.detail-section h4{font-size:12px;color:var(--ac);margin-bottom:8px;font-weight:700}
-.ach-badge{display:inline-block;padding:3px 8px;background:rgba(var(--ac-rgb),.1);border:1px solid rgba(var(--ac-rgb),.3);border-radius:4px;font-size:11px;margin:2px}
-.item-row{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:rgba(255,255,255,.03);border-radius:6px;margin-bottom:4px}
-.item-row span{font-size:12px}
-.item-row button{background:none;border:none;color:#ef4444;cursor:pointer;font-size:12px}
 .side-role-chips{display:flex;flex-wrap:wrap;gap:6px}
 .side-role-chip{padding:4px 10px;border-radius:12px;font-size:11px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text-dim);transition:all .2s}
 .side-role-chip.active{background:rgba(var(--ac-rgb),.15);color:var(--ac);border-color:var(--ac)}
+@media(max-width:900px){.user-card{flex-wrap:wrap;gap:10px}.user-card-stats,.user-card-flags{width:100%}}
 </style>
 
 <div class="users-topbar">
@@ -80,13 +70,11 @@
 <div class="users-grid" id="usersGrid">
   <% users.forEach(u => { %>
     <div class="user-card<%= u.is_banned ? ' banned' : '' %>" data-id="<%= u.id %>" data-search="<%= (u.username||'').toLowerCase() %> <%= u.id %> <%= (u.email||'').toLowerCase() %>">
-      <div class="user-card-top">
-        <img src="<%= u.profile_picture || '/images/default-avatar.png' %>" class="user-card-avatar" alt="">
-        <div class="user-card-info">
-          <div class="user-card-name"><%= u.username %></div>
-          <span class="user-card-role" style="background:<%= u.role === 'owner' ? '#ef4444' : u.role === 'admin' ? '#f97316' : u.role === 'moderator' ? '#eab308' : u.role === 'support' ? '#22c55e' : '#6b7280' %>20;color:<%= u.role === 'owner' ? '#ef4444' : u.role === 'admin' ? '#f97316' : u.role === 'moderator' ? '#eab308' : u.role === 'support' ? '#22c55e' : '#6b7280' %>"><%= u.role %></span>
-          <% if (u.is_banned) { %><span class="user-card-banned"><i class="fas fa-ban"></i> محظور</span><% } %>
-        </div>
+      <img src="<%= u.profile_picture || '/images/default-avatar.png' %>" class="user-card-avatar" alt="">
+      <div class="user-card-info">
+        <div class="user-card-name"><%= u.username %></div>
+        <span class="user-card-role" style="background:<%= u.role === 'owner' ? '#ef4444' : u.role === 'admin' ? '#f97316' : u.role === 'moderator' ? '#eab308' : u.role === 'support' ? '#22c55e' : '#6b7280' %>20;color:<%= u.role === 'owner' ? '#ef4444' : u.role === 'admin' ? '#f97316' : u.role === 'moderator' ? '#eab308' : u.role === 'support' ? '#22c55e' : '#6b7280' %>"><%= u.role %></span>
+        <% if (u.is_banned) { %><span class="user-card-banned"><i class="fas fa-ban"></i> محظور</span><% } %>
       </div>
       <div class="user-card-stats">
         <span><i class="fas fa-coins"></i> <%= u.points || u.total_game_points || 0 %></span>
@@ -94,16 +82,15 @@
         <% if (u.in_guild) { %><span><i class="fas fa-check-circle" style="color:#22c55e"></i> في السيرفر</span><% } %>
       </div>
       <div class="user-card-flags">
-        <% if (u.manage_role) { %><span class="flag-badge"><i class="fas fa-shield"></i> Manage Role</span><% } %>
-        <% if (u.event_manager) { %><span class="flag-badge"><i class="fas fa-calendar"></i> Event Manager</span><% } %>
+        <% if (u.manage_role) { %><span class="flag-badge"><i class="fas fa-shield"></i> MR</span><% } %>
+        <% if (u.event_manager) { %><span class="flag-badge"><i class="fas fa-calendar"></i> EM</span><% } %>
       </div>
       <div class="user-card-actions">
-        <button class="card-btn" data-action="detail" data-id="<%= u.id %>"><i class="fas fa-info-circle"></i> تفاصيل</button>
-        <button class="card-btn" data-action="edit" data-id="<%= u.id %>" data-name="<%= u.username %>" data-role="<%= u.role %>" data-managerole="<%= u.manage_role ? 1 : 0 %>" data-eventmanager="<%= u.event_manager ? 1 : 0 %>"><i class="fas fa-edit"></i> تعديل</button>
+        <button class="card-btn" data-action="edit" data-id="<%= u.id %>" data-name="<%= u.username %>" data-role="<%= u.role %>" data-managerole="<%= u.manage_role ? 1 : 0 %>" data-eventmanager="<%= u.event_manager ? 1 : 0 %>"><i class="fas fa-edit"></i></button>
         <% if (u.is_banned) { %>
-          <button class="card-btn success" data-action="unban" data-id="<%= u.id %>"><i class="fas fa-unlock"></i> فك حظر</button>
+          <button class="card-btn success" data-action="unban" data-id="<%= u.id %>"><i class="fas fa-unlock"></i></button>
         <% } else { %>
-          <button class="card-btn danger" data-action="ban" data-id="<%= u.id %>" data-name="<%= u.username %>"><i class="fas fa-ban"></i> حظر</button>
+          <button class="card-btn danger" data-action="ban" data-id="<%= u.id %>" data-name="<%= u.username %>"><i class="fas fa-ban"></i></button>
         <% } %>
       </div>
     </div>
@@ -155,20 +142,9 @@
   </div>
 </div>
 
-<!-- Detail Modal -->
-<div id="detailModal" class="admin-modal">
-  <div class="modal-content" style="max-width:600px">
-    <h3><i class="fas fa-info-circle" style="color:var(--ac)"></i> تفاصيل المستخدم</h3>
-    <div id="detailContent"></div>
-    <div class="modal-actions"><button onclick="closeModal('detailModal')" class="btn btn-ghost">إغلاق</button></div>
-  </div>
-</div>
-
 <script>
 const SIDE_ROLES = <%- JSON.stringify(sideRoles) %>;
-let _allUsers = <%- JSON.stringify(users) %>;
 
-// Live search
 document.getElementById('userSearch').addEventListener('input', function() {
   const q = this.value.toLowerCase();
   document.querySelectorAll('.user-card').forEach(card => {
@@ -176,30 +152,25 @@ document.getElementById('userSearch').addEventListener('input', function() {
   });
 });
 
-// Event delegation for card buttons
 document.getElementById('usersGrid').addEventListener('click', function(e) {
   const btn = e.target.closest('[data-action]');
   if (!btn) return;
   const action = btn.dataset.action;
-  const id = btn.dataset.id;
   if (action === 'edit') openEdit(btn);
-  else if (action === 'ban') openBan(id, btn.dataset.name);
-  else if (action === 'unban') doUnban(id);
-  else if (action === 'detail') openDetail(id);
+  else if (action === 'ban') openBan(btn.dataset.id, btn.dataset.name);
+  else if (action === 'unban') doUnban(btn.dataset.id);
 });
 
 function openModal(id) { document.getElementById(id).style.display = 'flex'; }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
 function openEdit(btn) {
-  const id = btn.dataset.id;
-  document.getElementById('editUserId').value = id;
+  document.getElementById('editUserId').value = btn.dataset.id;
   document.getElementById('editUsername').value = btn.dataset.name;
   document.getElementById('editRole').value = btn.dataset.role;
   document.getElementById('editManageRole').checked = btn.dataset.managerole === '1';
   document.getElementById('editEventManager').checked = btn.dataset.eventmanager === '1';
-  // Fetch current side roles
-  fetch('/api/admin/users/' + id).then(r => r.json()).then(data => {
+  fetch('/api/admin/users/' + btn.dataset.id).then(r => r.json()).then(data => {
     const active = (data.sideRoles || []).map(sr => sr.id);
     const container = document.getElementById('sideRoleChips');
     container.innerHTML = SIDE_ROLES.map(sr =>
@@ -228,59 +199,6 @@ async function doUnban(id) {
   else alert(data.error || 'خطأ');
 }
 
-async function openDetail(id) {
-  const res = await fetch('/api/admin/users/' + id);
-  const data = await res.json();
-  if (!data.success) return;
-  const u = data.user;
-  const pts = data.points;
-  const inv = data.inventory || [];
-  const boxes = data.boxes || [];
-  const achs = data.achievements || [];
-  document.getElementById('detailContent').innerHTML = `
-    <div style="text-align:center;margin-bottom:16px">
-      <img src="${u.profile_picture || '/images/default-avatar.png'}" style="width:72px;height:72px;border-radius:50%;border:3px solid var(--ac);margin-bottom:8px" alt="">
-      <h3 style="margin:0">${u.username}</h3>
-      <span style="font-size:12px;color:var(--text-dim)">${u.email || 'لا يوجد بريد'} • ID: ${u.id}</span>
-    </div>
-    <div class="detail-grid">
-      <div class="detail-item"><label>النقاط</label><span>${pts ? pts.points : 0}</span></div>
-      <div class="detail-item"><label>إجمالي النقاط</label><span>${pts ? pts.total_earned : 0}</span></div>
-      <div class="detail-item"><label>في السيرفر</label><span>${u.in_guild ? 'نعم' : 'لا'}</span></div>
-      <div class="detail-item"><label>تذاكر مغلقة</label><span>${u.tickets_closed || 0}</span></div>
-      <div class="detail-item"><label>Manage Role</label><span>${u.manage_role ? 'مفعّل' : 'معطّل'}</span></div>
-      <div class="detail-item"><label>Event Manager</label><span>${u.event_manager ? 'مفعّل' : 'معطّل'}</span></div>
-    </div>
-    <div class="detail-section"><h4><i class="fas fa-box"></i> الحقيبة (${inv.length})</h4>
-      ${inv.length ? inv.map(i => '<div class="item-row"><span>' + i.item_name + ' ×' + i.quantity + '</span><button onclick="deleteItem(' + u.id + ',\'' + i.item_key + '\')"><i class="fas fa-trash"></i></button></div>').join('') : '<p style="font-size:12px;color:var(--text-dim)">فارغة</p>'}
-    </div>
-    <div class="detail-section"><h4><i class="fas fa-box-open"></i> الصناديق (${boxes.length})</h4>
-      ${boxes.length ? boxes.map(b => '<div class="item-row"><span>' + b.box_name + '</span><button onclick="deleteBox(' + b.id + ')"><i class="fas fa-trash"></i></button></div>').join('') : '<p style="font-size:12px;color:var(--text-dim)">لا توجد صناديق</p>'}
-    </div>
-    <div class="detail-section"><h4><i class="fas fa-trophy"></i> الإنجازات (${achs.length})</h4>
-      ${achs.length ? achs.map(a => '<span class="ach-badge">' + a.achievement_name + ' <button onclick="deleteAch(' + u.id + ',' + a.id + ')" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:10px">✕</button></span>').join('') : '<p style="font-size:12px;color:var(--text-dim)">لا توجد إنجازات</p>'}
-    </div>
-  `;
-  openModal('detailModal');
-}
-
-async function deleteItem(userId, key) {
-  if (!confirm('حذف الصنف؟')) return;
-  await fetch('/api/admin/users/' + userId + '/items/' + key, { method: 'DELETE' });
-  openDetail(userId);
-}
-async function deleteBox(boxId) {
-  if (!confirm('حذف الصندوق؟')) return;
-  await fetch('/api/admin/boxes/' + boxId, { method: 'DELETE' });
-  document.getElementById('detailContent').querySelectorAll('.item-row').forEach(el => el.remove());
-}
-async function deleteAch(userId, achId) {
-  if (!confirm('حذف الإنجاز؟')) return;
-  await fetch('/api/admin/users/' + userId + '/achievements/' + achId, { method: 'DELETE' });
-  openDetail(userId);
-}
-
-// Edit form submit
 document.getElementById('editForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   const id = document.getElementById('editUserId').value;
@@ -298,7 +216,6 @@ document.getElementById('editForm').addEventListener('submit', async function(e)
   else alert(data.error || 'خطأ');
 });
 
-// Ban form submit
 document.getElementById('banForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   const id = document.getElementById('banUserId').value;
