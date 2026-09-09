@@ -85,14 +85,18 @@
       --ac-light: rgb(<%= _acLight %>);
       --bg-url: url('<%= _bgUrl %>');
       --mobile-bg-url: url('<%= _mobileBgUrl %>');
-      --bg-main: <%= _bgColor %>;
-      --text-main: <%= _textColor %>;
-      --card-bg: <%= _cardColor %>;
-      --border-main: <%= _borderColor %>;
+      --bg-body: <%= _bgColor %>;
+      --bg-deep: <%= _bgColor %>;
+      --bg-card: <%= _cardColor %>;
+      --bg-card-solid: <%= _cardColor %>;
+      --bg-glass: <%= _cardColor %>;
+      --text: <%= _textColor %>;
+      --text-dim: <%= _textColor %>99;
+      --border: <%= _borderColor %>;
     }
     <% /* خلفية الموقع الموحدة لكل الصفحات — الرئيسية مثلها */ %>
     body {
-      background-color: var(--bg-main);
+      background-color: var(--bg-body);
       background-image: var(--bg-url);
       background-size: cover;
       background-position: center;
