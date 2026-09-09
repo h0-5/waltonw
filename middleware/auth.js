@@ -172,8 +172,9 @@ function denyAccess(res) {
 }
 
 /**
- * Unified permission checker — checks role_role_permissions table
+ * Unified permission checker — checks role_role_permissions + side_role_permissions
  * Owner always passes. Admin roles pass by default.
+ * Side roles are ADDITIVE: they can only grant, never revoke.
  */
 const checkPermission = (permissionKey) => {
   return (req, res, next) => {
@@ -188,7 +189,7 @@ const checkPermission = (permissionKey) => {
       .then(([role]) => {
         if (!role.length) {
           if (ADMIN_ROLES.includes(req.user.role)) return next();
-          return denyAccess(res);
+          return checkSideRolePermission(db, req.user.id, permissionKey, next, res);
         }
         if (role[0].is_admin_role) return next();
         return db.execute(
@@ -196,7 +197,7 @@ const checkPermission = (permissionKey) => {
           [role[0].id, permissionKey]
         ).then(([perm]) => {
           if (perm && perm.length && perm[0].enabled) return next();
-          return denyAccess(res);
+          return checkSideRolePermission(db, req.user.id, permissionKey, next, res);
         });
       })
       .catch((err) => {
@@ -208,7 +209,22 @@ const checkPermission = (permissionKey) => {
 };
 
 /**
+ * Check if any side role grants this permission (additive only)
+ */
+async function checkSideRolePermission(db, userId, permissionKey, next, res) {
+  try {
+    const [srPerm] = await db.execute(
+      'SELECT srp.enabled FROM side_role_permissions srp JOIN user_side_roles usr ON srp.side_role_id = usr.side_role_id WHERE usr.user_id = ? AND srp.permission_key = ? AND srp.enabled = 1',
+      [userId, permissionKey]
+    );
+    if (srPerm.length > 0) return next();
+  } catch(_) {}
+  return denyAccess(res);
+}
+
+/**
  * Check if user has a specific permission (returns boolean)
+ * Includes side role permissions (additive)
  */
 async function userHasPermission(userId, permissionKey) {
   const db = require('../config/database');
@@ -222,12 +238,20 @@ async function userHasPermission(userId, permissionKey) {
     'SELECT enabled FROM role_role_permissions WHERE role_id = ? AND permission_key = ?',
     [role[0].id, permissionKey]
   );
-  return perm.length > 0 && perm[0].enabled === 1;
+  if (perm.length > 0 && perm[0].enabled === 1) return true;
+  try {
+    const [srPerm] = await db.execute(
+      'SELECT srp.enabled FROM side_role_permissions srp JOIN user_side_roles usr ON srp.side_role_id = usr.side_role_id WHERE usr.user_id = ? AND srp.permission_key = ? AND srp.enabled = 1',
+      [userId, permissionKey]
+    );
+    return srPerm.length > 0;
+  } catch(_) { return false; }
 }
 
 /**
  * Check page access — owner and admin roles bypass.
- * For others, checks role_page_access table.
+ * For others, checks role_page_access + side_role_page_access.
+ * Side roles are ADDITIVE.
  */
 const checkPageAccess = (pagePath) => {
   return (req, res, next) => {
@@ -240,13 +264,15 @@ const checkPageAccess = (pagePath) => {
     const db = require('../config/database');
     db.execute('SELECT id, is_admin_role FROM roles WHERE name = ?', [req.user.role])
       .then(([role]) => {
-        if (!role.length) return denyAccess(res);
+        if (!role.length) return checkSideRolePageAccess(db, req.user.id, pagePath, next, res);
         if (role[0].is_admin_role) return next();
         return db.execute(
           'SELECT can_access FROM role_page_access WHERE role_id = ? AND page_path = ?',
           [role[0].id, pagePath]
         ).then(([rows]) => {
-          if (!rows || !rows.length) return next();
+          if (!rows || !rows.length) {
+            return checkSideRolePageAccess(db, req.user.id, pagePath, next, res);
+          }
           if (rows[0].can_access) return next();
           return denyAccess(res);
         });
@@ -254,5 +280,16 @@ const checkPageAccess = (pagePath) => {
       .catch(() => next());
   };
 };
+
+async function checkSideRolePageAccess(db, userId, pagePath, next, res) {
+  try {
+    const [srPage] = await db.execute(
+      'SELECT srpa.can_access FROM side_role_page_access srpa JOIN user_side_roles usr ON srpa.side_role_id = usr.side_role_id WHERE usr.user_id = ? AND srpa.page_path = ? AND srpa.can_access = 1',
+      [userId, pagePath]
+    );
+    if (srPage.length > 0) return next();
+  } catch(_) {}
+  return denyAccess(res);
+}
 
 module.exports = { isAuthenticated, isInGuild, isAdmin, checkPagePermission, checkElementPermission, checkCanBan, checkPermission, checkPageAccess, userHasPermission, REQUIRED_GUILD_ID };

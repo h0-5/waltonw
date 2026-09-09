@@ -1076,4 +1076,54 @@ router.get('/page-access-all', checkPermission('roles_config_view'), async (req,
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== Side Role Permissions API =====
+
+router.get('/side-roles/:id/permissions', checkPermission('roles_config_view'), async (req, res) => {
+  try {
+    const [perms] = await db.execute('SELECT permission_key, enabled FROM side_role_permissions WHERE side_role_id = ?', [req.params.id]);
+    const result = {};
+    perms.forEach(p => { result[p.permission_key] = p.enabled; });
+    res.json({ permissions: result });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.post('/side-roles/:id/permissions', checkPermission('roles_config_edit'), async (req, res) => {
+  try {
+    const { permissions } = req.body;
+    await db.execute('DELETE FROM side_role_permissions WHERE side_role_id = ?', [req.params.id]);
+    if (permissions && typeof permissions === 'object') {
+      for (const [key, enabled] of Object.entries(permissions)) {
+        if (key) {
+          await db.execute('INSERT INTO side_role_permissions (side_role_id, permission_key, enabled) VALUES (?, ?, ?)', [req.params.id, key, enabled ? 1 : 0]);
+        }
+      }
+    }
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.get('/side-roles/:id/page-access', checkPermission('roles_config_view'), async (req, res) => {
+  try {
+    const [rows] = await db.execute('SELECT page_path, can_access FROM side_role_page_access WHERE side_role_id = ?', [req.params.id]);
+    const result = {};
+    rows.forEach(r => { result[r.page_path] = r.can_access; });
+    res.json({ pageAccess: result });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.post('/side-roles/:id/page-access', checkPermission('roles_config_edit'), async (req, res) => {
+  try {
+    const { pages } = req.body;
+    await db.execute('DELETE FROM side_role_page_access WHERE side_role_id = ?', [req.params.id]);
+    if (pages && typeof pages === 'object') {
+      for (const [path, canAccess] of Object.entries(pages)) {
+        if (path) {
+          await db.execute('INSERT INTO side_role_page_access (side_role_id, page_path, can_access) VALUES (?, ?, ?)', [req.params.id, path, canAccess ? 1 : 0]);
+        }
+      }
+    }
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 module.exports = router;

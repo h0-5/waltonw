@@ -390,11 +390,37 @@ router.get('/roles', checkPermission('roles_config_view'), async (req, res) => {
       });
     } catch(e) {}
 
+    // Side role permissions
+    let sideRolePerms = {};
+    let sideRolePageAccess = {};
+    try {
+      const [srp] = await db.execute('SELECT side_role_id, permission_key, enabled FROM side_role_permissions');
+      srp.forEach(r => {
+        if (!sideRolePerms[r.side_role_id]) sideRolePerms[r.side_role_id] = {};
+        sideRolePerms[r.side_role_id][r.permission_key] = r.enabled;
+      });
+    } catch(e) {}
+    try {
+      const [srpa] = await db.execute('SELECT side_role_id, page_path, can_access FROM side_role_page_access');
+      srpa.forEach(r => {
+        if (!sideRolePageAccess[r.side_role_id]) sideRolePageAccess[r.side_role_id] = {};
+        sideRolePageAccess[r.side_role_id][r.page_path] = r.can_access;
+      });
+    } catch(e) {}
+
+    // Member counts per role
+    let roleMemberCounts = {};
+    try {
+      const [mc] = await db.execute('SELECT role, COUNT(*) as cnt FROM users GROUP BY role');
+      mc.forEach(r => { roleMemberCounts[r.role] = r.cnt; });
+    } catch(e) {}
+
     res.render('admin/roles', {
       title: 'إدارة الصلاحيات',
       roles, permissions, pagePerms, elemPerms, punishData,
       unifiedPerms, sideRoles, userSideRoles,
-      PERMISSION_GROUPS, pageAccess,
+      PERMISSION_GROUPS, pageAccess, sideRolePerms, sideRolePageAccess,
+      roleMemberCounts,
       currentPath: req.path
     });
   } catch(err) {
@@ -402,7 +428,8 @@ router.get('/roles', checkPermission('roles_config_view'), async (req, res) => {
       title: 'إدارة الصلاحيات',
       roles: [], permissions: {}, pagePerms: {}, elemPerms: {}, punishData: {},
       unifiedPerms: {}, sideRoles: [], userSideRoles: {},
-      PERMISSION_GROUPS: {}, pageAccess: {},
+      PERMISSION_GROUPS: {}, pageAccess: {}, sideRolePerms: {}, sideRolePageAccess: {},
+      roleMemberCounts: {},
       currentPath: req.path
     });
   }
