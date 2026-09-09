@@ -238,19 +238,34 @@
 
 <!-- Staff Modal -->
 <div class="prof-modal-overlay" id="staffModal">
-  <div class="prof-modal">
+  <div class="prof-modal" style="max-width:650px">
     <h3>
       <button class="prof-modal-close" onclick="closeModal('staffModal')"><i class="fas fa-times"></i></button>
       <i class="fas fa-users"></i> فريق الإدارة
+      <span style="font-size:0.75rem; font-weight:400; color:var(--prof-text-dim); margin-right:auto; margin-left:8px"><%= staff.length %> أعضاء</span>
     </h3>
     <div class="staff-grid">
       <% staff.forEach(function(s) { %>
       <a class="staff-card" href="/admin/profile/<%= s.id %>">
-        <img src="<%= s.profile_picture || '/images/default-avatar.png' %>" alt="<%= s.username %>">
-        <div>
-          <div class="staff-name"><%= s.username %></div>
-          <div class="staff-role" style="color:<%= s.role_color || '#888' %>"><%= s.role_display || s.role %></div>
+        <div class="staff-avatar-wrap">
+          <img src="<%= s.profile_picture || '/images/default-avatar.png' %>" alt="<%= s.username %>">
+          <div class="staff-avatar-ring" style="border-color:<%= s.role_color || '#888' %>"></div>
         </div>
+        <div class="staff-info">
+          <div class="staff-name"><%= s.username %></div>
+          <div class="staff-role-badge" style="background:<%= s.role_color || '#888' %>22; color:<%= s.role_color || '#888' %>; border:1px solid <%= s.role_color || '#888' %>44">
+            <i class="fas <%= s.role_icon || 'fa-user' %>"></i> <%= s.role_display || s.role %>
+          </div>
+          <div class="staff-meta">
+            <span title="تاريخ الانضمام"><i class="fas fa-calendar-plus"></i> <%= s.created_at ? new Date(s.created_at).toLocaleDateString('ar-EG') : '—' %></span>
+            <span title="آخر تواجد"><i class="fas fa-clock"></i> <%= s.last_login ? new Date(s.last_login).toLocaleDateString('ar-EG') : 'غير معروف' %></span>
+          </div>
+          <div class="staff-stats">
+            <span class="staff-stat" title="تذاكر مغلقة"><i class="fas fa-ticket"></i> <%= s.tickets_closed || 0 %></span>
+            <span class="staff-stat" title="تحذيرات"><i class="fas fa-exclamation-triangle"></i> <%= s.warnings_count || 0 %></span>
+          </div>
+        </div>
+        <i class="fas fa-chevron-left staff-arrow"></i>
       </a>
       <% }); %>
     </div>

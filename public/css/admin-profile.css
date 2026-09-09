@@ -322,15 +322,15 @@
 
 /* Staff Grid */
 .staff-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 .staff-card {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px;
+  gap: 14px;
+  padding: 14px 16px;
   background: var(--prof-card);
   border: 1px solid var(--prof-border);
   border-radius: 12px;
@@ -340,22 +340,73 @@
 }
 .staff-card:hover {
   border-color: var(--prof-accent);
-  transform: translateY(-2px);
+  transform: translateX(-4px);
+  background: rgba(var(--prof-accent-rgb), 0.04);
 }
-.staff-card img {
-  width: 44px;
-  height: 44px;
+.staff-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.staff-avatar-wrap img {
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   object-fit: cover;
+  display: block;
 }
-.staff-card .staff-name {
-  font-weight: 600;
+.staff-avatar-ring {
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 2px solid;
+  opacity: 0.5;
+}
+.staff-info {
+  flex: 1;
+  min-width: 0;
+}
+.staff-name {
+  font-weight: 700;
   color: var(--prof-text);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  margin-bottom: 3px;
 }
-.staff-card .staff-role {
-  font-size: 0.75rem;
+.staff-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-bottom: 6px;
+}
+.staff-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 0.72rem;
   color: var(--prof-text-dim);
+  margin-bottom: 4px;
+}
+.staff-meta i { margin-left: 3px; font-size: 0.65rem; }
+.staff-stats {
+  display: flex;
+  gap: 12px;
+}
+.staff-stat {
+  font-size: 0.72rem;
+  color: var(--prof-text-dim);
+}
+.staff-stat i { margin-left: 3px; font-size: 0.65rem; }
+.staff-arrow {
+  color: var(--prof-text-dim);
+  font-size: 0.8rem;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+.staff-card:hover .staff-arrow {
+  transform: translateX(-4px);
+  color: var(--prof-accent);
 }
 
 /* Buttons */
@@ -447,7 +498,7 @@
   border-radius: 16px;
   padding: 24px;
   width: 90%;
-  max-width: 500px;
+  max-width: 650px;
   max-height: 80vh;
   overflow-y: auto;
 }
@@ -496,7 +547,8 @@
   .stat-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  .staff-grid {
-    grid-template-columns: 1fr;
+  .staff-meta {
+    flex-wrap: wrap;
+    gap: 8px;
   }
 }

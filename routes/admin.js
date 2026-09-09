@@ -455,7 +455,7 @@ router.get('/profile', isAuthenticated, async (req, res) => {
     const orders = await safeQuery('SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC LIMIT 20', [userId]);
 
     const staff = await safeQuery(`
-      SELECT u.id, u.username, u.profile_picture, u.role
+      SELECT u.id, u.username, u.profile_picture, u.role, u.created_at, u.last_login, u.tickets_closed
       FROM users u
       WHERE u.role IN ('owner','admin','moderator','support')
       ORDER BY u.id ASC
@@ -465,6 +465,10 @@ router.get('/profile', isAuthenticated, async (req, res) => {
         const [role] = await db.execute('SELECT display_name, color, icon FROM roles WHERE name = ?', [s.role]);
         if (role[0]) { s.role_display = role[0].display_name; s.role_color = role[0].color; s.role_icon = role[0].icon; }
         else { s.role_display = s.role; s.role_color = '#fff'; s.role_icon = 'fa-user'; }
+        const [ticketCount] = await db.execute('SELECT COUNT(*) as c FROM support_tickets WHERE admin_id = ? AND status = "closed"', [s.id]).catch(() => [[{c:0}]]);
+        s.tickets_closed = ticketCount[0]?.c || 0;
+        const [warnCount] = await db.execute('SELECT COUNT(*) as c FROM admin_warnings WHERE user_id = ? AND is_deleted = 0', [s.id]).catch(() => [[{c:0}]]);
+        s.warnings_count = warnCount[0]?.c || 0;
       }
     } catch(e) { console.error('[Admin/Profile] Staff role fetch:', e.message); }
 
@@ -577,12 +581,16 @@ router.get('/profile/:userId', isAuthenticated, async (req, res) => {
     const tickets = await safeQuery('SELECT * FROM support_tickets WHERE admin_id = ? ORDER BY created_at DESC LIMIT 20', [targetId]);
     const applications = await safeQuery('SELECT * FROM submitted_applications WHERE reviewed_by = ? ORDER BY created_at DESC LIMIT 20', [targetId]);
     const orders = await safeQuery('SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC LIMIT 20', [targetId]);
-    const staff = await safeQuery(`SELECT u.id, u.username, u.profile_picture, u.role FROM users u WHERE u.role IN ('owner','admin','moderator','support') ORDER BY u.id ASC`);
+    const staff = await safeQuery(`SELECT u.id, u.username, u.profile_picture, u.role, u.created_at, u.last_login, u.tickets_closed FROM users u WHERE u.role IN ('owner','admin','moderator','support') ORDER BY u.id ASC`);
     try {
       for (const s of staff) {
         const [role] = await db.execute('SELECT display_name, color, icon FROM roles WHERE name = ?', [s.role]);
         if (role[0]) { s.role_display = role[0].display_name; s.role_color = role[0].color; s.role_icon = role[0].icon; }
         else { s.role_display = s.role; s.role_color = '#fff'; s.role_icon = 'fa-user'; }
+        const [ticketCount] = await db.execute('SELECT COUNT(*) as c FROM support_tickets WHERE admin_id = ? AND status = "closed"', [s.id]).catch(() => [[{c:0}]]);
+        s.tickets_closed = ticketCount[0]?.c || 0;
+        const [warnCount] = await db.execute('SELECT COUNT(*) as c FROM admin_warnings WHERE user_id = ? AND is_deleted = 0', [s.id]).catch(() => [[{c:0}]]);
+        s.warnings_count = warnCount[0]?.c || 0;
       }
     } catch(e) {}
 
