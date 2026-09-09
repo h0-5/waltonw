@@ -84,14 +84,15 @@ const lockdownMode = async (req, res, next) => {
       const [msgRows] = await db.execute(
         "SELECT setting_value FROM site_settings WHERE setting_key = 'lockdown_message'"
       );
-      const [imgRows] = await db.execute(
-        "SELECT setting_value FROM site_settings WHERE setting_key = 'lockdown_image'"
+      const [reasonRows] = await db.execute(
+        "SELECT setting_value FROM site_settings WHERE setting_key = 'lockdown_reason'"
       );
       
       return res.status(503).render('pages/lockdown', {
-        title: 'الموقع مقفول',
-        message: msgRows.length > 0 ? msgRows[0].setting_value : 'الموقع مقفول حالياً. يرجى المحاولة لاحقاً.',
-        image: imgRows.length > 0 ? imgRows[0].setting_value : ''
+        title: 'الموقع مغلق',
+        message: msgRows.length > 0 ? msgRows[0].setting_value : 'الموقع مغلق حالياً. يرجى المحاولة لاحقاً.',
+        reason: reasonRows.length > 0 ? reasonRows[0].setting_value : '',
+        image: ''
       });
     }
   } catch (err) {

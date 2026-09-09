@@ -61,18 +61,25 @@
         <div class="icon"><i class="fas fa-lock"></i></div>
       </div>
 
-      <h1 class="title">الموقع مقفول</h1>
+      <h1 class="title">الموقع مغلق</h1>
       <p class="subtitle">لا يمكنك الوصول إلى الموقع حالياً</p>
 
       <div class="message-box">
         <p><%= message %></p>
       </div>
 
-      <% if (image) { %>
-      <div style="margin-bottom:1.5rem">
-        <img src="<%= image %>" alt="قفل" style="max-width:200px;border-radius:12px;opacity:.8">
+      <% if (reason) { %>
+      <div class="message-box" style="background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.15)">
+        <p style="color:#ef4444;font-weight:700"><i class="fas fa-info-circle"></i> سبب الإغلاق: <%= reason %></p>
       </div>
       <% } %>
+
+      <div class="message-box" style="background:rgba(88,101,242,.08);border-color:rgba(88,101,242,.15)">
+        <p><i class="fab fa-discord" style="color:#5865f2"></i> تابعنا على الديسكورد لمعرفة كل جديد</p>
+        <a href="https://discord.gg/dkhSKu8hHF" target="_blank" style="display:inline-flex;align-items:center;gap:8px;margin-top:8px;padding:8px 16px;background:rgba(88,101,242,.15);border:1px solid rgba(88,101,242,.3);border-radius:10px;color:#5865f2;font-weight:700;text-decoration:none;font-size:.85rem;transition:all .3s">
+          <i class="fab fa-discord"></i> انضم للديسكورد
+        </a>
+      </div>
 
       <a href="/" class="logout-btn">
         <i class="fas fa-home"></i>

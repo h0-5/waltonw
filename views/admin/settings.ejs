@@ -158,7 +158,7 @@
   <div class="settings-panel" id="panelLockdown">
     <div class="lockdown-status <%= settings.site_lockdown === '1' ? 'on' : 'off' %>" id="lockdownStatus">
       <i class="fas fa-<%= settings.site_lockdown === '1' ? 'lock' : 'lock-open' %>"></i>
-      الموقع <%= settings.site_lockdown === '1' ? 'مقفول حالياً' : 'مفتوح للجميع' %>
+      الموقع <%= settings.site_lockdown === '1' ? 'مغلق حالياً' : 'مفتوح للجميع' %>
     </div>
 
     <form id="lockdownForm">
@@ -171,7 +171,7 @@
             تفعيل قفل الموقع
           </label>
         </div>
-        <p style="font-size:.8rem;color:var(--text-dim);margin-bottom:1rem">لو مفعّل، الموقع هيبان مقفول لكل الناس ما عدا الأدوار المحددة</p>
+        <p style="font-size:.8rem;color:var(--text-dim);margin-bottom:1rem">لو مفعّل، الموقع هيبان مغلق لكل الناس ما عدا الأدوار المحددة</p>
 
         <div class="form-group">
           <label>الأدوار المسموح لها بالدخول وقت القفل</label>
@@ -191,11 +191,11 @@
         <h3><i class="fas fa-image"></i> صفحة القفل</h3>
         <div class="form-group">
           <label>رسالة القفل</label>
-          <textarea class="form-textarea" name="lockdown_message"><%= settings.lockdown_message || 'الموقع مقفول حالياً. يرجى المحاولة لاحقاً.' %></textarea>
+          <textarea class="form-textarea" name="lockdown_message"><%= settings.lockdown_message || 'الموقع مغلق حالياً. يرجى المحاولة لاحقاً.' %></textarea>
         </div>
         <div class="form-group">
-          <label>رابط الصورة</label>
-          <input type="text" class="form-input" name="lockdown_image" value="<%= settings.lockdown_image || '' %>">
+          <label>سبب الإغلاق</label>
+          <input type="text" class="form-input" name="lockdown_reason" value="<%= settings.lockdown_reason || '' %>" placeholder="مثال: تحديثات دورية على الموقع">
         </div>
       </div>
       <button type="submit" class="submit-btn"><i class="fas fa-save"></i> حفظ إعدادات القفل</button>
@@ -353,7 +353,7 @@ async function saveForm(formId, endpoint) {
         var status = document.getElementById('lockdownStatus');
         if (data.site_lockdown === '1') {
           status.className = 'lockdown-status on';
-          status.innerHTML = '<i class="fas fa-lock"></i> الموقع مقفول حالياً';
+          status.innerHTML = '<i class="fas fa-lock"></i> الموقع مغلق حالياً';
         } else {
           status.className = 'lockdown-status off';
           status.innerHTML = '<i class="fas fa-lock-open"></i> الموقع مفتوح للجميع';
