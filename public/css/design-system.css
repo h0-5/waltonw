@@ -298,14 +298,22 @@ a.ds-card:hover, .ds-card-hover:hover {
   align-items: center;
   gap: 16px;
   padding-inline: max(16px, calc((100% - var(--container)) / 2 + 16px));
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  /* بلا مستطيل أسود بعرض الشاشة (طلب المستخدم بصورة مرجعية): الشريط شفاف كلياً
+     وكل مجموعة عناصر لها مستطيل بلور زجاجي خاص بها فقط خلف محتواها */
+  --glass-bg: rgba(17, 14, 32, 0.5);
+  --glass-line: rgba(255, 255, 255, 0.14);
+  --glass-shadow: 0 6px 22px rgba(0, 0, 0, 0.3);
+  background: transparent;
+  border-bottom: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   box-shadow: none;
+  /* الشريط الشفاف لا يحجب نقرات المحتوى تحته — العناصر الداخلية تُعيد تفعيل النقر لنفسها */
+  pointer-events: none;
   transition: transform 220ms ease, opacity 220ms ease;
 }
-.navbar.scrolled { box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25); }
+.navbar > * { pointer-events: auto; }
+.navbar.scrolled { box-shadow: none; }
 .navbar.hidden-nav { transform: translateY(-100%); opacity: 0; pointer-events: none; }
 
 /* الشعار / الختم */
@@ -318,10 +326,11 @@ a.ds-card:hover, .ds-card-hover:hover {
   margin-inline-end: 8px;
 }
 .ds-brand img { width: 40px; height: 40px; object-fit: contain; }
-.ds-brand-name { font-family: var(--font-head); font-weight: 800; font-size: 15px; color: var(--text); line-height: 1.2; }
-.ds-brand-sub { font-size: 11px; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; }
+.ds-brand-name { font-family: var(--font-head); font-weight: 800; font-size: 15px; color: var(--text); line-height: 1.2; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8); }
+.ds-brand-sub { font-size: 11px; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8); }
 
-/* روابط الديسكتوب */
+/* روابط الديسكتوب — مستطيل بلور زجاجي واحد يحتضن الروابط (مثل الصورة المرجعية)،
+   والشريط نفسه شفاف؛ الكبسولة تُوسَّط داخل المساحة بين البراند ومنطقة الإجراءات */
 .ds-navlinks {
   display: flex;
   align-items: center;
@@ -330,6 +339,13 @@ a.ds-card:hover, .ds-card-hover:hover {
   min-width: 0;
   overflow-x: auto;
   scrollbar-width: none;
+  padding: 7px 10px;
+  border: 1px solid var(--glass-line);
+  border-radius: 999px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--glass-shadow);
 }
 .ds-navlinks::-webkit-scrollbar { display: none; }
 /* منعت الروابط من التسلل تحت الإجراءات المزاحة للزاوية — الحجز يطابق عرض الإجراءات الفعلي
@@ -360,10 +376,12 @@ a.ds-card:hover, .ds-card-hover:hover {
   white-space: nowrap;
   transition: color var(--speed), background-color var(--speed);
 }
-/* النطاق 1024-1199 هو الأضيق (10 روابط + حجز الإجراءات) — خط أصغر وحشوة أقل يمنع قص آخر رابط
-   (يجب أن يأتي بعد القاعدة الأساسية ليتغلب عليها بنفس الخصوصية) */
+/* النطاق 1024-1199 هو الأضيق (10 روابط + حجز الإجراءات) — خط أصغر وحشوات أقل (روابط
+   وكبسولة معاً) تمنع قص آخر رابط — الكبسولة الزجاجية أكلت 20px من مساحة الروابط فيُعاد
+   الحساب هنا (يجب أن يأتي بعد القاعدة الأساسية ليتغلب عليها بنفس الخصوصية) */
 @media (min-width: 1024px) and (max-width: 1199px) {
-  .ds-navlink { font-size: 12.5px; padding: 8px 7px; }
+  .ds-navlink { font-size: 12.5px; padding: 8px 5px; }
+  .ds-navlinks { padding: 6px 6px; }
 }
 .ds-navlink i { font-size: 12px; opacity: .8; }
 .ds-navlink:hover { color: var(--text); background: rgba(139, 143, 153, 0.08); }
@@ -391,10 +409,13 @@ a.ds-card:hover, .ds-card-hover:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--muted);
+  border-radius: 50%;
+  border: 1px solid var(--glass-line);
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--glass-shadow);
+  color: #fff;
   cursor: pointer;
   font-size: 15px;
   transition: color var(--speed), border-color var(--speed);
@@ -408,10 +429,13 @@ a.ds-card:hover, .ds-card-hover:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
-  border: 1px solid rgba(var(--ac-rgb, 188, 19, 254), 0.45);
-  background: rgba(var(--ac-rgb, 188, 19, 254), 0.1);
-  color: var(--accent);
+  border-radius: 12px;
+  border: 1px solid rgba(var(--ac-rgb, 188, 19, 254), 0.5);
+  background: rgba(var(--ac-rgb, 188, 19, 254), 0.16);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--glass-shadow);
+  color: #fff;
   text-decoration: none;
   font-size: 15px;
   flex-shrink: 0;
@@ -444,9 +468,12 @@ a.ds-card:hover, .ds-card-hover:hover {
   gap: 8px;
   height: 38px;
   padding: 0 10px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: transparent;
+  border-radius: 999px;
+  border: 1px solid var(--glass-line);
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--glass-shadow);
   cursor: pointer;
   transition: border-color var(--speed);
 }
@@ -538,16 +565,19 @@ a.ds-card:hover, .ds-card-hover:hover {
 .ds-drop-item-logout, .ds-drop-item-logout i { color: var(--danger); }
 .ds-drop-sep { height: 1px; background: var(--border); margin: 4px 0; }
 
-/* زر القائمة للجوال */
+/* زر القائمة للجوال — شريحة زجاجية مربعة الزوايا (مثل أيقونة الشبكة بالصورة المرجعية) */
 .ds-menubtn {
   width: 38px; height: 38px;
   display: none;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text);
+  border-radius: 12px;
+  border: 1px solid var(--glass-line);
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--glass-shadow);
+  color: #fff;
   cursor: pointer;
   font-size: 15px;
 }
@@ -604,6 +634,11 @@ a.ds-card:hover, .ds-card-hover:hover {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
+}
+/* الهاتف: البلور معطل كلياً (قاعدة الأداء أعلاه) — شفافية الزجاج تُعوَّض بكثافة أعلى
+   حتى تبقى الكبسولات مقروءة فوق أي خلفية بلا تكلفة بلور على التمرير */
+@media (max-width: 768px) {
+  .navbar { --glass-bg: rgba(14, 12, 26, 0.86); --glass-line: rgba(255, 255, 255, 0.1); }
 }
 /* الهواتف: الاسم يختفي ويبقى الأفاتار — يمنع فيض النافبار عن 390px */
 @media (max-width: 599px) {

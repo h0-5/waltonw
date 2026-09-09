@@ -114,13 +114,14 @@
         <text class="ftv2-w3" x="50%" y="54" text-anchor="middle" textLength="421" lengthAdjust="spacingAndGlyphs" mask="url(#ftv2TextMask)"><tspan>W</tspan><tspan>a</tspan><tspan>l</tspan><tspan>t</tspan><tspan>o</tspan><tspan>n</tspan><tspan class="ftv2-sp"> </tspan><tspan>F</tspan><tspan>a</tspan><tspan>m</tspan><tspan>i</tspan><tspan>l</tspan><tspan>y</tspan></text>
         <!-- طبقة 4: وهج حرف-حرف بعد اكتمال المسحة — بنفس بنية الطبقات تماماً -->
         <text class="ftv2-w4" x="50%" y="54" text-anchor="middle" textLength="421" lengthAdjust="spacingAndGlyphs"><tspan>W</tspan><tspan>a</tspan><tspan>l</tspan><tspan>t</tspan><tspan>o</tspan><tspan>n</tspan><tspan class="ftv2-sp"> </tspan><tspan>F</tspan><tspan>a</tspan><tspan>m</tspan><tspan>i</tspan><tspan>l</tspan><tspan>y</tspan></text>
-        <!-- طبقة 5 (الانضغاط 3D) انتقلت لطبقة HTML فوق الـ SVG — .ftv2-w5 تحت هذا الـ svg —
+        <!-- طبقة 5 (الانبثاق والغرس ثلاثي الأبعاد) انتقلت لطبقة HTML فوق الـ SVG — .ftv2-w5 تحت هذا الـ svg —
              لأن المتصفحات لا ترندر التحويلات المنظورية (rotateX/rotateY/perspective) على عناصر
-             SVG الداخلية أصلاً: كانت تُسطَّح أو تُهمل = كل نماذج الدوران السابقة ميتة بصرياً.
-             الحروف هنا عناصر HTML divs يبنيها JS بنفس إحداثيات الحروف المطبوعة (x/textLength
-             مأخوذة من getExtentOfChar بعد التشديد — مطابقة بكسل-بكسل) وكل حرف svg صغير
-             بنفس آلية textLength فيرندر بالحرف الأصلي تماماً، والتحويل المنظوري يتم على الـ div
-             (عنصر HTML كامل الأهلية للـ 3D) — تعمل بالماوس وباللمس معاً -->
+             SVG الداخلية أصلاً: كانت تُسطَّح أو تُهمل. الحروف هنا عناصر HTML divs يبنيها JS بنفس
+             إحداثيات الحروف المطبوعة (x/textLength مأخوذة من getExtentOfChar بعد التشديد —
+             مطابقة بكسل-بكسل) وكل حرف svg صغير بنفس آلية textLength فيرندر بالحرف الأصلي تماماً،
+             والتحويل المنظوري يتم على الـ div (عنصر HTML كامل الأهلية للـ 3D).
+             النظام بمرحلتين: أول ضغطة = الحرف يبرز ويكبر ويتوهج ويبقى، وبعدها تحريك الماوس أو
+             ضغط الإصبع يغرسه للداخل من مكان اللمس بنفس الحجم والبروز — تعمل بالماوس وباللمس معاً -->
       </svg>
       <div class="ftv2-w5" id="ftv2W5" aria-hidden="true"></div>
     </div>
@@ -186,11 +187,9 @@
   // الماوس يُتتبَّع على مستوى البطاقة كلها — «كشاف» يكشف تدرج الكلمة من أي مكان،
   // دون أن يحجب أي عنصر الروابط القابلة للنقر (ماوس فقط — على اللمس التدرج كامل بلا قناع)
   // ── حلقة تتبّع الماوس: للكشاف فقط (تنعيم lerp) ──
-  // الانضغاط خارج الحلقة كلياً: يُحسب ويُكتب مباشرة من حدث المؤشر بلا أي حلقة ولا مطاردة،
-  // فأول لمسة من أي جهة تنضغط الحرف فوراً بالاتجاه الصحيح (بلا تأخر إطارات يُقرأ عكساً).
-  // الحلقة تعمل فقط أثناء حركة المؤشر لتنعيم الكشاف وتتوقف كلياً عند السكون —
-  // والإطار الساكن صفر كتابات DOM. مسار اللمس يبقى مباشراً بلا حلقة أصلاً.
-  var tiltAt = null, releaseAll = null;
+  // الانبثاق والغرس خارج هذه الحلقة كلياً (كتلة ftv2-w5 أدناه): حلقة مستقلة تعمل فقط
+  // أثناء الحركة الفعلية للحروف وتتوقف ذاتياً عند الاستقرار. هذه الحلقة تعمل فقط
+  // أثناء حركة المؤشر لتنعيم الكشاف وتتوقف كلياً عند السكون — الإطار الساكن صفر كتابات DOM.
   var tX = 0, tY = 0, sX = 0, sY = 0, queued = false, wasInside = false, lastCx = '', lastCy = '', live = false, lastMove = 0;
   function kick(){ if (!queued) { queued = true; requestAnimationFrame(frame); } }
   function frame(){
@@ -220,35 +219,32 @@
     card.addEventListener('mousemove', function(e){
       var now = performance.now();
       tX = e.clientX; tY = e.clientY;
-      // الانضغاط من موضع المؤشر الحقيقي مباشرة (بلا تنعيم): الضغط يظهر حيث يجري المؤشر بالضبط
-      if (tiltAt) { var p0 = svgPoint(tX, tY); if (p0) tiltAt(p0[0], p0[1]); }
       if (!live || now - lastMove > 120) { sX = tX; sY = tY; }
       live = true; lastMove = now;
       kick();
     }, { passive: true });
     card.addEventListener('mouseleave', function(){
       live = false;
-      if (tiltAt) tiltAt(NaN, NaN); // إنشال فوري عند مغادرة البطاقة
       if (wasInside) { wasInside = false; wrap.classList.remove('hovered'); }
     });
   }
-  // ── انضغاط حروف Walton Family — منظور ثلاثي الأبعاد حقيقي — ماوس ولمس معاً ──
+  // ── حروف Walton Family — انبثاق ثلاثي الأبعاد بمرحلتين — ماوس ولمس معاً ──
   // · الحروف طبقة HTML فوق الكلمة: المتصفحات لا ترندر التحويلات المنظورية
   //   (rotateX/rotateY/perspective) على عناصر SVG الداخلية — تُسطّح أو تُهمل،
-  //   ولهذا كانت كل نماذج «الدوران» السابقة على <text> ميتة أو مشوّهة بصرياً.
-  //   الحرف الآن div فوق الكلمة بداخله svg صغير بنفس آلية textLength — يطابق
+  //   الحرف div فوق الكلمة بداخله svg صغير بنفس آلية textLength — يطابق
   //   الحرف المطبوع بكسل-بكسل، والمنظور يُطبّق على الـ div (عنصر HTML كامل الأهلية)
-  // · نموذج «المفتاح يُكبس» كما اعتُمد سابقاً: نطاقات منفصلة بقلب 70% من كل حرف
-  //   وفجوات ميتة بين الحروف (بين حرفين = صفر تفاعل)، وأقصى عمق بقلب الحرف
-  //   يتلاشى عند طرفي النطاق — والانضغاط نفسه صار منظورياً: جهة اللمس تغوص
-  //   داخل الشاشة بإشارات مدققة (rotateY موجب = اليمين يبتعد عن الناظر،
-  //   rotateX سالب = الأسفل يبتعد) + دفع translateZ للخلف + تصغير خفيف،
-  //   وقلب الحرف الأفقي = غوص مستقيم بلا أي ميلان
-  // · الضغط يُكتب مباشرة من حدث المؤشر بلا انتقال CSS على transform = لحظي
-  //   لا يُقرأ متأخراً ولا معكوساً، والإنشال حلقة decay أُسّية قصيرة (~150ms)
-  //   تتوقف ذاتياً — لا حلقات دائمة ولا مؤقتات خامل، أثر الأداء صفري بالسكون
+  // · المرحلة 1 (طلب المستخدم): أول ضغطة على حرف يبرز نحو المستخدم (translateZ+)
+  //   ويكبر (scale 1.22) ويتوهج توهجاً خارجياً — ويبقى منبثقاً بعد رفع الإصبع
+  // · المرحلة 2: وهو منبثق، تحريك الماوس فوقه (ديسكتوب) أو ضغط الإصبع/تمريره (هاتف)
+  //   يغرسه للداخل من مكان المؤشر بالضبط بنفس الحجم والبروز: ميلان منظوري تجاه
+  //   نقطة اللمس (rotateY موجب = اليمين يبتعد، rotateX سالب = الأسفل يبتعد) + دفع
+  //   للخلف يبلغ أقصاه عند قلب اللمس، وقرب مركز الحرف = غوص مستقيم بلا ميلان.
+  //   نقرة ثانية على المنبثق تعيده للسكون، والحروف الساكنة لا تستجيب للمجرد
+  //   المرور إطلاقاً (البروز بالضغطة فقط — لا «انضغاط بالمرور» كما في النموذج القديم)
+  // · الحركة حلقة rAF واحدة تعمل فقط أثناء انتقال القيم وتتوقف ذاتياً عند
+  //   الاستقرار — لا مؤقتات خامل ولا حلقات دائمة، وأثر السكون على الأداء صفري
   if (!reduced && W5) {
-    var MAXR = 16, MAXRX = 13, HH = 34, MAXZ = 12, MAXSH = 0.05;
+    var POPZ = 22, POPS = 1.22, MAXR = 14, MAXRX = 11, DENTZ = 30, PERSP = 340, HH = 34;
     var NS = 'http://www.w3.org/2000/svg';
     // [الحرف، مركز x، العرض المشدود (textLength)، مركز y البصري للصنف]
     // المركز الرأسي لكل صنف: قبعة (W/F) 9.4–54 → 31.7 / وسط صغير 20.5–54 → 37.25 / نازل (y) 20.5–66.5 → 43.5
@@ -274,9 +270,9 @@
       sv.appendChild(tx); d.appendChild(sv); W5.appendChild(d);
       // محور الدوران بصرّ الحرف نفسه (وليس صندوقه الكامل) — انعكاس دقيق حول مركز الحرف
       d.style.transformOrigin = '50% ' + c[3] + '%';
-      var half = c[2] * 0.35; // قلب عرض الحرف ~70% فقط — ما بين الحروف فجوة ميتة بلا تفاعل
-      letters.push({ el: d, cx: c[1], half: half, cy: c[3], rx: 0, ry: 0, tz: 0, s: 1 });
-      bands.push([c[1] - half, c[1] + half]);
+      var hw = c[2] / 2 + 1.5; // نطاق اللمس بعرض الحرف كاملاً — الحروف المتتالية تغطي الكلمة كلها وفجوة الكلمتين فقط بلا حرف
+      letters.push({ el: d, cx: c[1], hw: hw, cy: c[3], pop: 0, popT: 0, dent: 0, dentT: 0, ndx: 0, ndy: 0 });
+      bands.push([c[1] - hw, c[1] + hw]);
     });
     // تثبيت الحروف بالبكسل فوق حجز viewBox داخل صندوق الـ svg — preserveAspectRatio
     // يوسّط المحتوى فيحجز هوامش، والمطابقة البكسلية تُحسب من نفس معادلة svgPoint
@@ -304,81 +300,106 @@
     Array.prototype.forEach.call(['ftv2-w1', 'ftv2-w2', 'ftv2-w3', 'ftv2-w4'], function(cls){
       baseRows.push(svg.querySelector('.' + cls).querySelectorAll('tspan:not(.ftv2-sp)'));
     });
-    var cur = -1, decaying = null, rafId = 0;
+    var rafId = 0, dented = -1, poppedCount = 0, suppressClick = false, pressedIdx = -1, pressedWasPop = false;
     function apply(L){
-      L.el.style.transform = 'perspective(340px) translateZ(' + L.tz.toFixed(2) + 'px) rotateX(' + L.rx.toFixed(2) + 'deg) rotateY(' + L.ry.toFixed(2) + 'deg) scale(' + L.s.toFixed(3) + ')';
+      var tz = POPZ * L.pop - DENTZ * L.dent; // بروز نحو المستخدم، والغرس يدفع الخلف من مكان اللمس
+      var sc = 1 + (POPS - 1) * L.pop;        // «بنفس الحجم»: الغرس لا يغيّر الحجم إطلاقاً
+      L.el.style.transform = 'perspective(' + PERSP + 'px) translateZ(' + tz.toFixed(2) + 'px) rotateX(' + (-MAXRX * L.ndy * L.dent).toFixed(2) + 'deg) rotateY(' + (MAXR * L.ndx * L.dent).toFixed(2) + 'deg) scale(' + sc.toFixed(3) + ')';
     }
-    function setState(idx, on){
-      letters[idx].el.classList[on ? 'add' : 'remove']('ftv2-tilting');
-      for (var r2 = 0; r2 < 4; r2++) baseRows[r2][idx].classList[on ? 'add' : 'remove']('ftv2-lift');
-    }
-    function rest(L){ L.rx = L.ry = L.tz = 0; L.s = 1; L.el.style.transform = ''; }
-    function startDecay(idx){
-      var L = letters[idx];
-      if (Math.abs(L.rx) < 0.3 && Math.abs(L.ry) < 0.3 && Math.abs(L.tz) < 0.4 && Math.abs(1 - L.s) < 0.002) { rest(L); return; }
-      (decaying || (decaying = {}))[idx] = L;
-      if (!rafId) rafId = requestAnimationFrame(decayStep);
-    }
-    function decayStep(){
+    function tick(){
       rafId = 0;
-      var live = false;
-      for (var k in decaying) {
-        var L = decaying[k];
-        L.rx *= 0.72; L.ry *= 0.72; L.tz *= 0.72; L.s = 1 - (1 - L.s) * 0.72;
-        if (Math.abs(L.rx) < 0.25 && Math.abs(L.ry) < 0.25 && Math.abs(L.tz) < 0.3 && Math.abs(1 - L.s) < 0.0015) {
-          rest(L); delete decaying[k];
-        } else { apply(L); live = true; }
+      var live2 = false;
+      for (var i = 0; i < letters.length; i++) {
+        var L = letters[i];
+        var dp = L.popT - L.pop, dd = L.dentT - L.dent;
+        if (Math.abs(dp) > 0.004 || Math.abs(dd) > 0.004) {
+          L.pop += dp * 0.16; L.dent += dd * 0.3; // انبثاق ناعم ~280ms وغرس أسرع ~150ms
+          if (Math.abs(L.popT - L.pop) <= 0.004) L.pop = L.popT;
+          if (Math.abs(L.dentT - L.dent) <= 0.004) L.dent = L.dentT;
+          if (L.pop === 0 && L.dent === 0) L.el.style.transform = ''; // سكون تام = صفر تكلفة
+          else apply(L);
+          live2 = true;
+        }
       }
-      if (live) rafId = requestAnimationFrame(decayStep);
+      if (live2) rafId = requestAnimationFrame(tick);
     }
-    function releaseActive(){
-      if (cur < 0) return;
-      setState(cur, false);
-      startDecay(cur);
-      cur = -1;
+    function kick(){ if (!rafId) rafId = requestAnimationFrame(tick); }
+    function setPop(i, on){
+      var L = letters[i];
+      if ((L.popT === 1) === on) return;
+      L.popT = on ? 1 : 0;
+      if (on) poppedCount++;
+      else { poppedCount--; L.dentT = 0; if (dented === i) dented = -1; }
+      L.el.classList[on ? 'add' : 'remove']('ftv2-pop');
+      for (var r2 = 0; r2 < 4; r2++) baseRows[r2][i].classList[on ? 'add' : 'remove']('ftv2-lift');
+      kick();
     }
-    tiltAt = function(xSvg, ySvg){
-      if (isNaN(xSvg)) { releaseActive(); return; }
-      if (!wrap.classList.contains('w5-ready') || !(ySvg > 0 && ySvg < 100)) { releaseActive(); return; }
-      var hit = -1;
-      for (var b = 0; b < bands.length; b++) {
-        if (xSvg >= bands[b][0] && xSvg < bands[b][1]) { hit = b; break; }
-      }
-      if (hit < 0) { releaseActive(); return; } // الفجوة الميتة بين الحروف: لا أي تفاعل
+    function releaseDents(){
+      if (dented < 0) return;
+      letters[dented].dentT = 0;
+      dented = -1;
+      kick();
+    }
+    function hitAt(x){
+      for (var b = 0; b < bands.length; b++) if (x >= bands[b][0] && x < bands[b][1]) return b;
+      return -1;
+    }
+    // الغرس: على الحروف المنبثقة فقط — الساكن لا يستجيب للمرور إطلاقاً
+    function dentAt(xSvg, ySvg){
+      if (isNaN(xSvg) || !wrap.classList.contains('w5-ready') || !(ySvg > 0 && ySvg < 100)) { releaseDents(); return; }
+      var hit = hitAt(xSvg);
+      if (hit < 0 || letters[hit].popT !== 1) { releaseDents(); return; }
       var L = letters[hit];
-      var ndx = (xSvg - L.cx) / L.half; if (ndx > 1) ndx = 1; else if (ndx < -1) ndx = -1;
-      var depth = 1 - Math.abs(ndx);
-      var i = depth * depth * (3 - 2 * depth); // أقصى عمق بقلب الحرف، صفر عند طرفي النطاق حتى يلتحم بالفجوة الميتة
+      var ndx = (xSvg - L.cx) / L.hw; if (ndx > 1) ndx = 1; else if (ndx < -1) ndx = -1;
       var ndy = (ySvg - L.cy) / HH; if (ndy > 1) ndy = 1; else if (ndy < -1) ndy = -1;
-      L.ry =  MAXR  * ndx * i; // يمين القلب ← يمين الحرف يغوص للداخل
-      L.rx = -MAXRX * ndy * i; // تحت القلب ← أسفل الحرف يغوص للداخل
-      L.tz = -MAXZ  * i;
-      L.s  = 1 - MAXSH * i;
-      if (hit !== cur) {
-        releaseActive();
-        cur = hit;
-        setState(hit, true);
-        if (decaying) delete decaying[hit];
+      var prox = 1 - Math.max(Math.abs(ndx), Math.abs(ndy)); // أعمق غرس عند قلب اللمس
+      prox = prox * prox * (3 - 2 * prox);                    // يتلاشى نحو أطراف الحرف
+      L.ndx = ndx; L.ndy = ndy; L.dentT = prox;
+      if (dented !== hit) {
+        if (dented >= 0) letters[dented].dentT = 0;
+        dented = hit;
       }
-      apply(L);
-    };
+      kick();
+    }
+    // الضغط (ديسكتوب mousedown / لمس touchstart):
+    // · حرف ساكن → ينبثق فوراً (المرحلة 1) بلا أي غرس في نفس الضغطة — يظهر البروز نظيفاً
+    // · حرف منبثق → يُغرس من مكان الضغط (المرحلة 2 — «ضغطة اليد بهاتف»)
+    function pressAt(xSvg, ySvg){
+      if (!wrap.classList.contains('w5-ready') || !(ySvg > 0 && ySvg < 100)) { pressedIdx = -1; return; }
+      var hit = hitAt(xSvg);
+      pressedIdx = hit;
+      if (hit < 0) return;
+      pressedWasPop = letters[hit].popT === 1;
+      if (!pressedWasPop) setPop(hit, true); // أول ضغطة: بروز + تكبير + وهج فوراً
+      else dentAt(xSvg, ySvg);               // منبثق سابقاً: الغرس من مكان الضغط
+    }
+    // النقرة = إعادة الحرف الذي ضُغط للسكون (فقط إذا كان منبثقاً قبل الضغطة —
+    // وإلا كانت هي ضغطة الانبثاق نفسها فلا يُقلب فوراً)
+    wrap.addEventListener('click', function(){
+      if (suppressClick) { suppressClick = false; return; }
+      if (pressedIdx < 0) return;
+      var i3 = pressedIdx, wasPop = pressedWasPop;
+      pressedIdx = -1;
+      if (wasPop) setPop(i3, false);
+    });
     if (isTouch) {
-      // اللمس: الإصبع بنفس النموذج بالضبط —
-      // · تمرير الإصبع فوق الكلمة ينضغط الحروف تباعاً معه (مستمعات passive فلا تعترض سكرول الصفحة أبداً)
-      // · نقرة واحدة تنضغط الحرف للداخل وتُبقيه لحظة (900ms) ثم ينشال بنعومة
-      // · رفع الإصبع بعد تمرير ينشال فوراً
-      var holdTimer = null, moved = 0, lx = 0, ly = 0;
+      // اللمس (مستمعات passive لا تعترض سكرول الصفحة أبداً):
+      // · ضغطة على حرف ساكن = ينبثق ويبقى منبثقاً بعد رفع الإصبع
+      // · ضغطة/تمرير على منبثق = يُغرس من مكان الإصبع وينشال عند الرفع ويبقى منبثقاً
+      // · نقرة سريعة على منبثق = تعيده للسكون (تبديل)
+      var moved = 0, lx = 0, ly = 0, t0 = 0;
       var at = function(e){
         var t = e.touches[0];
         if (!t) return;
         var p = svgPoint(t.clientX, t.clientY);
-        if (p) tiltAt(p[0], p[1]);
+        if (p) dentAt(p[0], p[1]);
       };
-      var dropHold = function(){ if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; } };
       svg.addEventListener('touchstart', function(e){
         var t = e.touches[0];
-        if (t) { moved = 0; lx = t.clientX; ly = t.clientY; }
-        dropHold(); at(e);
+        if (!t) return;
+        moved = 0; lx = t.clientX; ly = t.clientY; t0 = performance.now();
+        var p = svgPoint(t.clientX, t.clientY);
+        if (p) pressAt(p[0], p[1]);
       }, { passive: true });
       svg.addEventListener('touchmove', function(e){
         var t = e.touches[0];
@@ -386,12 +407,25 @@
         at(e);
       }, { passive: true });
       svg.addEventListener('touchend', function(){
-        if (moved < 12) { holdTimer = setTimeout(function(){ tiltAt(NaN, NaN); }, 900); } else { tiltAt(NaN, NaN); }
+        // ضغط مطوّل أو تمرير = غرس/سحب لا نقرة — تُمنع النقرة كي لا يُقلب الحرف بالخطأ
+        if (!(moved < 12 && performance.now() - t0 < 350)) suppressClick = true;
+        releaseDents();
       }, { passive: true });
-      svg.addEventListener('touchcancel', function(){ dropHold(); tiltAt(NaN, NaN); }, { passive: true });
+      svg.addEventListener('touchcancel', function(){ suppressClick = true; releaseDents(); }, { passive: true });
+    } else {
+      // الديسكتوب: الضغط ينبثق/يغرس، والحركة فوق المنبثق تغرّسه من مكان المؤشر،
+      // ومغادرة البطاقة تُنشّل كل غرسة (المنبثق يبقى منبثقاً)
+      wrap.addEventListener('mousedown', function(e){
+        var p = svgPoint(e.clientX, e.clientY);
+        if (p) pressAt(p[0], p[1]);
+      });
+      card.addEventListener('mousemove', function(e){
+        if (!poppedCount) return; // لا حروف منبثقة = صفر عمل لكل حركة ماوس (أداء)
+        var p = svgPoint(e.clientX, e.clientY);
+        if (p) dentAt(p[0], p[1]);
+      }, { passive: true });
+      card.addEventListener('mouseleave', releaseDents);
     }
-    // الديسكتوب: مغادرة البطاقة تُنشّل الانضغاط فوراً — مُدرَجة فوق في مستمع
-    // card mouseleave (النموذج المباشر لا يعلق حرفاً)
   }
 })();</script>
 
