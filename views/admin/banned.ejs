@@ -69,7 +69,7 @@
         <td class="banned-td-date"><%= u.banned_at ? new Date(u.banned_at).toLocaleDateString('ar-SA', {year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '-' %></td>
         <td class="banned-td-date"><%= u.banned_until ? new Date(u.banned_until).toLocaleDateString('ar-SA', {year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : 'دائم' %></td>
         <td>
-          <button class="card-btn" data-action="unban" data-id="<%= u.id %>"><i class="fas fa-unlock"></i> فك الحظر</button>
+          <button class="card-btn" data-action="unban" data-id="<%= u.id %>" data-name="<%= u.username %>"><i class="fas fa-unlock"></i> فك الحظر</button>
         </td>
       </tr>
       <% }); %>
@@ -79,17 +79,64 @@
   </tbody>
 </table>
 
+<!-- Unban Confirmation Modal -->
+<div class="unban-overlay" id="unbanOverlay">
+  <div class="unban-modal">
+    <div class="unban-modal-icon"><i class="fas fa-unlock"></i></div>
+    <h3>فك الحظر</h3>
+    <p>هل أنت متأكد من فك حظر <strong id="unbanName"></strong>؟</p>
+    <div class="unban-modal-actions">
+      <button class="unban-btn cancel" onclick="closeUnbanModal()">إلغاء</button>
+      <button class="unban-btn confirm" id="unbanConfirmBtn"><i class="fas fa-check"></i> تأكيد</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.unban-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:999;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.unban-overlay.active{display:flex}
+.unban-modal{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:28px;text-align:center;width:90%;max-width:360px;animation:unbanPop 0.25s ease}
+@keyframes unbanPop{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
+.unban-modal-icon{width:56px;height:56px;border-radius:50%;background:rgba(34,197,94,0.12);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:1.4rem;color:#22c55e}
+.unban-modal h3{margin:0 0 8px;font-size:1.1rem;color:var(--text)}
+.unban-modal p{margin:0 0 20px;font-size:0.88rem;color:var(--text-dim);line-height:1.6}
+.unban-modal p strong{color:var(--text)}
+.unban-modal-actions{display:flex;gap:10px;justify-content:center}
+.unban-btn{padding:10px 24px;border-radius:10px;font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer;border:none;transition:all 0.2s}
+.unban-btn.cancel{background:rgba(255,255,255,0.06);color:var(--text-dim);border:1px solid var(--border)}
+.unban-btn.cancel:hover{background:rgba(255,255,255,0.1);color:var(--text)}
+.unban-btn.confirm{background:#22c55e;color:#fff}
+.unban-btn.confirm:hover{background:#16a34a}
+</style>
+
 <script>
-document.getElementById('bannedTable').addEventListener('click', async function(e) {
-  const btn = e.target.closest('[data-action]');
+let pendingUnbanId = null;
+
+document.getElementById('bannedTable').addEventListener('click', function(e) {
+  const btn = e.target.closest('[data-action="unban"]');
   if (!btn) return;
-  if (btn.dataset.action === 'unban') {
-    if (!confirm('إلغاء حظر هذا المستخدم؟')) return;
-    const res = await fetch('/api/admin/users/' + btn.dataset.id + '/unban', { method: 'POST', headers: {'Content-Type':'application/json'} });
-    const data = await res.json();
-    if (data.success) location.href = '/admin/banned';
-    else alert(data.error || 'خطأ');
-  }
+  pendingUnbanId = btn.dataset.id;
+  document.getElementById('unbanName').textContent = btn.dataset.name;
+  document.getElementById('unbanOverlay').classList.add('active');
+});
+
+function closeUnbanModal() {
+  document.getElementById('unbanOverlay').classList.remove('active');
+  pendingUnbanId = null;
+}
+
+document.getElementById('unbanConfirmBtn').addEventListener('click', async function() {
+  if (!pendingUnbanId) return;
+  this.disabled = true;
+  this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري...';
+  const res = await fetch('/api/admin/users/' + pendingUnbanId + '/unban', { method: 'POST', headers: {'Content-Type':'application/json'} });
+  const data = await res.json();
+  if (data.success) location.href = '/admin/banned';
+  else { alert(data.error || 'خطأ'); closeUnbanModal(); }
+});
+
+document.getElementById('unbanOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeUnbanModal();
 });
 </script>
 <%- include('admin_footer') %>
