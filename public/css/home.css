@@ -170,7 +170,9 @@
 /* سهم النزول (hx-scrollhint) حُذف كلياً بطلب المستخدم — كان ينغرس نصفه خلف بطاقة
    الإحصائيات فيبرز قوسه فوق حدود البطاقة ويظهر شبحه عبر خلفيتها الشبه شفافة */
 
-/* ══════════════════ شريط الإحصائيات ══════════════════ */
+/* ══════════════════ شريط الإحصائيات ══════════════════
+   نفس فكرة بطاقات «من نحن» الزجاجية (كل إحصائية بطاقة منفصلة) — والخلفية أغمق بلمسة
+   سوداء بنفسجية بطلب المستخدم. القيم الزجاجية منصورة لأن متغيرات الزجاج محصورة بنطاق .navbar */
 .hx-statsband {
   position: relative;
   z-index: 3;
@@ -179,11 +181,7 @@
 .hx-stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  background: rgba(26, 27, 46, 0.92);
-  border: 1px solid rgba(210, 77, 255, 0.22);
-  border-radius: 18px;
-  overflow: hidden;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.2);
+  gap: 16px;
 }
 .hx-stat {
   position: relative;
@@ -193,8 +191,23 @@
   gap: 4px;
   padding: 22px 14px 18px;
   text-align: center;
+  background: rgba(20, 13, 36, 0.6);
+  border: 1px solid rgba(210, 77, 255, 0.22);
+  border-radius: 18px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.35);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.hx-stat + .hx-stat { border-inline-start: 1px solid var(--border); }
+.hx-stat:hover {
+  border-color: rgba(210, 77, 255, 0.45);
+  transform: translateY(-4px);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.4), 0 0 22px rgba(210, 77, 255, 0.12);
+}
+/* اللمس اللاصق: بلا رفع ولا توهج على الأجهزة اللمسية */
+@media (hover: none) and (pointer: coarse) {
+  .hx-stat:hover { transform: none; }
+}
 .hx-stat-ic {
   width: 40px; height: 40px;
   display: grid;
@@ -609,9 +622,8 @@
   .hx-hero-inner { gap: 16px; }
   .hx-grad { animation: none; }
   .hx-stats { grid-template-columns: repeat(2, 1fr); }
-  .hx-stat { padding: 16px 10px 14px; }
-  .hx-stat:nth-child(3) { border-inline-start: 0; }
-  .hx-stat:nth-child(n + 3) { border-top: 1px solid var(--border); }
+  /* البلور معطل بالجوال (قاعدة الأداء العامة) — تُكثّف الخلفية السوداء البنفسجية لتبقى البطاقات مقروءة */
+  .hx-stat { padding: 16px 10px 14px; background: rgba(16, 10, 30, 0.86); }
   .hx-stat-val { font-size: 22px; }
   .hx-section { padding-block: 40px 8px; }
   .hx-join { padding-bottom: 28px; }
