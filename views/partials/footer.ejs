@@ -187,30 +187,50 @@
   }
   // الماوس يُتتبَّع على مستوى البطاقة كلها — «كشاف» يكشف تدرج الكلمة من أي مكان،
   // دون أن يحجب أي عنصر الروابط القابلة للنقر (ماوس فقط — على اللمس التدرج كامل بلا قناع)
-  if (!isTouch) {
-  var pending = false, lastX = 0, lastY = 0;
-  function apply() {
+  // ── حلقة تتبّع الماوس: نعومة lerp للكشاف ولبطاقات الـ 3D معاً ──
+  // مستمع الماوس لا يحسب شيئاً: يحفظ هدف المؤشر فقط ويوقظ الحلقة، والحلقة تقترب من
+  // الهدف بنسبة ثابتة كل إطار (55%) — حركة even بلا رجفة: كانت transition الـ transform
+  // تُعاد تشغيلها كل إطار فوق قيم متقطعة فتظهر خطوات متفاوتة = اهتزاز خفيف أحياناً.
+  // الحلقة تعمل فقط عند الحاجة (مؤشر لم يستقر أو حرف مرفوع) وتتوقف كلياً عند السكون،
+  // والإطار الساكن صفر كتابات DOM (كتابة فقط عند تغيّر فعلي). مسار اللمس يبقى مباشراً.
+  var tiltAt = null, isEngaged = function(){ return false; };
+  var tX = 0, tY = 0, sX = 0, sY = 0, queued = false, wasInside = false, lastCx = '', lastCy = '';
+  function kick(){ if (!queued) { queued = true; requestAnimationFrame(frame); } }
+  function frame(){
+    queued = false;
     var r = svg.getBoundingClientRect();
-    if (r.width && r.height) {
-      // الكشاف بإحداثيات المحتوى الفعلية (بعد التوسيط) — يلتصق بمكان المؤشر بلا انزياح
-      var p = svgPoint(lastX, lastY);
-      if (p) {
-        maskG.setAttribute('cx', (p[0] / vbW * 100).toFixed(2) + '%');
-        maskG.setAttribute('cy', (p[1] / vbH * 100).toFixed(2) + '%');
+    if (!r.width || !r.height) return;
+    sX += (tX - sX) * 0.55; sY += (tY - sY) * 0.55;
+    var p = svgPoint(sX, sY);
+    if (p) {
+      if (!isTouch && maskG) {
+        var mcx = (p[0] / vbW * 100).toFixed(2) + '%', mcy = (p[1] / vbH * 100).toFixed(2) + '%';
+        if (mcx !== lastCx || mcy !== lastCy) {
+          lastCx = mcx; lastCy = mcy;
+          maskG.setAttribute('cx', mcx); maskG.setAttribute('cy', mcy);
+        }
       }
-      var inside = lastX >= r.left - 24 && lastX <= r.right + 24 &&
-                   lastY >= r.top - 24 && lastY <= r.bottom + 24;
-      if (inside) { wrap.classList.add('hovered'); } else { wrap.classList.remove('hovered'); }
-      // نفس الإطار: توجيه بطاقة الـ 3D للحروف — صفر مستمعات إضافية وصفر قياسات
-      if (tiltAt && p) tiltAt(p[0], p[1]);
+      if (!isTouch) {
+        var inside = tX >= r.left - 24 && tX <= r.right + 24 &&
+                     tY >= r.top - 24 && tY <= r.bottom + 24;
+        if (inside !== wasInside) {
+          wasInside = inside;
+          if (inside) wrap.classList.add('hovered'); else wrap.classList.remove('hovered');
+        }
+      }
+      if (tiltAt) tiltAt(p[0], p[1]);
     }
-    pending = false;
+    // الاستمرار عند الداعي فقط: المؤشر لم يبلغ هدفه بعد، أو حرف مرفوع — تُعاد القراءة
+    // كل إطار فتبقى البطاقة ملتصقة بالمؤشر حتى لو تحركت الصفحة (سكرول) تحت المؤشر
+    if (Math.abs(tX - sX) + Math.abs(tY - sY) > 0.4 || isEngaged()) kick();
   }
-  card.addEventListener('mousemove', function(e){
-    lastX = e.clientX; lastY = e.clientY;
-    if (!pending) { pending = true; requestAnimationFrame(apply); }
-  }, { passive: true });
-  card.addEventListener('mouseleave', function(){ wrap.classList.remove('hovered'); });
+  if (!isTouch) {
+    card.addEventListener('mousemove', function(e){
+      tX = e.clientX; tY = e.clientY; kick();
+    }, { passive: true });
+    card.addEventListener('mouseleave', function(){
+      if (wasInside) { wasInside = false; wrap.classList.remove('hovered'); }
+    });
   }
   // ── بطاقة 3D تفاعلية للحروف (نفس تفاعل بطاقات الرئيسية القديمة) — ماوس ولمس معاً ──
   // تتبّع مركزي واحد على مستوى الـ SVG بدل مستمع لكل حرف:
@@ -219,7 +239,6 @@
   // · الميلان يُحدَّث داخل نفس rAF الخاص بكشف التدرج، فيتبع المؤشر فوراً بلا تأخير
   // · الحرف المرفوع: نسخ الطبقات 1-4 تحته تُخفت (ftv2-lift) فينطلق الحرف كله كبطاقة واحدة
   //   بدل «حرفين»، وعند الابتعاد ينشال الميلان بالمنحنى النابض وترجع الطبقات بنعومة
-  var tiltAt = null;
   if (!reduced) {
     var TILT = 18;
     var letters = svg.querySelectorAll('.ftv2-w5i');
@@ -244,6 +263,8 @@
       cur = i;
       if (i >= 0) for (var r2 = 0; r2 < 4; r2++) baseRows[r2][i].classList.add('ftv2-lift');
     };
+    isEngaged = function(){ return cur >= 0; };
+    var lastHit = -2, lastStr = '';
     tiltAt = function(xSvg, ySvg){
       var hit = -1;
       // النطاق العمودي يغطي الحروف كاملة (القمم ~9.4 والقواعد ~54) مع هامش فوق/تحت
@@ -251,14 +272,25 @@
         for (var b = 0; b < bands.length; b++) {
           if (xSvg >= bands[b][0] && xSvg < bands[b][1]) { hit = b; break; }
         }
+        // ثبات على الحرف (hysteresis): لا تبديل للحرف المجاور إلا بعد اختراق 3 وحدات
+        // داخل نطاقه — يمنع وميض التذبذب حين يرقد المؤشر قرب الفاصل بين حرفين
+        if (hit !== cur && cur >= 0 && hit >= 0 &&
+            (xSvg < bands[hit][0] + 3 || xSvg >= bands[hit][1] - 3)) hit = cur;
       }
       if (hit >= 0) {
         var bd = bands[hit];
         var px = Math.max(-0.5, Math.min(0.5, (xSvg - bd[2]) / bd[3]));
         var py = Math.max(-0.5, Math.min(0.5, (ySvg - 10) / 44 - 0.5));
-        letters[hit].classList.add('ftv2-tilting');
-        letters[hit].style.transform = 'perspective(320px) rotateX(' + (-py * 2 * TILT).toFixed(2) +
+        var str = 'perspective(320px) rotateX(' + (-py * 2 * TILT).toFixed(2) +
           'deg) rotateY(' + (px * 2 * TILT).toFixed(2) + 'deg) translateY(-4px) scale(1.2)';
+        // كتابة للـ DOM فقط عند تغيّر فعلي — والإطار الساكن بلا أي كتابة
+        if (hit !== lastHit || str !== lastStr) {
+          letters[hit].classList.add('ftv2-tilting');
+          letters[hit].style.transform = str;
+          lastHit = hit; lastStr = str;
+        }
+      } else {
+        lastHit = -2; lastStr = '';
       }
       lift(hit);
     };

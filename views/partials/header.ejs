@@ -16,7 +16,12 @@
   %>
   <meta name="description" content="<%= _siteName %> - مجتمعنا الرقمي">
   <meta name="theme-color" content="<%= _accentColor %>">
-  <title><%= title %> | <%= _siteName %></title>
+  <%
+    /* عنوان التبويب: «اسم الصفحة | اسم الموقع» — لكن لو عنوان الصفحة هو اسم الموقع
+       نفسه (الرئيسية تُمرر site_name كعنوان) يُعرض مرة واحدة بلا تكرار */
+    var _tabTitle = (typeof title !== 'undefined' && title && title !== _siteName) ? (title + ' | ' + _siteName) : _siteName;
+  %>
+  <title><%= _tabTitle %></title>
 
   <!-- Preload الصور الحرجة (اللوغو والخلفية المحلية فقط) — أول ما تفتح الصفحة تبدأ بالتحميل فوراً مع الكاش 7 أيام فما تعيد التحميل مع كل تنقل -->
   <% var _logoUrl = (typeof settings !== 'undefined' && settings && settings.site_logo_url) ? settings.site_logo_url : '/images/logo.png'; %>
