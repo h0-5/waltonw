@@ -2,206 +2,21 @@
 <%- include('../partials/navbar') %>
 
 <%
-  /* ===== تجهيزات خفيفة بمنطق الصفحة (بلا أي استعلام) ===== */
-  var hwUser = typeof user !== 'undefined' ? user : null;
-  var hwMy = (typeof myStats !== 'undefined' && myStats) ? myStats : null;
-  var hwStore = (typeof storePreview !== 'undefined' && storePreview) ? storePreview : [];
+  /* تجهيزات خفيفة — الشعار من الإعدادات فقط (بلا أي استعلام) */
   var hwSettings = typeof settings !== 'undefined' ? settings : {};
-  var hwDiscord = hwSettings.discord_server_url || '#';
   var hwLogo = hwSettings.site_logo_url || '/images/logo.png';
-  var hwNews = (typeof news !== 'undefined' && news) ? news.slice(0, 6) : [];
-
-  /* شارة نوع المنتج (نفس تعبير صفحة المتجر) */
-  var hwType = function(t) {
-    if (t === 'bot_item') return 'منتجات البوت';
-    if (t === 'purchase' || t === 'purchase_money') return 'شراء منتج';
-    if (t === 'random_box') return 'صندوق عشوائي';
-    return 'متجر';
-  };
 %>
 
 <main class="hw2-page" id="main">
-  <div class="ds-container">
 
-    <!-- ══ الهيرو: ختم العائلة (العنصر البصري المميز الوحيد) + دعوة الانضمام ══ -->
-    <section class="hw2-hero" aria-labelledby="heroTitle">
-      <div>
-        <span class="hw2-kicker wf-reveal"><i class="fas fa-shield-halved" aria-hidden="true"></i> مجتمع عائلي للألعاب والحياة الرقمية</span>
-        <h1 class="hw2-title wf-reveal" style="transition-delay:.04s" id="heroTitle">أكثر من مجرد عائلة،<br><em>نصنع صدارة الألعاب</em></h1>
-        <p class="hw2-sub wf-reveal" style="transition-delay:.08s">العب ألعابك المفضلة، اجمع النقاط التنافسية تلقائياً مع كل فوز، واستبدلها بجوائز وميزات حقيقية داخل سيرفر الديسكورد الخاص بنا.</p>
-        <div class="hw2-cta wf-reveal" style="transition-delay:.12s">
-          <% if (hwUser) { %>
-          <a href="/applications" class="ds-btn ds-btn-primary"><i class="fas fa-file-signature" aria-hidden="true"></i> قدّم طلب الانضمام</a>
-          <% } else { %>
-          <a href="/auth/discord" class="ds-btn ds-btn-primary"><i class="fab fa-discord" aria-hidden="true"></i> انضم عبر Discord</a>
-          <% } %>
-          <a href="/store" class="ds-btn ds-btn-secondary"><i class="fas fa-bag-shopping" aria-hidden="true"></i> تصفح المتجر</a>
-        </div>
-      </div>
+  <!-- ══ الهيرو: الشعار بإطار دائري بنفسجي + جملة واحدة فقط ══ -->
+  <section class="hw2-hero" aria-labelledby="heroTitle">
+    <div class="hw2-orb wf-reveal">
+      <img src="<%= hwLogo %>" alt="شعار Walton Family" width="280" height="280" decoding="async">
+    </div>
+    <h1 class="hw2-title wf-reveal" style="transition-delay:.06s" id="heroTitle">أكثر من مجرد عائلة</h1>
+  </section>
 
-      <div class="hw2-seal-wrap wf-reveal" style="transition-delay:.1s">
-        <div class="hw2-seal">
-          <img src="<%= hwLogo %>" alt="ختم عائلة Walton Family" width="186" height="186" loading="lazy" decoding="async">
-        </div>
-      </div>
-    </section>
-
-    <!-- ══ شريط الإحصائيات الحقيقية — من المتغيرات الممررة فقط (بلا أرقام زخرفية) ══ -->
-    <section class="wf-reveal" style="transition-delay:.16s" aria-label="إحصائيات العائلة">
-      <div class="ds-card hw2-stats">
-        <div class="hw2-stat">
-          <div class="hw2-stat-val"><%= stats.members %></div>
-          <div class="hw2-stat-lbl">عضو بالعائلة</div>
-        </div>
-        <div class="hw2-stat">
-          <div class="hw2-stat-val"><%= (typeof activeGiveaways !== 'undefined' && activeGiveaways) ? activeGiveaways.length : 0 %></div>
-          <div class="hw2-stat-lbl">فعاليات ومسابقات نشطة</div>
-        </div>
-        <div class="hw2-stat">
-          <div class="hw2-stat-val"><%= stats.staff %></div>
-          <div class="hw2-stat-lbl">فريق إداري</div>
-        </div>
-        <div class="hw2-stat">
-          <div class="hw2-stat-val"><%= stats.support %></div>
-          <div class="hw2-stat-lbl">دعم فني</div>
-        </div>
-      </div>
-      <% if (hwUser && hwMy) { %>
-      <div class="ds-card hw2-personal">
-        <span><i class="fas fa-coins" aria-hidden="true"></i> نقاطك: <b><%= hwMy.points.toLocaleString('en') %></b></span>
-        <span><i class="fas fa-medal" aria-hidden="true"></i> رتبتك: <b>#<%= hwMy.rank %></b></span>
-        <span><i class="fas fa-arrow-trend-up" aria-hidden="true"></i> إجمالي المكتسب: <b><%= hwMy.total_earned.toLocaleString('en') %></b></span>
-        <a href="/profile">ملفي الشخصي <i class="fas fa-angle-left" aria-hidden="true"></i></a>
-      </div>
-      <% } %>
-    </section>
-
-    <!-- ══ أحدث الأخبار ══ -->
-    <section class="hw2-section" aria-labelledby="newsTitle">
-      <div class="ds-sect-head wf-reveal">
-        <h2 class="ds-sect-title" id="newsTitle">أحدث الأخبار والمسابقات</h2>
-        <a href="/community" class="ds-sect-link">كل الأخبار <i class="fas fa-arrow-left" aria-hidden="true"></i></a>
-      </div>
-      <% if (hwNews.length) { %>
-      <div class="hw2-news-grid">
-        <% hwNews.forEach(function(item, index) { %>
-        <article class="ds-card hw2-news-card wf-reveal" style="transition-delay:<%= Math.min(index, 3) * 0.05 %>s">
-          <% if (item.image) { %>
-          <picture class="hw2-news-img">
-            <img src="<%= item.image %>" alt="<%= item.title %>" width="640" height="360" loading="lazy" decoding="async">
-          </picture>
-          <% } %>
-          <div class="hw2-news-body">
-            <span class="ds-badge <%= item.type === 'giveaway' ? 'ds-badge-pending' : '' %>">
-              <i class="fas <%= item.type === 'giveaway' ? 'fa-gift' : 'fa-bullhorn' %>" aria-hidden="true"></i>
-              <%= item.type === 'giveaway' ? 'مسابقة' : 'خبر' %>
-            </span>
-            <h3 class="hw2-news-title"><%= item.title %></h3>
-            <span class="hw2-news-date"><i class="fas fa-clock" aria-hidden="true"></i> <%= new Date(item.created_at).toLocaleDateString('ar-SA') %><% if (item.type === 'giveaway' && item.expires_at) { %> · تنتهي <%= new Date(item.expires_at).toLocaleDateString('ar-SA') %><% } %></span>
-            <% if (item.content) { %><p class="hw2-news-txt"><%= item.content.substring(0, 150) %></p><% } %>
-          </div>
-        </article>
-        <% }); %>
-      </div>
-      <% } else { %>
-      <div class="ds-empty wf-reveal">
-        <i class="fas fa-newspaper" aria-hidden="true"></i>
-        <p>لا توجد أخبار أو مسابقات حالياً — تابع سيرفر الديسكورد لتصلك الجديدة</p>
-        <a href="<%= hwDiscord %>" target="_blank" rel="noopener" class="ds-btn ds-btn-secondary ds-btn-sm"><i class="fab fa-discord" aria-hidden="true"></i> انضم للسيرفر</a>
-      </div>
-      <% } %>
-    </section>
-
-    <!-- ══ من المتجر (مقتطف حقيقي ممرر) ══ -->
-    <section class="hw2-section" aria-labelledby="storeTitle">
-      <div class="ds-sect-head wf-reveal">
-        <h2 class="ds-sect-title" id="storeTitle">من متجر العائلة</h2>
-        <a href="/store" class="ds-sect-link">كل المنتجات <i class="fas fa-arrow-left" aria-hidden="true"></i></a>
-      </div>
-      <% if (hwStore.length) { %>
-      <div class="hw2-store-grid">
-        <% hwStore.forEach(function(it, index) { %>
-        <a href="/store" class="ds-card hw2-item wf-reveal" style="transition-delay:<%= index * 0.05 %>s">
-          <div class="hw2-item-top">
-            <h3 class="hw2-item-name"><%= it.name %></h3>
-            <span class="ds-badge"><%= hwType(it.category_type) %></span>
-          </div>
-          <% if (it.description) { %><p class="hw2-item-desc"><%= it.description.substring(0, 110) %></p><% } %>
-          <div class="hw2-item-foot">
-            <% if (it.price_points) { %>
-            <span class="hw2-item-price"><i class="fas fa-coins" aria-hidden="true"></i> <%= it.price_points.toLocaleString('en') %> نقطة</span>
-            <% } else if (it.price_money) { %>
-            <span class="hw2-item-price"><i class="fas fa-dollar-sign" aria-hidden="true"></i> <%= it.price_money %></span>
-            <% } %>
-            <span class="hw2-item-go">التفاصيل <i class="fas fa-angle-left" aria-hidden="true"></i></span>
-          </div>
-        </a>
-        <% }); %>
-      </div>
-      <% } else { %>
-      <div class="ds-empty wf-reveal">
-        <i class="fas fa-bag-shopping" aria-hidden="true"></i>
-        <p>متجر العائلة بانتظارك — استبدل نقاطك بجوائز وميزات حقيقية</p>
-        <a href="/store" class="ds-btn ds-btn-secondary ds-btn-sm">زيارة المتجر</a>
-      </div>
-      <% } %>
-    </section>
-
-    <!-- ══ منطقة الألعاب (روابط حقيقية) ══ -->
-    <section class="hw2-section" aria-labelledby="gamesTitle">
-      <div class="ds-sect-head wf-reveal">
-        <h2 class="ds-sect-title" id="gamesTitle">منطقة الألعاب</h2>
-        <a href="/games" class="ds-sect-link">كل الألعاب <i class="fas fa-arrow-left" aria-hidden="true"></i></a>
-      </div>
-      <div class="hw2-games-grid">
-        <a href="/games/mafia" class="ds-card hw2-game wf-reveal"><i class="fas fa-user-secret" aria-hidden="true"></i><span>مافيا</span></a>
-        <a href="/games/spin_wheel" class="ds-card hw2-game wf-reveal" style="transition-delay:.05s"><i class="fas fa-dharmachakra" aria-hidden="true"></i><span>عجلة الحظ</span></a>
-        <a href="/games/memory" class="ds-card hw2-game wf-reveal" style="transition-delay:.1s"><i class="fas fa-brain" aria-hidden="true"></i><span>الذاكرة</span></a>
-        <a href="/games/rps" class="ds-card hw2-game wf-reveal" style="transition-delay:.15s"><i class="fas fa-hand-scissors" aria-hidden="true"></i><span>حجر ورقة مقص</span></a>
-        <a href="/games" class="ds-card hw2-game wf-reveal" style="transition-delay:.2s"><i class="fas fa-gamepad" aria-hidden="true"></i><span>المزيد من الألعاب</span></a>
-      </div>
-    </section>
-
-    <!-- ══ الشركة والممتلكات ══ -->
-    <section class="hw2-section" aria-labelledby="companyTitle">
-      <div class="ds-sect-head wf-reveal">
-        <h2 class="ds-sect-title" id="companyTitle">الشركة والممتلكات</h2>
-      </div>
-      <div class="hw2-company-grid">
-        <a href="/company" class="ds-card hw2-company-card wf-reveal">
-          <span class="hw2-company-ic"><i class="fas fa-briefcase" aria-hidden="true"></i></span>
-          <span>
-            <h3>شركة العائلة</h3>
-            <p>خدمات وأنشطة داخل المجتمع بباقات وطلبات واضحة</p>
-          </span>
-        </a>
-        <a href="/properties" class="ds-card hw2-company-card wf-reveal" style="transition-delay:.05s">
-          <span class="hw2-company-ic"><i class="fas fa-building" aria-hidden="true"></i></span>
-          <span>
-            <h3>الممتلكات</h3>
-            <p>قصور ومركبات معروضة بتفاصيلها وأسعارها</p>
-          </span>
-        </a>
-      </div>
-    </section>
-
-    <!-- ══ الدعوة الأخيرة للانضمام ══ -->
-    <section class="hw2-section" aria-labelledby="joinTitle">
-      <div class="ds-card hw2-cta-band wf-reveal">
-        <h2 id="joinTitle">جاهز تكون من العائلة؟</h2>
-        <p>انضم لسيرفر الديسكورد، شارك الأعضاء يومياً، واجمع النقاط التي تفتح لك الجوائز والمزايا الحقيقية.</p>
-        <div class="hw2-cta">
-          <% if (!hwUser) { %>
-          <a href="/auth/discord" class="ds-btn ds-btn-primary"><i class="fab fa-discord" aria-hidden="true"></i> انضم عبر Discord</a>
-          <% } else { %>
-          <a href="/community" class="ds-btn ds-btn-primary"><i class="fas fa-comments" aria-hidden="true"></i> افتح المجتمع</a>
-          <% } %>
-          <a href="<%= hwDiscord %>" target="_blank" rel="noopener" class="ds-btn ds-btn-secondary"><i class="fab fa-discord" aria-hidden="true"></i> سيرفر الديسكورد</a>
-        </div>
-      </div>
-    </section>
-
-  </div>
 </main>
 
 <%- include('../partials/footer') %>

@@ -1,11 +1,11 @@
 /* ============================================================
-   WALTON FAMILY — HOME (الرئيسية المبنية من صفر)
-   يعتمد كلياً على design-system.css — بلا ألوان خارج المنظومة
-   الحركة: تسلسل دخول واحد ≤600ms (wf-reveal) — انتقالات قصيرة فقط
+   WALTON FAMILY — HOME (الرئيسية البسيطة)
+   شعار بإطار دائري بنفسجي + جملة واحدة — فوق خلفية الموقع الموحدة
+   تعتمد على design-system.css (الثيم الأساسي) — بلا ألوان خارجها
+   الحركة: تسلسل دخول واحد ≤600ms (wf-reveal) — transform/opacity فقط
    ============================================================ */
 
-/* تسلسل الدخول: ظهور متدرج للهيرو ثم البطاقات — ≤600ms
-   نفس كلاس .wf-reveal الذي يراقبه سكربت الفوتر المشترك — محصور بصفحة الرئيسية */
+/* تسلسل الدخول: نفس كلاس .wf-reveal الذي يراقبه سكربت الفوتر المشترك */
 .hw2-page .wf-reveal {
   opacity: 0;
   transform: translateY(14px);
@@ -17,224 +17,51 @@
   .hw2-page .wf-reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
 }
 
+/* الصفحة: ارتفاع الشاشة كاملاً والمحتوى بالمنتصف */
 .hw2-page {
-  padding-top: calc(var(--nav-h) + 24px);
-  min-height: 100vh;
+  min-height: calc(100vh - var(--nav-h));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--nav-h) + 24px) 16px 48px;
 }
 
-/* ══ الهيرو: ختم العائلة + نص قوي ══ */
 .hw2-hero {
-  display: grid;
-  gap: 32px;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  padding: 24px 0 16px;
-}
-@media (min-width: 900px) {
-  .hw2-hero { grid-template-columns: 1.15fr .85fr; gap: 48px; padding: 40px 0 24px; }
+  text-align: center;
+  gap: 30px;
 }
 
-.hw2-kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 30px;
-  padding: 0 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(201, 162, 39, 0.35);
-  color: var(--accent);
-  font-family: var(--font-head);
-  font-weight: 700;
-  font-size: 12.5px;
-  margin-bottom: 16px;
+/* الشعار — إطار دائري بحد بنفسجي + توهج بنفسجي خفيف (ثابت، بلا أنميشن) */
+.hw2-orb {
+  width: min(280px, 64vw);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 3px solid var(--accent);
+  background: #000;
+  overflow: hidden;
+  box-shadow: 0 0 34px rgba(188, 19, 254, 0.38), 0 0 90px rgba(188, 19, 254, 0.16);
+}
+.hw2-orb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
+/* الجملة الوحيدة — بيضاء دائماً لأنها تجلس فوق صورة الخلفية الداكنة مباشرة */
 .hw2-title {
   font-family: var(--font-head);
   font-weight: 800;
-  font-size: clamp(30px, 5.4vw, 50px);
-  line-height: 1.25;
-  color: var(--text);
-  margin: 0 0 14px;
-}
-.hw2-title em { font-style: normal; color: var(--accent); }
-
-.hw2-sub {
-  font-size: 15px;
-  color: var(--muted);
-  max-width: 56ch;
-  margin: 0 0 24px;
-}
-
-.hw2-cta { display: flex; flex-wrap: wrap; gap: 12px; }
-
-/* ختم العائلة — العنصر البصري المميز الوحيد */
-.hw2-seal-wrap { display: flex; justify-content: center; }
-.hw2-seal {
-  width: min(300px, 72vw);
-  aspect-ratio: 1;
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  display: grid;
-  place-items: center;
-  background: var(--surface);
-  position: relative;
-}
-.hw2-seal::before {
-  content: "";
-  position: absolute;
-  inset: 12px;
-  border: 1px dashed rgba(201, 162, 39, 0.3);
-  border-radius: 14px;
-  pointer-events: none;
-}
-.hw2-seal img {
-  width: 62%;
-  height: auto;
-  object-fit: contain;
-}
-
-/* ══ شريط الإحصائيات الحقيقية ══ */
-.hw2-stats {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  margin-top: 24px;
-}
-@media (min-width: 768px) { .hw2-stats { grid-template-columns: repeat(4, 1fr); } }
-.hw2-stat {
-  padding: 18px 16px;
-  text-align: center;
-  border-inline-end: 1px solid var(--border);
-}
-.hw2-stat:nth-child(2n) { border-inline-end: 0; }
-@media (min-width: 768px) {
-  .hw2-stat:last-child { border-inline-end: 0; }
-  .hw2-stat:nth-child(2n) { border-inline-end: 1px solid var(--border); }
-}
-.hw2-stat-val {
-  font-family: var(--font-head);
-  font-weight: 800;
-  font-size: 24px;
-  color: var(--accent);
-  line-height: 1.2;
-}
-.hw2-stat-lbl { font-size: 13px; color: var(--muted); margin-top: 2px; }
-
-/* شريط النقاط الشخصية (للمسجل فقط) — بيانات حقيقية */
-.hw2-personal {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 8px 20px;
-  margin-top: 12px;
-  padding: 12px 16px;
-  font-size: 13.5px;
-  color: var(--muted);
-}
-.hw2-personal b { color: var(--text); font-family: var(--font-head); }
-.hw2-personal a { color: var(--accent); text-decoration: none; font-weight: 700; font-family: var(--font-head); }
-.hw2-personal a:hover { color: var(--accent-hover); }
-
-/* ══ الأقسام ══ */
-.hw2-section { padding-block: 30px; }
-@media (min-width: 768px) { .hw2-section { padding-block: 40px; } }
-
-/* الأخبار */
-.hw2-news-grid {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: 1fr;
-}
-@media (min-width: 640px) { .hw2-news-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (min-width: 1024px) { .hw2-news-grid { grid-template-columns: repeat(3, 1fr); } }
-
-.hw2-news-card { display: flex; flex-direction: column; overflow: hidden; }
-.hw2-news-body { padding: 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
-.hw2-news-title {
-  font-family: var(--font-head);
-  font-weight: 700;
-  font-size: 16px;
-  line-height: 1.45;
-  color: var(--text);
+  font-size: clamp(30px, 6vw, 54px);
+  line-height: 1.3;
+  color: #fff;
   margin: 0;
 }
-.hw2-news-date { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
-.hw2-news-txt { font-size: 14px; color: var(--muted); margin: 0; line-height: 1.6; }
-.hw2-news-img { aspect-ratio: 16 / 9; overflow: hidden; display: block; }
-.hw2-news-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-/* المتجر */
-.hw2-store-grid {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: 1fr;
+@media (max-width: 480px) {
+  .hw2-orb { width: min(220px, 58vw); }
+  .hw2-hero { gap: 24px; }
 }
-@media (min-width: 640px) { .hw2-store-grid { grid-template-columns: repeat(2, 1fr); } }
-.hw2-item { padding: 16px; display: flex; flex-direction: column; gap: 8px; text-decoration: none; }
-.hw2-item-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-.hw2-item-name { font-family: var(--font-head); font-weight: 700; font-size: 15px; color: var(--text); margin: 0; }
-.hw2-item-desc { font-size: 13.5px; color: var(--muted); margin: 0; line-height: 1.6; }
-.hw2-item-foot { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 6px; }
-.hw2-item-price { font-family: var(--font-head); font-weight: 700; font-size: 14px; color: var(--accent); display: inline-flex; align-items: center; gap: 6px; }
-.hw2-item-go { font-size: 12.5px; color: var(--muted); display: inline-flex; align-items: center; gap: 5px; transition: color var(--speed); }
-.hw2-item:hover .hw2-item-go { color: var(--accent); }
-
-/* الألعاب */
-.hw2-games-grid {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(2, 1fr);
-}
-@media (min-width: 768px) { .hw2-games-grid { grid-template-columns: repeat(5, 1fr); } }
-.hw2-game {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 22px 12px;
-  text-decoration: none;
-  text-align: center;
-}
-.hw2-game i { font-size: 22px; color: var(--accent); }
-.hw2-game span { font-family: var(--font-head); font-weight: 700; font-size: 13.5px; color: var(--text); }
-
-/* الشركة والممتلكات */
-.hw2-company-grid {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: 1fr;
-}
-@media (min-width: 640px) { .hw2-company-grid { grid-template-columns: repeat(2, 1fr); } }
-.hw2-company-card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 20px;
-  text-decoration: none;
-}
-.hw2-company-ic {
-  width: 48px; height: 48px;
-  flex-shrink: 0;
-  display: grid;
-  place-items: center;
-  border-radius: 12px;
-  border: 1px solid rgba(201, 162, 39, 0.35);
-  color: var(--accent);
-  font-size: 19px;
-}
-.hw2-company-card h3 { font-family: var(--font-head); font-weight: 700; font-size: 15.5px; color: var(--text); margin: 0 0 3px; }
-.hw2-company-card p { font-size: 13.5px; color: var(--muted); margin: 0; }
-
-/* ══ دعوة الانضمام الأخيرة ══ */
-.hw2-cta-band {
-  text-align: center;
-  padding: 40px 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-}
-.hw2-cta-band h2 { font-family: var(--font-head); font-weight: 800; font-size: clamp(22px, 3.4vw, 30px); color: var(--text); margin: 0; }
-.hw2-cta-band p { font-size: 14.5px; color: var(--muted); margin: 0; max-width: 52ch; }
-.hw2-cta-band .hw2-cta { justify-content: center; margin-top: 6px; }

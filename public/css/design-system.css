@@ -1,7 +1,7 @@
 /* ============================================================
    WALTON FAMILY — DESIGN SYSTEM (النسخة الموحدة v3)
    ------------------------------------------------------------
-   الهوية: داكن بريميوم + ذهبي مطفي — 5 ألوان فقط في :root
+   الهوية: ثيم الموقع الأساسي — بنفسجي #bc13fe على داكن #0b0c18 (ألوان أمس كما هي)
    الخطوط: Cairo (عناوين 700/800) + IBM Plex Sans Arabic (نصوص 400/500)
    الحركة: انتقالات 150-200ms فقط — transform/opacity — بلا حركات مستمرة
    الاتجاه: RTL بخصائص منطقية (inline/padding-inline/text-align:start)
@@ -10,15 +10,15 @@
    ============================================================ */
 
 :root {
-  /* النظام الخماسي الرسمي */
-  --bg: #0E1116;
-  --surface: #171B23;
-  --text: #EDEAE3;
-  --muted: #8B8F99;
-  --accent: #C9A227;
+  /* ثيم الموقع الأساسي (نفس متغيرات main.css) */
+  --bg: #0b0c18;
+  --surface: #1a1b2e;
+  --text: #f0eef6;
+  --muted: rgba(240, 238, 246, 0.55);
+  --accent: #bc13fe;
   /* مشتقات من نفس المنظومة بشفافيات — لا لون خارجها */
-  --accent-hover: #DBB84B;
-  --border: rgba(139, 143, 153, 0.16);
+  --accent-hover: #d24dff;
+  --border: rgba(61, 61, 92, 0.5);
   --success: #57C785;
   --danger: #E57373;
   /* بنية موحدة */
@@ -36,8 +36,8 @@
   --surface: #FFFFFF;
   --text: #1A1C22;
   --muted: #5D6168;
-  --accent: #9C7B14;
-  --accent-hover: #7E620E;
+  --accent: #930fc6;
+  --accent-hover: #7a0ca4;
   --border: rgba(26, 28, 34, 0.14);
 }
 
@@ -95,7 +95,7 @@ h1, h2, h3, h4 { font-family: var(--font-head); }
 .ds-btn:active { transform: translateY(1px); }
 .ds-btn[disabled], .ds-btn.is-disabled { opacity: .5; cursor: not-allowed; pointer-events: none; }
 
-.ds-btn-primary { background: var(--accent); color: #14161C; }
+.ds-btn-primary { background: var(--accent); color: #fff; }
 .ds-btn-primary:hover { background: var(--accent-hover); }
 
 .ds-btn-secondary { background: transparent; color: var(--text); border-color: var(--border); }
@@ -115,8 +115,8 @@ h1, h2, h3, h4 { font-family: var(--font-head); }
   position: absolute;
   width: 18px; height: 18px;
   border-radius: 50%;
-  border: 2px solid rgba(20, 22, 28, 0.35);
-  border-top-color: #14161C;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
   animation: ds-spin 0.7s linear infinite;
 }
 @keyframes ds-spin { to { transform: rotate(360deg); } }
@@ -132,7 +132,7 @@ a.ds-card, .ds-card-hover {
 }
 a.ds-card:hover, .ds-card-hover:hover {
   transform: translateY(-2px);
-  border-color: rgba(201, 162, 39, 0.45);
+  border-color: rgba(188, 19, 254, 0.45);
 }
 
 /* ---------- الشارات والحالات ---------- */
@@ -152,7 +152,7 @@ a.ds-card:hover, .ds-card-hover:hover {
   background: rgba(139, 143, 153, 0.08);
 }
 .ds-badge-open, .ds-badge-accepted { color: var(--success); border-color: rgba(87, 199, 133, 0.35); background: rgba(87, 199, 133, 0.08); }
-.ds-badge-pending, .ds-badge-review { color: var(--accent); border-color: rgba(201, 162, 39, 0.35); background: rgba(201, 162, 39, 0.08); }
+.ds-badge-pending, .ds-badge-review { color: var(--accent); border-color: rgba(188, 19, 254, 0.35); background: rgba(188, 19, 254, 0.08); }
 .ds-badge-rejected, .ds-badge-danger { color: var(--danger); border-color: rgba(229, 115, 115, 0.35); background: rgba(229, 115, 115, 0.08); }
 .ds-badge-closed { color: var(--muted); }
 
@@ -387,7 +387,7 @@ a.ds-card:hover, .ds-card-hover:hover {
   padding: 0 4px;
   border-radius: 999px;
   background: var(--accent);
-  color: #14161C;
+  color: #fff;
   font-size: 10.5px;
   font-weight: 700;
   display: flex;
@@ -431,7 +431,7 @@ a.ds-card:hover, .ds-card-hover:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(201, 162, 39, 0.15);
+  background: rgba(188, 19, 254, 0.15);
   color: var(--accent);
   font-family: var(--font-head);
   font-weight: 800;

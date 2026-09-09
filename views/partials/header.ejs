@@ -15,12 +15,7 @@
     var _mobileBgUrl = typeof mobileBgUrl !== 'undefined' ? mobileBgUrl : '';
   %>
   <meta name="description" content="<%= _siteName %> - مجتمعنا الرقمي">
-  <%
-    /* الرئيسية بالهوية الجديدة (خلفية داكنة مسطحة) — باقي الصفحات على لون الثيم الحالي */
-    var _pCss0 = (typeof currentPath === 'string' ? currentPath : '');
-    var _isHome = (_pCss0 === '/' || _pCss0 === '/home');
-  %>
-  <meta name="theme-color" content="<%= _isHome ? '#0E1116' : _accentColor %>">
+  <meta name="theme-color" content="<%= _accentColor %>">
   <script>try { if (localStorage.getItem('wfTheme') === 'light') document.documentElement.setAttribute('data-theme', 'light'); } catch (e) {}</script>
   <%
     /* عنوان التبويب: «اسم الصفحة | اسم الموقع» — لكن لو عنوان الصفحة هو اسم الموقع
@@ -87,11 +82,7 @@
       --bg-url: url('<%= _bgUrl %>');
       --mobile-bg-url: url('<%= _mobileBgUrl %>');
     }
-    <% if (_isHome) { %>
-    /* الرئيسية (الهوية الجديدة): خلفية داكنة مسطحة من منظومة النظام — بلا صور */
-    body { background: var(--bg); }
-    #wfBgFix { display: none !important; }
-    <% } else { %>
+    <% /* خلفية الموقع الموحدة لكل الصفحات — الرئيسية مثلها */ %>
     body {
       background-image: var(--bg-url);
       background-size: cover;
@@ -116,7 +107,6 @@
       body { background-image: none; }
       #wfBgFix { display: block; }
     }
-    <% } %>
   </style>
 
   <style>
