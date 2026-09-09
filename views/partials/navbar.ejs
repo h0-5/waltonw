@@ -52,12 +52,8 @@
     <% } %>
   </div>
 
-  <!-- الإجراءات: ثيم + إشعارات + مستخدم -->
+  <!-- الإجراءات: إشعارات + مستخدم (مود ليل/نهار أُزيل كلياً بطلب المستخدم — الثيم القديم الداكن دائم) -->
   <div class="ds-actions">
-    <button class="ds-iconbtn" id="themeToggle" onclick="toggleTheme()" aria-label="تبديل الوضع الفاتح والداكن" aria-pressed="false">
-      <i class="fas fa-moon" aria-hidden="true"></i>
-    </button>
-
     <% if (_nbUser) { %>
       <!-- الإشعارات -->
       <div style="position:relative">
@@ -161,28 +157,4 @@ function toggleUserMenu() {
 }
 function markAllRead() {}
 function deleteAllNotifications() {}
-/* الوضع الفاتح/الداكن — يُحفظ محلياً ويعمل فوراً بلا إعادة تحميل */
-function toggleTheme() {
-  var root = document.documentElement;
-  var toLight = root.getAttribute('data-theme') !== 'light';
-  if (toLight) root.setAttribute('data-theme', 'light');
-  else root.removeAttribute('data-theme');
-  try { localStorage.setItem('wfTheme', toLight ? 'light' : 'dark'); } catch (e) {}
-  var btn = document.getElementById('themeToggle');
-  if (btn) {
-    var ic = btn.querySelector('i');
-    if (ic) ic.className = toLight ? 'fas fa-sun' : 'fas fa-moon';
-    btn.setAttribute('aria-pressed', toLight ? 'true' : 'false');
-  }
-}
-(function() {
-  var light = false;
-  try { light = localStorage.getItem('wfTheme') === 'light'; } catch (e) {}
-  var btn = document.getElementById('themeToggle');
-  if (btn && light) {
-    var ic = btn.querySelector('i');
-    if (ic) ic.className = 'fas fa-sun';
-    btn.setAttribute('aria-pressed', 'true');
-  }
-})();
 </script>

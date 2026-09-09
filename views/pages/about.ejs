@@ -138,5 +138,31 @@
 
 <%- include('../partials/footer') %>
 <script src="/js/main.js"></script>
+<script>
+/* عدادات إحصائيات «من نحن» — كانت بلا أي سكربت فالأرقام تظهر 0 دائماً (40+/8/2026/NYC)
+   خفيفة: rAF واحد لكل عنصر، تتوقف عند الوصول، وتحترم تفضيل تقليل الحركة */
+(function() {
+  var els = document.querySelectorAll('.stat-number[data-target]');
+  if (!els.length) return;
+  var reduce = false;
+  try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+  Array.prototype.forEach.call(els, function(el) {
+    var raw = el.getAttribute('data-target') || '';
+    var m = raw.match(/^(\d+)(\D*)$/);            /* رقم + لاحقة اختيارية (مثل 40+) */
+    if (!m) { el.textContent = raw; return; }     /* نصوص مثل NYC تلصق فوراً */
+    var end = parseInt(m[1], 10), suffix = m[2] || '';
+    if (reduce) { el.textContent = raw; return; }
+    var t0 = null, dur = 1200;
+    var step = function(ts) {
+      if (!t0) t0 = ts;
+      var p = Math.min(1, (ts - t0) / dur);
+      p = 1 - Math.pow(1 - p, 3);                 /* easeOutCubic */
+      el.textContent = Math.round(end * p) + suffix;
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  });
+})();
+</script>
 </body>
 </html>

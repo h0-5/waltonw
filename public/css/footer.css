@@ -139,6 +139,9 @@
     }
     .ftv2-inner .ftv2-col,
     .ftv2-inner .ftv2-contact { align-items: flex-start; }
+    /* قائمة تواصل معنا مزاحة ~نص سم لليسار (طلب المستخدم) — بالديسكتوب فقط،
+       بالهاتف العمود ملتصق أصلاً بحافة الشاشة اليسرى فلا مجال للسحب */
+    .ftv2-contact { transform: translateX(-19px); }
 }
 
 .ftv2-title {

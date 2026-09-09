@@ -30,16 +30,8 @@
   --nav-h: 70px;
 }
 
-/* النسخة الفاتحة — نفس المنظومة بمقابل مقروء (تباين 4.5:1+) */
-[data-theme="light"] {
-  --bg: #F5F4F0;
-  --surface: #FFFFFF;
-  --text: #1A1C22;
-  --muted: #5D6168;
-  --accent: #930fc6;
-  --accent-hover: #7a0ca4;
-  --border: rgba(26, 28, 34, 0.14);
-}
+/* مود ليل/نهار أُزيل كلياً بطلب المستخدم — لا توجد نسخة فاتحة: الثيم الداكن دائم حتى لمن فعّل الفاتح سابقاً
+   (سطر تطبيق wfTheme من localStorage حُذف من header.ejs أيضاً) */
 
 /* ---------- الأساسيات ---------- */
 body {
@@ -340,6 +332,11 @@ a.ds-card:hover, .ds-card-hover:hover {
   scrollbar-width: none;
 }
 .ds-navlinks::-webkit-scrollbar { display: none; }
+/* منعت الروابط من التسلل تحت الإجراءات المزاحة للزاوية — 206px يطابق حد القص القديم
+   تماماً (الإجراءات 190 + فجوة 16) فلا يظهر أي حرف مقصوص من رابط الدعم */
+@media (min-width: 1024px) {
+  .ds-navlinks { margin-inline-end: 206px; }
+}
 .ds-navlink {
   display: inline-flex;
   align-items: center;
@@ -359,8 +356,20 @@ a.ds-card:hover, .ds-card-hover:hover {
 .ds-navlink.active { color: var(--accent); }
 .ds-navlink-ds { color: var(--accent); }
 
-/* منطقة الإجراءات */
-.ds-actions { display: flex; align-items: center; gap: 8px; margin-inline-start: auto; flex-shrink: 0; }
+/* منطقة الإجراءات — ملزقة بزاوية الشاشة اليسرى نفسها (~1سم قبل الزاوية) بطلب المستخدم:
+   على الشاشات الواسعة كانت تنحشر بهامش حاوية 1200px الموسّط فتبعد ~99px عن الزاوية —
+   الآن absolute على النافبار نفسه (فوق الحاوية) بمسافة ثابتة 38px ≈ 1سم، والمسافة بين الأزرار أوسع */
+.ds-actions {
+  position: absolute;
+  inset-inline-end: 38px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  z-index: 5;
+}
 
 .ds-iconbtn {
   position: relative;

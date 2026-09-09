@@ -20,7 +20,7 @@
   %>
   <meta name="description" content="<%= _siteName %> - مجتمعنا الرقمي">
   <meta name="theme-color" content="<%= _accentColor %>">
-  <script>try { if (localStorage.getItem('wfTheme') === 'light') document.documentElement.setAttribute('data-theme', 'light'); } catch (e) {}</script>
+  <% /* مود ليل/نهار أُزيل كلياً (طلب المستخدم) — لا wfTheme ولا data-theme: الثيم الداكن القديم دائم */ %>
   <%
     /* عنوان التبويب: «اسم الصفحة | اسم الموقع» — لكن لو عنوان الصفحة هو اسم الموقع
        نفسه (الرئيسية تُمرر site_name كعنوان) يُعرض مرة واحدة بلا تكرار */
