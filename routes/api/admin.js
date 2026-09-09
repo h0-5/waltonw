@@ -36,6 +36,145 @@ router.post('/users/unban', checkPermission('users_ban'), async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== User Detail =====
+router.get('/users/:id', checkPermission('users_view'), async (req, res) => {
+  try {
+    const [users] = await db.execute('SELECT * FROM users WHERE id = ?', [req.params.id]);
+    if (!users.length) return res.status(404).json({ error: 'المستخدم غير موجود' });
+    const user = users[0];
+    const [points] = await db.execute('SELECT * FROM bot_points WHERE discord_id = ?', [user.discord_id || '']);
+    const [inventory] = await db.execute('SELECT * FROM bot_inventory WHERE user_id = ?', [user.id]);
+    const [boxes] = await db.execute('SELECT * FROM user_boxes WHERE user_id = ?', [user.id]);
+    const [achievements] = await db.execute('SELECT * FROM user_achievements WHERE discord_id = ?', [user.discord_id || '']);
+    const [sideRoles] = await db.execute('SELECT sr.* FROM side_roles sr JOIN user_side_roles usr ON sr.id = usr.side_role_id WHERE usr.user_id = ?', [user.id]);
+    res.json({ success: true, user, points: points[0] || null, inventory, boxes, achievements, sideRoles });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== Unified User Update =====
+router.patch('/users/:id', checkPermission('users_edit'), async (req, res) => {
+  try {
+    const { username, role, manageRole, eventManager, sideRoles } = req.body;
+    const updates = [];
+    const params = [];
+    if (username !== undefined) { updates.push('username = ?'); params.push(username); }
+    if (role !== undefined) {
+      updates.push('role = ?'); params.push(role);
+      updates.push('role_updated_at = NOW()');
+      const familyRoles = ['family_member','company_member','vice_president','chairman','founder','leadership','deputy_leadership','executive','deputy_executive','supervisor'];
+      if (familyRoles.includes(role)) updates.push('family_joined_at = COALESCE(family_joined_at, NOW())');
+      if (['user','member','trial'].includes(role)) { updates.push('tickets_closed = 0'); }
+    }
+    if (manageRole !== undefined) { updates.push('manage_role = ?'); params.push(manageRole ? 1 : 0); }
+    if (eventManager !== undefined) { updates.push('event_manager = ?'); params.push(eventManager ? 1 : 0); }
+    if (updates.length) {
+      params.push(req.params.id);
+      await db.execute(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, params);
+    }
+    if (sideRoles && Array.isArray(sideRoles)) {
+      await db.execute('DELETE FROM user_side_roles WHERE user_id = ?', [req.params.id]);
+      for (const srId of sideRoles) {
+        await db.execute('INSERT INTO user_side_roles (user_id, side_role_id, assigned_by) VALUES (?, ?, ?)', [req.params.id, srId, req.user?.id || null]);
+      }
+    }
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== Ban with reason + duration =====
+router.post('/users/:id/ban', checkPermission('users_ban'), async (req, res) => {
+  try {
+    const { reason, durationMinutes } = req.body;
+    const updates = ['is_banned = 1', 'ban_reason = ?', 'banned_at = NOW()', 'banned_by = ?'];
+    const params = [reason || '', req.user?.id || null];
+    if (durationMinutes && durationMinutes > 0) {
+      updates.push('banned_until = DATE_ADD(NOW(), INTERVAL ? MINUTE)');
+      params.push(parseInt(durationMinutes));
+    }
+    params.push(req.params.id);
+    await db.execute(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, params);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== Unban by ID =====
+router.post('/users/:id/unban', checkPermission('users_ban'), async (req, res) => {
+  try {
+    await db.execute('UPDATE users SET is_banned = 0, ban_reason = NULL, banned_at = NULL, banned_until = NULL, banned_by = NULL WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== Unban All =====
+router.post('/users/unban-all', checkPermission('users_ban'), async (req, res) => {
+  try {
+    await db.execute('UPDATE users SET is_banned = 0, ban_reason = NULL, banned_at = NULL, banned_until = NULL, banned_by = NULL WHERE is_banned = 1');
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== Bot Points =====
+router.post('/users/:id/points', checkPermission('users_edit'), async (req, res) => {
+  try {
+    const { points, reason } = req.body;
+    const [users] = await db.execute('SELECT discord_id FROM users WHERE id = ?', [req.params.id]);
+    if (!users.length || !users[0].discord_id) return res.status(404).json({ error: 'المستخدم غير موجود' });
+    const discordId = users[0].discord_id;
+    await db.execute('INSERT INTO bot_points (discord_id, points, total_earned) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE points = points + VALUES(points), total_earned = total_earned + VALUES(total_earned)', [discordId, points || 0, points > 0 ? points : 0]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== Inventory =====
+router.post('/users/:id/items', checkPermission('users_edit'), async (req, res) => {
+  try {
+    const { item_key, item_name, quantity } = req.body;
+    await db.execute('INSERT INTO bot_inventory (user_id, item_key, item_name, quantity) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)', [req.params.id, item_key, item_name, quantity || 1]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.delete('/users/:id/items/:key', checkPermission('users_edit'), async (req, res) => {
+  try {
+    await db.execute('DELETE FROM bot_inventory WHERE user_id = ? AND item_key = ?', [req.params.id, req.params.key]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== Boxes =====
+router.post('/users/:id/boxes', checkPermission('users_edit'), async (req, res) => {
+  try {
+    const { box_name } = req.body;
+    await db.execute('INSERT INTO user_boxes (user_id, box_name) VALUES (?, ?)', [req.params.id, box_name]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.delete('/boxes/:boxId', checkPermission('users_edit'), async (req, res) => {
+  try {
+    await db.execute('DELETE FROM user_boxes WHERE id = ?', [req.params.boxId]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== Achievements =====
+router.post('/users/:id/achievements', checkPermission('users_edit'), async (req, res) => {
+  try {
+    const { achievement_name } = req.body;
+    const [users] = await db.execute('SELECT discord_id FROM users WHERE id = ?', [req.params.id]);
+    if (!users.length || !users[0].discord_id) return res.status(404).json({ error: 'المستخدم غير موجود' });
+    await db.execute('INSERT INTO user_achievements (discord_id, achievement_name) VALUES (?, ?)', [users[0].discord_id, achievement_name]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.delete('/users/:id/achievements/:achId', checkPermission('users_edit'), async (req, res) => {
+  try {
+    await db.execute('DELETE FROM user_achievements WHERE id = ?', [req.params.achId]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // Admin Products API
 router.post('/products/add', checkPermission('products_manage'), async (req, res) => {
   const { name, description, category_type, price_points, price_money, stock } = req.body;

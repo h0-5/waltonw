@@ -1,156 +1,315 @@
 <%- include('layout') %>
 <script>document.getElementById('pageTitle').textContent = 'إدارة المستخدمين';</script>
 
-<div class="admin-content">
-  <div class="content-header">
-    <h2><i class="fas fa-users"></i> إدارة المستخدمين</h2>
-    <div class="header-actions">
-      <div class="admin-search-box">
-        <i class="fas fa-search"></i>
-        <input type="text" id="searchUsers" placeholder="بحث بالاسم أو ID..." oninput="filterUsers()">
+<style>
+.users-topbar{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.users-topbar h2{font-size:18px;font-weight:700;flex:1}
+.users-search{position:relative}
+.users-search input{padding:10px 14px 10px 40px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px;width:280px;outline:none;transition:border-color .3s}
+.users-search input:focus{border-color:var(--ac)}
+.users-search i{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:13px}
+.users-stats{display:flex;gap:16px;font-size:12px;color:var(--text-dim)}
+.users-stats span{display:flex;align-items:center;gap:4px}
+.users-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.user-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;gap:10px;transition:all .3s;cursor:default}
+.user-card:hover{border-color:rgba(var(--ac-rgb),.3);box-shadow:0 4px 20px rgba(0,0,0,.2);transform:translateY(-2px)}
+.user-card.banned{border-color:rgba(239,68,68,.3);opacity:.75}
+.user-card-top{display:flex;align-items:center;gap:12px}
+.user-card-avatar{width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid var(--ac);flex-shrink:0}
+.user-card.banned .user-card-avatar{border-color:#ef4444}
+.user-card-info{flex:1;min-width:0}
+.user-card-name{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-card-role{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;margin-top:2px}
+.user-card-banned{color:#ef4444;font-size:11px;font-weight:600}
+.user-card-stats{display:flex;gap:12px;font-size:12px;color:var(--text-dim);align-items:center;flex-wrap:wrap}
+.user-card-stats i{font-size:11px}
+.user-card-flags{display:flex;gap:6px;flex-wrap:wrap}
+.flag-badge{padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;background:rgba(var(--ac-rgb),.1);color:var(--ac);border:1px solid rgba(var(--ac-rgb),.2)}
+.user-card-actions{display:flex;gap:6px;margin-top:auto;padding-top:8px;border-top:1px solid var(--border)}
+.card-btn{padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-dim);cursor:pointer;font-size:12px;transition:all .3s;display:flex;align-items:center;gap:4px}
+.card-btn:hover{background:rgba(var(--ac-rgb),.1);color:var(--text);border-color:var(--ac)}
+.card-btn.danger:hover{background:rgba(239,68,68,.1);color:#ef4444;border-color:#ef4444}
+.card-btn.success:hover{background:rgba(34,197,94,.1);color:#22c55e;border-color:#22c55e}
+.empty-state{text-align:center;padding:60px 20px;color:var(--text-dim)}
+.empty-state i{font-size:48px;margin-bottom:16px;display:block;opacity:.5}
+.admin-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-content{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:520px;width:92%;max-height:85vh;overflow-y:auto}
+.modal-content h3{margin-bottom:16px;font-size:16px;display:flex;align-items:center;gap:8px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:4px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;outline:none}
+.form-group input:focus,.form-group select:focus{border-color:var(--ac)}
+.form-check{display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:8px;cursor:pointer;margin-bottom:8px}
+.form-check input[type="checkbox"]{width:18px;height:18px;accent-color:var(--ac)}
+.form-check span{font-size:13px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.btn{padding:10px 20px;border-radius:8px;border:none;font-family:inherit;font-weight:600;cursor:pointer;font-size:13px;transition:all .3s}
+.btn-primary{background:var(--ac);color:#fff}
+.btn-primary:hover{opacity:.9}
+.btn-ghost{background:transparent;color:var(--text-dim);border:1px solid var(--border)}
+.btn-ghost:hover{color:var(--text);border-color:rgba(255,255,255,.3)}
+.btn-danger{background:#ef4444;color:#fff}
+.btn-danger:hover{opacity:.9}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.detail-item{background:rgba(255,255,255,.03);border-radius:8px;padding:10px}
+.detail-item label{display:block;font-size:10px;color:var(--text-dim);margin-bottom:2px}
+.detail-item span{font-weight:700;font-size:13px}
+.detail-section{margin-top:14px}
+.detail-section h4{font-size:12px;color:var(--ac);margin-bottom:8px;font-weight:700}
+.ach-badge{display:inline-block;padding:3px 8px;background:rgba(var(--ac-rgb),.1);border:1px solid rgba(var(--ac-rgb),.3);border-radius:4px;font-size:11px;margin:2px}
+.item-row{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:rgba(255,255,255,.03);border-radius:6px;margin-bottom:4px}
+.item-row span{font-size:12px}
+.item-row button{background:none;border:none;color:#ef4444;cursor:pointer;font-size:12px}
+.side-role-chips{display:flex;flex-wrap:wrap;gap:6px}
+.side-role-chip{padding:4px 10px;border-radius:12px;font-size:11px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text-dim);transition:all .2s}
+.side-role-chip.active{background:rgba(var(--ac-rgb),.15);color:var(--ac);border-color:var(--ac)}
+</style>
+
+<div class="users-topbar">
+  <h2><i class="fas fa-users" style="color:var(--ac)"></i> إدارة المستخدمين</h2>
+  <div class="users-search">
+    <i class="fas fa-search"></i>
+    <input type="text" id="userSearch" placeholder="بحث بالاسم أو ID...">
+  </div>
+  <div class="users-stats">
+    <span><i class="fas fa-users"></i> <span id="totalCount"><%= users.length %></span> مستخدم</span>
+    <span><i class="fas fa-ban" style="color:#ef4444"></i> <span id="bannedCount"><%= users.filter(u => u.is_banned).length %></span> محظور</span>
+  </div>
+</div>
+
+<div class="users-grid" id="usersGrid">
+  <% users.forEach(u => { %>
+    <div class="user-card<%= u.is_banned ? ' banned' : '' %>" data-id="<%= u.id %>" data-search="<%= (u.username||'').toLowerCase() %> <%= u.id %> <%= (u.email||'').toLowerCase() %>">
+      <div class="user-card-top">
+        <img src="<%= u.profile_picture || '/images/default-avatar.png' %>" class="user-card-avatar" alt="">
+        <div class="user-card-info">
+          <div class="user-card-name"><%= u.username %></div>
+          <span class="user-card-role" style="background:<%= u.role === 'owner' ? '#ef4444' : u.role === 'admin' ? '#f97316' : u.role === 'moderator' ? '#eab308' : u.role === 'support' ? '#22c55e' : '#6b7280' %>20;color:<%= u.role === 'owner' ? '#ef4444' : u.role === 'admin' ? '#f97316' : u.role === 'moderator' ? '#eab308' : u.role === 'support' ? '#22c55e' : '#6b7280' %>"><%= u.role %></span>
+          <% if (u.is_banned) { %><span class="user-card-banned"><i class="fas fa-ban"></i> محظور</span><% } %>
+        </div>
+      </div>
+      <div class="user-card-stats">
+        <span><i class="fas fa-coins"></i> <%= u.points || u.total_game_points || 0 %></span>
+        <span><i class="fas fa-shopping-bag"></i> <%= u.tickets_closed || 0 %> تذاكر</span>
+        <% if (u.in_guild) { %><span><i class="fas fa-check-circle" style="color:#22c55e"></i> في السيرفر</span><% } %>
+      </div>
+      <div class="user-card-flags">
+        <% if (u.manage_role) { %><span class="flag-badge"><i class="fas fa-shield"></i> Manage Role</span><% } %>
+        <% if (u.event_manager) { %><span class="flag-badge"><i class="fas fa-calendar"></i> Event Manager</span><% } %>
+      </div>
+      <div class="user-card-actions">
+        <button class="card-btn" data-action="detail" data-id="<%= u.id %>"><i class="fas fa-info-circle"></i> تفاصيل</button>
+        <button class="card-btn" data-action="edit" data-id="<%= u.id %>" data-name="<%= u.username %>" data-role="<%= u.role %>" data-managerole="<%= u.manage_role ? 1 : 0 %>" data-eventmanager="<%= u.event_manager ? 1 : 0 %>"><i class="fas fa-edit"></i> تعديل</button>
+        <% if (u.is_banned) { %>
+          <button class="card-btn success" data-action="unban" data-id="<%= u.id %>"><i class="fas fa-unlock"></i> فك حظر</button>
+        <% } else { %>
+          <button class="card-btn danger" data-action="ban" data-id="<%= u.id %>" data-name="<%= u.username %>"><i class="fas fa-ban"></i> حظر</button>
+        <% } %>
       </div>
     </div>
-  </div>
-
-  <div class="table-container">
-    <table class="admin-table" id="usersTable">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>المستخدم</th>
-          <th>البريد</th>
-          <th>الرتبة</th>
-          <th>تاريخ التسجيل</th>
-          <th>إجراءات</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% if (users && users.length > 0) { %>
-          <% users.forEach(u => { %>
-            <tr data-search="<%= u.username %> <%= u.id %> <%= u.email %>">
-              <td><code style="color:var(--ac)"><%= u.id %></code></td>
-              <td>
-                <div style="display:flex;align-items:center;gap:10px">
-                  <img src="<%= u.avatar || '/images/default-avatar.png' %>" alt="" style="width:32px;height:32px;border-radius:50%;border:2px solid <%= u.is_banned ? '#ef4444' : 'var(--ac)' %>">
-                  <div>
-                    <div style="font-weight:600"><%= u.username %></div>
-                    <% if (u.is_banned) { %><span style="color:#ef4444;font-size:11px">محظور</span><% } %>
-                  </div>
-                </div>
-              </td>
-              <td><%= u.email || '-' %></td>
-              <td><span class="badge"><%= u.role %></span></td>
-              <td style="color:var(--text-dim);font-size:12px"><%= new Date(u.created_at).toLocaleDateString('ar-SA') %></td>
-              <td>
-                <div style="display:flex;gap:6px">
-                  <button class="admin-btn small" onclick="editUser(<%= u.id %>, '<%= u.username %>', '<%= u.email || '' %>')"><i class="fas fa-edit"></i></button>
-                  <button class="admin-btn small" onclick="changeRole(<%= u.id %>, '<%= u.role %>')"><i class="fas fa-user-shield"></i></button>
-                  <% if (u.is_banned) { %>
-                    <button class="admin-btn success small" onclick="unbanUser(<%= u.id %>)"><i class="fas fa-unlock"></i></button>
-                  <% } else { %>
-                    <button class="admin-btn danger small" onclick="banUser(<%= u.id %>)"><i class="fas fa-ban"></i></button>
-                  <% } %>
-                </div>
-              </td>
-            </tr>
-          <% }) %>
-        <% } else { %>
-          <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-dim)">لا يوجد مستخدمين</td></tr>
-        <% } %>
-      </tbody>
-    </table>
-  </div>
+  <% }) %>
+  <% if (!users.length) { %>
+    <div class="empty-state"><i class="fas fa-users"></i><p>لا يوجد مستخدمين</p></div>
+  <% } %>
 </div>
 
-<div id="editModal" class="admin-modal" style="display:none">
+<!-- Edit Modal -->
+<div id="editModal" class="admin-modal">
   <div class="modal-content">
-    <h3><i class="fas fa-edit"></i> تعديل المستخدم</h3>
+    <h3><i class="fas fa-edit" style="color:var(--ac)"></i> تعديل المستخدم</h3>
     <form id="editForm">
-      <input type="hidden" name="user_id" id="editUserId">
-      <div class="form-group"><label>اسم المستخدم</label><input type="text" name="username" id="editUsername" required></div>
-      <div class="form-group"><label>البريد</label><input type="email" name="email" id="editEmail"></div>
+      <input type="hidden" id="editUserId">
+      <div class="form-group"><label>اسم المستخدم</label><input type="text" id="editUsername" required></div>
+      <div class="form-group"><label>الرتبة</label><select id="editRole">
+        <option value="owner">مالك</option><option value="developer">مطور</option><option value="founder">مؤسس</option>
+        <option value="vice_founder">نائب المؤسس</option><option value="chairman">رئيس</option><option value="present_member">عضو حاضر</option>
+        <option value="vice_president">نائب رئيس</option><option value="leadership">قيادة</option><option value="family_member">عضو عائلة</option>
+        <option value="admin">مدير</option><option value="moderator">مشرف</option><option value="support">دعم فني</option>
+        <option value="member">عضو</option><option value="trial">تحت التجربة</option><option value="user">مستخدم</option>
+      </select></div>
+      <label class="form-check"><input type="checkbox" id="editManageRole"><span>Manage Role</span></label>
+      <label class="form-check"><input type="checkbox" id="editEventManager"><span>Event Manager</span></label>
+      <div class="form-group"><label>الرتب الجانبية</label><div class="side-role-chips" id="sideRoleChips"></div></div>
       <div class="modal-actions">
-        <button type="button" onclick="closeModal('editModal')" class="admin-btn">إلغاء</button>
-        <button type="submit" class="admin-btn primary">حفظ</button>
+        <button type="button" onclick="closeModal('editModal')" class="btn btn-ghost">إلغاء</button>
+        <button type="submit" class="btn btn-primary">حفظ</button>
       </div>
     </form>
   </div>
 </div>
 
-<div id="roleModal" class="admin-modal" style="display:none">
+<!-- Ban Modal -->
+<div id="banModal" class="admin-modal">
   <div class="modal-content">
-    <h3><i class="fas fa-user-shield"></i> تغيير الرتبة</h3>
-    <form id="roleForm">
-      <input type="hidden" name="user_id" id="roleUserId">
-      <div class="form-group">
-        <label>الرتبة الجديدة</label>
-        <select name="role" id="newRole">
-          <option value="user">عضو</option>
-          <option value="family_member">عضو عائلة</option>
-          <option value="company_member">عضو شركة</option>
-          <option value="vip">VIP</option>
-          <option value="support">دعم فني</option>
-          <option value="moderator">مشرف</option>
-          <option value="observer">مراقب</option>
-          <option value="supervisor">مشرف عام</option>
-          <option value="deputy_executive">نائب تنفيذي</option>
-          <option value="executive">تنفيذي</option>
-          <option value="deputy_leadership">نائب قيادة</option>
-          <option value="leadership">قيادة</option>
-          <option value="vice_president">نائب رئيس</option>
-          <option value="chairman">رئيس</option>
-          <option value="founder">مؤسس</option>
-          <option value="developer">مطور</option>
-          <option value="owner">مالك</option>
-        </select>
-      </div>
+    <h3><i class="fas fa-ban" style="color:#ef4444"></i> حظر المستخدم</h3>
+    <form id="banForm">
+      <input type="hidden" id="banUserId">
+      <p style="font-size:13px;color:var(--text-dim);margin-bottom:12px">حظر: <strong id="banUserName"></strong></p>
+      <div class="form-group"><label>سبب الحظر</label><input type="text" id="banReason" required placeholder="اكتب السبب..."></div>
+      <div class="form-group"><label>المدة (دقائق) — اتركه فاضي للحظر الدائم</label><input type="number" id="banDuration" placeholder="مثال: 1440 = يوم كامل" min="1"></div>
       <div class="modal-actions">
-        <button type="button" onclick="closeModal('roleModal')" class="admin-btn">إلغاء</button>
-        <button type="submit" class="admin-btn primary">تغيير</button>
+        <button type="button" onclick="closeModal('banModal')" class="btn btn-ghost">إلغاء</button>
+        <button type="submit" class="btn btn-danger">حظر</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div id="detailModal" class="admin-modal">
+  <div class="modal-content" style="max-width:600px">
+    <h3><i class="fas fa-info-circle" style="color:var(--ac)"></i> تفاصيل المستخدم</h3>
+    <div id="detailContent"></div>
+    <div class="modal-actions"><button onclick="closeModal('detailModal')" class="btn btn-ghost">إغلاق</button></div>
   </div>
 </div>
 
 <script>
-function filterUsers() {
-  const q = document.getElementById('searchUsers').value.toLowerCase();
-  document.querySelectorAll('#usersTable tbody tr').forEach(r => {
-    r.style.display = (r.dataset.search || '').toLowerCase().includes(q) ? '' : 'none';
+const SIDE_ROLES = <%- JSON.stringify(sideRoles) %>;
+let _allUsers = <%- JSON.stringify(users) %>;
+
+// Live search
+document.getElementById('userSearch').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.user-card').forEach(card => {
+    card.style.display = (card.dataset.search || '').includes(q) ? '' : 'none';
   });
-}
-function editUser(id, name, email) {
-  document.getElementById('editUserId').value = id;
-  document.getElementById('editUsername').value = name;
-  document.getElementById('editEmail').value = email;
-  document.getElementById('editModal').style.display = 'flex';
-}
-function changeRole(id, role) {
-  document.getElementById('roleUserId').value = id;
-  document.getElementById('newRole').value = role;
-  document.getElementById('roleModal').style.display = 'flex';
-}
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-async function banUser(id) {
-  if (!confirm('هل أنت متأكد من حظر هذا المستخدم؟')) return;
-  await fetch('/api/admin/users/ban', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id:id}) });
-  location.reload();
-}
-async function unbanUser(id) {
-  await fetch('/api/admin/users/unban', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id:id}) });
-  location.reload();
-}
-document.getElementById('editForm').addEventListener('submit', async e => {
-  e.preventDefault();
-  const fd = new FormData(e.target);
-  await fetch('/api/admin/users/update', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(Object.fromEntries(fd)) });
-  location.reload();
 });
-document.getElementById('roleForm').addEventListener('submit', async e => {
+
+// Event delegation for card buttons
+document.getElementById('usersGrid').addEventListener('click', function(e) {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const action = btn.dataset.action;
+  const id = btn.dataset.id;
+  if (action === 'edit') openEdit(btn);
+  else if (action === 'ban') openBan(id, btn.dataset.name);
+  else if (action === 'unban') doUnban(id);
+  else if (action === 'detail') openDetail(id);
+});
+
+function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+function openEdit(btn) {
+  const id = btn.dataset.id;
+  document.getElementById('editUserId').value = id;
+  document.getElementById('editUsername').value = btn.dataset.name;
+  document.getElementById('editRole').value = btn.dataset.role;
+  document.getElementById('editManageRole').checked = btn.dataset.managerole === '1';
+  document.getElementById('editEventManager').checked = btn.dataset.eventmanager === '1';
+  // Fetch current side roles
+  fetch('/api/admin/users/' + id).then(r => r.json()).then(data => {
+    const active = (data.sideRoles || []).map(sr => sr.id);
+    const container = document.getElementById('sideRoleChips');
+    container.innerHTML = SIDE_ROLES.map(sr =>
+      '<button type="button" class="side-role-chip' + (active.includes(sr.id) ? ' active' : '') + '" data-srid="' + sr.id + '" style="border-color:' + sr.color + ';color:' + (active.includes(sr.id) ? sr.color : 'inherit') + '">' + (sr.emoji || '') + ' ' + sr.display_name + '</button>'
+    ).join('');
+    container.querySelectorAll('.side-role-chip').forEach(chip => {
+      chip.addEventListener('click', function() { this.classList.toggle('active'); });
+    });
+  });
+  openModal('editModal');
+}
+
+function openBan(id, name) {
+  document.getElementById('banUserId').value = id;
+  document.getElementById('banUserName').textContent = name;
+  document.getElementById('banReason').value = '';
+  document.getElementById('banDuration').value = '';
+  openModal('banModal');
+}
+
+async function doUnban(id) {
+  if (!confirm('هل تريد فك الحظر؟')) return;
+  const res = await fetch('/api/admin/users/' + id + '/unban', { method: 'POST', headers: {'Content-Type':'application/json'} });
+  const data = await res.json();
+  if (data.success) location.reload();
+  else alert(data.error || 'خطأ');
+}
+
+async function openDetail(id) {
+  const res = await fetch('/api/admin/users/' + id);
+  const data = await res.json();
+  if (!data.success) return;
+  const u = data.user;
+  const pts = data.points;
+  const inv = data.inventory || [];
+  const boxes = data.boxes || [];
+  const achs = data.achievements || [];
+  document.getElementById('detailContent').innerHTML = `
+    <div style="text-align:center;margin-bottom:16px">
+      <img src="${u.profile_picture || '/images/default-avatar.png'}" style="width:72px;height:72px;border-radius:50%;border:3px solid var(--ac);margin-bottom:8px" alt="">
+      <h3 style="margin:0">${u.username}</h3>
+      <span style="font-size:12px;color:var(--text-dim)">${u.email || 'لا يوجد بريد'} • ID: ${u.id}</span>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-item"><label>النقاط</label><span>${pts ? pts.points : 0}</span></div>
+      <div class="detail-item"><label>إجمالي النقاط</label><span>${pts ? pts.total_earned : 0}</span></div>
+      <div class="detail-item"><label>في السيرفر</label><span>${u.in_guild ? 'نعم' : 'لا'}</span></div>
+      <div class="detail-item"><label>تذاكر مغلقة</label><span>${u.tickets_closed || 0}</span></div>
+      <div class="detail-item"><label>Manage Role</label><span>${u.manage_role ? 'مفعّل' : 'معطّل'}</span></div>
+      <div class="detail-item"><label>Event Manager</label><span>${u.event_manager ? 'مفعّل' : 'معطّل'}</span></div>
+    </div>
+    <div class="detail-section"><h4><i class="fas fa-box"></i> الحقيبة (${inv.length})</h4>
+      ${inv.length ? inv.map(i => '<div class="item-row"><span>' + i.item_name + ' ×' + i.quantity + '</span><button onclick="deleteItem(' + u.id + ',\'' + i.item_key + '\')"><i class="fas fa-trash"></i></button></div>').join('') : '<p style="font-size:12px;color:var(--text-dim)">فارغة</p>'}
+    </div>
+    <div class="detail-section"><h4><i class="fas fa-box-open"></i> الصناديق (${boxes.length})</h4>
+      ${boxes.length ? boxes.map(b => '<div class="item-row"><span>' + b.box_name + '</span><button onclick="deleteBox(' + b.id + ')"><i class="fas fa-trash"></i></button></div>').join('') : '<p style="font-size:12px;color:var(--text-dim)">لا توجد صناديق</p>'}
+    </div>
+    <div class="detail-section"><h4><i class="fas fa-trophy"></i> الإنجازات (${achs.length})</h4>
+      ${achs.length ? achs.map(a => '<span class="ach-badge">' + a.achievement_name + ' <button onclick="deleteAch(' + u.id + ',' + a.id + ')" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:10px">✕</button></span>').join('') : '<p style="font-size:12px;color:var(--text-dim)">لا توجد إنجازات</p>'}
+    </div>
+  `;
+  openModal('detailModal');
+}
+
+async function deleteItem(userId, key) {
+  if (!confirm('حذف الصنف؟')) return;
+  await fetch('/api/admin/users/' + userId + '/items/' + key, { method: 'DELETE' });
+  openDetail(userId);
+}
+async function deleteBox(boxId) {
+  if (!confirm('حذف الصندوق؟')) return;
+  await fetch('/api/admin/boxes/' + boxId, { method: 'DELETE' });
+  document.getElementById('detailContent').querySelectorAll('.item-row').forEach(el => el.remove());
+}
+async function deleteAch(userId, achId) {
+  if (!confirm('حذف الإنجاز؟')) return;
+  await fetch('/api/admin/users/' + userId + '/achievements/' + achId, { method: 'DELETE' });
+  openDetail(userId);
+}
+
+// Edit form submit
+document.getElementById('editForm').addEventListener('submit', async function(e) {
   e.preventDefault();
-  const fd = new FormData(e.target);
-  await fetch('/api/admin/users/role', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(Object.fromEntries(fd)) });
-  location.reload();
+  const id = document.getElementById('editUserId').value;
+  const activeChips = document.querySelectorAll('#sideRoleChips .side-role-chip.active');
+  const body = {
+    username: document.getElementById('editUsername').value,
+    role: document.getElementById('editRole').value,
+    manageRole: document.getElementById('editManageRole').checked,
+    eventManager: document.getElementById('editEventManager').checked,
+    sideRoles: Array.from(activeChips).map(c => parseInt(c.dataset.srid))
+  };
+  const res = await fetch('/api/admin/users/' + id, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  const data = await res.json();
+  if (data.success) location.reload();
+  else alert(data.error || 'خطأ');
+});
+
+// Ban form submit
+document.getElementById('banForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const id = document.getElementById('banUserId').value;
+  const body = {
+    reason: document.getElementById('banReason').value,
+    durationMinutes: document.getElementById('banDuration').value ? parseInt(document.getElementById('banDuration').value) : undefined
+  };
+  const res = await fetch('/api/admin/users/' + id + '/ban', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  const data = await res.json();
+  if (data.success) location.reload();
+  else alert(data.error || 'خطأ');
 });
 </script>
 <%- include('admin_footer') %>

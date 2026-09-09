@@ -132,7 +132,9 @@ async function migrate() {
     `CREATE TABLE IF NOT EXISTS site_visits (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, visit_date DATE NOT NULL, path VARCHAR(191) NOT NULL, views INT UNSIGNED NOT NULL DEFAULT 0, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, UNIQUE KEY uq_date_path (visit_date, path), INDEX idx_visit_date (visit_date)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
     `CREATE TABLE IF NOT EXISTS visit_uniques (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, visit_date DATE NOT NULL, visitor_id VARCHAR(64) NOT NULL, UNIQUE KEY uq_date_visitor (visit_date, visitor_id), INDEX idx_vu_date (visit_date)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
     `CREATE TABLE IF NOT EXISTS bot_visits (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, visit_date DATE NOT NULL, path VARCHAR(191) NOT NULL, views INT UNSIGNED NOT NULL DEFAULT 0, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, UNIQUE KEY uq_bot_date_path (visit_date, path), INDEX idx_bot_visit_date (visit_date)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
-    `CREATE TABLE IF NOT EXISTS blocked_ips (ip VARCHAR(64) PRIMARY KEY, reason VARCHAR(191) NOT NULL DEFAULT 'unknown', user_agent VARCHAR(255) DEFAULT '', blocked_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, expires_at DATETIME NULL, INDEX idx_blocked_expires (expires_at)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`
+    `CREATE TABLE IF NOT EXISTS blocked_ips (ip VARCHAR(64) PRIMARY KEY, reason VARCHAR(191) NOT NULL DEFAULT 'unknown', user_agent VARCHAR(255) DEFAULT '', blocked_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, expires_at DATETIME NULL, INDEX idx_blocked_expires (expires_at)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+    `CREATE TABLE IF NOT EXISTS bot_inventory (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, item_key VARCHAR(100) NOT NULL, item_name VARCHAR(255) NOT NULL, quantity INT DEFAULT 1, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, UNIQUE KEY unique_user_item (user_id, item_key))`,
+    `CREATE TABLE IF NOT EXISTS user_boxes (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, box_name VARCHAR(255) NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`
   ];
 
   for (const sql of tables) {
@@ -218,6 +220,13 @@ async function migrate() {
     { table: 'role_punishments', col: 'can_warn', sql: "ALTER TABLE role_punishments ADD COLUMN can_warn TINYINT(1) DEFAULT 0" },
     { table: 'role_punishments', col: 'can_kick', sql: "ALTER TABLE role_punishments ADD COLUMN can_kick TINYINT(1) DEFAULT 0" },
     { table: 'role_punishments', col: 'max_ban_level', sql: "ALTER TABLE role_punishments ADD COLUMN max_ban_level INT DEFAULT 0" },
+    { table: 'users', col: 'manage_role', sql: "ALTER TABLE users ADD COLUMN manage_role TINYINT(1) DEFAULT 0" },
+    { table: 'users', col: 'event_manager', sql: "ALTER TABLE users ADD COLUMN event_manager TINYINT(1) DEFAULT 0" },
+    { table: 'users', col: 'role_updated_at', sql: "ALTER TABLE users ADD COLUMN role_updated_at DATETIME" },
+    { table: 'users', col: 'family_joined_at', sql: "ALTER TABLE users ADD COLUMN family_joined_at DATETIME" },
+    { table: 'users', col: 'banned_until', sql: "ALTER TABLE users ADD COLUMN banned_until DATETIME" },
+    { table: 'users', col: 'banned_by', sql: "ALTER TABLE users ADD COLUMN banned_by INT" },
+    { table: 'users', col: 'tickets_closed', sql: "ALTER TABLE users ADD COLUMN tickets_closed INT DEFAULT 0" },
   ];
   for (const { table, col, sql } of alterStatements) {
     try {
@@ -261,7 +270,7 @@ async function migrate() {
 }
 
 // Bump this when tables/ALTERs change in migrate() — '6' adds analytics + guard tables
-const SCHEMA_VERSION = '6';
+const SCHEMA_VERSION = '7';
 
 async function start() {
   // Skip the ~50-table migration when schema is already current:
