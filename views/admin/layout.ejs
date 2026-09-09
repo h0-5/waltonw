@@ -13,6 +13,10 @@
     var _admUser = typeof user !== 'undefined' ? user : null;
     var _admPath = typeof currentPath !== 'undefined' ? currentPath : '/admin';
     var _admTitle = typeof title !== 'undefined' ? title : 'Admin';
+    var _admBgColor = typeof bgColor !== 'undefined' ? bgColor : '#06040a';
+    var _admTextColor = typeof textColor !== 'undefined' ? textColor : '#ffffff';
+    var _admCardColor = typeof cardColor !== 'undefined' ? cardColor : '#0c0816';
+    var _admBorderColor = typeof borderColor !== 'undefined' ? borderColor : '#1a1525';
     // Permission check helper — owner and admin roles always pass
     var _canAccess = function(permKey) {
       if (!_admUser) return false;
@@ -34,8 +38,13 @@
       --ac-rgb: <%= _admAcRgb %>;
       --bg-url: url('<%= _admBg %>');
       --mobile-bg-url: url('<%= _admMobBg %>');
+      --bg-main: <%= _admBgColor %>;
+      --bg-card: <%= _admCardColor %>;
+      --border: <%= _admBorderColor %>;
+      --text: <%= _admTextColor %>;
     }
     body {
+      background-color: var(--bg-main);
       background-image: var(--bg-url);
       background-size: cover;
       background-position: center;

@@ -1,117 +1,330 @@
 <%- include('layout') %>
 <script>document.getElementById('pageTitle').textContent = 'الإعدادات';</script>
 
+<style>
+.settings-tabs{display:flex;gap:6px;margin-bottom:1.5rem;flex-wrap:wrap}
+.settings-tab{padding:.5rem 1.2rem;border-radius:8px;border:1px solid rgba(var(--ac-rgb),.15);background:transparent;color:var(--text-dim);font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
+.settings-tab.active,.settings-tab:hover{background:rgba(var(--ac-rgb),.15);color:var(--ac);border-color:rgba(var(--ac-rgb),.3)}
+.settings-panel{display:none}
+.settings-panel.active{display:block}
+.settings-card{background:rgba(var(--ac-rgb),.04);border:1px solid rgba(var(--ac-rgb),.12);border-radius:12px;padding:1.2rem;margin-bottom:1rem}
+.settings-card h3{color:var(--ac);margin-bottom:1rem;font-size:1rem}
+.form-group{margin-bottom:1rem}
+.form-group label{display:block;font-size:.85rem;color:var(--text-dim);margin-bottom:.3rem;font-weight:600}
+.form-input,.form-textarea,.form-select{width:100%;padding:.6rem .8rem;background:rgba(255,255,255,.05);border:1px solid rgba(var(--ac-rgb),.15);border-radius:8px;color:#fff;font-family:inherit;font-size:.85rem}
+.form-textarea{min-height:80px;resize:vertical}
+.form-input:focus,.form-textarea:focus,.form-select:focus{outline:none;border-color:var(--ac)}
+.form-select option{background:#1a1525;color:#fff}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.toggle-label{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:.85rem;color:var(--text-dim)}
+.toggle-label input{display:none}
+.toggle-slider{width:40px;height:22px;background:rgba(255,255,255,.1);border-radius:11px;position:relative;transition:all .3s}
+.toggle-slider::after{content:'';position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:2px;left:2px;transition:all .3s}
+.toggle-label input:checked+.toggle-slider{background:var(--ac)}
+.toggle-label input:checked+.toggle-slider::after{transform:translateX(18px)}
+.color-picker{display:flex;align-items:center;gap:10px}
+.color-picker input[type="color"]{width:50px;height:35px;border:none;border-radius:8px;cursor:pointer;background:transparent}
+.color-picker .color-value{font-size:.8rem;color:var(--text-dim);font-family:monospace}
+.role-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:.5rem}
+.role-chip{padding:6px 14px;border-radius:20px;border:1px solid rgba(var(--ac-rgb),.2);background:rgba(var(--ac-rgb),.05);color:var(--text-dim);font-size:.8rem;cursor:pointer;transition:all .2s;font-weight:600}
+.role-chip:hover{border-color:var(--ac);color:var(--ac)}
+.role-chip.selected{background:var(--ac);color:#fff;border-color:var(--ac)}
+.submit-btn{padding:.7rem 2rem;background:var(--ac);color:#fff;border:none;border-radius:8px;font-weight:700;font-family:inherit;cursor:pointer;font-size:.9rem;transition:all .2s}
+.submit-btn:hover{opacity:.9;transform:translateY(-1px)}
+.preview-box{background:rgba(0,0,0,.3);border:1px solid rgba(var(--ac-rgb),.15);border-radius:12px;padding:1.5rem;margin-top:1rem;text-align:center}
+.preview-box h4{color:#fff;margin-bottom:.5rem}
+.preview-box p{color:rgba(255,255,255,.6);font-size:.85rem}
+.lockdown-status{padding:12px 16px;border-radius:10px;margin-bottom:1rem;display:flex;align-items:center;gap:10px;font-weight:700;font-size:.85rem}
+.lockdown-status.off{background:rgba(34,197,94,.1);color:#22c55e;border:1px solid rgba(34,197,94,.2)}
+.lockdown-status.on{background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2)}
+</style>
+
 <div class="admin-content">
   <div class="content-header">
     <h2><i class="fas fa-cog"></i> إعدادات الموقع</h2>
   </div>
 
-  <!-- Pages Section -->
-  <div class="settings-card" style="margin-bottom:1.5rem">
-    <h3 style="color:var(--ac);margin-bottom:1rem"><i class="fas fa-th-large"></i> الصفحات</h3>
-    <div style="display:flex;flex-wrap:wrap;gap:0.75rem">
-      <a href="/admin/roles" style="display:inline-flex;align-items:center;gap:8px;padding:12px 20px;background:rgba(var(--ac-rgb),0.1);border:1px solid rgba(var(--ac-rgb),0.2);border-radius:12px;color:#fff;text-decoration:none;font-weight:700;font-size:0.9rem;transition:all 0.3s">
-        <i class="fas fa-shield-halved" style="color:var(--ac)"></i> إدارة الصلاحيات
-      </a>
-      <a href="/admin/users" style="display:inline-flex;align-items:center;gap:8px;padding:12px 20px;background:rgba(var(--ac-rgb),0.1);border:1px solid rgba(var(--ac-rgb),0.2);border-radius:12px;color:#fff;text-decoration:none;font-weight:700;font-size:0.9rem;transition:all 0.3s">
-        <i class="fas fa-users" style="color:var(--ac)"></i> إدارة المستخدمين
-      </a>
-      <a href="/admin/products" style="display:inline-flex;align-items:center;gap:8px;padding:12px 20px;background:rgba(var(--ac-rgb),0.1);border:1px solid rgba(var(--ac-rgb),0.2);border-radius:12px;color:#fff;text-decoration:none;font-weight:700;font-size:0.9rem;transition:all 0.3s">
-        <i class="fas fa-box-open" style="color:var(--ac)"></i> إدارة المنتجات
-      </a>
-      <a href="/admin/orders" style="display:inline-flex;align-items:center;gap:8px;padding:12px 20px;background:rgba(var(--ac-rgb),0.1);border:1px solid rgba(var(--ac-rgb),0.2);border-radius:12px;color:#fff;text-decoration:none;font-weight:700;font-size:0.9rem;transition:all 0.3s">
-        <i class="fas fa-truck" style="color:var(--ac)"></i> إدارة الطلبات
-      </a>
-      <a href="/admin/news" style="display:inline-flex;align-items:center;gap:8px;padding:12px 20px;background:rgba(var(--ac-rgb),0.1);border:1px solid rgba(var(--ac-rgb),0.2);border-radius:12px;color:#fff;text-decoration:none;font-weight:700;font-size:0.9rem;transition:all 0.3s">
-        <i class="fas fa-newspaper" style="color:var(--ac)"></i> إدارة الأخبار
-      </a>
-      <a href="/admin/tickets" style="display:inline-flex;align-items:center;gap:8px;padding:12px 20px;background:rgba(var(--ac-rgb),0.1);border:1px solid rgba(var(--ac-rgb),0.2);border-radius:12px;color:#fff;text-decoration:none;font-weight:700;font-size:0.9rem;transition:all 0.3s">
-        <i class="fas fa-ticket" style="color:var(--ac)"></i> إدارة التذاكر
-      </a>
-      <a href="/admin/applications" style="display:inline-flex;align-items:center;gap:8px;padding:12px 20px;background:rgba(var(--ac-rgb),0.1);border:1px solid rgba(var(--ac-rgb),0.2);border-radius:12px;color:#fff;text-decoration:none;font-weight:700;font-size:0.9rem;transition:all 0.3s">
-        <i class="fas fa-file-alt" style="color:var(--ac)"></i> الطلبات المقدمة
-      </a>
-      <a href="/admin/manage-apps" style="display:inline-flex;align-items:center;gap:8px;padding:12px 20px;background:rgba(var(--ac-rgb),0.1);border:1px solid rgba(var(--ac-rgb),0.2);border-radius:12px;color:#fff;text-decoration:none;font-weight:700;font-size:0.9rem;transition:all 0.3s">
-        <i class="fas fa-list-check" style="color:var(--ac)"></i> إدارة نظام التقديمات
-      </a>
-      <a href="/admin/rules" style="display:inline-flex;align-items:center;gap:8px;padding:12px 20px;background:rgba(var(--ac-rgb),0.1);border:1px solid rgba(var(--ac-rgb),0.2);border-radius:12px;color:#fff;text-decoration:none;font-weight:700;font-size:0.9rem;transition:all 0.3s">
-        <i class="fas fa-gavel" style="color:var(--ac)"></i> إدارة القوانين
-      </a>
-      <a href="/admin/discounts" style="display:inline-flex;align-items:center;gap:8px;padding:12px 20px;background:rgba(var(--ac-rgb),0.1);border:1px solid rgba(var(--ac-rgb),0.2);border-radius:12px;color:#fff;text-decoration:none;font-weight:700;font-size:0.9rem;transition:all 0.3s">
-        <i class="fas fa-tag" style="color:var(--ac)"></i> أكواد الخصم
-      </a>
-      <a href="/admin/about" style="display:inline-flex;align-items:center;gap:8px;padding:12px 20px;background:rgba(var(--ac-rgb),0.1);border:1px solid rgba(var(--ac-rgb),0.2);border-radius:12px;color:#fff;text-decoration:none;font-weight:700;font-size:0.9rem;transition:all 0.3s">
-        <i class="fas fa-info-circle" style="color:var(--ac)"></i> صفحة من نحن
-      </a>
-      <a href="/admin/properties" style="display:inline-flex;align-items:center;gap:8px;padding:12px 20px;background:rgba(var(--ac-rgb),0.1);border:1px solid rgba(var(--ac-rgb),0.2);border-radius:12px;color:#fff;text-decoration:none;font-weight:700;font-size:0.9rem;transition:all 0.3s">
-        <i class="fas fa-building" style="color:var(--ac)"></i> إدارة الممتلكات
-      </a>
-      <a href="/admin/broadcast" style="display:inline-flex;align-items:center;gap:8px;padding:12px 20px;background:rgba(var(--ac-rgb),0.1);border:1px solid rgba(var(--ac-rgb),0.2);border-radius:12px;color:#fff;text-decoration:none;font-weight:700;font-size:0.9rem;transition:all 0.3s">
-        <i class="fas fa-bullhorn" style="color:var(--ac)"></i> البث
-      </a>
-      <a href="/admin/banned" style="display:inline-flex;align-items:center;gap:8px;padding:12px 20px;background:rgba(var(--ac-rgb),0.1);border:1px solid rgba(var(--ac-rgb),0.2);border-radius:12px;color:#fff;text-decoration:none;font-weight:700;font-size:0.9rem;transition:all 0.3s">
-        <i class="fas fa-ban" style="color:var(--ac)"></i> المحظورين
-      </a>
-      <a href="/admin/logs" style="display:inline-flex;align-items:center;gap:8px;padding:12px 20px;background:rgba(var(--ac-rgb),0.1);border:1px solid rgba(var(--ac-rgb),0.2);border-radius:12px;color:#fff;text-decoration:none;font-weight:700;font-size:0.9rem;transition:all 0.3s">
-        <i class="fas fa-history" style="color:var(--ac)"></i> السجلات
-      </a>
-    </div>
+  <div class="settings-tabs">
+    <button class="settings-tab active" onclick="showSettingsTab('general')">الإعدادات العامة</button>
+    <button class="settings-tab" onclick="showSettingsTab('appearance')">المظهر والألوان</button>
+    <button class="settings-tab" onclick="showSettingsTab('lockdown')">قفل الموقع</button>
+    <button class="settings-tab" onclick="showSettingsTab('security')">الأمان</button>
   </div>
 
-  <form id="settingsForm" class="settings-form">
-    <div class="settings-grid">
+  <!-- General Settings -->
+  <div class="settings-panel active" id="panelGeneral">
+    <form id="generalForm">
       <div class="settings-card">
-        <h3><i class="fas fa-globe"></i> الإعدادات العامة</h3>
-        <div class="form-group">
-          <label>اسم الموقع</label>
-          <input type="text" name="site_name" value="<%= settings.site_name || 'Walton Family' %>">
+        <h3><i class="fas fa-globe"></i> معلومات الموقع</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>اسم الموقع</label>
+            <input type="text" class="form-input" name="site_name" value="<%= settings.site_name || 'Walton Family' %>">
+          </div>
+          <div class="form-group">
+            <label>رابط الموقع</label>
+            <input type="url" class="form-input" name="site_url" value="<%= settings.site_url || '' %>">
+          </div>
         </div>
         <div class="form-group">
-          <label>رابط الموقع</label>
-          <input type="url" name="site_url" value="<%= settings.site_url || '' %>">
+          <label>وصف الموقع</label>
+          <textarea class="form-textarea" name="site_description"><%= settings.site_description || '' %></textarea>
         </div>
-        <div class="form-group">
-          <label>لون التمييز</label>
-          <input type="color" name="accent_color" value="<%= settings.accent_color || '#f97316' %>">
+        <div class="form-row">
+          <div class="form-group">
+            <label>رابط اللوجو</label>
+            <input type="text" class="form-input" name="site_logo_url" value="<%= settings.site_logo_url || '' %>">
+          </div>
+          <div class="form-group">
+            <label>رابط الخلفية</label>
+            <input type="text" class="form-input" name="site_bg_url" value="<%= settings.site_bg_url || '' %>">
+          </div>
         </div>
       </div>
+      <button type="submit" class="submit-btn"><i class="fas fa-save"></i> حفظ الإعدادات العامة</button>
+    </form>
+  </div>
+
+  <!-- Appearance Settings -->
+  <div class="settings-panel" id="panelAppearance">
+    <form id="appearanceForm">
+      <div class="settings-card">
+        <h3><i class="fas fa-palette"></i> ألوان الموقع</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>اللون الرئيسي (Accent)</label>
+            <div class="color-picker">
+              <input type="color" name="accent_color" value="<%= settings.accent_color || '#bc13fe' %>">
+              <span class="color-value"><%= settings.accent_color || '#bc13fe' %></span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>لون الخلفية</label>
+            <div class="color-picker">
+              <input type="color" name="bg_color" value="<%= settings.bg_color || '#06040a' %>">
+              <span class="color-value"><%= settings.bg_color || '#06040a' %></span>
+            </div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>لون النصوص</label>
+            <div class="color-picker">
+              <input type="color" name="text_color" value="<%= settings.text_color || '#ffffff' %>">
+              <span class="color-value"><%= settings.text_color || '#ffffff' %></span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>لون البطاقات</label>
+            <div class="color-picker">
+              <input type="color" name="card_color" value="<%= settings.card_color || '#0c0816' %>">
+              <span class="color-value"><%= settings.card_color || '#0c0816' %></span>
+            </div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>لون حدود البطاقات</label>
+            <div class="color-picker">
+              <input type="color" name="border_color" value="<%= settings.border_color || '#1a1525' %>">
+              <span class="color-value"><%= settings.border_color || '#1a1525' %></span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>شفافية الخلفية (0-1)</label>
+            <input type="number" class="form-input" name="bg_opacity" value="<%= settings.bg_opacity || '0.85' %>" min="0" max="1" step="0.05">
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <h3><i class="fas fa-eye"></i> معاينة مباشرة</h3>
+        <div class="preview-box" id="colorPreview">
+          <h4>معاينة الألوان</h4>
+          <p>هذا نص تجريبي لمعاينة لون النصوص</p>
+          <div style="margin-top:1rem;padding:1rem;border-radius:8px;background:rgba(var(--ac-rgb),.1);border:1px solid rgba(var(--ac-rgb),.2)">
+            <span style="color:var(--ac)">نص بلون التمييز</span>
+          </div>
+        </div>
+      </div>
+      <button type="submit" class="submit-btn"><i class="fas fa-save"></i> حفظ المظهر</button>
+    </form>
+  </div>
+
+  <!-- Lockdown Settings -->
+  <div class="settings-panel" id="panelLockdown">
+    <div class="lockdown-status <%= settings.site_lockdown === '1' ? 'on' : 'off' %>" id="lockdownStatus">
+      <i class="fas fa-<%= settings.site_lockdown === '1' ? 'lock' : 'lock-open' %>"></i>
+      الموقع <%= settings.site_lockdown === '1' ? 'مقفول حالياً' : 'مفتوح للجميع' %>
+    </div>
+
+    <form id="lockdownForm">
+      <div class="settings-card">
+        <h3><i class="fas fa-lock"></i> قفل الموقع</h3>
+        <div class="form-group">
+          <label class="toggle-label">
+            <input type="checkbox" name="site_lockdown" <%= settings.site_lockdown === '1' ? 'checked' : '' %>>
+            <span class="toggle-slider"></span>
+            تفعيل قفل الموقع
+          </label>
+        </div>
+        <p style="font-size:.8rem;color:var(--text-dim);margin-bottom:1rem">لو مفعّل، الموقع هيبان مقفول لكل الناس ما عدا الأدوار المحددة</p>
+
+        <div class="form-group">
+          <label>الأدوار المسموح لها بالدخول وقت القفل</label>
+          <div class="role-chips" id="lockdownRoles">
+            <% roles.forEach(function(r) { %>
+            <div class="role-chip <%= (settings.site_lockdown_roles || '').includes(r.role_name) ? 'selected' : '' %>" 
+                 data-role="<%= r.role_name %>" onclick="toggleLockdownRole(this)">
+              <i class="<%= r.icon || 'fas fa-user' %>"></i> <%= r.display_name || r.role_name %>
+            </div>
+            <% }); %>
+          </div>
+          <input type="hidden" name="site_lockdown_roles" id="lockdownRolesInput" value="<%= settings.site_lockdown_roles || 'owner,developer,founder' %>">
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <h3><i class="fas fa-image"></i> صفحة القفل</h3>
+        <div class="form-group">
+          <label>رسالة القفل</label>
+          <textarea class="form-textarea" name="lockdown_message"><%= settings.lockdown_message || 'الموقع مقفول حالياً. يرجى المحاولة لاحقاً.' %></textarea>
+        </div>
+        <div class="form-group">
+          <label>رابط الصورة</label>
+          <input type="text" class="form-input" name="lockdown_image" value="<%= settings.lockdown_image || '' %>">
+        </div>
+      </div>
+      <button type="submit" class="submit-btn"><i class="fas fa-save"></i> حفظ إعدادات القفل</button>
+    </form>
+  </div>
+
+  <!-- Security Settings -->
+  <div class="settings-panel" id="panelSecurity">
+    <form id="securityForm">
       <div class="settings-card">
         <h3><i class="fas fa-shield-alt"></i> الأمان</h3>
         <div class="form-group">
           <label class="toggle-label">
-            <input type="checkbox" name="maintenance_mode" <%= settings.maintenance_mode ? 'checked' : '' %>>
+            <input type="checkbox" name="maintenance_mode" <%= settings.maintenance_mode === '1' ? 'checked' : '' %>>
             <span class="toggle-slider"></span>
             وضع الصيانة
           </label>
         </div>
+        <p style="font-size:.8rem;color:var(--text-dim);margin-bottom:1rem">لو مفعّل، الموقع هيعرض صفحة صيانة لكل المستخدمين ما عدا owner/developer/founder</p>
+
         <div class="form-group">
           <label class="toggle-label">
-            <input type="checkbox" name="games_locked" <%= settings.games_locked ? 'checked' : '' %>>
+            <input type="checkbox" name="games_locked" <%= settings.games_locked === '1' ? 'checked' : '' %>>
             <span class="toggle-slider"></span>
             قفل الألعاب
           </label>
         </div>
       </div>
-    </div>
-    <button type="submit" class="submit-btn"><i class="fas fa-save"></i> حفظ الإعدادات</button>
-  </form>
+
+      <div class="settings-card">
+        <h3><i class="fas fa-user-shield"></i> حماية إضافية</h3>
+        <div class="form-group">
+          <label class="toggle-label">
+            <input type="checkbox" name="registration_enabled" <%= settings.registration_enabled !== '0' ? 'checked' : '' %>>
+            <span class="toggle-slider"></span>
+            تفعيل التسجيل
+          </label>
+        </div>
+        <div class="form-group">
+          <label class="toggle-label">
+            <input type="checkbox" name="discord_login_enabled" <%= settings.discord_login_enabled !== '0' ? 'checked' : '' %>>
+            <span class="toggle-slider"></span>
+            تفعيل تسجيل الدخول بـ Discord
+          </label>
+        </div>
+      </div>
+      <button type="submit" class="submit-btn"><i class="fas fa-save"></i> حفظ إعدادات الأمان</button>
+    </form>
+  </div>
 </div>
 
 <script>
-document.getElementById('settingsForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  const formData = new FormData(this);
-  const data = Object.fromEntries(formData);
-  data.maintenance_mode = formData.has('maintenance_mode') ? '1' : '0';
-  data.games_locked = formData.has('games_locked') ? '1' : '0';
-  const res = await fetch('/api/admin/settings', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
+// Tab switching
+function showSettingsTab(name) {
+  document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+  var panelId = 'panel' + name.charAt(0).toUpperCase() + name.slice(1);
+  document.getElementById(panelId).classList.add('active');
+  document.querySelectorAll('.settings-tab').forEach(function(t) {
+    if (t.getAttribute('onclick') && t.getAttribute('onclick').indexOf("'" + name + "'") !== -1) {
+      t.classList.add('active');
+    }
   });
-  const result = await res.json();
-  if (result.success) WaltonAPI.showNotification('تم حفظ الإعدادات', 'success');
-});
-</script>
+}
 
+// Color preview
+document.querySelectorAll('input[type="color"]').forEach(function(input) {
+  input.addEventListener('input', function() {
+    var value = this.value;
+    this.parentElement.querySelector('.color-value').textContent = value;
+    updateColorPreview();
+  });
+});
+
+function updateColorPreview() {
+  var accent = document.querySelector('[name="accent_color"]').value;
+  var r = parseInt(accent.slice(1,3), 16);
+  var g = parseInt(accent.slice(3,5), 16);
+  var b = parseInt(accent.slice(5,7), 16);
+  document.documentElement.style.setProperty('--ac', accent);
+  document.documentElement.style.setProperty('--ac-rgb', r + ',' + g + ',' + b);
+}
+
+// Lockdown roles
+function toggleLockdownRole(el) {
+  el.classList.toggle('selected');
+  var selected = [];
+  document.querySelectorAll('.role-chip.selected').forEach(function(chip) {
+    selected.push(chip.dataset.role);
+  });
+  document.getElementById('lockdownRolesInput').value = selected.join(',');
+}
+
+// Forms
+async function saveForm(formId, endpoint) {
+  var form = document.getElementById(formId);
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    var formData = new FormData(this);
+    var data = {};
+    formData.forEach(function(value, key) { data[key] = value; });
+    // Handle checkboxes
+    form.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+      data[cb.name] = cb.checked ? '1' : '0';
+    });
+    var res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    var result = await res.json();
+    if (result.success) {
+      WaltonAPI.showNotification('تم الحفظ', 'success');
+      if (formId === 'lockdownForm') {
+        var status = document.getElementById('lockdownStatus');
+        if (data.site_lockdown === '1') {
+          status.className = 'lockdown-status on';
+          status.innerHTML = '<i class="fas fa-lock"></i> الموقع مقفول حالياً';
+        } else {
+          status.className = 'lockdown-status off';
+          status.innerHTML = '<i class="fas fa-lock-open"></i> الموقع مفتوح للجميع';
+        }
+      }
+    } else {
+      WaltonAPI.showNotification(result.error || 'خطأ', 'error');
+    }
+  });
+}
+
+saveForm('generalForm', '/api/admin/settings');
+saveForm('appearanceForm', '/api/admin/settings');
+saveForm('lockdownForm', '/api/admin/settings');
+saveForm('securityForm', '/api/admin/settings');
+</script>
 <%- include('admin_footer') %>

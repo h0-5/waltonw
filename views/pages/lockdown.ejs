@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <title><%= title %> | Walton Family</title>
+  <style>
+    :root{--ac:#f59e0b;--ac-rgb:245,158,11}
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Cairo',sans-serif;background:#06040a;min-height:100vh;display:flex;flex-direction:column;justify-content:center;overflow-x:hidden;position:relative}
+    body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 59px,rgba(var(--ac-rgb),0.04) 59px,rgba(var(--ac-rgb),0.04) 60px),repeating-linear-gradient(90deg,transparent,transparent 59px,rgba(var(--ac-rgb),0.04) 59px,rgba(var(--ac-rgb),0.04) 60px);z-index:0;animation:gridMove 20s linear infinite}
+    @keyframes gridMove{0%{transform:translate(0,0)}100%{transform:translate(60px,60px)}}
+    .orb{position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0}
+    .orb-1{width:400px;height:400px;background:rgba(var(--ac-rgb),0.12);top:-100px;right:-100px;animation:orbFloat1 8s ease-in-out infinite}
+    .orb-2{width:300px;height:300px;background:rgba(var(--ac-rgb),0.08);bottom:-80px;left:-80px;animation:orbFloat2 10s ease-in-out infinite}
+    @keyframes orbFloat1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-30px,30px) scale(1.1)}}
+    @keyframes orbFloat2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(20px,-20px) scale(1.15)}}
+    .container{position:relative;z-index:1;width:100%;max-width:480px;padding:1.5rem;margin:0 auto;flex:1;display:flex;flex-direction:column;justify-content:center}
+    .card{background:rgba(12,8,22,0.85);backdrop-filter:blur(24px);border:1px solid rgba(var(--ac-rgb),0.25);border-radius:24px;padding:3rem 2.5rem;text-align:center;position:relative;overflow:hidden;animation:cardReveal 0.8s cubic-bezier(0.175,0.885,0.32,1.275) forwards;opacity:0;transform:translateY(30px) scale(0.95)}
+    @keyframes cardReveal{to{opacity:1;transform:translateY(0) scale(1)}}
+    .card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--ac),rgba(var(--ac-rgb),0.5),var(--ac),transparent);animation:glowLine 3s linear infinite}
+    @keyframes glowLine{0%{background-position:-200% 0}100%{background-position:200% 0}}
+    .corner-tl,.corner-br{position:absolute;width:20px;height:20px;opacity:0.4}
+    .corner-tl{top:8px;left:8px;border-top:2px solid var(--ac);border-left:2px solid var(--ac);border-radius:8px 0 0 0}
+    .corner-br{bottom:8px;right:8px;border-bottom:2px solid var(--ac);border-right:2px solid var(--ac);border-radius:0 0 8px 0}
+    .icon-container{position:relative;width:100px;height:100px;margin:0 auto 1.5rem;animation:iconPulse 3s ease-in-out infinite}
+    @keyframes iconPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+    .icon-container::before{content:'';position:absolute;inset:-4px;border-radius:50%;background:conic-gradient(from 0deg,var(--ac),rgba(var(--ac-rgb),0.3),var(--ac),rgba(var(--ac-rgb),0.1),var(--ac));animation:ringRotate 3s linear infinite}
+    @keyframes ringRotate{to{transform:rotate(360deg)}}
+    .icon-container::after{content:'';position:absolute;inset:2px;border-radius:50%;background:#0a0612}
+    .icon-container .icon{position:relative;z-index:1;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;color:var(--ac);filter:drop-shadow(0 0 15px rgba(var(--ac-rgb),0.5))}
+    .title{font-size:1.6rem;font-weight:900;background:linear-gradient(135deg,#fff,rgba(255,255,255,0.7),var(--ac));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:0.5rem}
+    .subtitle{font-size:0.92rem;color:rgba(255,255,255,0.45);margin-bottom:1.5rem;line-height:1.8}
+    .message-box{background:rgba(var(--ac-rgb),0.08);border:1px solid rgba(var(--ac-rgb),0.15);border-radius:14px;padding:16px;margin-bottom:1.5rem;text-align:center}
+    .message-box p{color:rgba(255,255,255,0.7);font-size:.9rem;line-height:1.8}
+    .lock-icon{font-size:4rem;color:var(--ac);margin-bottom:1rem;filter:drop-shadow(0 0 20px rgba(var(--ac-rgb),0.4));animation:lockBounce 2s ease-in-out infinite}
+    @keyframes lockBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+    .logout-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px 24px;background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.1);border-radius:14px;font-family:'Cairo',sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;transition:all 0.3s;text-decoration:none}
+    .logout-btn:hover{background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.2)}
+    .particles{position:fixed;inset:0;pointer-events:none;z-index:0}
+    .particle{position:absolute;width:2px;height:2px;border-radius:50%;background:var(--ac);opacity:0.3;animation:particleUp linear infinite}
+    @keyframes particleUp{0%{transform:translateY(100vh) scale(0);opacity:0}10%{opacity:0.3}90%{opacity:0.3}100%{transform:translateY(-10vh) scale(1);opacity:0}}
+    @media(max-width:480px){.card{padding:2.5rem 1.5rem}.title{font-size:1.3rem}}
+  </style>
+</head>
+<body>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="particles" id="particles"></div>
+
+  <div class="container">
+    <div class="card">
+      <div class="corner-tl"></div>
+      <div class="corner-br"></div>
+
+      <div class="icon-container">
+        <div class="icon"><i class="fas fa-lock"></i></div>
+      </div>
+
+      <h1 class="title">الموقع مقفول</h1>
+      <p class="subtitle">لا يمكنك الوصول إلى الموقع حالياً</p>
+
+      <div class="message-box">
+        <p><%= message %></p>
+      </div>
+
+      <% if (image) { %>
+      <div style="margin-bottom:1.5rem">
+        <img src="<%= image %>" alt="قفل" style="max-width:200px;border-radius:12px;opacity:.8">
+      </div>
+      <% } %>
+
+      <a href="/" class="logout-btn">
+        <i class="fas fa-home"></i>
+        <span>الصفحة الرئيسية</span>
+      </a>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      var c=document.getElementById('particles');
+      for(var i=0;i<20;i++){
+        var p=document.createElement('div');
+        p.className='particle';
+        p.style.left=Math.random()*100+'%';
+        p.style.animationDuration=(6+Math.random()*10)+'s';
+        p.style.animationDelay=Math.random()*6+'s';
+        p.style.width=p.style.height=(1.5+Math.random()*2.5)+'px';
+        c.appendChild(p);
+      }
+    })();
+  </script>
+</body>
+</html>

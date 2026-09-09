@@ -10,7 +10,7 @@ const sessionConfig = require('./config/session');
 const db = require('./config/database');
 
 const app = express();
-const { securityHeaders, sanitizeInput, maintenanceMode } = require('./middleware/security');
+const { securityHeaders, sanitizeInput, maintenanceMode, lockdownMode } = require('./middleware/security');
 
 app.set('trust proxy', 1);
 
@@ -98,9 +98,13 @@ app.use(async (req, res, next) => {
   res.locals.user = req.user || null;
   res.locals.siteName = settings.site_name || process.env.SITE_NAME || 'Walton Family';
   res.locals.siteUrl = settings.site_url || process.env.SITE_URL || 'http://localhost:3000';
-  var _accent = settings.site_accent_color || process.env.SITE_ACCENT_COLOR || '#bc13fe';
+  var _accent = settings.accent_color || settings.site_accent_color || process.env.SITE_ACCENT_COLOR || '#bc13fe';
   if (String(_accent).toLowerCase() === '#780ecf') _accent = '#bc13fe'; // ترحيل الثيم القديم للرسمي
   res.locals.accentColor = _accent;
+  res.locals.bgColor = settings.bg_color || '#06040a';
+  res.locals.textColor = settings.text_color || '#ffffff';
+  res.locals.cardColor = settings.card_color || '#0c0816';
+  res.locals.borderColor = settings.border_color || '#1a1525';
   res.locals.currentPath = req.path;
   res.locals.settings = settings;
   res.locals.bgUrl = settings.site_bg_url || '';
@@ -231,6 +235,9 @@ app.use('/api/notifications', adminApi);
 
 // Maintenance mode (after routes, before static)
 app.use(maintenanceMode);
+
+// Lockdown mode
+app.use(lockdownMode);
 
 // Ensure all view locals always exist (fallback for error/404 pages)
 app.use((req, res, next) => {

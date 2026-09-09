@@ -13,6 +13,10 @@
     var _acLight = _rgbArr.map(function(v){ return _clampC(v * 1.18 + 22); }).join(', ');
     var _bgUrl = typeof bgUrl !== 'undefined' ? bgUrl : '';
     var _mobileBgUrl = typeof mobileBgUrl !== 'undefined' ? mobileBgUrl : '';
+    var _bgColor = typeof bgColor !== 'undefined' ? bgColor : '#06040a';
+    var _textColor = typeof textColor !== 'undefined' ? textColor : '#ffffff';
+    var _cardColor = typeof cardColor !== 'undefined' ? cardColor : '#0c0816';
+    var _borderColor = typeof borderColor !== 'undefined' ? borderColor : '#1a1525';
   %>
   <meta name="description" content="<%= _siteName %> - مجتمعنا الرقمي">
   <meta name="theme-color" content="<%= _accentColor %>">
@@ -81,9 +85,14 @@
       --ac-light: rgb(<%= _acLight %>);
       --bg-url: url('<%= _bgUrl %>');
       --mobile-bg-url: url('<%= _mobileBgUrl %>');
+      --bg-main: <%= _bgColor %>;
+      --text-main: <%= _textColor %>;
+      --card-bg: <%= _cardColor %>;
+      --border-main: <%= _borderColor %>;
     }
     <% /* خلفية الموقع الموحدة لكل الصفحات — الرئيسية مثلها */ %>
     body {
+      background-color: var(--bg-main);
       background-image: var(--bg-url);
       background-size: cover;
       background-position: center;

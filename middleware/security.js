@@ -54,4 +54,50 @@ const maintenanceMode = async (req, res, next) => {
   next();
 };
 
-module.exports = { securityHeaders, preventBot, sanitizeInput, maintenanceMode };
+const lockdownMode = async (req, res, next) => {
+  // Skip for API routes, auth routes, and static files
+  if (req.path.startsWith('/api/') || req.path.startsWith('/auth/') || req.path.startsWith('/images/') || req.path.startsWith('/css/') || req.path.startsWith('/js/')) {
+    return next();
+  }
+  
+  try {
+    const [rows] = await db.execute(
+      "SELECT setting_value FROM site_settings WHERE setting_key = 'site_lockdown'"
+    );
+    
+    if (rows.length > 0 && rows[0].setting_value === '1') {
+      // Get allowed roles
+      const [roleRows] = await db.execute(
+        "SELECT setting_value FROM site_settings WHERE setting_key = 'site_lockdown_roles'"
+      );
+      
+      const allowedRoles = roleRows.length > 0 
+        ? roleRows[0].setting_value.split(',').map(r => r.trim())
+        : ['owner', 'developer', 'founder'];
+      
+      // Check if user has allowed role
+      if (req.user && allowedRoles.includes(req.user.role)) {
+        return next();
+      }
+      
+      // Get lockdown settings
+      const [msgRows] = await db.execute(
+        "SELECT setting_value FROM site_settings WHERE setting_key = 'lockdown_message'"
+      );
+      const [imgRows] = await db.execute(
+        "SELECT setting_value FROM site_settings WHERE setting_key = 'lockdown_image'"
+      );
+      
+      return res.status(503).render('pages/lockdown', {
+        title: 'الموقع مقفول',
+        message: msgRows.length > 0 ? msgRows[0].setting_value : 'الموقع مقفول حالياً. يرجى المحاولة لاحقاً.',
+        image: imgRows.length > 0 ? imgRows[0].setting_value : ''
+      });
+    }
+  } catch (err) {
+    // If table doesn't exist, continue
+  }
+  next();
+};
+
+module.exports = { securityHeaders, preventBot, sanitizeInput, maintenanceMode, lockdownMode };
