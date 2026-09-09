@@ -287,6 +287,14 @@ function toggleLockdownRole(el) {
 }
 
 // Forms
+function showNotif(msg, type) {
+  var div = document.createElement('div');
+  div.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:10px;font-weight:700;font-size:.85rem;z-index:99999;font-family:Cairo,sans-serif;' + (type === 'success' ? 'background:#22c55e;color:#fff' : 'background:#ef4444;color:#fff');
+  div.textContent = msg;
+  document.body.appendChild(div);
+  setTimeout(function(){ div.remove(); }, 3000);
+}
+
 async function saveForm(formId, endpoint) {
   var form = document.getElementById(formId);
   form.addEventListener('submit', async function(e) {
@@ -294,7 +302,6 @@ async function saveForm(formId, endpoint) {
     var formData = new FormData(this);
     var data = {};
     formData.forEach(function(value, key) { data[key] = value; });
-    // Handle checkboxes
     form.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
       data[cb.name] = cb.checked ? '1' : '0';
     });
@@ -305,7 +312,7 @@ async function saveForm(formId, endpoint) {
     });
     var result = await res.json();
     if (result.success) {
-      WaltonAPI.showNotification('تم الحفظ', 'success');
+      showNotif('تم الحفظ', 'success');
       if (formId === 'lockdownForm') {
         var status = document.getElementById('lockdownStatus');
         if (data.site_lockdown === '1') {
@@ -317,7 +324,7 @@ async function saveForm(formId, endpoint) {
         }
       }
     } else {
-      WaltonAPI.showNotification(result.error || 'خطأ', 'error');
+      showNotif(result.error || 'خطأ', 'error');
     }
   });
 }
