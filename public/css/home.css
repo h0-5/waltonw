@@ -562,14 +562,18 @@
 }
 .hx-banner-ic + .hx-banner-title { margin-top: 2px; }
 .hx-banner-title {
-  font-family: var(--font-head);
+  /* خط عصري حديث بطلب المستخدم — Rubik هندسي بحواف دائرية خفيفة (يُحمَّل بالرئيسية فقط)
+     الجملة أطول من العنوان القديم فالمقاس أخفض قليلاً مع ارتفاع سطر مريح للسطرين */
+  font-family: 'Rubik', var(--font-head);
   font-weight: 800;
-  font-size: clamp(24px, 4.4vw, 38px);
+  font-size: clamp(22px, 3.4vw, 32px);
+  line-height: 1.65;
+  max-width: 860px;
   color: #fff;
   margin: 0;
   text-shadow: 0 4px 26px rgba(0, 0, 0, 0.5);
 }
-.hx-banner-sub { margin: 0; color: var(--muted); font-size: 14.5px; max-width: 520px; line-height: 1.8; }
+/* .hx-banner-sub حُذف من home.ejs (كان يكرر جملة العنوان) — قاعدته أزيلت معه */
 .hx-banner-btns { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 8px; }
 .hx-banner .ds-btn-primary { box-shadow: 0 10px 30px rgba(188, 19, 254, 0.4); }
 .hx-banner .ds-btn-primary:hover { transform: translateY(-2px); }

@@ -196,8 +196,9 @@
         <span class="hx-banner-ghost" aria-hidden="true">WALTON</span>
         <div class="hx-banner-body">
           <span class="hx-banner-ic" aria-hidden="true"><i class="fas fa-headset"></i></span>
-          <h2 class="hx-banner-title" id="hxCtaTitle">محتاج دعم؟ إحنا موجودين</h2>
-          <p class="hx-banner-sub">في حال واجهتك مشكلة يمكنك فتح تذكرة او تواصل عن طريق الديسكورد</p>
+          <% /* عنوان البانر صار الجملة المطلوبة حرفياً (طلب المستخدم) — السطر الفرعي حُذف
+                لأنه كان يحمل نفس الجملة بعد تعديل 7b44e13 فلا تكرار — الخط: Rubik عصري */ %>
+          <h2 class="hx-banner-title" id="hxCtaTitle">في حال واجهتك مشكلة يمكنك فتح تذكرة او تواصل عن طريق الديسكورد</h2>
           <div class="hx-banner-btns">
             <a href="/support" class="ds-btn ds-btn-primary hx-btn-big"><i class="fas fa-headset" aria-hidden="true"></i> صفحة الدعم الفني</a>
             <a href="<%= hxDiscord %>" target="_blank" rel="noopener" class="ds-btn ds-btn-ghost hx-btn-big"><i class="fab fa-discord" aria-hidden="true"></i> سيرفر الديسكورد</a>
