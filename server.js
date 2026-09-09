@@ -85,7 +85,7 @@ async function migrate() {
     `CREATE TABLE IF NOT EXISTS site_settings (setting_key VARCHAR(100) PRIMARY KEY, setting_value TEXT)`,
     `CREATE TABLE IF NOT EXISTS roles (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(50) UNIQUE, display_name VARCHAR(100), color VARCHAR(20) DEFAULT '#ffffff', icon VARCHAR(50) DEFAULT '', is_admin_role TINYINT(1) DEFAULT 0, is_default TINYINT(1) DEFAULT 0, is_protected TINYINT(1) DEFAULT 0, sort_order INT DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
     `CREATE TABLE IF NOT EXISTS role_permissions (id INT AUTO_INCREMENT PRIMARY KEY, role_id INT, page VARCHAR(100), can_access TINYINT(1) DEFAULT 1, can_edit TINYINT(1) DEFAULT 0, can_delete TINYINT(1) DEFAULT 0, can_manage TINYINT(1) DEFAULT 0, FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE, UNIQUE KEY unique_role_page (role_id, page))`,
-    `CREATE TABLE IF NOT EXISTS rules (id INT AUTO_INCREMENT PRIMARY KEY, category VARCHAR(100), title VARCHAR(255) DEFAULT '', content TEXT, rule_text TEXT, sort_order INT DEFAULT 0)`,
+    `CREATE TABLE IF NOT EXISTS rules (id INT AUTO_INCREMENT PRIMARY KEY, category VARCHAR(100), title VARCHAR(255) DEFAULT '', content TEXT, rule_text TEXT, sort_order INT DEFAULT 0, icon VARCHAR(50) DEFAULT '', icon_color VARCHAR(20) DEFAULT '')`,
     `CREATE TABLE IF NOT EXISTS discounts (id INT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(50) UNIQUE, percentage INT DEFAULT 0, max_uses INT DEFAULT 0, used_count INT DEFAULT 0, expires_at DATETIME, is_active TINYINT(1) DEFAULT 1)`,
     `CREATE TABLE IF NOT EXISTS banned_users (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, reason TEXT, banned_by INT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
     `CREATE TABLE IF NOT EXISTS broadcasts (id INT AUTO_INCREMENT PRIMARY KEY, message TEXT, type VARCHAR(50) DEFAULT 'info', is_active TINYINT(1) DEFAULT 1, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
@@ -229,6 +229,9 @@ async function migrate() {
     { table: 'users', col: 'tickets_closed', sql: "ALTER TABLE users ADD COLUMN tickets_closed INT DEFAULT 0" },
     { table: 'rules', col: 'rule_text', sql: "ALTER TABLE rules ADD COLUMN rule_text TEXT" },
     { table: 'rules', col: 'title', sql: "ALTER TABLE rules MODIFY COLUMN title VARCHAR(255) DEFAULT ''" },
+    { table: 'rules', col: 'content', sql: "ALTER TABLE rules MODIFY COLUMN content TEXT" },
+    { table: 'rules', col: 'icon', sql: "ALTER TABLE rules ADD COLUMN icon VARCHAR(50) DEFAULT ''" },
+    { table: 'rules', col: 'icon_color', sql: "ALTER TABLE rules ADD COLUMN icon_color VARCHAR(20) DEFAULT ''" },
   ];
   for (const { table, col, sql } of alterStatements) {
     try {
