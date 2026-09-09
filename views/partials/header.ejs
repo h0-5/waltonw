@@ -212,4 +212,72 @@
       setTimeout(endLoading, 8000);
     })();
   </script>
+  <!-- News Ticker Bar -->
+  <style>
+    .news-ticker{display:none;background:linear-gradient(90deg,rgba(var(--ac-rgb),0.12),rgba(var(--ac-rgb),0.04),rgba(var(--ac-rgb),0.12));border-bottom:1px solid rgba(var(--ac-rgb),0.15);padding:10px 16px;position:relative;z-index:50}
+    .news-ticker.show{display:block}
+    .news-ticker-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:12px}
+    .news-ticker-icon{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:rgba(var(--ac-rgb),0.15);display:flex;align-items:center;justify-content:center;color:var(--ac);font-size:0.75rem;animation:tickPulse 2s ease-in-out infinite}
+    @keyframes tickPulse{0%,100%{opacity:1}50%{opacity:0.5}}
+    .news-ticker-label{flex-shrink:0;font-size:0.7rem;font-weight:800;color:var(--ac);background:rgba(var(--ac-rgb),0.12);padding:3px 10px;border-radius:6px;letter-spacing:0.5px}
+    .news-ticker-content{flex:1;overflow:hidden;position:relative;height:22px}
+    .news-ticker-item{position:absolute;width:100%;opacity:0;transform:translateY(20px);transition:all 0.5s ease;font-size:0.82rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .news-ticker-item.active{opacity:1;transform:translateY(0)}
+    .news-ticker-item strong{color:var(--ac);margin-left:6px}
+    .news-ticker-close{flex-shrink:0;background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:0.8rem;padding:4px;border-radius:4px;transition:color 0.2s}
+    .news-ticker-close:hover{color:var(--text)}
+  </style>
+  <div class="news-ticker" id="newsTicker">
+    <div class="news-ticker-inner">
+      <div class="news-ticker-icon"><i class="fas fa-bullhorn"></i></div>
+      <div class="news-ticker-label">أخبار</div>
+      <div class="news-ticker-content" id="tickerContent"></div>
+      <button class="news-ticker-close" id="tickerClose" title="إغلاق"><i class="fas fa-times"></i></button>
+    </div>
+  </div>
+  <script>
+  (function() {
+    var dismissed = {};
+    try { dismissed = JSON.parse(localStorage.getItem('wf_ticker_dismissed') || '{}'); } catch(e) {}
+    function saveDismissed() { try { localStorage.setItem('wf_ticker_dismissed', JSON.stringify(dismissed)); } catch(e) {} }
+    var ticker = document.getElementById('newsTicker');
+    var content = document.getElementById('tickerContent');
+    var closeBtn = document.getElementById('tickerClose');
+    var currentIndex = 0;
+    var items = [];
+    var interval = null;
+
+    closeBtn.addEventListener('click', function() {
+      ticker.classList.remove('show');
+      dismissed['_all'] = Date.now();
+      saveDismissed();
+    });
+
+    fetch('/api/broadcasts').then(function(r){return r.json()}).then(function(broadcasts) {
+      if (!broadcasts || !broadcasts.length) return;
+      items = broadcasts.filter(function(b) {
+        if (dismissed[b.id] && (Date.now() - dismissed[b.id]) < 86400000) return false;
+        return true;
+      });
+      if (!items.length) return;
+      content.innerHTML = items.map(function(b, i) {
+        return '<div class="news-ticker-item' + (i === 0 ? ' active' : '') + '">' +
+          (b.title ? '<strong>' + b.title + '</strong>' : '') + b.message +
+        '</div>';
+      }).join('');
+      ticker.classList.add('show');
+      if (items.length > 1) {
+        interval = setInterval(function() {
+          var all = content.querySelectorAll('.news-ticker-item');
+          all[currentIndex].classList.remove('active');
+          currentIndex = (currentIndex + 1) % all.length;
+          all[currentIndex].classList.add('active');
+        }, 4000);
+      }
+      // Mark all as seen
+      items.forEach(function(b) { dismissed[b.id] = Date.now(); });
+      saveDismissed();
+    });
+  })();
+  </script>
   <!-- سكربت حماية المحتوى في الفوتر المشترك — يغطي كل الصفحات بما فيها دخول/404 (لا تستخدم هذا الهيدر) -->

@@ -265,6 +265,15 @@ async function migrate() {
     console.log('✅ roles collation fixed');
   } catch(e) { console.log('roles collation:', e.message); }
 
+  // Ensure broadcasts.title and broadcasts.expires_at exist
+  try {
+    const [cols] = await db.query("SHOW COLUMNS FROM broadcasts LIKE 'title'");
+    if (cols.length === 0) await db.query("ALTER TABLE broadcasts ADD COLUMN title VARCHAR(255) DEFAULT ''");
+  } catch(e) {}
+  try {
+    const [cols] = await db.query("SHOW COLUMNS FROM broadcasts LIKE 'expires_at'");
+    if (cols.length === 0) await db.query("ALTER TABLE broadcasts ADD COLUMN expires_at DATETIME");
+  } catch(e) {}
   // Ensure orders.product_id exists (was missing from old DB)
   try {
     const [cols] = await db.query("SHOW COLUMNS FROM orders LIKE 'product_id'");
@@ -305,7 +314,7 @@ async function migrate() {
 }
 
 // Bump this when tables/ALTERs change in migrate() — '6' adds analytics + guard tables
-const SCHEMA_VERSION = '8';
+const SCHEMA_VERSION = '9';
 
 async function start() {
   // Skip the ~50-table migration when schema is already current:

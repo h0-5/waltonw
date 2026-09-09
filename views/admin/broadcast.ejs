@@ -1,36 +1,133 @@
 <%- include('layout') %>
-<div class="admin-card" style="max-width:700px">
-  <h3 style="margin-bottom:20px"><i class="fas fa-bullhorn"></i> بث إشعار</h3>
-  <form id="broadcastForm">
-    <div class="form-group">
-      <label><i class="fas fa-heading"></i> العنوان</label>
-      <input type="text" name="title" placeholder="عنوان الإشعار" required>
-    </div>
-    <div class="form-group">
-      <label><i class="fas fa-comment"></i> الرسالة</label>
-      <textarea name="message" rows="4" placeholder="نص الإشعار" required></textarea>
-    </div>
-    <div class="form-group">
-      <label><i class="fas fa-users"></i> الإرسال إلى</label>
-      <select name="target">
-        <option value="all">جميع الأعضاء</option>
-        <option value="admins">الإدارة فقط</option>
-        <option value="family">أفراد العائلة</option>
-      </select>
-    </div>
-    <button type="submit" class="admin-btn primary" style="width:100%"><i class="fas fa-paper-plane"></i> إرسال</button>
-  </form>
-  <div id="broadcastResult" style="margin-top:15px;display:none"></div>
+<script>document.getElementById('pageTitle').textContent = 'البث';</script>
+
+<style>
+.bc-form{max-width:700px;margin-bottom:30px}
+.bc-form .form-group{margin-bottom:14px}
+.bc-form label{display:block;font-size:0.8rem;font-weight:700;color:var(--text-dim);margin-bottom:6px}
+.bc-form input,.bc-form textarea,.bc-form select{width:100%;padding:10px 14px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:0.85rem;transition:border-color 0.2s}
+.bc-form input:focus,.bc-form textarea:focus,.bc-form select:focus{outline:none;border-color:var(--ac)}
+.bc-form select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23888' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:14px center}
+.bc-list{max-width:700px}
+.bc-item{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;margin-bottom:8px;transition:border-color 0.2s}
+.bc-item:hover{border-color:rgba(var(--ac-rgb),0.3)}
+.bc-item.inactive{opacity:0.45}
+.bc-info{flex:1;min-width:0}
+.bc-title{font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:2px}
+.bc-msg{font-size:0.8rem;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bc-meta{font-size:0.7rem;color:var(--text-dim);margin-top:4px;display:flex;gap:10px}
+.bc-meta i{margin-left:3px;font-size:0.6rem}
+.bc-actions{display:flex;gap:6px;flex-shrink:0}
+.bc-btn{padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-dim);cursor:pointer;font-size:0.75rem;transition:all 0.2s;display:flex;align-items:center;gap:4px}
+.bc-btn:hover{background:rgba(255,255,255,0.06);color:var(--text)}
+.bc-btn.danger:hover{background:rgba(239,68,68,0.1);color:#ef4444;border-color:#ef4444}
+.bc-btn.toggle:hover{background:rgba(34,197,94,0.1);color:#22c55e;border-color:#22c55e}
+.bc-badge{font-size:0.65rem;padding:2px 7px;border-radius:6px;font-weight:700}
+.bc-badge.active{background:rgba(34,197,94,0.15);color:#22c55e}
+.bc-badge.expired{background:rgba(239,68,68,0.15);color:#ef4444}
+.bc-empty{text-align:center;padding:40px;color:var(--text-dim);font-size:0.85rem}
+.bc-empty i{font-size:2rem;display:block;margin-bottom:10px;opacity:0.4}
+</style>
+
+<div class="bc-form">
+  <div class="admin-card">
+    <h3 style="margin-bottom:20px"><i class="fas fa-bullhorn"></i> بث خبر</h3>
+    <form id="broadcastForm">
+      <div class="form-group">
+        <label><i class="fas fa-heading"></i> العنوان</label>
+        <input type="text" name="title" placeholder="عنوان الخبر" required>
+      </div>
+      <div class="form-group">
+        <label><i class="fas fa-comment"></i> الخبر</label>
+        <textarea name="message" rows="3" placeholder="نص الخبر..." required></textarea>
+      </div>
+      <div style="display:flex;gap:12px">
+        <div class="form-group" style="flex:1">
+          <label><i class="fas fa-users"></i> الإرسال إلى</label>
+          <select name="target">
+            <option value="all">جميع الأعضاء</option>
+            <option value="admins">الإدارة فقط</option>
+            <option value="family">أفراد العائلة</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1">
+          <label><i class="fas fa-clock"></i> ينتهي في</label>
+          <input type="datetime-local" name="expires_at">
+        </div>
+      </div>
+      <button type="submit" class="admin-btn primary" style="width:100%"><i class="fas fa-paper-plane"></i> نشر الخبر</button>
+    </form>
+    <div id="broadcastResult" style="margin-top:15px;display:none"></div>
+  </div>
 </div>
+
+<div class="bc-list">
+  <h3 style="margin-bottom:12px;font-size:0.9rem;color:var(--text-dim)"><i class="fas fa-list"></i> الأخبار المنشورة</h3>
+  <div id="broadcastsList"><div class="bc-empty"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div></div>
+</div>
+
 <script>
+async function loadBroadcasts() {
+  try {
+    const res = await fetch('/api/admin/broadcasts');
+    const data = await res.json();
+    const list = document.getElementById('broadcastsList');
+    if (!data.broadcasts || data.broadcasts.length === 0) {
+      list.innerHTML = '<div class="bc-empty"><i class="fas fa-bullhorn"></i> لا توجد أخبار منشورة</div>';
+      return;
+    }
+    list.innerHTML = data.broadcasts.map(b => {
+      const isExpired = b.expires_at && new Date(b.expires_at) < new Date();
+      const isActive = b.is_active && !isExpired;
+      const date = new Date(b.created_at).toLocaleDateString('ar-SA', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+      const expires = b.expires_at ? new Date(b.expires_at).toLocaleDateString('ar-SA', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : 'دائم';
+      return '<div class="bc-item' + (isActive ? '' : ' inactive') + '">' +
+        '<div class="bc-info">' +
+          '<div class="bc-title">' + (b.title || 'بدون عنوان') + '</div>' +
+          '<div class="bc-msg">' + (b.message || '') + '</div>' +
+          '<div class="bc-meta">' +
+            '<span><i class="fas fa-calendar"></i> ' + date + '</span>' +
+            '<span><i class="fas fa-clock"></i> ينتهي: ' + expires + '</span>' +
+            '<span class="bc-badge ' + (isActive ? 'active' : 'expired') + '">' + (isActive ? 'نشط' : isExpired ? 'منتهي' : 'معطل') + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="bc-actions">' +
+          '<button class="bc-btn toggle" onclick="toggleBroadcast(' + b.id + ')" title="تفعيل/تعطيل"><i class="fas fa-' + (isActive ? 'pause' : 'play') + '"></i></button>' +
+          '<button class="bc-btn danger" onclick="deleteBroadcast(' + b.id + ')" title="حذف"><i class="fas fa-trash"></i></button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  } catch(e) {
+    document.getElementById('broadcastsList').innerHTML = '<div class="bc-empty">خطأ في التحميل</div>';
+  }
+}
+
+async function toggleBroadcast(id) {
+  await fetch('/api/admin/broadcasts/' + id + '/toggle', { method: 'POST' });
+  loadBroadcasts();
+}
+
+async function deleteBroadcast(id) {
+  if (!confirm('حذف هذا الخبر؟')) return;
+  await fetch('/api/admin/broadcasts/' + id, { method: 'DELETE' });
+  loadBroadcasts();
+}
+
 document.getElementById('broadcastForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const fd = new FormData(e.target);
-  const res = await fetch('/api/admin/broadcast', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(Object.fromEntries(fd)) });
-  const data = await res.json();
-  const result = document.getElementById('broadcastResult');
-  result.style.display = 'block';
-  result.innerHTML = data.success ? '<div style="color:#4ade80;padding:10px;background:rgba(34,197,94,0.1);border-radius:8px">تم الإرسال بنجاح!</div>' : '<div style="color:#fca5a5;padding:10px;background:rgba(239,68,68,0.1);border-radius:8px">' + (data.error || 'خطأ') + '</div>';
+  const data = Object.fromEntries(fd);
+  if (!data.expires_at) delete data.expires_at;
+  const res = await fetch('/api/admin/broadcast', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+  const result = await res.json();
+  const el = document.getElementById('broadcastResult');
+  el.style.display = 'block';
+  el.innerHTML = result.success
+    ? '<div style="color:#4ade80;padding:10px;background:rgba(34,197,94,0.1);border-radius:8px">تم النشر بنجاح! (تم إرسال إشعار لـ ' + result.sent + ' مستخدم)</div>'
+    : '<div style="color:#fca5a5;padding:10px;background:rgba(239,68,68,0.1);border-radius:8px">' + (result.error || 'خطأ') + '</div>';
+  if (result.success) { e.target.reset(); loadBroadcasts(); }
 });
+
+loadBroadcasts();
 </script>
 <%- include('admin_footer') %>

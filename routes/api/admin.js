@@ -484,7 +484,7 @@ router.post('/users/:id/unban', checkPermission('users_ban'), async (req, res) =
 // Broadcast API
 router.post('/broadcast', checkPermission('broadcast_send'), async (req, res) => {
   try {
-    const { title, message, target } = req.body;
+    const { title, message, target, expires_at } = req.body;
     let whereClause = '';
     if (target === 'admins') whereClause = "AND role IN ('owner','developer','founder','moderator','support')";
     else if (target === 'family') whereClause = "AND role != 'user'";
@@ -492,9 +492,36 @@ router.post('/broadcast', checkPermission('broadcast_send'), async (req, res) =>
     const [users] = await db.execute(`SELECT id FROM users WHERE 1=1 ${whereClause}`);
     for (const u of users) {
       await db.execute('INSERT INTO notifications (user_id, title, message, is_read, created_at) VALUES (?, ?, ?, 0, NOW())',
-        [u.id, title || 'ط¥ط´ط¹ط§ط± ط¹ط§ظ…', message]);
+        [u.id, title || 'تبليغ', message]);
     }
+    // Also save to broadcasts table for ticker
+    await db.execute('INSERT INTO broadcasts (title, message, type, is_active, expires_at) VALUES (?, ?, ?, 1, ?)',
+      [title || '', message, target || 'all', expires_at || null]);
     res.json({ success: true, sent: users.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// List broadcasts
+router.get('/broadcasts', checkPermission('broadcast_send'), async (req, res) => {
+  try {
+    const [rows] = await db.execute('SELECT * FROM broadcasts ORDER BY created_at DESC LIMIT 50');
+    res.json({ success: true, broadcasts: rows });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Delete broadcast
+router.delete('/broadcasts/:id', checkPermission('broadcast_send'), async (req, res) => {
+  try {
+    await db.execute('DELETE FROM broadcasts WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Toggle broadcast active
+router.post('/broadcasts/:id/toggle', checkPermission('broadcast_send'), async (req, res) => {
+  try {
+    await db.execute('UPDATE broadcasts SET is_active = NOT is_active WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

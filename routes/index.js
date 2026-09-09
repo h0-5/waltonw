@@ -43,6 +43,16 @@ router.get('/test-lockdown', (req, res) => {
   });
 });
 
+// Public API - Active broadcasts for ticker
+router.get('/api/broadcasts', async (req, res) => {
+  try {
+    const [rows] = await db.execute(
+      "SELECT id, title, message, type, created_at, expires_at FROM broadcasts WHERE is_active = 1 AND (expires_at IS NULL OR expires_at > NOW()) ORDER BY created_at DESC LIMIT 5"
+    );
+    res.json(rows);
+  } catch(e) { res.json([]); }
+});
+
 // Home
 router.get('/', isAuthenticated, isInGuild, checkPageAccess('/'), async (req, res) => {
   const settings = await getSettings();
