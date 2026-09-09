@@ -539,7 +539,7 @@
 .hx-step-link:hover { color: #fff; }
 .hx-step-btn { margin-top: auto; width: 100%; }
 
-/* ══════════════════ بانر الدعوة ══════════════════ */
+/* ══════════════════ بطاقة الدعم ══════════════════ */
 .hx-ctasec { padding-block: 30px 56px; }
 .hx-banner {
   position: relative;
@@ -570,6 +570,22 @@
   white-space: nowrap;
 }
 .hx-banner-body { position: relative; z-index: 1; display: grid; gap: 12px; justify-items: center; }
+/* أيقونة الدعم: دائرة بلور صغيرة فوق العنوان — تميّز بطاقة الدعم عن أي قسم آخر */
+.hx-banner-ic {
+  width: 58px;
+  height: 58px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid rgba(210, 77, 255, 0.5);
+  background: rgba(188, 19, 254, 0.16);
+  color: var(--accent);
+  font-size: 24px;
+  box-shadow: 0 0 26px rgba(188, 19, 254, 0.28);
+  margin-bottom: 2px;
+}
+.hx-banner-ic + .hx-banner-title { margin-top: 2px; }
 .hx-banner-title {
   font-family: var(--font-head);
   font-weight: 800;
@@ -598,6 +614,7 @@
   .hx-join { padding-bottom: 28px; }
   .hx-ctasec { padding-block: 16px 44px; }
   .hx-banner { padding: 38px 18px; border-radius: 20px; }
+  .hx-banner-ic { width: 50px; height: 50px; font-size: 20px; }
   .hx-scrollhint { display: none; }
 }
 @media (max-width: 480px) {

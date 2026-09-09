@@ -50,8 +50,8 @@
     <% } %>
     <a href="/community" class="ds-navlink<%= _nbPath === '/community' ? ' active' : '' %>"><i class="fas fa-comments" aria-hidden="true"></i>المجتمع</a>
     <a href="/about" class="ds-navlink<%= _nbPath === '/about' ? ' active' : '' %>"><i class="fas fa-circle-info" aria-hidden="true"></i>من نحن</a>
-    <a href="/support" class="ds-navlink<%= _nbPath === '/support' ? ' active' : '' %>"><i class="fas fa-headset" aria-hidden="true"></i>الدعم</a>
-    <% /* رابط الإدارة انتقل لزر الأيقونة بمنطقة الإجراءات (is-staff) — كان يُقص بفيض الشريط */ %>
+    <% /* الدعم أُزيل من الهدر بطلب المستخدم — مدخله الآن بطاقة الدعم بأسفل الرئيسية + فوتر «تواصل معنا»
+       رابط الإدارة انتقل لزر الأيقونة بمنطقة الإجراءات (is-staff) — كان يُقص بفيض الشريط */ %>
   </div>
 
   <!-- الإجراءات: إشعارات + مستخدم (مود ليل/نهار أُزيل كلياً بطلب المستخدم — الثيم القديم الداكن دائم) -->
@@ -137,7 +137,6 @@
   <% } %>
   <a href="/community" class="ds-mlink<%= _nbPath === '/community' ? ' active' : '' %>"><i class="fas fa-comments" aria-hidden="true"></i>المجتمع</a>
   <a href="/about" class="ds-mlink<%= _nbPath === '/about' ? ' active' : '' %>"><i class="fas fa-circle-info" aria-hidden="true"></i>من نحن</a>
-  <a href="/support" class="ds-mlink<%= _nbPath === '/support' ? ' active' : '' %>"><i class="fas fa-headset" aria-hidden="true"></i>الدعم الفني</a>
   <% if (!_nbUser) { %>
   <a href="/auth/discord" class="ds-mlink ds-mlink-accent"><i class="fab fa-discord" aria-hidden="true"></i>تسجيل الدخول</a>
   <% } %>
