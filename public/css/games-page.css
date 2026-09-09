@@ -524,15 +524,20 @@ body {
     }
 }
 
-/* تأثير ظهور العناصر عند التمرير */
-.wf-reveal {
+/* تأثير ظهور العناصر عند التمرير — الإخفاء مشروط بكلاس التسليح من <head>.
+   إصلاح خانق قديم: المراقب بالفوتر يضيف .visible بينما كانت القواعد تنتظر .wf-visible
+   فلا تظهر العناصر أبداً + بلا JS تبقى الأقسام ظاهرة */
+.wf-reveal-armed .wf-reveal {
     opacity: 0;
     transform: translateY(20px);
 }
-.wf-reveal.wf-visible {
+.wf-reveal-armed .wf-reveal.visible {
     animation: reveal 0.5s ease forwards;
 }
-.wf-reveal.wf-visible .game-card {
+.wf-reveal-armed .wf-reveal.wf-visible {
+    animation: reveal 0.5s ease forwards;
+}
+.wf-reveal-armed .wf-reveal.visible .game-card {
     animation: reveal 0.5s ease forwards;
 }
 
@@ -540,7 +545,7 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-.game-card.wf-reveal:not(.wf-visible) { animation: none !important }
+.wf-reveal-armed .game-card.wf-reveal:not(.visible):not(.wf-visible) { animation: none !important }
 
 /* ==================== أجهزة ضعيفة / prefers-reduced-motion ==================== */
 @media (prefers-reduced-motion: reduce) {

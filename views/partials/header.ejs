@@ -22,6 +22,12 @@
   %>
   <meta name="description" content="<%= _siteName %> - مجتمعنا الرقمي">
   <meta name="theme-color" content="<%= _accentColor %>">
+  <%
+    /* تسليح ظهور التمرير مبكراً: كلاس على <html> قبل أي رسم — قواعد إخفاء .wf-reveal
+       في CSS الصفحات تُطبق فقط وهوه موجود، فلو تعطل JS (أو مات الـ Observer) تبقى
+       كل الأقسام ظاهرة بدل فراغ أبيض — نفس عائلة بلاغ «صفحة من نحن مو ظاهرة كاملة» */
+  %>
+  <script>if('IntersectionObserver' in window){document.documentElement.className+=' wf-reveal-armed';}</script>
   <% /* مود ليل/نهار أُزيل كلياً (طلب المستخدم) — لا wfTheme ولا data-theme: الثيم الداكن القديم دائم */ %>
   <%
     /* عنوان التبويب: «اسم الصفحة | اسم الموقع» — لكن لو عنوان الصفحة هو اسم الموقع

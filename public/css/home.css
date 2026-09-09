@@ -11,14 +11,15 @@
    prefers-reduced-motion على مستوى كل الأقسام
    ============================================================ */
 
-/* ── تسلسل الدخول: نفس كلاس .wf-reveal الذي يراقبه سكربت الفوتر المشترك ── */
-.hx-page .wf-reveal {
+/* ── تسلسل الدخول: نفس كلاس .wf-reveal الذي يراقبه سكربت الفوتر المشترك ──
+   الإخفاء مشروط بكلاس التسليح من <head> — بلا JS تبقى الأقسام ظاهرة */
+.wf-reveal-armed .hx-page .wf-reveal {
   opacity: 0;
   transform: translateY(18px);
   transition: opacity .5s ease, transform .5s ease;
   will-change: opacity, transform;
 }
-.hx-page .wf-reveal.visible { opacity: 1; transform: none; }
+.wf-reveal-armed .hx-page .wf-reveal.visible { opacity: 1; transform: none; }
 
 .hx-page { padding-top: 0; padding-bottom: 8px; }
 

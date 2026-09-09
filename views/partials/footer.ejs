@@ -497,4 +497,7 @@
     btn.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
 })();</script>
 
-<script>(function(){var els=document.querySelectorAll('.wf-reveal,.wf-reveal-left,.wf-reveal-right,.wf-reveal-scale');if(!els.length)return;var io=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visible');io.unobserve(e.target);}});},{threshold:0.12});els.forEach(function(el){io.observe(el);});})();</script>
+<script>(function(){var els=document.querySelectorAll('.wf-reveal,.wf-reveal-left,.wf-reveal-right,.wf-reveal-scale');if(!els.length)return;
+/* التسليح يتم من <head> في header.ejs قبل أي رسم (كلاس wf-reveal-armed على <html>
+   فقط إن وُجد IntersectionObserver) — لو تعطل JS تبقى الأقسام ظاهرة بلا فراغ ميت */
+var io=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visible');io.unobserve(e.target);}});},{threshold:0.12});els.forEach(function(el){io.observe(el);});})();</script>
