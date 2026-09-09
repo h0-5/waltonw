@@ -358,6 +358,8 @@ router.post('/settings', checkPermission('site_settings_edit'), async (req, res)
         [key, value, value]
       );
     }
+    const app = require('../../app');
+    if (app.invalidateSettingsCache) app.invalidateSettingsCache();
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });

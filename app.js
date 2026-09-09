@@ -67,6 +67,11 @@ let globalSettings = {};
 let settingsLastFetch = 0;
 const SETTINGS_CACHE_TTL = 5 * 60 * 1000;
 
+function invalidateSettingsCache() {
+  settingsLastFetch = 0;
+  globalSettings = {};
+}
+
 async function loadSettings() {
   try {
     const now = Date.now();
@@ -271,4 +276,5 @@ app.use((err, req, res, next) => {
   }
 });
 
+app.invalidateSettingsCache = invalidateSettingsCache;
 module.exports = app;
