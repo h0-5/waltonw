@@ -214,7 +214,9 @@
   </script>
   <!-- News Ticker Bar -->
   <style>
-    .news-ticker{display:none;background:linear-gradient(90deg,rgba(var(--ac-rgb),0.12),rgba(var(--ac-rgb),0.04),rgba(var(--ac-rgb),0.12));border-bottom:1px solid rgba(var(--ac-rgb),0.15);padding:10px 16px;position:relative;z-index:50}
+    .news-ticker{display:none;background:linear-gradient(90deg,rgba(var(--ac-rgb),0.12),rgba(var(--ac-rgb),0.04),rgba(var(--ac-rgb),0.12));border-bottom:1px solid rgba(var(--ac-rgb),0.15);padding:10px 16px;position:relative;z-index:50;
+      /* يبدأ تحت الهدر الثابت مباشرة — بدونه الشريط يرندر من فوق الصفحة مخفياً كلياً خلف النافبار */
+      margin-top:var(--nav-h,70px)}
     .news-ticker.show{display:block}
     .news-ticker-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:12px}
     .news-ticker-icon{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:rgba(var(--ac-rgb),0.15);display:flex;align-items:center;justify-content:center;color:var(--ac);font-size:0.75rem;animation:tickPulse 2s ease-in-out infinite}
