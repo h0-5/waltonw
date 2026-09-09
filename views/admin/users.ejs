@@ -92,7 +92,7 @@
             <img src="<%= u.profile_picture || '/images/default-avatar.png' %>" class="user-td-avatar" alt="">
             <div>
               <div class="user-td-name"><%= u.username %></div>
-              <div class="user-td-email"><%= u.email || '-' %></div>
+              <% if (currentUser.role === 'owner') { %><div class="user-td-email"><%= u.email || '-' %></div><% } %>
             </div>
           </div>
         </td>
