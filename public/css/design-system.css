@@ -316,14 +316,21 @@ a.ds-card:hover, .ds-card-hover:hover {
 .navbar.scrolled { box-shadow: none; }
 .navbar.hidden-nav { transform: translateY(-100%); opacity: 0; pointer-events: none; }
 
-/* الشعار / الختم */
+/* الشعار / الختم — ملزق بزاوية الشاشة اليمنى نفسها كمرآة لمنطقة الإجراءات اليسرى
+   (طلب المستخدم: «الجملة ذي خليها بجهة اليمين بزاوية مثل موقع بروفايل بزاوية يسار»):
+   كان بالتدفق داخل حشوة حاوية 1200px الموسّطة فتبعد ~99px عن الزاوية بالشاشات الواسعة —
+   الآن absolute على النافبار بنفس مسافة الإجراءات 38px ≈ 1سم والتمركز الرأسي نفسه */
 .ds-brand {
+  position: absolute;
+  inset-inline-start: 38px;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
   align-items: center;
   gap: 10px;
   text-decoration: none;
   flex-shrink: 0;
-  margin-inline-end: 8px;
+  z-index: 5;
 }
 .ds-brand img { width: 40px; height: 40px; object-fit: contain; }
 .ds-brand-name { font-family: var(--font-head); font-weight: 800; font-size: 15px; color: var(--text); line-height: 1.2; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8); }
@@ -353,7 +360,9 @@ a.ds-card:hover, .ds-card-hover:hover {
    مع إخفاء أيقونات الروابط تحت 1440px: بدونها الروابط العشرة تفيض ~74px عند 1366
    (آخر رابط مقصوص — Cairo أعرض من قياسات الهارنس القديمة) */
 @media (min-width: 1024px) {
-  .ds-navlinks { margin-inline-end: 170px; }
+  /* البداية: حجز مساحة البراند المزاح للزاوية اليمنى (ختم 40 + نص ~110 + فجوة + الزاوية 38)
+     والنهاية: حجز الإجراءات الفعلي 170/222 — الكبسولة تتمركز بالمساحة البينية */
+  .ds-navlinks { margin-inline-start: 205px; margin-inline-end: 170px; }
   .navbar.is-staff .ds-navlinks { margin-inline-end: 222px; }
   /* الأيقونات زخرفة 12px + فجوة 5px لكل رابط ≈ 170px على عشرة روابط — إخفاؤها
      تحت 1440px يجعل كل الروابط ظاهرة بلا فيض؛ الشاشات الأعرض تتمتع بالأيقونات */
@@ -380,8 +389,8 @@ a.ds-card:hover, .ds-card-hover:hover {
    وكبسولة معاً) تمنع قص آخر رابط — الكبسولة الزجاجية أكلت 20px من مساحة الروابط فيُعاد
    الحساب هنا (يجب أن يأتي بعد القاعدة الأساسية ليتغلب عليها بنفس الخصوصية) */
 @media (min-width: 1024px) and (max-width: 1199px) {
-  .ds-navlink { font-size: 12.5px; padding: 8px 5px; }
-  .ds-navlinks { padding: 6px 6px; }
+  .ds-navlink { font-size: 12.5px; padding: 8px 4px; }
+  .ds-navlinks { padding: 6px 5px; }
 }
 .ds-navlink i { font-size: 12px; opacity: .8; }
 .ds-navlink:hover { color: var(--text); background: rgba(139, 143, 153, 0.08); }
@@ -658,6 +667,8 @@ a.ds-card:hover, .ds-card-hover:hover {
   .ds-brand-txt { display: none; }
   .ds-adminbtn { display: none; }
   .ds-actions { inset-inline-end: 16px; gap: 8px; }
+  /* البراند (الختم التاجي وحده) بنفس مسافة الإجراءات من زاويته */
+  .ds-brand { inset-inline-start: 16px; }
 }
 @media (min-width: 1024px) {
   #mobileNav { display: none !important; }

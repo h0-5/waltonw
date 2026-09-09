@@ -2,90 +2,142 @@
 <%- include('../partials/navbar') %>
 
 <%
-  /* ===== تجهيزات خفيفة بمنطق الصفحة (بلا أي استعلام) ===== */
-  var hwUser = typeof user !== 'undefined' ? user : null;
-  var hwMy = (typeof myStats !== 'undefined' && myStats) ? myStats : null;
-  var hwSettings = typeof settings !== 'undefined' ? settings : {};
-  var hwDiscord = hwSettings.discord_server_url || '#';
-  var hwLogo = hwSettings.site_logo_url || '/images/logo.png';
-  var hwNews = (typeof news !== 'undefined' && news) ? news.slice(0, 6) : [];
+  /* ===== تجهيزات خفيفة بمنطق الصفحة (بلا أي استعلام إضافي) ===== */
+  var hxUser = typeof user !== 'undefined' ? user : null;
+  var hxMy = (typeof myStats !== 'undefined' && myStats) ? myStats : null;
+  var hxSettings = typeof settings !== 'undefined' ? settings : {};
+  var hxDiscord = hxSettings.discord_server_url || '#';
+  var hxLogo = hxSettings.site_logo_url || '/images/logo.png';
+  var hxNews = (typeof news !== 'undefined' && news) ? news.slice(0, 6) : [];
+  var hxGaws = (typeof activeGiveaways !== 'undefined' && activeGiveaways) ? activeGiveaways.length : 0;
   /* الشروط: من صفحة التقديمات نفسها (حقل المتطلبات بتقديم Join Family) — وإن لا توجد: بدائل ثابتة */
-  var hwReqs = (typeof joinReqs !== 'undefined' && joinReqs && joinReqs.length)
-    ? joinReqs
+  var hxReqs = (typeof joinReqs !== 'undefined' && joinReqs && joinReqs.length)
+    ? joinReqs.slice(0, 5)
     : ['حساب ديسكورد فعّال', 'قراءة قوانين العائلة والالتزام بها', 'احترام الأعضاء والنشاط الإيجابي'];
+  /* عناصر نجوم الهيرو — عناصر زخرفية ثابتة بلا JS */
+  var hxStarCount = 12;
 %>
 
-<main class="hw2-page" id="main">
-  <div class="ds-container">
+<main class="hx-page" id="main">
 
-    <!-- ══ الهيرو: الشعار بإطار دائري بنفسجي + الجملة + انضم الآن ══ -->
-    <section class="hw2-hero" aria-labelledby="heroTitle">
-      <div class="hw2-orb wf-reveal">
-        <img src="<%= hwLogo %>" alt="شعار Walton Family" width="280" height="280" decoding="async">
+  <!-- ═══════════ الهيرو — شاشة أولى حية: شفق + نجوم + ختم بحلقة دوّارة + عنوان متدرج ═══════════ -->
+  <section class="hx-hero" aria-labelledby="hxHeroTitle">
+    <div class="hx-aurora" aria-hidden="true">
+      <span class="hx-blob hx-b1"></span>
+      <span class="hx-blob hx-b2"></span>
+      <span class="hx-blob hx-b3"></span>
+    </div>
+    <div class="hx-grid" aria-hidden="true"></div>
+    <div class="hx-stars" aria-hidden="true"><% for (var s = 0; s < hxStarCount; s++) { %><i></i><% } %></div>
+
+    <div class="ds-container hx-hero-inner">
+      <div class="hx-orb wf-reveal">
+        <span class="hx-orb-ring" aria-hidden="true"></span>
+        <span class="hx-orb-glow" aria-hidden="true"></span>
+        <img src="<%= hxLogo %>" alt="شعار Walton Family" width="240" height="240" decoding="async">
       </div>
-      <h1 class="hw2-title wf-reveal" style="transition-delay:.06s" id="heroTitle">أكثر من مجرد عائلة</h1>
-      <div class="hw2-cta wf-reveal" style="transition-delay:.12s">
-        <% if (hwUser) { %>
-        <a href="/applications" class="ds-btn ds-btn-primary"><i class="fas fa-file-signature" aria-hidden="true"></i> قدّم طلب الانضمام</a>
+
+      <span class="hx-eyebrow wf-reveal" style="transition-delay:.05s">
+        <span class="hx-eyebrow-dot" aria-hidden="true"></span>
+        مجتمع والتون فاميلي الرسمي
+      </span>
+
+      <h1 class="hx-title wf-reveal" style="transition-delay:.1s" id="hxHeroTitle">
+        أكثر من <span class="hx-grad">مجرد عائلة</span>
+      </h1>
+
+      <p class="hx-sub wf-reveal" style="transition-delay:.15s">
+        ألعاب ومسابقات ونقاط وأخبار — مجتمع عربي واحد يجمعنا بعض، وهنا مكانك بيننا
+      </p>
+
+      <div class="hx-cta wf-reveal" style="transition-delay:.2s">
+        <% if (hxUser) { %>
+        <a href="/applications" class="ds-btn ds-btn-primary hx-btn-big"><i class="fas fa-file-signature" aria-hidden="true"></i> قدّم طلب الانضمام</a>
+        <a href="#hx-news" class="ds-btn ds-btn-secondary hx-btn-big">شاهد الأخبار <i class="fas fa-arrow-down" aria-hidden="true"></i></a>
         <% } else { %>
-        <a href="/auth/discord" class="ds-btn ds-btn-primary"><i class="fab fa-discord" aria-hidden="true"></i> انضم الآن</a>
+        <a href="<%= hxDiscord %>" target="_blank" rel="noopener" class="ds-btn ds-btn-primary hx-btn-big"><i class="fab fa-discord" aria-hidden="true"></i> انضم الآن</a>
+        <a href="#hx-news" class="ds-btn ds-btn-secondary hx-btn-big">اكتشف الموقع <i class="fas fa-arrow-down" aria-hidden="true"></i></a>
         <% } %>
       </div>
-    </section>
+    </div>
 
-    <!-- ══ شريط الإحصائيات الحقيقية — من المتغيرات الممررة فقط ══ -->
-    <section class="wf-reveal" style="transition-delay:.16s" aria-label="إحصائيات العائلة">
-      <div class="ds-card hw2-stats">
-        <div class="hw2-stat">
-          <div class="hw2-stat-val"><%= stats.members %></div>
-          <div class="hw2-stat-lbl">عضو بالعائلة</div>
+    <a class="hx-scrollhint" href="#hx-stats" aria-label="انزل للأسفل"><i class="fas fa-chevron-down" aria-hidden="true"></i></a>
+  </section>
+
+  <!-- ═══════════ شريط الإحصائيات الحقيقية + بطاقة نقاطك ═══════════ -->
+  <section class="hx-statsband" id="hx-stats" aria-label="إحصائيات العائلة">
+    <div class="ds-container">
+      <div class="hx-stats wf-reveal">
+        <div class="hx-stat">
+          <span class="hx-stat-ic" aria-hidden="true"><i class="fas fa-users"></i></span>
+          <div class="hx-stat-val"><%= stats.members %></div>
+          <div class="hx-stat-lbl">عضو بالعائلة</div>
         </div>
-        <div class="hw2-stat">
-          <div class="hw2-stat-val"><%= (typeof activeGiveaways !== 'undefined' && activeGiveaways) ? activeGiveaways.length : 0 %></div>
-          <div class="hw2-stat-lbl">فعاليات ومسابقات نشطة</div>
+        <div class="hx-stat">
+          <span class="hx-stat-ic" aria-hidden="true"><i class="fas fa-gift"></i></span>
+          <div class="hx-stat-val"><%= hxGaws %></div>
+          <div class="hx-stat-lbl">فعاليات ومسابقات نشطة</div>
         </div>
-        <div class="hw2-stat">
-          <div class="hw2-stat-val"><%= stats.staff %></div>
-          <div class="hw2-stat-lbl">فريق إداري</div>
+        <div class="hx-stat">
+          <span class="hx-stat-ic" aria-hidden="true"><i class="fas fa-shield-halved"></i></span>
+          <div class="hx-stat-val"><%= stats.staff %></div>
+          <div class="hx-stat-lbl">فريق إداري</div>
         </div>
-        <div class="hw2-stat">
-          <div class="hw2-stat-val"><%= stats.support %></div>
-          <div class="hw2-stat-lbl">دعم فني</div>
+        <div class="hx-stat">
+          <span class="hx-stat-ic" aria-hidden="true"><i class="fas fa-headset"></i></span>
+          <div class="hx-stat-val"><%= stats.support %></div>
+          <div class="hx-stat-lbl">دعم فني</div>
         </div>
       </div>
-      <% if (hwUser && hwMy) { %>
-      <div class="ds-card hw2-personal">
-        <span><i class="fas fa-coins" aria-hidden="true"></i> نقاطك: <b><%= hwMy.points.toLocaleString('en') %></b></span>
-        <span><i class="fas fa-medal" aria-hidden="true"></i> رتبتك: <b>#<%= hwMy.rank %></b></span>
-        <span><i class="fas fa-arrow-trend-up" aria-hidden="true"></i> إجمالي المكتسب: <b><%= hwMy.total_earned.toLocaleString('en') %></b></span>
-        <a href="/profile">ملفي الشخصي <i class="fas fa-angle-left" aria-hidden="true"></i></a>
+
+      <% if (hxUser && hxMy) { %>
+      <div class="hx-personal wf-reveal" style="transition-delay:.06s">
+        <span class="hx-personal-wel">هلا <b><%= hxUser.username %></b>، نورت الصفحة</span>
+        <span class="hx-personal-item"><i class="fas fa-coins" aria-hidden="true"></i> نقاطك <b><%= hxMy.points.toLocaleString('en') %></b></span>
+        <span class="hx-personal-item"><i class="fas fa-medal" aria-hidden="true"></i> رتبتك <b>#<%= hxMy.rank %></b></span>
+        <span class="hx-personal-item"><i class="fas fa-arrow-trend-up" aria-hidden="true"></i> إجمالي المكتسب <b><%= hxMy.total_earned.toLocaleString('en') %></b></span>
+        <a href="/profile" class="hx-personal-link">ملفي الشخصي <i class="fas fa-angle-left" aria-hidden="true"></i></a>
       </div>
       <% } %>
-    </section>
+    </div>
+  </section>
 
-    <!-- ══ أحدث الأخبار ══ -->
-    <section class="hw2-section" aria-labelledby="newsTitle">
+  <!-- ═══════════ أحدث الأخبار والمسابقات — بطاقات بلمسة ضوء تتبع الماوس ═══════════ -->
+  <section class="hx-section" id="hx-news" aria-labelledby="hxNewsTitle">
+    <div class="ds-container">
       <div class="ds-sect-head wf-reveal">
-        <h2 class="ds-sect-title" id="newsTitle">أحدث الأخبار والمسابقات</h2>
+        <div>
+          <span class="hx-kicker">جديد العائلة</span>
+          <h2 class="ds-sect-title" id="hxNewsTitle">أحدث الأخبار والمسابقات</h2>
+        </div>
         <a href="/community" class="ds-sect-link">كل الأخبار <i class="fas fa-arrow-left" aria-hidden="true"></i></a>
       </div>
-      <% if (hwNews.length) { %>
-      <div class="hw2-news-grid">
-        <% hwNews.forEach(function(item, index) { %>
-        <article class="ds-card hw2-news-card wf-reveal" style="transition-delay:<%= Math.min(index, 3) * 0.05 %>s">
-          <% if (item.image) { %>
-          <picture class="hw2-news-img">
+
+      <% if (hxNews.length) { %>
+      <div class="hx-news-grid">
+        <% hxNews.forEach(function(item, index) { %>
+        <article class="hx-card wf-reveal" style="transition-delay:<%= Math.min(index, 3) * 0.06 %>s">
+          <div class="hx-card-media">
+            <% if (item.image) { %>
             <img src="<%= item.image %>" alt="<%= item.title %>" width="640" height="360" loading="lazy" decoding="async">
-          </picture>
-          <% } %>
-          <div class="hw2-news-body">
-            <span class="ds-badge <%= item.type === 'giveaway' ? 'ds-badge-pending' : '' %>">
+            <% } else { %>
+            <span class="hx-card-ph" aria-hidden="true"><i class="fas <%= item.type === 'giveaway' ? 'fa-gift' : 'fa-bullhorn' %>"></i></span>
+            <% } %>
+            <span class="ds-badge <%= item.type === 'giveaway' ? 'ds-badge-pending hx-badge-gaw' : '' %> hx-badge">
               <i class="fas <%= item.type === 'giveaway' ? 'fa-gift' : 'fa-bullhorn' %>" aria-hidden="true"></i>
               <%= item.type === 'giveaway' ? 'مسابقة' : 'خبر' %>
             </span>
-            <h3 class="hw2-news-title"><%= item.title %></h3>
-            <span class="hw2-news-date"><i class="fas fa-clock" aria-hidden="true"></i> <%= new Date(item.created_at).toLocaleDateString('ar-SA') %><% if (item.type === 'giveaway' && item.expires_at) { %> · تنتهي <%= new Date(item.expires_at).toLocaleDateString('ar-SA') %><% } %></span>
-            <% if (item.content) { %><p class="hw2-news-txt"><%= item.content.substring(0, 150) %></p><% } %>
+            <% if (item.type === 'giveaway' && item.expires_at) { %>
+            <span class="hx-count" data-end="<%= new Date(item.expires_at).toISOString() %>"><i class="fas fa-hourglass-half" aria-hidden="true"></i> <b class="hx-count-val">—</b></span>
+            <% } %>
+          </div>
+          <div class="hx-card-body">
+            <h3 class="hx-card-title"><%= item.title %></h3>
+            <% if (item.content) { %><p class="hx-card-txt"><%= item.content.substring(0, 120) %></p><% } %>
+            <div class="hx-card-foot">
+              <span class="hx-card-date"><i class="fas fa-clock" aria-hidden="true"></i> <%= new Date(item.created_at).toLocaleDateString('ar-SA') %></span>
+              <span class="hx-card-go" aria-hidden="true"><i class="fas fa-arrow-left"></i></span>
+            </div>
           </div>
         </article>
         <% }); %>
@@ -94,54 +146,78 @@
       <div class="ds-empty wf-reveal">
         <i class="fas fa-newspaper" aria-hidden="true"></i>
         <p>لا توجد أخبار أو مسابقات حالياً — تابع سيرفر الديسكورد لتصلك الجديدة</p>
-        <a href="<%= hwDiscord %>" target="_blank" rel="noopener" class="ds-btn ds-btn-secondary ds-btn-sm"><i class="fab fa-discord" aria-hidden="true"></i> انضم للسيرفر</a>
+        <a href="<%= hxDiscord %>" target="_blank" rel="noopener" class="ds-btn ds-btn-secondary ds-btn-sm"><i class="fab fa-discord" aria-hidden="true"></i> انضم للسيرفر</a>
       </div>
       <% } %>
-    </section>
+    </div>
+  </section>
 
-    <!-- ══ كيف تنضم للعائلة — ثلاث بطاقات متتابعة ══ -->
-    <section class="hw2-section hw2-join" aria-labelledby="joinTitle">
-      <div class="ds-sect-head wf-reveal">
-        <h2 class="ds-sect-title" id="joinTitle">كيف تنضم للعائلة؟</h2>
+  <!-- ═══════════ كيف تنضم للعائلة — ثلاث خطوات بخط متصل ═══════════ -->
+  <section class="hx-section hx-join" aria-labelledby="hxJoinTitle">
+    <div class="ds-container">
+      <div class="hx-join-head wf-reveal">
+        <span class="hx-kicker">الانضمام</span>
+        <h2 class="hx-join-title" id="hxJoinTitle">كيف تنضم للعائلة؟</h2>
+        <p class="hx-join-sub">ثلاث خطوات بس وانت من العائلة</p>
       </div>
-      <p class="hw2-join-sub wf-reveal">ثلاث خطوات بس وانت من العائلة</p>
-      <ol class="hw2-steps">
-        <li class="hw2-step wf-reveal">
-          <div class="hw2-step-head">
-            <span class="hw2-step-ic" aria-hidden="true"><i class="fab fa-discord"></i></span>
-            <span class="hw2-step-no" aria-hidden="true">٠١</span>
+
+      <ol class="hx-steps">
+        <li class="hx-step wf-reveal">
+          <div class="hx-step-top" aria-hidden="true">
+            <span class="hx-step-no">٠١</span>
+            <span class="hx-step-ic"><i class="fab fa-discord"></i></span>
           </div>
-          <h3 class="hw2-step-title">انضم لسيرفر الديسكورد</h3>
-          <p class="hw2-step-txt">سيرفر العائلة الرسمي — من هناك يبدأ كل شيء</p>
-          <a href="<%= hwDiscord %>" target="_blank" rel="noopener" class="ds-btn ds-btn-secondary ds-btn-sm hw2-step-btn"><i class="fab fa-discord" aria-hidden="true"></i> سيرفر الديسكورد</a>
+          <h3 class="hx-step-title">انضم لسيرفر الديسكورد</h3>
+          <p class="hx-step-txt">سيرفر العائلة الرسمي — من هناك يبدأ كل شيء: التعارف، الألعاب، والمسابقات</p>
+          <a href="<%= hxDiscord %>" target="_blank" rel="noopener" class="ds-btn ds-btn-secondary ds-btn-sm hx-step-btn"><i class="fab fa-discord" aria-hidden="true"></i> سيرفر الديسكورد</a>
         </li>
-        <li class="hw2-step wf-reveal" style="transition-delay:.07s">
-          <div class="hw2-step-head">
-            <span class="hw2-step-ic" aria-hidden="true"><i class="fas fa-clipboard-check"></i></span>
-            <span class="hw2-step-no" aria-hidden="true">٠٢</span>
+
+        <li class="hx-step wf-reveal" style="transition-delay:.08s">
+          <div class="hx-step-top" aria-hidden="true">
+            <span class="hx-step-no">٠٢</span>
+            <span class="hx-step-ic"><i class="fas fa-clipboard-check"></i></span>
           </div>
-          <h3 class="hw2-step-title">تأكد إنك تحقق الشروط</h3>
-          <ul class="hw2-conds">
-            <% hwReqs.forEach(function(c) { %><li><%= c %></li><% }); %>
+          <h3 class="hx-step-title">تأكد إنك تحقق الشروط</h3>
+          <ul class="hx-conds">
+            <% hxReqs.forEach(function(c) { %><li><%= c %></li><% }); %>
           </ul>
-          <a href="/rules" class="hw2-step-link">القوانين كاملة <i class="fas fa-angle-left" aria-hidden="true"></i></a>
+          <a href="/rules" class="hx-step-link">القوانين كاملة <i class="fas fa-angle-left" aria-hidden="true"></i></a>
         </li>
-        <li class="hw2-step wf-reveal" style="transition-delay:.14s">
-          <div class="hw2-step-head">
-            <span class="hw2-step-ic" aria-hidden="true"><i class="fas fa-file-signature"></i></span>
-            <span class="hw2-step-no" aria-hidden="true">٠٣</span>
+
+        <li class="hx-step wf-reveal" style="transition-delay:.16s">
+          <div class="hx-step-top" aria-hidden="true">
+            <span class="hx-step-no">٠٣</span>
+            <span class="hx-step-ic"><i class="fas fa-file-signature"></i></span>
           </div>
-          <h3 class="hw2-step-title">قدّم من صفحة التقديمات</h3>
-          <p class="hw2-step-txt">عبّي نموذج الطلب — وبعد الموافقة تصير من العائلة</p>
-          <a href="/applications" class="ds-btn ds-btn-primary ds-btn-sm hw2-step-btn"><i class="fas fa-file-signature" aria-hidden="true"></i> صفحة التقديمات</a>
+          <h3 class="hx-step-title">قدّم من صفحة التقديمات</h3>
+          <p class="hx-step-txt">عبّي نموذج الطلب — وبعد الموافقة تصير رسمياً من العائلة</p>
+          <a href="/applications" class="ds-btn ds-btn-primary ds-btn-sm hx-step-btn"><i class="fas fa-file-signature" aria-hidden="true"></i> صفحة التقديمات</a>
         </li>
       </ol>
-    </section>
+    </div>
+  </section>
 
-  </div>
+  <!-- ═══════════ بانر الدعوة الأخير ═══════════ -->
+  <section class="hx-ctasec" aria-labelledby="hxCtaTitle">
+    <div class="ds-container">
+      <div class="hx-banner wf-reveal">
+        <span class="hx-banner-ghost" aria-hidden="true">WALTON</span>
+        <div class="hx-banner-body">
+          <h2 class="hx-banner-title" id="hxCtaTitle">جاهز تكون من العائلة؟</h2>
+          <p class="hx-banner-sub">ادخل سيرفر الديسكورد، تحقق من الشروط، وقدّم طلبك — الباب مفتوح دايماً</p>
+          <div class="hx-banner-btns">
+            <a href="<%= hxDiscord %>" target="_blank" rel="noopener" class="ds-btn ds-btn-primary hx-btn-big"><i class="fab fa-discord" aria-hidden="true"></i> سيرفر الديسكورد</a>
+            <a href="/applications" class="ds-btn ds-btn-ghost hx-btn-big">صفحة التقديمات <i class="fas fa-angle-left" aria-hidden="true"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
 </main>
 
 <%- include('../partials/footer') %>
+<script src="/js/home.js"></script>
 <script src="/js/main.js"></script>
 </body>
 </html>

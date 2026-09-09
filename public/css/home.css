@@ -1,167 +1,522 @@
 /* ============================================================
-   WALTON FAMILY — HOME (الرئيسية)
-   هيرو (شعار داخل قرص بنفسجي كامل + جملة + انضم الآن) + إحصائيات + أخبار
-   + «كيف تنضم للعائلة» ثلاث بطاقات متتابعة والشروط من صفحة التقديمات
-   تعتمد على design-system.css (الثيم الأساسي) — بلا ألوان خارجها
-   الحركة: تسلسل دخول واحد (wf-reveal) — transform/opacity فقط
+   WALTON FAMILY — HOME v3 (الرئيسية من الصفر)
+   ------------------------------------------------------------
+   الفكرة: شاشة أولى «حية» — شفق بنفسجي متموّج + شبكة نقط + نجوم
+   متلألئة + ختم بحلقة دوّارة + عنوان متدرج لامع، ثم شريط إحصائيات
+   حقيقي بعدّادات، أخبار بلمسة ضوء تتبع الماوس، خطوات انضمام بخط
+   متصل، وبانر دعوة بكلمة شبح.
+   الثيم: بنفسجي #bc13fe على داكن #0b0c18 (نفس هوية الموقع)
+   الأداء: كل الحركة transform/opacity فقط — البلور على عناصر
+   ثابتة لا تتحرك — ≤768px بلا أنميشن شفق/نجوم — ويحترم
+   prefers-reduced-motion على مستوى كل الأقسام
    ============================================================ */
 
-/* تسلسل الدخول: نفس كلاس .wf-reveal الذي يراقبه سكربت الفوتر المشترك */
-.hw2-page .wf-reveal {
+/* ── تسلسل الدخول: نفس كلاس .wf-reveal الذي يراقبه سكربت الفوتر المشترك ── */
+.hx-page .wf-reveal {
   opacity: 0;
-  transform: translateY(14px);
-  transition: opacity .42s ease, transform .42s ease;
+  transform: translateY(18px);
+  transition: opacity .5s ease, transform .5s ease;
   will-change: opacity, transform;
 }
-.hw2-page .wf-reveal.visible { opacity: 1; transform: none; }
-@media (prefers-reduced-motion: reduce) {
-  .hw2-page .wf-reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+.hx-page .wf-reveal.visible { opacity: 1; transform: none; }
+
+.hx-page { padding-top: 0; padding-bottom: 8px; }
+
+/* ══════════════════ الهيرو ══════════════════ */
+.hx-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: var(--nav-h) 0 76px;
 }
 
-.hw2-page { padding-top: calc(var(--nav-h) + 24px); padding-bottom: 8px; }
+/* الشفق: ثلاث كتل ضوئية بنفسجية تتموج ببطء (فلتر البلور ثابت والعناصر لا تُعاد رسمها — transform فقط) */
+.hx-aurora { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.hx-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  will-change: transform;
+}
+.hx-b1 {
+  width: 540px; height: 540px;
+  top: -170px; inset-inline-start: -130px;
+  background: radial-gradient(circle, rgba(188, 19, 254, 0.5), transparent 68%);
+  opacity: .55;
+  animation: hx-drift1 22s ease-in-out infinite alternate;
+}
+.hx-b2 {
+  width: 460px; height: 460px;
+  bottom: -150px; inset-inline-end: -110px;
+  background: radial-gradient(circle, rgba(210, 77, 255, 0.42), transparent 68%);
+  opacity: .5;
+  animation: hx-drift2 26s ease-in-out infinite alternate;
+}
+.hx-b3 {
+  width: 380px; height: 380px;
+  top: 26%; inset-inline-start: 46%;
+  background: radial-gradient(circle, rgba(104, 22, 168, 0.5), transparent 70%);
+  opacity: .38;
+  animation: hx-drift3 30s ease-in-out infinite alternate;
+}
+@keyframes hx-drift1 { to { transform: translate(70px, 46px) scale(1.16); } }
+@keyframes hx-drift2 { to { transform: translate(-64px, -40px) scale(1.12); } }
+@keyframes hx-drift3 { to { transform: translate(-40px, 52px) scale(1.2); } }
 
-/* ══ الهيرو: شاشة أولى بالمنتصف ══ */
-.hw2-hero {
-  min-height: calc(100vh - var(--nav-h) - 48px);
+/* شبكة خفيفة تختفي تدريجياً نحو الأطراف (ساكنة تماماً — رسمة واحدة) */
+.hx-grid {
+  position: absolute; inset: 0;
+  pointer-events: none; z-index: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.032) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.032) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(ellipse 72% 62% at 50% 42%, #000 28%, transparent 74%);
+  mask-image: radial-gradient(ellipse 72% 62% at 50% 42%, #000 28%, transparent 74%);
+}
+
+/* نجوم متلألئة — عناصر صغيرة، حركة opacity/transform فقط */
+.hx-stars { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.hx-stars i {
+  position: absolute;
+  width: 3px; height: 3px;
+  border-radius: 50%;
+  background: rgba(238, 222, 255, 0.85);
+  box-shadow: 0 0 6px rgba(210, 77, 255, 0.8);
+  opacity: .15;
+  animation: hx-twinkle 4.2s ease-in-out infinite;
+}
+.hx-stars i:nth-child(1)  { top: 14%; inset-inline-start: 12%; animation-delay: 0s; }
+.hx-stars i:nth-child(2)  { top: 22%; inset-inline-start: 78%; animation-delay: .5s; width: 2px; height: 2px; }
+.hx-stars i:nth-child(3)  { top: 64%; inset-inline-start: 8%;  animation-delay: 1.1s; }
+.hx-stars i:nth-child(4)  { top: 70%; inset-inline-start: 88%; animation-delay: .8s; width: 2px; height: 2px; }
+.hx-stars i:nth-child(5)  { top: 38%; inset-inline-start: 22%; animation-delay: 1.6s; }
+.hx-stars i:nth-child(6)  { top: 12%; inset-inline-start: 55%; animation-delay: 2s; width: 2px; height: 2px; }
+.hx-stars i:nth-child(7)  { top: 48%; inset-inline-start: 92%; animation-delay: 1.3s; }
+.hx-stars i:nth-child(8)  { top: 82%; inset-inline-start: 30%; animation-delay: 2.4s; width: 2px; height: 2px; }
+.hx-stars i:nth-child(9)  { top: 30%; inset-inline-start: 42%; animation-delay: 2.9s; }
+.hx-stars i:nth-child(10) { top: 58%; inset-inline-start: 62%; animation-delay: .3s; width: 2px; height: 2px; }
+.hx-stars i:nth-child(11) { top: 86%; inset-inline-start: 70%; animation-delay: 1.9s; }
+.hx-stars i:nth-child(12) { top: 8%;  inset-inline-start: 32%; animation-delay: 3.3s; width: 2px; height: 2px; }
+@keyframes hx-twinkle {
+  0%, 100% { opacity: .12; transform: translateY(0) scale(1); }
+  50%      { opacity: .9;  transform: translateY(-6px) scale(1.25); }
+}
+
+/* محتوى الهيرو */
+.hx-hero-inner {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column;
+  align-items: center; text-align: center;
+  gap: 20px;
+}
+
+/* الختم: هالة تتنفس + حلقة تدرّج دوّارة + حلقة ساكنة خارجية */
+.hx-orb {
+  position: relative;
+  width: min(225px, 54vw);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+}
+.hx-orb-glow {
+  position: absolute; inset: -14%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(188, 19, 254, 0.34), transparent 62%);
+  animation: hx-breathe 5s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+@keyframes hx-breathe {
+  0%, 100% { transform: scale(1); opacity: .8; }
+  50%      { transform: scale(1.09); opacity: 1; }
+}
+.hx-orb::before {
+  content: '';
+  position: absolute; inset: -13px;
+  border-radius: 50%;
+  border: 1px solid rgba(210, 77, 255, 0.22);
+}
+.hx-orb-ring {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg,
+    rgba(210, 77, 255, 0) 0%,
+    rgba(210, 77, 255, 0.95) 11%,
+    rgba(188, 19, 254, 0) 27%,
+    rgba(188, 19, 254, 0) 100%);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+  animation: hx-spin 7s linear infinite;
+  will-change: transform;
+}
+@keyframes hx-spin { to { transform: rotate(360deg); } }
+.hx-orb img {
+  width: 84%; height: 84%;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 30px rgba(28, 0, 44, 0.55));
+}
+
+/* شارة علوية صغيرة */
+.hx-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(210, 77, 255, 0.35);
+  background: rgba(188, 19, 254, 0.1);
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 12.5px;
+  color: #e9c6fb;
+}
+.hx-eyebrow-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--accent-hover);
+  box-shadow: 0 0 8px rgba(210, 77, 255, 0.9);
+  animation: hx-pulse 2.2s ease-in-out infinite;
+}
+@keyframes hx-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+
+/* العنوان — أبيض مع جزء متدرج لامع يتحرك */
+.hx-title {
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-size: clamp(34px, 6.6vw, 62px);
+  line-height: 1.25;
+  color: #fff;
+  margin: 0;
+  text-shadow: 0 4px 30px rgba(0, 0, 0, 0.45);
+}
+.hx-grad {
+  background: linear-gradient(90deg, #d24dff 0%, #bc13fe 30%, #e2a9ff 50%, #bc13fe 70%, #d24dff 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: hx-shine 5.5s linear infinite;
+}
+@keyframes hx-shine { to { background-position: 200% center; } }
+
+.hx-sub {
+  max-width: 580px;
+  margin: 0;
+  font-size: clamp(14.5px, 2vw, 16.5px);
+  line-height: 1.8;
+  color: var(--muted);
+}
+
+/* أزرار الهيرو — أكبر من المعتاد */
+.hx-cta { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+.hx-btn-big { height: 50px; padding: 0 26px; font-size: 15px; border-radius: 14px; }
+.hx-cta .ds-btn-primary {
+  box-shadow: 0 10px 30px rgba(188, 19, 254, 0.38);
+}
+.hx-cta .ds-btn-primary:hover { transform: translateY(-2px); }
+
+/* سهم النزول */
+.hx-scrollhint {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  width: 38px; height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid rgba(210, 77, 255, 0.35);
+  color: var(--accent-hover);
+  background: rgba(188, 19, 254, 0.08);
+  animation: hx-bob 2.4s ease-in-out infinite;
+}
+.hx-scrollhint:hover { border-color: var(--accent); color: #fff; }
+@keyframes hx-bob {
+  0%, 100% { transform: translate(-50%, 0); }
+  50%      { transform: translate(-50%, 7px); }
+}
+
+/* ══════════════════ شريط الإحصائيات ══════════════════ */
+.hx-statsband {
+  position: relative;
+  z-index: 3;
+  margin-top: -40px;
+}
+.hx-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: rgba(26, 27, 46, 0.92);
+  border: 1px solid rgba(210, 77, 255, 0.22);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.2);
+}
+.hx-stat {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  gap: 4px;
+  padding: 22px 14px 18px;
   text-align: center;
-  gap: 28px;
-  padding: 16px 0 24px;
 }
-
-/* الشعار — دائرة بنفسجية كاملة (تدرج الثيم يملأ القرص كله بدل الخط فقط)
-   والشعار يطفو وسطها — ثابت، بلا أنميشن */
-.hw2-orb {
-  /* قرص أصغر قليلاً والشعار يملأ داخله مساحة أكبر — هامش ثابت 8px (النسبة المئوية
-     للـ padding تُحسب من عرض الأب فتتقلب مع الشاشة، الـ px ثابت ومضمون).
-     يبقى contain يضمن بقاء الشعار كاملاً ضمن حدود القرص مهما كانت أبعاد الصورة */
-  width: min(240px, 56vw);
-  aspect-ratio: 1;
-  border-radius: 50%;
-  padding: 8px;
-  background: linear-gradient(145deg, #d24dff 0%, #bc13fe 48%, #7d0cb0 100%);
-  box-shadow:
-    0 0 38px rgba(188, 19, 254, 0.5),
-    0 0 110px rgba(188, 19, 254, 0.2),
-    inset 0 2px 16px rgba(255, 255, 255, 0.3),
-    inset 0 -14px 36px rgba(45, 0, 70, 0.4);
-}
-.hw2-orb img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  display: block;
-  filter: drop-shadow(0 8px 22px rgba(30, 0, 45, 0.45));
-}
-
-/* الجملة — بيضاء دائماً لأنها تجلس فوق صورة الخلفية الداكنة مباشرة */
-.hw2-title {
-  font-family: var(--font-head);
-  font-weight: 800;
-  font-size: clamp(30px, 6vw, 54px);
-  line-height: 1.3;
-  color: #fff;
-  margin: 0;
-}
-
-.hw2-cta { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
-
-/* ══ شريط الإحصائيات الحقيقية ══ */
-.hw2-stats {
+.hx-stat + .hx-stat { border-inline-start: 1px solid var(--border); }
+.hx-stat-ic {
+  width: 40px; height: 40px;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  place-items: center;
+  border-radius: 13px;
+  font-size: 17px;
+  color: #fff;
+  background: linear-gradient(135deg, #d24dff, #8d0dbc);
+  box-shadow: 0 6px 18px rgba(188, 19, 254, 0.32), inset 0 1px 6px rgba(255, 255, 255, 0.25);
+  margin-bottom: 4px;
 }
-@media (min-width: 768px) { .hw2-stats { grid-template-columns: repeat(4, 1fr); } }
-.hw2-stat {
-  padding: 18px 16px;
-  text-align: center;
-  border-inline-end: 1px solid var(--border);
-}
-.hw2-stat:nth-child(2n) { border-inline-end: 0; }
-@media (min-width: 768px) {
-  .hw2-stat:last-child { border-inline-end: 0; }
-  .hw2-stat:nth-child(2n) { border-inline-end: 1px solid var(--border); }
-}
-.hw2-stat-val {
+.hx-stat-val {
   font-family: var(--font-head);
   font-weight: 800;
-  font-size: 24px;
-  color: var(--accent);
-  line-height: 1.2;
+  font-size: 27px;
+  line-height: 1.15;
+  color: var(--accent-hover);
 }
-.hw2-stat-lbl { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.hx-stat-lbl { font-size: 12.5px; color: var(--muted); }
 
-/* شريط النقاط الشخصية (للمسجل فقط) — بيانات حقيقية */
-.hw2-personal {
+/* شريط «نقاطك» للمسجّل — إطار متدرج بخدعة الخلفيتين */
+.hx-personal {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: 8px 20px;
   margin-top: 12px;
-  padding: 12px 16px;
+  padding: 13px 18px;
+  border-radius: 15px;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    linear-gradient(120deg, rgba(210, 77, 255, 0.7), rgba(188, 19, 254, 0.12) 45%, rgba(210, 77, 255, 0.7)) border-box;
   font-size: 13.5px;
   color: var(--muted);
 }
-.hw2-personal b { color: var(--text); font-family: var(--font-head); }
-.hw2-personal a { color: var(--accent); text-decoration: none; font-weight: 700; font-family: var(--font-head); }
-.hw2-personal a:hover { color: var(--accent-hover); }
-
-/* ══ الأقسام ══ */
-.hw2-section { padding-block: 30px; }
-@media (min-width: 768px) { .hw2-section { padding-block: 40px; } }
-
-/* الأخبار */
-.hw2-news-grid {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: 1fr;
-}
-@media (min-width: 640px) { .hw2-news-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (min-width: 1024px) { .hw2-news-grid { grid-template-columns: repeat(3, 1fr); } }
-
-.hw2-news-card { display: flex; flex-direction: column; overflow: hidden; }
-.hw2-news-body { padding: 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
-.hw2-news-title {
+.hx-personal-wel { font-family: var(--font-head); font-weight: 700; color: var(--text); }
+.hx-personal-item { display: inline-flex; align-items: center; gap: 6px; }
+.hx-personal-item i { color: var(--accent-hover); font-size: 12px; }
+.hx-personal-item b { color: var(--text); font-family: var(--font-head); }
+.hx-personal-link {
   font-family: var(--font-head);
   font-weight: 700;
-  font-size: 16px;
-  line-height: 1.45;
+  color: var(--accent-hover);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.hx-personal-link:hover { color: #fff; }
+
+/* ══════════════════ الأقسام العامة ══════════════════ */
+.hx-section { padding-block: 54px 12px; }
+
+/* كلمة تمهيد فوق عناوين الأقسام */
+.hx-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: .06em;
+  color: var(--accent-hover);
+  margin-bottom: 6px;
+}
+.hx-kicker::before {
+  content: '';
+  width: 24px; height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent), rgba(188, 19, 254, 0));
+}
+
+/* ══════════════════ بطاقات الأخبار ══════════════════ */
+.hx-news-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 640px)  { .hx-news-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1024px) { .hx-news-grid { grid-template-columns: repeat(3, 1fr); } }
+
+.hx-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+}
+.hx-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(188, 19, 254, 0.5);
+  box-shadow: 0 18px 40px rgba(188, 19, 254, 0.14), 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+/* لمسة ضوء تتبع الماوس — --mx/--my يكتبهما JS (ديسكتوب فقط) */
+.hx-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .3s ease;
+  background: radial-gradient(230px circle at var(--mx, 50%) var(--my, 50%), rgba(210, 77, 255, 0.13), transparent 68%);
+}
+.hx-card:hover::after { opacity: 1; }
+
+.hx-card-media {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background:
+    radial-gradient(90% 120% at 50% 0%, rgba(188, 19, 254, 0.22), rgba(26, 27, 46, 0.4) 70%),
+    var(--surface);
+}
+.hx-card-media img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform .35s ease;
+}
+.hx-card:hover .hx-card-media img { transform: scale(1.045); }
+.hx-card-ph {
+  position: absolute; inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 44px;
+  color: rgba(210, 77, 255, 0.4);
+  text-shadow: 0 0 30px rgba(188, 19, 254, 0.4);
+}
+.hx-badge {
+  position: absolute;
+  top: 12px;
+  inset-inline-start: 12px;
+  background: rgba(11, 12, 24, 0.82);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+.hx-badge-gaw { border-color: rgba(210, 77, 255, 0.55); color: #e9c6fb; }
+.hx-count {
+  position: absolute;
+  bottom: 12px;
+  inset-inline-end: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: rgba(188, 19, 254, 0.9);
+  color: #fff;
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 12px;
+  box-shadow: 0 4px 14px rgba(188, 19, 254, 0.45);
+}
+.hx-count i { font-size: 10.5px; }
+
+.hx-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  padding: 16px;
+}
+.hx-card-title {
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 16.5px;
+  line-height: 1.5;
   color: var(--text);
   margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
-.hw2-news-date { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
-.hw2-news-txt { font-size: 14px; color: var(--muted); margin: 0; line-height: 1.6; }
-.hw2-news-img { aspect-ratio: 16 / 9; overflow: hidden; display: block; }
-.hw2-news-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
-
-/* ══ كيف تنضم للعائلة — ثلاث بطاقات متتابعة بسهم وصل ══ */
-.hw2-join { padding-bottom: 44px; }
-
-.hw2-join-sub {
-  margin: -14px 0 20px;
+.hx-card-txt {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.7;
   color: var(--muted);
-  font-size: 14px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
+.hx-card-foot {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.hx-card-date { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
+.hx-card-go {
+  width: 28px; height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 12px;
+  color: #fff;
+  background: linear-gradient(135deg, #d24dff, #8d0dbc);
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity .25s ease, transform .25s ease;
+}
+.hx-card:hover .hx-card-go { opacity: 1; transform: none; }
 
-.hw2-steps {
+/* ══════════════════ كيف تنضم للعائلة ══════════════════ */
+.hx-join { padding-bottom: 40px; }
+.hx-join-head { text-align: center; margin-bottom: 30px; }
+.hx-join-head .hx-kicker::before { display: none; }
+.hx-join-title {
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-size: clamp(24px, 4vw, 34px);
+  color: #fff;
+  margin: 0;
+}
+.hx-join-sub { margin: 8px 0 0; color: var(--muted); font-size: 14.5px; }
+
+.hx-steps {
   position: relative;
   display: grid;
-  gap: 16px;
+  gap: 18px;
   grid-template-columns: 1fr;
   list-style: none;
   margin: 0;
   padding: 0;
 }
 @media (min-width: 900px) {
-  .hw2-steps { grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .hx-steps { grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  /* الخط الواصل بين الخطوات — يظهر بين البطاقات فقط (البطاقات معتمة تغطيه)
+     ومصوّب على مركز صف أيقونات الخطوة (22 حشوة + نصف 52) */
+  .hx-steps::before {
+    content: '';
+    position: absolute;
+    top: 48px;
+    inset-inline: 9%;
+    height: 2px;
+    background: linear-gradient(90deg, rgba(210, 77, 255, 0), rgba(188, 19, 254, 0.5) 18%, rgba(210, 77, 255, 0.5) 82%, rgba(210, 77, 255, 0));
+    pointer-events: none;
+  }
 }
 
-/* البطاقة: سطح داكن بتوهج بنفسجي علوي وحافة رقيقة — محاذاة للبداية بدل التوسيط */
-.hw2-step {
+.hx-step {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -171,93 +526,55 @@
   border-radius: 18px;
   border: 1px solid var(--border);
   background:
-    radial-gradient(130% 75% at 50% 0%, rgba(188, 19, 254, 0.14), rgba(188, 19, 254, 0) 56%),
+    radial-gradient(130% 70% at 50% 0%, rgba(188, 19, 254, 0.15), rgba(188, 19, 254, 0) 55%),
     var(--surface);
   transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
 }
-.hw2-step:hover {
+.hx-step:hover {
   transform: translateY(-4px);
-  border-color: rgba(188, 19, 254, 0.45);
+  border-color: rgba(188, 19, 254, 0.5);
   box-shadow: 0 16px 38px rgba(188, 19, 254, 0.16), 0 4px 16px rgba(0, 0, 0, 0.3);
 }
-@media (prefers-reduced-motion: reduce) {
-  .hw2-step, .hw2-step:hover { transition: none; transform: none; }
-}
-
-/* شعاع علوي متدرج يحدد رأس كل بطاقة */
-.hw2-step::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  inset-inline: 16%;
-  height: 3px;
-  border-radius: 0 0 6px 6px;
-  background: linear-gradient(90deg, rgba(210, 77, 255, 0), #d24dff 30%, #bc13fe 70%, rgba(210, 77, 255, 0));
-}
-
-/* سهم يصل كل بطاقة باللي بعدها — ديسكتوب فقط (اتجاه الكلمة: من اليمين لليسار) */
-@media (min-width: 900px) {
-  .hw2-step:not(:last-child)::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    inset-inline-end: -16px;
-    margin-top: -6px;
-    width: 11px;
-    height: 11px;
-    border-top: 3px solid var(--accent);
-    border-left: 3px solid var(--accent);
-    border-radius: 2px;
-    transform: rotate(-45deg);
-    opacity: .6;
-    filter: drop-shadow(0 0 6px rgba(188, 19, 254, 0.6));
-  }
-}
-
-/* رأس البطاقة: أيقونة متدرجة يمين + رقم شبح محيطي يسار */
-.hw2-step-head {
+.hx-step-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
   margin-bottom: 4px;
 }
-
-.hw2-step-ic {
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
+.hx-step-ic {
+  order: 2;
+  width: 52px; height: 52px;
   display: grid;
   place-items: center;
-  font-size: 21px;
+  border-radius: 16px;
+  font-size: 23px;
   color: #fff;
-  background: linear-gradient(135deg, #d24dff, #930fc6);
-  box-shadow: 0 6px 18px rgba(188, 19, 254, 0.35), inset 0 1px 8px rgba(255, 255, 255, 0.25);
+  background: linear-gradient(135deg, #d24dff, #8d0dbc);
+  box-shadow: 0 8px 22px rgba(188, 19, 254, 0.38), inset 0 1px 8px rgba(255, 255, 255, 0.28);
 }
-
-/* رقم الخطوة: شبح كبير بنفسجي — حدود محيطية مع تعبئة باهتة احتياطية للمتصفحات القديمة */
-.hw2-step-no {
+.hx-step-no {
+  order: 1;
   font-family: var(--font-head);
   font-weight: 800;
-  font-size: 46px;
+  font-size: 48px;
   line-height: 1;
-  color: rgba(188, 19, 254, 0.22);
+  color: rgba(188, 19, 254, 0.2);
 }
-@supports (-webkit-text-stroke: 1px red) {
-  .hw2-step-no { color: transparent; -webkit-text-stroke: 1.6px rgba(188, 19, 254, 0.6); }
+@supports ((-webkit-text-stroke: 1px red)) {
+  .hx-step-no { color: transparent; -webkit-text-stroke: 1.6px rgba(210, 77, 255, 0.55); }
 }
-
-.hw2-step-title {
+.hx-step-title {
   font-family: var(--font-head);
   font-weight: 800;
   font-size: 17.5px;
   color: var(--text);
   margin: 0;
 }
-.hw2-step-txt { font-size: 13.5px; color: var(--muted); margin: 0; line-height: 1.7; }
+.hx-step-txt { font-size: 13.5px; color: var(--muted); margin: 0; line-height: 1.7; }
 
-/* الشروط — عناصر بمسطّرات (نفس فكرة المستخدم) */
-.hw2-conds {
+/* الشروط — عناصر بمسطّرات بنفسجية */
+.hx-conds {
   list-style: none;
   margin: 2px 0 0;
   padding: 0;
@@ -266,8 +583,8 @@
   font-size: 13.5px;
   color: var(--text);
 }
-.hw2-conds li { position: relative; padding-inline-start: 20px; line-height: 1.6; }
-.hw2-conds li::before {
+.hx-conds li { position: relative; padding-inline-start: 20px; line-height: 1.6; }
+.hx-conds li::before {
   content: '';
   position: absolute;
   top: 0.75em;
@@ -275,24 +592,94 @@
   width: 12px;
   border-top: 2px solid var(--accent);
 }
-
-.hw2-step-link {
+.hx-step-link {
   font-family: var(--font-head);
   font-weight: 700;
   font-size: 13.5px;
-  color: var(--accent);
+  color: var(--accent-hover);
   text-decoration: none;
   display: inline-flex;
   align-items: center;
   gap: 5px;
   margin-top: auto;
 }
-.hw2-step-link:hover { color: var(--accent-hover); }
+.hx-step-link:hover { color: #fff; }
+.hx-step-btn { margin-top: auto; width: 100%; }
 
-/* زر البطاقة: بعرض البطاقة كاملة مثبت أسفلها */
-.hw2-step-btn { margin-top: auto; width: 100%; }
+/* ══════════════════ بانر الدعوة ══════════════════ */
+.hx-ctasec { padding-block: 30px 56px; }
+.hx-banner {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  border: 1px solid rgba(210, 77, 255, 0.4);
+  background:
+    radial-gradient(130% 150% at 50% -10%, rgba(188, 19, 254, 0.3), rgba(26, 27, 46, 0.55) 52%, var(--surface)),
+    var(--surface);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.42), 0 0 40px rgba(188, 19, 254, 0.12);
+  padding: 52px 28px;
+  text-align: center;
+}
+.hx-banner-ghost {
+  position: absolute;
+  top: -0.18em;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Space Grotesk', var(--font-head);
+  font-weight: 700;
+  font-size: clamp(90px, 19vw, 200px);
+  letter-spacing: .08em;
+  line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(210, 77, 255, 0.13);
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+}
+.hx-banner-body { position: relative; z-index: 1; display: grid; gap: 12px; justify-items: center; }
+.hx-banner-title {
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-size: clamp(24px, 4.4vw, 38px);
+  color: #fff;
+  margin: 0;
+  text-shadow: 0 4px 26px rgba(0, 0, 0, 0.5);
+}
+.hx-banner-sub { margin: 0; color: var(--muted); font-size: 14.5px; max-width: 520px; line-height: 1.8; }
+.hx-banner-btns { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 8px; }
+.hx-banner .ds-btn-primary { box-shadow: 0 10px 30px rgba(188, 19, 254, 0.4); }
+.hx-banner .ds-btn-primary:hover { transform: translateY(-2px); }
 
+/* ══════════════════ الجوال ══════════════════ */
+@media (max-width: 768px) {
+  /* أداء الهاتف: بلا أنميشن شفق/نجوم — كتل ساكنة خافتة تكفي للعمق */
+  .hx-blob { animation: none !important; opacity: .3; filter: blur(56px); }
+  .hx-stars { display: none; }
+  .hx-hero { min-height: auto; padding-bottom: 64px; }
+  .hx-hero-inner { gap: 16px; }
+  .hx-grad { animation: none; }
+  .hx-stats { grid-template-columns: repeat(2, 1fr); }
+  .hx-stat { padding: 16px 10px 14px; }
+  .hx-stat:nth-child(3) { border-inline-start: 0; }
+  .hx-stat:nth-child(n + 3) { border-top: 1px solid var(--border); }
+  .hx-stat-val { font-size: 22px; }
+  .hx-section { padding-block: 40px 8px; }
+  .hx-join { padding-bottom: 28px; }
+  .hx-ctasec { padding-block: 16px 44px; }
+  .hx-banner { padding: 38px 18px; border-radius: 20px; }
+  .hx-scrollhint { display: none; }
+}
 @media (max-width: 480px) {
-  .hw2-orb { width: min(190px, 51vw); }
-  .hw2-hero { gap: 24px; }
+  .hx-orb { width: min(180px, 52vw); }
+  .hx-btn-big { height: 46px; padding: 0 20px; font-size: 14px; width: 100%; }
+  .hx-cta { width: 100%; flex-direction: column; }
+}
+
+/* ══════════════════ احترام تقليل الحركة ══════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .hx-page .wf-reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+  .hx-blob, .hx-stars i, .hx-orb-ring, .hx-orb-glow, .hx-grad,
+  .hx-eyebrow-dot, .hx-scrollhint, .hx-card-media img { animation: none !important; }
+  .hx-page .wf-reveal,
+  .hx-card, .hx-step, .hx-card-media img, .hx-card-go { transition: none !important; }
 }
