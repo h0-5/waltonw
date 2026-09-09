@@ -9,6 +9,10 @@
   var hwDiscord = hwSettings.discord_server_url || '#';
   var hwLogo = hwSettings.site_logo_url || '/images/logo.png';
   var hwNews = (typeof news !== 'undefined' && news) ? news.slice(0, 6) : [];
+  /* الشروط: من صفحة التقديمات نفسها (حقل المتطلبات بتقديم Join Family) — وإن لا توجد: بدائل ثابتة */
+  var hwReqs = (typeof joinReqs !== 'undefined' && joinReqs && joinReqs.length)
+    ? joinReqs
+    : ['حساب ديسكورد فعّال', 'قراءة قوانين العائلة والالتزام بها', 'احترام الأعضاء والنشاط الإيجابي'];
 %>
 
 <main class="hw2-page" id="main">
@@ -95,36 +99,41 @@
       <% } %>
     </section>
 
-    <!-- ══ كيف تنضم للعائلة — ثلاث خطوات بمسطّلات ══ -->
+    <!-- ══ كيف تنضم للعائلة — ثلاث بطاقات متتابعة ══ -->
     <section class="hw2-section hw2-join" aria-labelledby="joinTitle">
       <div class="ds-sect-head wf-reveal">
         <h2 class="ds-sect-title" id="joinTitle">كيف تنضم للعائلة؟</h2>
       </div>
+      <p class="hw2-join-sub wf-reveal">ثلاث خطوات بس وانت من العائلة</p>
       <ol class="hw2-steps">
-        <li class="ds-card hw2-step wf-reveal">
-          <span class="hw2-step-no" aria-hidden="true">١</span>
-          <i class="fab fa-discord hw2-step-ic" aria-hidden="true"></i>
+        <li class="hw2-step wf-reveal">
+          <div class="hw2-step-head">
+            <span class="hw2-step-ic" aria-hidden="true"><i class="fab fa-discord"></i></span>
+            <span class="hw2-step-no" aria-hidden="true">٠١</span>
+          </div>
           <h3 class="hw2-step-title">انضم لسيرفر الديسكورد</h3>
           <p class="hw2-step-txt">سيرفر العائلة الرسمي — من هناك يبدأ كل شيء</p>
-          <a href="<%= hwDiscord %>" target="_blank" rel="noopener" class="ds-btn ds-btn-secondary ds-btn-sm"><i class="fab fa-discord" aria-hidden="true"></i> سيرفر الديسكورد</a>
+          <a href="<%= hwDiscord %>" target="_blank" rel="noopener" class="ds-btn ds-btn-secondary ds-btn-sm hw2-step-btn"><i class="fab fa-discord" aria-hidden="true"></i> سيرفر الديسكورد</a>
         </li>
-        <li class="ds-card hw2-step wf-reveal" style="transition-delay:.07s">
-          <span class="hw2-step-no" aria-hidden="true">٢</span>
-          <i class="fas fa-clipboard-check hw2-step-ic" aria-hidden="true"></i>
+        <li class="hw2-step wf-reveal" style="transition-delay:.07s">
+          <div class="hw2-step-head">
+            <span class="hw2-step-ic" aria-hidden="true"><i class="fas fa-clipboard-check"></i></span>
+            <span class="hw2-step-no" aria-hidden="true">٠٢</span>
+          </div>
           <h3 class="hw2-step-title">تأكد إنك تحقق الشروط</h3>
           <ul class="hw2-conds">
-            <li>حساب ديسكورد فعّال</li>
-            <li>قراءة قوانين العائلة والالتزام بها</li>
-            <li>احترام الأعضاء والنشاط الإيجابي</li>
+            <% hwReqs.forEach(function(c) { %><li><%= c %></li><% }); %>
           </ul>
           <a href="/rules" class="hw2-step-link">القوانين كاملة <i class="fas fa-angle-left" aria-hidden="true"></i></a>
         </li>
-        <li class="ds-card hw2-step wf-reveal" style="transition-delay:.14s">
-          <span class="hw2-step-no" aria-hidden="true">٣</span>
-          <i class="fas fa-file-signature hw2-step-ic" aria-hidden="true"></i>
+        <li class="hw2-step wf-reveal" style="transition-delay:.14s">
+          <div class="hw2-step-head">
+            <span class="hw2-step-ic" aria-hidden="true"><i class="fas fa-file-signature"></i></span>
+            <span class="hw2-step-no" aria-hidden="true">٠٣</span>
+          </div>
           <h3 class="hw2-step-title">قدّم من صفحة التقديمات</h3>
           <p class="hw2-step-txt">عبّي نموذج الطلب — وبعد الموافقة تصير من العائلة</p>
-          <a href="/applications" class="ds-btn ds-btn-primary ds-btn-sm"><i class="fas fa-file-signature" aria-hidden="true"></i> صفحة التقديمات</a>
+          <a href="/applications" class="ds-btn ds-btn-primary ds-btn-sm hw2-step-btn"><i class="fas fa-file-signature" aria-hidden="true"></i> صفحة التقديمات</a>
         </li>
       </ol>
     </section>

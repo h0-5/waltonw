@@ -1,7 +1,7 @@
 /* ============================================================
    WALTON FAMILY — HOME (الرئيسية)
-   هيرو (شعار دائري بنفسجي + جملة + انضم الآن) + إحصائيات + أخبار
-   + «كيف تنضم للعائلة» ثلاث خطوات بمسطّلات
+   هيرو (شعار داخل قرص بنفسجي كامل + جملة + انضم الآن) + إحصائيات + أخبار
+   + «كيف تنضم للعائلة» ثلاث بطاقات متتابعة والشروط من صفحة التقديمات
    تعتمد على design-system.css (الثيم الأساسي) — بلا ألوان خارجها
    الحركة: تسلسل دخول واحد (wf-reveal) — transform/opacity فقط
    ============================================================ */
@@ -32,21 +32,26 @@
   padding: 16px 0 24px;
 }
 
-/* الشعار — إطار دائري بحد بنفسجي + توهج بنفسجي خفيف (ثابت، بلا أنميشن) */
+/* الشعار — دائرة بنفسجية كاملة (تدرج الثيم يملأ القرص كله بدل الخط فقط)
+   والشعار يطفو وسطها — ثابت، بلا أنميشن */
 .hw2-orb {
   width: min(280px, 64vw);
   aspect-ratio: 1;
   border-radius: 50%;
-  border: 3px solid var(--accent);
-  background: #000;
-  overflow: hidden;
-  box-shadow: 0 0 34px rgba(188, 19, 254, 0.38), 0 0 90px rgba(188, 19, 254, 0.16);
+  padding: 9%;
+  background: linear-gradient(145deg, #d24dff 0%, #bc13fe 48%, #7d0cb0 100%);
+  box-shadow:
+    0 0 46px rgba(188, 19, 254, 0.5),
+    0 0 130px rgba(188, 19, 254, 0.2),
+    inset 0 2px 16px rgba(255, 255, 255, 0.3),
+    inset 0 -14px 36px rgba(45, 0, 70, 0.4);
 }
 .hw2-orb img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
+  filter: drop-shadow(0 8px 22px rgba(30, 0, 45, 0.45));
 }
 
 /* الجملة — بيضاء دائماً لأنها تجلس فوق صورة الخلفية الداكنة مباشرة */
@@ -130,79 +135,129 @@
 .hw2-news-img { aspect-ratio: 16 / 9; overflow: hidden; display: block; }
 .hw2-news-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-/* ══ كيف تنضم للعائلة — ثلاث خطوات بمسطّلات ══ */
+/* ══ كيف تنضم للعائلة — ثلاث بطاقات متتابعة بسهم وصل ══ */
 .hw2-join { padding-bottom: 44px; }
+
+.hw2-join-sub {
+  margin: -14px 0 20px;
+  color: var(--muted);
+  font-size: 14px;
+}
 
 .hw2-steps {
   position: relative;
   display: grid;
-  gap: 28px;
+  gap: 16px;
   grid-template-columns: 1fr;
   list-style: none;
   margin: 0;
-  padding: 22px 0 0;
+  padding: 0;
 }
 @media (min-width: 900px) {
   .hw2-steps { grid-template-columns: repeat(3, 1fr); gap: 20px; }
-  /* المسطّلة الواصلة بين الخطوات — تمر خلف دوائر الأرقام */
-  .hw2-steps::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 14%;
-    left: 14%;
-    border-top: 2px dashed rgba(188, 19, 254, 0.4);
-    pointer-events: none;
-  }
 }
 
+/* البطاقة: سطح داكن بتوهج بنفسجي علوي وحافة رقيقة — محاذاة للبداية بدل التوسيط */
 .hw2-step {
   position: relative;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
+  align-items: flex-start;
   gap: 10px;
-  padding: 34px 20px 22px;
-  margin-top: 22px;
+  padding: 22px 20px 20px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background:
+    radial-gradient(130% 75% at 50% 0%, rgba(188, 19, 254, 0.14), rgba(188, 19, 254, 0) 56%),
+    var(--surface);
+  transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+}
+.hw2-step:hover {
+  transform: translateY(-4px);
+  border-color: rgba(188, 19, 254, 0.45);
+  box-shadow: 0 16px 38px rgba(188, 19, 254, 0.16), 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hw2-step, .hw2-step:hover { transition: none; transform: none; }
 }
 
-/* دائرة رقم الخطوة — فوق حافة البطاقة على المسطّلة */
-.hw2-step-no {
+/* شعاع علوي متدرج يحدد رأس كل بطاقة */
+.hw2-step::before {
+  content: '';
   position: absolute;
-  top: -22px;
-  right: 50%;
-  transform: translateX(50%);
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: var(--bg);
-  border: 2px solid var(--accent);
-  color: var(--accent);
-  font-family: var(--font-head);
-  font-weight: 800;
-  font-size: 19px;
+  top: 0;
+  inset-inline: 16%;
+  height: 3px;
+  border-radius: 0 0 6px 6px;
+  background: linear-gradient(90deg, rgba(210, 77, 255, 0), #d24dff 30%, #bc13fe 70%, rgba(210, 77, 255, 0));
+}
+
+/* سهم يصل كل بطاقة باللي بعدها — ديسكتوب فقط (اتجاه الكلمة: من اليمين لليسار) */
+@media (min-width: 900px) {
+  .hw2-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    inset-inline-end: -16px;
+    margin-top: -6px;
+    width: 11px;
+    height: 11px;
+    border-top: 3px solid var(--accent);
+    border-left: 3px solid var(--accent);
+    border-radius: 2px;
+    transform: rotate(-45deg);
+    opacity: .6;
+    filter: drop-shadow(0 0 6px rgba(188, 19, 254, 0.6));
+  }
+}
+
+/* رأس البطاقة: أيقونة متدرجة يمين + رقم شبح محيطي يسار */
+.hw2-step-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 4px;
+}
+
+.hw2-step-ic {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
   display: grid;
   place-items: center;
-  box-shadow: 0 0 16px rgba(188, 19, 254, 0.28);
+  font-size: 21px;
+  color: #fff;
+  background: linear-gradient(135deg, #d24dff, #930fc6);
+  box-shadow: 0 6px 18px rgba(188, 19, 254, 0.35), inset 0 1px 8px rgba(255, 255, 255, 0.25);
 }
 
-.hw2-step-ic { font-size: 26px; color: var(--accent); margin-top: 2px; }
+/* رقم الخطوة: شبح كبير بنفسجي — حدود محيطية مع تعبئة باهتة احتياطية للمتصفحات القديمة */
+.hw2-step-no {
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-size: 46px;
+  line-height: 1;
+  color: rgba(188, 19, 254, 0.22);
+}
+@supports (-webkit-text-stroke: 1px red) {
+  .hw2-step-no { color: transparent; -webkit-text-stroke: 1.6px rgba(188, 19, 254, 0.6); }
+}
+
 .hw2-step-title {
   font-family: var(--font-head);
   font-weight: 800;
-  font-size: 17px;
+  font-size: 17.5px;
   color: var(--text);
   margin: 0;
 }
-.hw2-step-txt { font-size: 13.5px; color: var(--muted); margin: 0; line-height: 1.7; max-width: 30ch; }
+.hw2-step-txt { font-size: 13.5px; color: var(--muted); margin: 0; line-height: 1.7; }
 
-/* الشروط — عناصر بمسطّرات */
+/* الشروط — عناصر بمسطّرات (نفس فكرة المستخدم) */
 .hw2-conds {
   list-style: none;
-  margin: 0;
+  margin: 2px 0 0;
   padding: 0;
-  text-align: start;
   display: grid;
   gap: 7px;
   font-size: 13.5px;
@@ -227,10 +282,12 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  margin-top: auto;
 }
 .hw2-step-link:hover { color: var(--accent-hover); }
 
-.hw2-step .ds-btn { margin-top: auto; }
+/* زر البطاقة: بعرض البطاقة كاملة مثبت أسفلها */
+.hw2-step-btn { margin-top: auto; width: 100%; }
 
 @media (max-width: 480px) {
   .hw2-orb { width: min(220px, 58vw); }

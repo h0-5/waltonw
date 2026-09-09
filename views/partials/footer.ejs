@@ -160,8 +160,9 @@
         if (en.isIntersecting) {
           wrap.classList.add('drawn'); io.disconnect();
           setTimeout(function(){ wrap.classList.add('glow-start'); }, 3800);
-          // تفاعل بروز الحروف يُفتح بعد اكتمال وهج الحروف كله (~6.2ث): رسم 2.6 + كتابة 1.4 + وهج 12 حرفاً 2.4
-          setTimeout(function(){ wrap.classList.add('w5-ready'); }, 6300);
+          // تفاعل بروز الحروف يُفتح مبكراً بعد اكتمال الرسم بقليل (~4.2ث بدل 6.3ث):
+          // الانتظار الكامل كان يخلي الكلمة تبدو «ما تتفاعل» لمن يجرب فور نزوله للفوتر
+          setTimeout(function(){ wrap.classList.add('w5-ready'); }, 4200);
         }
       });
     }, { threshold: 0.2 });
@@ -169,7 +170,7 @@
   } else {
     wrap.classList.add('drawn');
     setTimeout(function(){ wrap.classList.add('glow-start'); }, 3800);
-    setTimeout(function(){ wrap.classList.add('w5-ready'); }, 6300);
+    setTimeout(function(){ wrap.classList.add('w5-ready'); }, 4200);
   }
   // الهاتف: إظهار التدرج كامل بدون قناع الماوس (إصلاح التشوه/الاختفاء)
   if (isTouch) {
@@ -203,7 +204,7 @@
   // تبقى أهداف الـ lerp (tX,tY) آخر نقطة داخل نطاق حرف، والإطارات المتبقية من الحلقة تعيد
   // إشراك الحرف بعد lift(-1) فبقى مائلاً للأبد (الحلقة حية ما دام حرف مرفوع) —
   // mouseleave يسلّح البوابة فيتجاهل tiltAt أي إطار متبقّي، وmousemove يعيد التسليح
-  var tX = 0, tY = 0, sX = 0, sY = 0, queued = false, wasInside = false, lastCx = '', lastCy = '', armed = true;
+  var tX = 0, tY = 0, sX = 0, sY = 0, queued = false, wasInside = false, lastCx = '', lastCy = '', armed = true, live = false, lastMove = 0;
   function kick(){ if (!queued) { queued = true; requestAnimationFrame(frame); } }
   function frame(){
     queued = false;
@@ -235,10 +236,20 @@
   }
   if (!isTouch) {
     card.addEventListener('mousemove', function(e){
+      var now = performance.now();
       armed = true;
-      tX = e.clientX; tY = e.clientY; kick();
+      tX = e.clientX; tY = e.clientY;
+      // إدخال نظيف بلا مسح متبقٍ (سبب «الحرف يدخل من فوق» المستمر): النقطة المنعّمة
+      // كانت تكمل من آخر موضع قديم (فوق الكلمة أو 0,0 عند التحميل) فحين تقترب من تحت
+      // يمرّ الميلان بالحروف من فوق كأنه يدخل من الجهة الخطأ — أول حركة بعد دخول
+      // البطاقة أو بعد توقف المؤشر تُلصق نقطة التنعيم بمكان المؤشر الحقيقي فالحرف
+      // يبدأ من الجهة التي اقترب منها فعلًا (من تحت = من تحت)
+      if (!live || now - lastMove > 120) { sX = tX; sY = tY; }
+      live = true; lastMove = now;
+      kick();
     }, { passive: true });
     card.addEventListener('mouseleave', function(){
+      live = false;
       if (wasInside) { wasInside = false; wrap.classList.remove('hovered'); }
     });
   }

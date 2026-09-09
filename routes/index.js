@@ -38,6 +38,16 @@ router.get('/', isAuthenticated, isInGuild, checkPageAccess('/'), async (req, re
   const storePreview = await safeQuery('SELECT id, name, price_points, price_money, category_type, description FROM fs_products ORDER BY id ASC LIMIT 2');
   const rulesPreview = await safeQuery('SELECT category, rule_text FROM rules ORDER BY sort_order ASC LIMIT 8');
 
+  /* شروط الانضمام — من صفحة التقديمات نفسها: حقل «المتطلبات» المحفوظ بتقديم Join Family
+     (نفس المصدر الذي تعرضه بطاقة التقديم بصفحة /applications). يفشل بأمان لقائمة فارغة
+     والواجهة تعرض البدائل الثابتة حين لا توجد متطلبات محفوظة */
+  const joinApps = await safeQuery('SELECT application_type, requirements FROM application_settings ORDER BY id ASC');
+  const joinSrc = joinApps.filter(function(a) { return a.application_type === 'Join Family' && (a.requirements || '').trim(); })[0]
+                || joinApps.filter(function(a) { return (a.requirements || '').trim(); })[0];
+  const joinReqs = joinSrc
+    ? joinSrc.requirements.split(/\r?\n/).map(function(s) { return s.trim(); }).filter(Boolean).slice(0, 6)
+    : [];
+
   /* نقاطي ورتبتي (للمسجّل فقط) — استعلامان صغيران بنمط صفحة البروفايل */
   let myStats = null;
   if (req.user) {
