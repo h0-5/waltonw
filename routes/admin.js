@@ -443,9 +443,10 @@ router.get('/roles', checkPermission('roles_config_view'), async (req, res) => {
 router.get('/rules', checkPermission('rules_view'), async (req, res) => {
   try {
     const [rules] = await db.execute('SELECT * FROM rules ORDER BY sort_order ASC, id ASC');
-    res.render('admin/rules', { title: 'إدارة القوانين', rules, currentPath: req.path });
+    const [categories] = await db.execute('SELECT * FROM rule_categories ORDER BY sort_order ASC, id ASC');
+    res.render('admin/rules', { title: 'إدارة القوانين', rules, categories, currentPath: req.path });
   } catch(err) {
-    res.render('admin/rules', { title: 'إدارة القوانين', rules: [], currentPath: req.path });
+    res.render('admin/rules', { title: 'إدارة القوانين', rules: [], categories: [], currentPath: req.path });
   }
 });
 

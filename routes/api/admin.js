@@ -421,6 +421,41 @@ router.delete('/rules/:id', checkPermission('rules_delete'), async (req, res) =>
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// Rule Categories API
+router.get('/rule-categories', checkPermission('rules_view'), async (req, res) => {
+  try {
+    const [cats] = await db.execute('SELECT * FROM rule_categories ORDER BY sort_order ASC, id ASC');
+    res.json(cats);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.post('/rule-categories', checkPermission('rules_add'), async (req, res) => {
+  try {
+    const { name, icon, sort_order } = req.body;
+    const [result] = await db.execute('INSERT INTO rule_categories (name, icon, sort_order) VALUES (?, ?, ?)', [name, icon || 'fa-gavel', sort_order || 0]);
+    res.json({ success: true, id: result.insertId });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.put('/rule-categories/:id', checkPermission('rules_add'), async (req, res) => {
+  try {
+    const { name, icon, sort_order } = req.body;
+    await db.execute('UPDATE rule_categories SET name=?, icon=?, sort_order=? WHERE id=?', [name, icon || 'fa-gavel', sort_order || 0, req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.delete('/rule-categories/:id', checkPermission('rules_delete'), async (req, res) => {
+  try {
+    const [cat] = await db.execute('SELECT name FROM rule_categories WHERE id = ?', [req.params.id]);
+    if (cat.length) {
+      await db.execute('UPDATE rules SET category = ? WHERE category = ?', ['أخرى', cat[0].name]);
+    }
+    await db.execute('DELETE FROM rule_categories WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // Discounts API
 router.post('/discounts', checkPermission('discounts_manage'), async (req, res) => {
   try {
