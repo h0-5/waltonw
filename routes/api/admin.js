@@ -36,6 +36,13 @@ router.post('/users/unban', checkPermission('users_ban'), async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+const ROLE_RANK = {
+  owner: 0, developer: 1, founder: 2, vice_founder: 3, chairman: 4,
+  present_member: 5, vice_president: 6, leadership: 7, family_member: 8,
+  admin: 9, moderator: 10, support: 11, member: 12, trial: 13, user: 14
+};
+function getRank(role) { return ROLE_RANK[role] !== undefined ? ROLE_RANK[role] : 99; }
+
 // ===== User Detail =====
 router.get('/users/:id', checkPermission('users_view'), async (req, res) => {
   try {
@@ -55,6 +62,22 @@ router.get('/users/:id', checkPermission('users_view'), async (req, res) => {
 router.patch('/users/:id', checkPermission('users_edit'), async (req, res) => {
   try {
     const { username, role, manageRole, eventManager, sideRoles, points } = req.body;
+    const targetId = parseInt(req.params.id);
+
+    // Self-promotion check
+    if (role !== undefined && req.user.id === targetId) {
+      return res.status(403).json({ error: 'لا يمكنك تغيير رتبتك بنفسك' });
+    }
+
+    // Role hierarchy check: can't promote to equal or higher role
+    if (role !== undefined) {
+      const myRank = getRank(req.user.role);
+      const targetNewRank = getRank(role);
+      if (targetNewRank <= myRank) {
+        return res.status(403).json({ error: 'لا يمكنك تعيين شخص في رتبة مساوية أو أعلى من رتبتك' });
+      }
+    }
+
     const updates = [];
     const params = [];
     if (username !== undefined) { updates.push('username = ?'); params.push(username); }
