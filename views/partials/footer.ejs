@@ -114,25 +114,15 @@
         <text class="ftv2-w3" x="50%" y="54" text-anchor="middle" textLength="421" lengthAdjust="spacingAndGlyphs" mask="url(#ftv2TextMask)"><tspan>W</tspan><tspan>a</tspan><tspan>l</tspan><tspan>t</tspan><tspan>o</tspan><tspan>n</tspan><tspan class="ftv2-sp"> </tspan><tspan>F</tspan><tspan>a</tspan><tspan>m</tspan><tspan>i</tspan><tspan>l</tspan><tspan>y</tspan></text>
         <!-- طبقة 4: وهج حرف-حرف بعد اكتمال المسحة — بنفس بنية الطبقات تماماً -->
         <text class="ftv2-w4" x="50%" y="54" text-anchor="middle" textLength="421" lengthAdjust="spacingAndGlyphs"><tspan>W</tspan><tspan>a</tspan><tspan>l</tspan><tspan>t</tspan><tspan>o</tspan><tspan>n</tspan><tspan class="ftv2-sp"> </tspan><tspan>F</tspan><tspan>a</tspan><tspan>m</tspan><tspan>i</tspan><tspan>l</tspan><tspan>y</tspan></text>
-        <!-- طبقة 5: بروز وتوهج أقوى للحرف الموجّه — حرف حرف بعناصر text مستقلة
-             (tspan لا يقبل transform لذا الحروف هنا عناصر مستقلة بقيم فتحات مأخوذة من الطبقات المرجعية نفسها:
-              getExtentOfChar بعد التشديد — تُخبز literal فلا أي حسابات وقت تشغيل)
-             لا تُفعّل إلا بعد اكتمال كل الأنميشنات (w5-ready) — تعمل بالماوس وباللمس معاً -->
-        <g class="ftv2-w5">
-          <text class="ftv2-w5i" x="45.82" y="54" text-anchor="middle" textLength="55.64" lengthAdjust="spacingAndGlyphs"><tspan>W</tspan></text>
-          <text class="ftv2-w5i" x="91.56" y="54" text-anchor="middle" textLength="35.82" lengthAdjust="spacingAndGlyphs"><tspan>a</tspan></text>
-          <text class="ftv2-w5i" x="117.71" y="54" text-anchor="middle" textLength="16.48" lengthAdjust="spacingAndGlyphs"><tspan>l</tspan></text>
-          <text class="ftv2-w5i" x="140.07" y="54" text-anchor="middle" textLength="28.25" lengthAdjust="spacingAndGlyphs"><tspan>t</tspan></text>
-          <text class="ftv2-w5i" x="173.17" y="54" text-anchor="middle" textLength="37.93" lengthAdjust="spacingAndGlyphs"><tspan>o</tspan></text>
-          <text class="ftv2-w5i" x="211.22" y="54" text-anchor="middle" textLength="38.17" lengthAdjust="spacingAndGlyphs"><tspan>n</tspan></text>
-          <text class="ftv2-w5i" x="262.59" y="54" text-anchor="middle" textLength="33.09" lengthAdjust="spacingAndGlyphs"><tspan>F</tspan></text>
-          <text class="ftv2-w5i" x="297.05" y="54" text-anchor="middle" textLength="35.82" lengthAdjust="spacingAndGlyphs"><tspan>a</tspan></text>
-          <text class="ftv2-w5i" x="341.41" y="54" text-anchor="middle" textLength="52.91" lengthAdjust="spacingAndGlyphs"><tspan>m</tspan></text>
-          <text class="ftv2-w5i" x="376.11" y="54" text-anchor="middle" textLength="16.48" lengthAdjust="spacingAndGlyphs"><tspan>i</tspan></text>
-          <text class="ftv2-w5i" x="392.59" y="54" text-anchor="middle" textLength="16.48" lengthAdjust="spacingAndGlyphs"><tspan>l</tspan></text>
-          <text class="ftv2-w5i" x="419.91" y="54" text-anchor="middle" textLength="38.17" lengthAdjust="spacingAndGlyphs"><tspan>y</tspan></text>
-        </g>
+        <!-- طبقة 5 (الانضغاط 3D) انتقلت لطبقة HTML فوق الـ SVG — .ftv2-w5 تحت هذا الـ svg —
+             لأن المتصفحات لا ترندر التحويلات المنظورية (rotateX/rotateY/perspective) على عناصر
+             SVG الداخلية أصلاً: كانت تُسطَّح أو تُهمل = كل نماذج الدوران السابقة ميتة بصرياً.
+             الحروف هنا عناصر HTML divs يبنيها JS بنفس إحداثيات الحروف المطبوعة (x/textLength
+             مأخوذة من getExtentOfChar بعد التشديد — مطابقة بكسل-بكسل) وكل حرف svg صغير
+             بنفس آلية textLength فيرندر بالحرف الأصلي تماماً، والتحويل المنظوري يتم على الـ div
+             (عنصر HTML كامل الأهلية للـ 3D) — تعمل بالماوس وباللمس معاً -->
       </svg>
+      <div class="ftv2-w5" id="ftv2W5" aria-hidden="true"></div>
     </div>
   </div>
 </footer>
@@ -142,6 +132,7 @@
   if (!svg) return;
   var wrap = svg.closest('.ftv2-word');
   var card = svg.closest('.ftv2-card');
+  var W5 = document.getElementById('ftv2W5');
   var maskG = document.getElementById('ftv2RevealMask');
   var isTouch = !window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   // ── طبقة الوهج الحرفي صارت ثابتة في الـ HTML بنفس بنية الطبقات الأخرى ──
@@ -241,63 +232,135 @@
       if (wasInside) { wasInside = false; wrap.classList.remove('hovered'); }
     });
   }
-  // ── انضغاط حروف Walton Family: نموذج «مفتاح يُكبس للداخل» — ماوس ولمس معاً ──
-  // · كل حرف نطاق لمس مُنفصل بفجوات ميتة بين الحروف: المؤشر في المسافة بين حرفين
-  //   لا يُشرك شيئاً إطلاقاً (طلب المستخدم: «لما يكون بنص ما يكون بأي انضغاط»)
-  // · الانضغاط تصغير موحّد نحو مركز الحرف (scale) — الحرف كله يُدفَع داخل الشاشة
-  //   بلا دوران ولا منظور: يستحيل هندسياً قراءة الحركة بالاتجاه المعاكس، ولا ينتفخ
-  //   أي جزء من الحرف نحو المستخدم (السبب الجذري لشكوى «بالجهة العكسية» المتكررة —
-  //   الدوران كان يغوص الجهة الملموسة ويدفع الجهة المقابلة للخارج فتُقرأ عكساً)
-  // · عمق الانضغاط أقصى بقلب الحرف ويتلاشى عند طرفي نطاق اللمس بسلاسة حتى الفجوة الميتة
-  // · التغطية العمودية كامل ارتفاع الكلمة: اللمس من فوق أو من تحت يُشرك الحرف بالقدر نفسه
-  // · كتابة واحدة مباشرة من حدث المؤشر (بلا حلقات ولا مطاردة)، والانتقال القصير
-  //   في CSS (0.16s) للنعومة فقط — الضغط يتبع الإصبع/الماوس لحظياً
-  if (!reduced) {
-    var MAXSINK = 0.18; // أقصى انضغاط: الحرف يصغر إلى 0.82 كأنه يُدفَع داخل الشاشة
-    var letters = svg.querySelectorAll('.ftv2-w5i');
-    var bands = [];
-    Array.prototype.forEach.call(letters, function(lt){
-      var x = parseFloat(lt.getAttribute('x'));
-      var tl = parseFloat(lt.getAttribute('textLength'));
-      var half = tl * 0.35; // قلب عرض الحرف ~70% فقط — ما بين الحروف فجوة ميتة بلا تفاعل
-      bands.push([x - half, x + half, x, half]); // [بداية، نهاية، المركز، نصف النطاق]
+  // ── انضغاط حروف Walton Family — منظور ثلاثي الأبعاد حقيقي — ماوس ولمس معاً ──
+  // · الحروف طبقة HTML فوق الكلمة: المتصفحات لا ترندر التحويلات المنظورية
+  //   (rotateX/rotateY/perspective) على عناصر SVG الداخلية — تُسطّح أو تُهمل،
+  //   ولهذا كانت كل نماذج «الدوران» السابقة على <text> ميتة أو مشوّهة بصرياً.
+  //   الحرف الآن div فوق الكلمة بداخله svg صغير بنفس آلية textLength — يطابق
+  //   الحرف المطبوع بكسل-بكسل، والمنظور يُطبّق على الـ div (عنصر HTML كامل الأهلية)
+  // · نموذج «المفتاح يُكبس» كما اعتُمد سابقاً: نطاقات منفصلة بقلب 70% من كل حرف
+  //   وفجوات ميتة بين الحروف (بين حرفين = صفر تفاعل)، وأقصى عمق بقلب الحرف
+  //   يتلاشى عند طرفي النطاق — والانضغاط نفسه صار منظورياً: جهة اللمس تغوص
+  //   داخل الشاشة بإشارات مدققة (rotateY موجب = اليمين يبتعد عن الناظر،
+  //   rotateX سالب = الأسفل يبتعد) + دفع translateZ للخلف + تصغير خفيف،
+  //   وقلب الحرف الأفقي = غوص مستقيم بلا أي ميلان
+  // · الضغط يُكتب مباشرة من حدث المؤشر بلا انتقال CSS على transform = لحظي
+  //   لا يُقرأ متأخراً ولا معكوساً، والإنشال حلقة decay أُسّية قصيرة (~150ms)
+  //   تتوقف ذاتياً — لا حلقات دائمة ولا مؤقتات خامل، أثر الأداء صفري بالسكون
+  if (!reduced && W5) {
+    var MAXR = 16, MAXRX = 13, HH = 34, MAXZ = 12, MAXSH = 0.05;
+    var NS = 'http://www.w3.org/2000/svg';
+    // [الحرف، مركز x، العرض المشدود (textLength)، مركز y البصري للصنف]
+    // المركز الرأسي لكل صنف: قبعة (W/F) 9.4–54 → 31.7 / وسط صغير 20.5–54 → 37.25 / نازل (y) 20.5–66.5 → 43.5
+    var CHARS = [
+      ['W', 45.82, 55.64, 31.7], ['a', 91.56, 35.82, 37.25], ['l', 117.71, 16.48, 37.25],
+      ['t', 140.07, 28.25, 37.25], ['o', 173.17, 37.93, 37.25], ['n', 211.22, 38.17, 37.25],
+      ['F', 262.59, 33.09, 31.7], ['a', 297.05, 35.82, 37.25], ['m', 341.41, 52.91, 37.25],
+      ['i', 376.11, 16.48, 37.25], ['l', 392.59, 16.48, 37.25], ['y', 419.91, 38.17, 43.5]
+    ];
+    var letters = [], bands = [];
+    CHARS.forEach(function(c){
+      var d = document.createElement('div');
+      d.className = 'ftv2-w5i';
+      var sv = document.createElementNS(NS, 'svg');
+      sv.setAttribute('viewBox', (c[1] - c[2] / 2) + ' 0 ' + c[2] + ' 100');
+      sv.setAttribute('preserveAspectRatio', 'none');
+      var tx = document.createElementNS(NS, 'text');
+      tx.setAttribute('x', c[1]); tx.setAttribute('y', '54');
+      tx.setAttribute('text-anchor', 'middle');
+      tx.setAttribute('textLength', c[2]);
+      tx.setAttribute('lengthAdjust', 'spacingAndGlyphs');
+      tx.textContent = c[0];
+      sv.appendChild(tx); d.appendChild(sv); W5.appendChild(d);
+      // محور الدوران بصرّ الحرف نفسه (وليس صندوقه الكامل) — انعكاس دقيق حول مركز الحرف
+      d.style.transformOrigin = '50% ' + c[3] + '%';
+      var half = c[2] * 0.35; // قلب عرض الحرف ~70% فقط — ما بين الحروف فجوة ميتة بلا تفاعل
+      letters.push({ el: d, cx: c[1], half: half, cy: c[3], rx: 0, ry: 0, tz: 0, s: 1 });
+      bands.push([c[1] - half, c[1] + half]);
     });
+    // تثبيت الحروف بالبكسل فوق حجز viewBox داخل صندوق الـ svg — preserveAspectRatio
+    // يوسّط المحتوى فيحجز هوامش، والمطابقة البكسلية تُحسب من نفس معادلة svgPoint
+    // وتُعاد عند أي تغيير مقاس (تلف/دوران الجهاز) — بلا قياسات أثناء التفاعل
+    function place(){
+      var r = svg.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      var s = Math.min(r.width / vbW, r.height / vbH);
+      var ox = (r.width - vbW * s) / 2, oy = (r.height - vbH * s) / 2;
+      for (var i2 = 0; i2 < letters.length; i2++) {
+        var c = CHARS[i2];
+        letters[i2].el.style.left = (ox + (c[1] - c[2] / 2) * s) + 'px';
+        letters[i2].el.style.width = (c[2] * s) + 'px';
+        letters[i2].el.style.top = oy + 'px';
+        letters[i2].el.style.height = (vbH * s) + 'px';
+      }
+    }
+    place();
+    if ('ResizeObserver' in window) new ResizeObserver(place).observe(svg);
+    else { window.addEventListener('resize', place); window.addEventListener('orientationchange', place); }
+
     var baseRows = [];
     // :not(.ftv2-sp) — tspan المسافة بين الكلمتين موجود بالطبقات الأربع لكنه بلا بطاقة
     // (ليس حرفاً) — الاستبعاد يبقي فهرسة baseRows متوافقة مع مصفوفة الحروف 1:1
     Array.prototype.forEach.call(['ftv2-w1', 'ftv2-w2', 'ftv2-w3', 'ftv2-w4'], function(cls){
       baseRows.push(svg.querySelector('.' + cls).querySelectorAll('tspan:not(.ftv2-sp)'));
     });
-    var cur = -1;
-    function lift(i, on){
-      for (var r2 = 0; r2 < 4; r2++) baseRows[r2][i].classList[on ? 'add' : 'remove']('ftv2-lift');
+    var cur = -1, decaying = null, rafId = 0;
+    function apply(L){
+      L.el.style.transform = 'perspective(340px) translateZ(' + L.tz.toFixed(2) + 'px) rotateX(' + L.rx.toFixed(2) + 'deg) rotateY(' + L.ry.toFixed(2) + 'deg) scale(' + L.s.toFixed(3) + ')';
     }
-    releaseAll = function(){
+    function setState(idx, on){
+      letters[idx].el.classList[on ? 'add' : 'remove']('ftv2-tilting');
+      for (var r2 = 0; r2 < 4; r2++) baseRows[r2][idx].classList[on ? 'add' : 'remove']('ftv2-lift');
+    }
+    function rest(L){ L.rx = L.ry = L.tz = 0; L.s = 1; L.el.style.transform = ''; }
+    function startDecay(idx){
+      var L = letters[idx];
+      if (Math.abs(L.rx) < 0.3 && Math.abs(L.ry) < 0.3 && Math.abs(L.tz) < 0.4 && Math.abs(1 - L.s) < 0.002) { rest(L); return; }
+      (decaying || (decaying = {}))[idx] = L;
+      if (!rafId) rafId = requestAnimationFrame(decayStep);
+    }
+    function decayStep(){
+      rafId = 0;
+      var live = false;
+      for (var k in decaying) {
+        var L = decaying[k];
+        L.rx *= 0.72; L.ry *= 0.72; L.tz *= 0.72; L.s = 1 - (1 - L.s) * 0.72;
+        if (Math.abs(L.rx) < 0.25 && Math.abs(L.ry) < 0.25 && Math.abs(L.tz) < 0.3 && Math.abs(1 - L.s) < 0.0015) {
+          rest(L); delete decaying[k];
+        } else { apply(L); live = true; }
+      }
+      if (live) rafId = requestAnimationFrame(decayStep);
+    }
+    function releaseActive(){
       if (cur < 0) return;
-      letters[cur].style.transform = '';
-      letters[cur].classList.remove('ftv2-tilting');
-      lift(cur, false);
+      setState(cur, false);
+      startDecay(cur);
       cur = -1;
-    };
+    }
     tiltAt = function(xSvg, ySvg){
-      if (isNaN(xSvg)) { releaseAll(); return; }
-      if (!wrap.classList.contains('w5-ready') || !(ySvg > 0 && ySvg < 100)) { releaseAll(); return; }
+      if (isNaN(xSvg)) { releaseActive(); return; }
+      if (!wrap.classList.contains('w5-ready') || !(ySvg > 0 && ySvg < 100)) { releaseActive(); return; }
       var hit = -1;
       for (var b = 0; b < bands.length; b++) {
         if (xSvg >= bands[b][0] && xSvg < bands[b][1]) { hit = b; break; }
       }
-      if (hit < 0) { releaseAll(); return; } // الفجوة الميتة بين الحروف: لا أي انضغاط
-      var bd = bands[hit];
-      // العمق: أقصاه بقلب الحرف ويصفر عند طرفي نطاق اللمس — يلتحم بالفجوة الميتة بلا قفزة
-      var depth = 1 - Math.min(1, Math.abs(xSvg - bd[2]) / bd[3]);
-      var k = 1 - MAXSINK * depth;
+      if (hit < 0) { releaseActive(); return; } // الفجوة الميتة بين الحروف: لا أي تفاعل
+      var L = letters[hit];
+      var ndx = (xSvg - L.cx) / L.half; if (ndx > 1) ndx = 1; else if (ndx < -1) ndx = -1;
+      var depth = 1 - Math.abs(ndx);
+      var i = depth * depth * (3 - 2 * depth); // أقصى عمق بقلب الحرف، صفر عند طرفي النطاق حتى يلتحم بالفجوة الميتة
+      var ndy = (ySvg - L.cy) / HH; if (ndy > 1) ndy = 1; else if (ndy < -1) ndy = -1;
+      L.ry =  MAXR  * ndx * i; // يمين القلب ← يمين الحرف يغوص للداخل
+      L.rx = -MAXRX * ndy * i; // تحت القلب ← أسفل الحرف يغوص للداخل
+      L.tz = -MAXZ  * i;
+      L.s  = 1 - MAXSH * i;
       if (hit !== cur) {
-        releaseAll();
+        releaseActive();
         cur = hit;
-        letters[cur].classList.add('ftv2-tilting');
-        lift(cur, true);
+        setState(hit, true);
+        if (decaying) delete decaying[hit];
       }
-      letters[cur].style.transform = 'scale(' + k.toFixed(3) + ')';
+      apply(L);
     };
     if (isTouch) {
       // اللمس: الإصبع بنفس النموذج بالضبط —
@@ -328,7 +391,7 @@
       svg.addEventListener('touchcancel', function(){ dropHold(); tiltAt(NaN, NaN); }, { passive: true });
     }
     // الديسكتوب: مغادرة البطاقة تُنشّل الانضغاط فوراً — مُدرَجة فوق في مستمع
-    // card mouseleave (بلا بوابة armed ولا حلقة متبقية: النموذج المباشر لا يعلق حرفاً)
+    // card mouseleave (النموذج المباشر لا يعلق حرفاً)
   }
 })();</script>
 

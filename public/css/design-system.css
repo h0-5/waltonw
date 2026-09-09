@@ -612,6 +612,18 @@ a.ds-card:hover, .ds-card-hover:hover {
   .ds-userbtn .ds-user-chev { display: none; }
   .navbar { gap: 10px; }
 }
+/* الهاتف: فك الزحام — عند 390px كانت الإجراءات الأربعة (☰ + بروفايل + إشعارات + درع الإدارة
+   ≈ 192px) + الشعار ونص Walton Family (≈ 171px) = 401px > 390px فعلاً = عناصر مدحوسة ببعضها
+   (صورة المستخدم). الحل:
+   · نص البراند يختفي ويبقى الختم التاجي وحده (40px) — يوفر ~115px
+   · زر درع الإدارة يختفي من الشريط — «الإدارة» موجودة أصلاً بدرج ☰ للطاقم — يوفر 50px
+   · فجوات الإجراءات 12→8px والمسافة من الزاوية 38→16px (تناسب شاشة الهاتف)
+   النتيجة عند 390px: ختم + ☰ + بروفايل + إشعارات = 230px من أصل 390 = فسحة مريحة بلا أي تلاصق */
+@media (max-width: 599px) {
+  .ds-brand-txt { display: none; }
+  .ds-adminbtn { display: none; }
+  .ds-actions { inset-inline-end: 16px; gap: 8px; }
+}
 @media (min-width: 1024px) {
   #mobileNav { display: none !important; }
 }

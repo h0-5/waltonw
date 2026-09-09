@@ -396,61 +396,68 @@
     100% { opacity: 1; stroke-width: var(--w4w); filter: drop-shadow(0 0 4px rgba(188, 19, 254, 0.45)); }
 }
 
-/* ── طبقة 5: انضغاط ثلاثي الأبعاد + توهج أقوى للحرف تحت المؤشر ──
-   تُفتح فقط بعد اكتمال كل الأنميشنات (w5-ready: رسم + كتابة + وهج الحروف)
-   — تعمل بالماوس وباللمس معاً (نفس التوجيه المركزي في JS الفوتر): نطاقات الحروف
-   محسوبة من إحداثياتها المطبوعة (x/textLength) والتغطية متصلة بلا فراغات،
-   وCSS يتكفل بالتوهج عبر كلاس ftv2-tilting الذي يضيفه JS للحرف الموجَّه —
-   transform/opacity فقط، بلا مكتبات ولا قياسات ثقيلة */
-.ftv2-w5 { pointer-events: none; }
+/* ── طبقة 5: انضغاط ثلاثي الأبعاد حقيقي + توهج أقوى للحرف تحت المؤشر ──
+   طبقة HTML فوق الـ svg: المتصفحات لا ترندر التحويلات المنظورية (rotateX/rotateY/
+   perspective) على عناصر SVG الداخلية — تُسطَّح أو تُهمل — ولهذا انتقلت الحروف
+   لعناصر div (كاملة الأهلية للـ 3D في كل المتصفحات) يبنيها JS فوق الحروف المطبوعة
+   بالبكسل، وكل div بداخله svg صغير بنفس آلية textLength فيطابق الحرف الأصلي.
+   تُفتح فقط بعد اكتمال الأنميشنات (w5-ready) — تعمل بالماوس وباللمس معاً،
+   transform يكتبه JS مباشرة من الحدث (بلا transition على transform = لحظي لا
+   يُقرأ متأخراً ولا معكوساً)، والوهج/الشفافية عبر كلاس ftv2-tilting */
+.ftv2-w5 {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none; /* الكشف بإحداثيات المؤشر من مستمع البطاقة — الطبقة شفافة كلياً */
+}
 
 .ftv2-w5i {
-    stroke: url(#ftv2TextGradient);
-    stroke-width: 1.15;
-    fill: transparent;
+    position: absolute;
+    top: 0;
+    height: 100%;
     opacity: 0;
-    transform-box: fill-box;
-    transform-origin: center;
-    /* إصلاح حرج: pointer-events يورَّث «none» من المجموعة ftv2-w5 — بدون هذه السطر
-       الحروف لا تستقبل التحويم إطلاقاً حتى على كمبيوتر حقيقي (المجموعة نفسها تبقى شفافة للتمرير) */
-    pointer-events: auto;
-    /* عند الإنشاءل يرجع scale إلى 1 بنفس الانتقال القصير، وعند الانتقال لحرف ثانٍ
-       يُكتب scale الجديد فوراً بلا انتقال مزدوج (الكتابة من الحدث مباشرة) */
-    /* ⚠️ transform بـ transition قصير 0.16s (نموذج «المفتاح يُكبس للداخل»):
-       JS يكتب scale مباشرة من حدث المؤشر (بلا حلقات ولا مطاردة)، والانتقال القصير
-       ينعّم الضغط والإنشال معاً — تأخره أقل من إطارين فلا يُقرأ تأخراً ولا اتجاهاً معاكساً.
-       (القديم: transition نابض 0.45s + كتابة كل إطار من حلقة lerp = تأخر ~300ms بتجاوز
-       معاكس كان يُقرأ انضغاط بالجهة العكسية — شكوى مستمرة انتهت بنموذج scale المباشر) */
-    transition: transform 0.16s ease-out,
-                opacity 0.22s ease,
-                filter 0.28s ease,
-                stroke-width 0.25s ease,
-                fill 0.28s ease;
-    filter: drop-shadow(0 0 0 rgba(210, 77, 255, 0));
+    pointer-events: none; /* لا تعترض أي نقرة/تمرير — كل التفاعل إحداثي من JS */
     will-change: transform, opacity;
-    cursor: default;
+    transition: opacity 0.22s ease,
+                filter 0.28s ease;
+    filter: drop-shadow(0 0 0 rgba(210, 77, 255, 0));
     /* اللمس: بلا وميض أزرق عند النقر على الحروف */
     -webkit-tap-highlight-color: transparent;
 }
 
-/* قبل الجاهزية الكاملة: لا التقاط مؤشر إطلاقاً */
-.ftv2-word:not(.w5-ready) .ftv2-w5i { pointer-events: none; }
+/* الحرف داخل الـ div: svg صغير بحجز الحرف نفسه — يرندر بالخط والتشديد نفسه
+   فيطابق الحرف المطبوع بالطبقات الأربع بكسل-بكسل */
+.ftv2-w5i svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: visible;
+}
+
+.ftv2-w5i text {
+    stroke: url(#ftv2TextGradient);
+    stroke-width: 1.15;
+    fill: transparent;
+    transition: stroke-width 0.25s ease,
+                fill 0.28s ease;
+}
+
+/* قبل الجاهزية الكاملة: لا تفعيل إطلاقاً (قاعدة احتياطية فوق أي حالة) */
+.ftv2-word:not(.w5-ready) .ftv2-w5i { opacity: 0 !important; }
 
 /* أثناء الانضغاط (الحرف تحت المؤشر): الحالة البصرية كاملة (وهج + تعبئة زجاجية)
-   تُدار بهذا الكلاس بدل :hover حتى يشتغل الوهج حتى لو المؤشر بين الحروف أو على حافة
-   النطاق لا على رسم الحرف نفسه، والانضغاط نفسه scale يكتبه JS مباشرة من الحدث
-   مع transition قصير، وعند الخروج يُزال الكلاس ويرجع الحرف لمكانه بنعومة */
+   تُدار بهذا الكلاس الذي يضيفه JS للحرف الموجَّه، والانضغاط المنظوري نفسه
+   (perspective/rotateX/rotateY/translateZ/scale) يكتبه JS مباشرة من الحدث */
 .ftv2-w5i.ftv2-tilting {
     opacity: 1;
-    stroke-width: 1.7;
-    fill: rgba(210, 77, 255, 0.12);
     filter: drop-shadow(0 0 6px rgba(210, 77, 255, 1))
             drop-shadow(0 0 24px rgba(188, 19, 254, 0.7))
             drop-shadow(0 3px 12px rgba(0, 0, 0, 0.5));
-    transition: opacity 0.22s ease,
-                filter 0.28s ease,
-                stroke-width 0.25s ease,
-                fill 0.28s ease;
+}
+
+.ftv2-w5i.ftv2-tilting text {
+    stroke-width: 1.7;
+    fill: rgba(210, 77, 255, 0.12);
 }
 
 /* إخفاء ناعم لنسخ الطبقات الأساسية للحرف المرفوع — الحرف ينطلق كله كبطاقة واحدة
@@ -465,20 +472,6 @@
 
 .ftv2-word.w5-ready tspan.ftv2-lift {
     opacity: 0 !important;
-}
-
-@media (hover: hover) and (pointer: fine) {
-    .ftv2-word.w5-ready .ftv2-w5i:hover {
-        opacity: 1;
-        /* لا transform هنا عمداً (نموذج «الانضغاط للداخل»): CSS لا يعرف موضع المؤشر
-           داخل الحرف فلا يستطيع حساب اتجاه الضغط — الميلان للداخل يديره JS فقط،
-           والوهج + التعبئة الزجاجية هنا احتياط عند المرور المباشر على رسم الحرف */
-        stroke-width: 1.7;
-        fill: rgba(210, 77, 255, 0.12);
-        filter: drop-shadow(0 0 6px rgba(210, 77, 255, 1))
-                drop-shadow(0 0 24px rgba(188, 19, 254, 0.7))
-                drop-shadow(0 3px 12px rgba(0, 0, 0, 0.5));
-    }
 }
 
 /* أجهزة اللمس: طبقة الانضغاط تعمل أيضاً — النقرة أو التمرير يضغط الحروف عبر JS
@@ -531,6 +524,10 @@
 
     .ftv2-w2 { stroke: rgba(var(--ftp-rgb), 0.7); }
     .ftv2-w1 { display: none; }
+
+    /* الحرف المنضغط بالهاتف: وسادة أوضح قليلاً لمطابقة تكبير سماكة الطبقات بالموبايل */
+    .ftv2-w5i text { stroke-width: 1.35; }
+    .ftv2-w5i.ftv2-tilting text { stroke-width: 1.9; }
 }
 
 @media (max-width: 360px) {
@@ -549,8 +546,7 @@
     .ftv2-word .ftv2-w3 { opacity: 1; }
     .ftv2-word .ftv2-w4 { opacity: 1; }
     .ftv2-word .ftv2-w4 tspan { animation: none; opacity: 1; filter: none; }
-    .ftv2-w5i { transition: none; }
-    .ftv2-word.w5-ready .ftv2-w5i:hover { transform: none; } /* توهج بلا حركة من يفضّل تقليلها */
+    .ftv2-w5i, .ftv2-w5i text { transition: none; }
     .ftv2-pulse { animation: none; }
     .ftv2-link,
     .ftv2-w1 { transition: none; }
