@@ -151,27 +151,8 @@
 }
 .hx-cta .ds-btn-primary:hover { transform: translateY(-2px); }
 
-/* سهم النزول */
-.hx-scrollhint {
-  position: absolute;
-  bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2;
-  width: 38px; height: 38px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  border: 1px solid rgba(210, 77, 255, 0.35);
-  color: var(--accent-hover);
-  background: rgba(188, 19, 254, 0.08);
-  animation: hx-bob 2.4s ease-in-out infinite;
-}
-.hx-scrollhint:hover { border-color: var(--accent); color: #fff; }
-@keyframes hx-bob {
-  0%, 100% { transform: translate(-50%, 0); }
-  50%      { transform: translate(-50%, 7px); }
-}
+/* سهم النزول (hx-scrollhint) حُذف كلياً بطلب المستخدم — كان ينغرس نصفه خلف بطاقة
+   الإحصائيات فيبرز قوسه فوق حدود البطاقة ويظهر شبحه عبر خلفيتها الشبه شفافة */
 
 /* ══════════════════ شريط الإحصائيات ══════════════════ */
 .hx-statsband {
@@ -615,7 +596,6 @@
   .hx-ctasec { padding-block: 16px 44px; }
   .hx-banner { padding: 38px 18px; border-radius: 20px; }
   .hx-banner-ic { width: 50px; height: 50px; font-size: 20px; }
-  .hx-scrollhint { display: none; }
 }
 @media (max-width: 480px) {
   .hx-orb { width: min(180px, 52vw); }
@@ -626,7 +606,7 @@
 /* ══════════════════ احترام تقليل الحركة ══════════════════ */
 @media (prefers-reduced-motion: reduce) {
   .hx-page .wf-reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
-  .hx-orb-ring, .hx-orb-glow, .hx-grad, .hx-eyebrow-dot, .hx-scrollhint, .hx-card-media img { animation: none !important; }
+  .hx-orb-ring, .hx-orb-glow, .hx-grad, .hx-eyebrow-dot, .hx-card-media img { animation: none !important; }
   .hx-page .wf-reveal,
   .hx-card, .hx-step, .hx-card-media img, .hx-card-go { transition: none !important; }
 }
