@@ -21,6 +21,18 @@ async function getSettings() {
   return settings;
 }
 
+// Test banned page (temp route - remove after testing)
+router.get('/test-banned', (req, res) => {
+  res.render('pages/banned', {
+    title: 'محظور',
+    username: 'TestUser#1234',
+    banReason: 'انتهاك قوانين المجتمع - سلوك غير لائق',
+    bannedAt: new Date(Date.now() - 86400000).toISOString(),
+    bannedUntil: null,
+    bannedBy: 'Admin'
+  });
+});
+
 // Home
 router.get('/', isAuthenticated, isInGuild, checkPageAccess('/'), async (req, res) => {
   const settings = await getSettings();
