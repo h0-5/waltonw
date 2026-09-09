@@ -801,18 +801,6 @@ router.get('/broadcast', checkPermission('broadcast_send'), async (req, res) => 
   res.render('admin/broadcast', { title: 'البث', currentPath: req.path });
 });
 
-// About Content
-router.get('/about', checkPermission('about_view'), async (req, res) => {
-  try {
-    const about = {};
-    const [rows] = await db.execute('SELECT content_key, content_value FROM about_us_content');
-    rows.forEach(r => { about[r.content_key] = r.content_value; });
-    res.render('admin/about', { title: 'صفحة من نحن', about, currentPath: req.path });
-  } catch(err) {
-    res.render('admin/about', { title: 'صفحة من نحن', about: {}, currentPath: req.path });
-  }
-});
-
 // Properties Management
 router.get('/properties', checkPermission('properties_view'), async (req, res) => {
   try {

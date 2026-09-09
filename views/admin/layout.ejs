@@ -146,11 +146,6 @@
       </a>
       <% } %>
       <div class="nav-section-title">النظام</div>
-      <% if (_canAccess('about_view')) { %>
-      <a href="/admin/about" class="nav-item<%= _admPath === '/admin/about' ? ' active' : '' %>">
-        <i class="fas fa-info-circle"></i><span>صفحة من نحن</span>
-      </a>
-      <% } %>
       <% if (_canAccess('site_settings_view')) { %>
       <a href="/admin/settings" class="nav-item<%= _admPath === '/admin/settings' ? ' active' : '' %>">
         <i class="fas fa-cog"></i><span>الإعدادات</span>
