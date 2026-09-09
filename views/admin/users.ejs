@@ -19,7 +19,7 @@
 .users-table .banned td{opacity:.7}
 .user-td-avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--ac)}
 .user-td-name{font-weight:700}
-.user-td-role{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700}
+.user-td-role{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;line-height:1}
 .user-td-id{color:var(--text-dim);font-size:12px;font-family:monospace}
 .user-td-email{color:var(--text-dim);font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .user-td-date{color:var(--text-dim);font-size:11px;white-space:nowrap}
@@ -82,7 +82,9 @@
     </tr>
   </thead>
   <tbody>
+    <% var rolesMap = {}; roles.forEach(r => { rolesMap[r.name] = r; }); %>
     <% users.forEach(u => { %>
+      <% var rObj = rolesMap[u.role] || { color: '#6b7280', display_name: u.role, icon: 'fa-user' }; %>
       <tr class="<%= u.is_banned ? 'banned' : '' %>" data-search="<%= (u.username||'').toLowerCase() %> <%= u.id %> <%= (u.email||'').toLowerCase() %>">
         <td style="width:40px;text-align:center"><code style="color:var(--ac);font-size:11px">#<%= u.id %></code></td>
         <td>
@@ -94,7 +96,7 @@
             </div>
           </div>
         </td>
-        <td><span class="user-td-role" style="background:<%= u.role === 'owner' ? '#ef4444' : u.role === 'admin' ? '#f97316' : u.role === 'moderator' ? '#eab308' : u.role === 'support' ? '#22c55e' : '#6b7280' %>20;color:<%= u.role === 'owner' ? '#ef4444' : u.role === 'admin' ? '#f97316' : u.role === 'moderator' ? '#eab308' : u.role === 'support' ? '#22c55e' : '#6b7280' %>"><%= u.role %></span></td>
+        <td><span class="user-td-role" style="background:<%= rObj.color %>18;color:<%= rObj.color %>;border:1px solid <%= rObj.color %>30"><i class="fas <%= rObj.icon || 'fa-user' %>" style="margin-left:4px"></i><%= rObj.display_name || u.role %></span></td>
         <td style="font-weight:700;color:var(--ac)"><i class="fas fa-coins" style="font-size:10px"></i> <%= u.points || u.total_game_points || 0 %></td>
         <td>
           <div class="user-td-flags">
