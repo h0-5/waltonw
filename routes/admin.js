@@ -314,7 +314,7 @@ router.get('/settings', checkPermission('site_settings_view'), async (req, res) 
 });
 
 // Admin Profile Page
-router.get('/profile', async (req, res) => {
+router.get('/profile', isAuthenticated, async (req, res) => {
   try {
     if (!req.user || !['owner','admin','moderator','support'].includes(req.user.role)) {
       return res.redirect('/admin');
@@ -389,7 +389,7 @@ router.get('/profile', async (req, res) => {
 });
 
 // View another admin's profile
-router.get('/profile/:userId', async (req, res) => {
+router.get('/profile/:userId', isAuthenticated, async (req, res) => {
   try {
     if (!req.user || !['owner','admin','moderator','support'].includes(req.user.role)) {
       return res.redirect('/admin');
