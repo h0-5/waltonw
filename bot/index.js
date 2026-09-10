@@ -30,6 +30,7 @@ const PREFIX = process.env.PREFIX || '!';
 
 if (!TOKEN) {
   console.error('❌ BOT_TOKEN is required in .env');
+  console.error('Available env vars:', Object.keys(process.env).filter(k => k.includes('BOT') || k.includes('TOKEN') || k.includes('GUILD') || k.includes('DB')).join(', ') || 'NONE found');
   process.exit(1);
 }
 
