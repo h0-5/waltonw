@@ -527,18 +527,20 @@ html { scroll-behavior: smooth; }
     font-weight: 700;
     color: var(--wr-text-dim);
 }
-/* صف المراحل: بطاقات جنب بعض — flex يتكيف مع أي عدد من المراحل */
+/* صف المراحل: بطاقات جنب بعض — حجم البطاقة ثابت مهما زاد/نقص العدد (الزيادة تلف لصف ثانٍ) */
 .wl-stages {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     gap: 16px;
     max-width: 1240px;
     margin: 0 auto;
     align-items: stretch;
 }
-/* ── بطاقة المرحلة: أيقونة + المرحلة N: + الاسم + صندوق وصف داخلي (مثل الصورة المرجعية) ── */
+/* ── بطاقة المرحلة: أيقونة + المرحلة N: + الاسم + صندوق وصف داخلي (مثل الصورة المرجعية) ──
+   flex: 0 0 = لا تتمدد ولا تتقلص — العرض ثابت 232px (5 بكل صف على 1240px) */
 .ws-card {
-    flex: 1 1 232px;
+    flex: 0 0 232px;
     min-width: 0;
     display: flex;
     flex-direction: column;
@@ -715,7 +717,7 @@ html { scroll-behavior: smooth; }
     /* المراحل على الهاتف: بطاقة واحدة بكل صف للقراءة المريحة */
     .wr-ladder { padding: 1.4rem 0.85rem 0; scroll-margin-top: 74px; }
     .wl-stages { gap: 11px; }
-    .ws-card { padding: 1.1rem 1rem 1.05rem; border-radius: 17px; }
+    .ws-card { flex: 1 1 100%; padding: 1.1rem 1rem 1.05rem; border-radius: 17px; }
     .ws-ico { width: 46px; height: 46px; border-radius: 14px; font-size: 1.1rem; }
     .ws-name { font-size: 1.05rem; }
     .ws-kicker { font-size: 0.72rem; }

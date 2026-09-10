@@ -138,6 +138,49 @@
     <% } else { %>
       <div class="empty-msg"><i class="fas fa-folder-open" style="font-size:2rem;display:block;margin-bottom:8px;opacity:.4"></i> لا توجد أقسام. أضف قسم أولاً.</div>
     <% } %>
+
+    <%
+      /* قوانين بلا قسم: تصنيفها ما يطابق أي قسم موجود (بقايا النظام القديم اللي كان ينقل قوانين
+         القسم المحذوف إلى «أخرى») — تُعرض هنا حتى تديرها/تحذفها، وصفحة القوانين تعرضها بقسم «أخرى» لحين تنحذف */
+      var wrOrphans = rules.filter(function(r) {
+        var c = (r.category || '').toString();
+        return !c || !categories.some(function(cc) { return cc.name === c; });
+      });
+    %>
+    <% if (wrOrphans.length) { %>
+    <div class="cat-section" id="orphanRulesSection" style="border-color:rgba(248,113,113,.3)">
+      <div class="cat-header">
+        <div class="cat-icon" style="color:#f87171;background:rgba(248,113,113,.12)"><i class="fas fa-box-archive"></i></div>
+        <h3>قوانين بلا قسم</h3>
+        <span class="cat-count"><%= wrOrphans.length %> قوانين</span>
+      </div>
+      <p class="stages-hint"><i class="fas fa-triangle-exclamation" style="color:#f87171"></i> قوانين قسمها انحذف قديماً (كانت تُنقل تلقائياً لقسم «أخرى») — احذفها من هنا وبتختفي من صفحة القوانين، ومن الآن حذف القسم يحذف قوانينه معه</p>
+      <div>
+        <% wrOrphans.forEach(function(rule, ri) { %>
+          <div class="rule-card" id="rule-card-<%= rule.id %>">
+            <span class="rule-num"><%= ri + 1 %></span>
+            <span class="rule-text" id="rule-display-<%= rule.id %>"><%= rule.rule_text || rule.content || '' %></span>
+            <span class="rule-order">#<%= rule.sort_order || 0 %></span>
+            <div class="rule-actions" id="rule-actions-<%= rule.id %>">
+              <% if (ri > 0) { %><button class="sm-btn" onclick="moveRule(<%= rule.id %>, 'up')" title="تحريك لأعلى"><i class="fas fa-arrow-up"></i></button><% } %>
+              <% if (ri < wrOrphans.length - 1) { %><button class="sm-btn" onclick="moveRule(<%= rule.id %>, 'down')" title="تحريك لأسفل"><i class="fas fa-arrow-down"></i></button><% } %>
+              <button class="sm-btn edit" onclick="editRuleInline(<%= rule.id %>)" title="تعديل"><i class="fas fa-pen"></i></button>
+              <button class="sm-btn del" onclick="deleteRule(<%= rule.id %>)" title="حذف"><i class="fas fa-trash"></i></button>
+            </div>
+          </div>
+          <div class="rule-card editing" id="rule-edit-<%= rule.id %>" style="display:none">
+            <span class="rule-num"><%= ri + 1 %></span>
+            <div class="inline-edit" style="flex:1">
+              <textarea class="form-textarea" id="rule-edit-text-<%= rule.id %>" rows="2"><%= rule.rule_text || rule.content || '' %></textarea>
+              <input type="number" class="form-input" id="rule-edit-sort-<%= rule.id %>" value="<%= rule.sort_order || 0 %>" style="max-width:60px">
+              <button class="sm-btn save" onclick="saveRule(<%= rule.id %>)"><i class="fas fa-check"></i></button>
+              <button class="sm-btn cancel" onclick="cancelEditRule(<%= rule.id %>)"><i class="fas fa-times"></i></button>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+    <% } %>
   </div>
 
   <!-- ═══ مراحل العقوبات — نظام مستقل تماماً عن القوانين والأقسام (فصل بطلب المستخدم) ═══ -->
@@ -286,7 +329,7 @@ async function saveCat(id) {
 }
 
 async function deleteCat(id) {
-  if (!confirm('حذف هذا القسم؟ القوانين هتنقل لقسم "أخرى"')) return;
+  if (!confirm('حذف هذا القسم؟ كل القوانين اللي داخله راح تنحذف معه وما تنرجع')) return;
   var res = await fetch('/api/admin/rule-categories/' + id, { method:'DELETE' });
   var r = await res.json();
   if (r.success) { showToast('تم الحذف'); location.reload(); } else alert(r.error || 'خطأ');

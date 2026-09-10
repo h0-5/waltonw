@@ -436,7 +436,12 @@ router.post('/rule-categories', checkPermission('rules_add'), async (req, res) =
 router.put('/rule-categories/:id', checkPermission('rules_add'), async (req, res) => {
   try {
     const { name, icon, sort_order } = req.body;
+    const [old] = await db.execute('SELECT name FROM rule_categories WHERE id = ?', [req.params.id]);
     await db.execute('UPDATE rule_categories SET name=?, icon=?, sort_order=? WHERE id=?', [name, icon || 'fa-gavel', sort_order || 0, req.params.id]);
+    // إعادة التسمية تحدّث قوانين القسم معها — وإلا تصير يتيمة بلا قسم (نفس مشكلة «أخرى»)
+    if (old.length && old[0].name !== name) {
+      await db.execute('UPDATE rules SET category = ? WHERE category = ?', [name, old[0].name]);
+    }
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -445,7 +450,8 @@ router.delete('/rule-categories/:id', checkPermission('rules_delete'), async (re
   try {
     const [cat] = await db.execute('SELECT name FROM rule_categories WHERE id = ?', [req.params.id]);
     if (cat.length) {
-      await db.execute('UPDATE rules SET category = ? WHERE category = ?', ['أخرى', cat[0].name]);
+      // حذف القسم يحذف قوانينه معه (طلب المستخدم: ما يبغاها تنقل لقسم «أخرى»)
+      await db.execute('DELETE FROM rules WHERE category = ?', [cat[0].name]);
     }
     await db.execute('DELETE FROM rule_categories WHERE id = ?', [req.params.id]);
     res.json({ success: true });
