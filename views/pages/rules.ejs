@@ -38,11 +38,11 @@
   }
   /* ===== مراحل العقوبات: نظام مستقل تماماً عن القوانين — من جدول rule_stages مع fallback ثابت ===== */
   var wrStages = (typeof stages !== 'undefined' && stages && stages.length) ? stages : [
-    { title: 'تحذير',     icon: 'fa-triangle-exclamation',        description: 'المخالفة الأولى: تنبيه رسمي يُسجّل في الأرشيف — تكرار المخالفة يوصلك للمرحلة التالية' },
-    { title: 'ميوت',      icon: 'fa-volume-xmark',                description: 'المخالفة الثانية: كتم من المحادثات مدة تتراوح بين ساعة وسبعة أيام حسب نوع المخالفة' },
-    { title: 'طرد مؤقت',  icon: 'fa-person-walking-arrow-right',  description: 'المخالفة الثالثة: طرد من السيرفر مؤقتاً مع بقاء سجل المخالفات محفوظاً بالكامل' },
-    { title: 'حظر مؤقت',  icon: 'fa-gavel',                       description: 'المخالفة الرابعة: حظر مؤقت من السيرفر لمدة تحددها الإدارة حسب جسامة المخالفة' },
-    { title: 'حظر دائم',  icon: 'fa-ban',                         description: 'المخالفة الخامسة: حظر نهائي من المجتمع — قرار الطاقم في هذه المرحلة نهائي' }
+    { title: 'تحذير',     icon: 'fa-triangle-exclamation',        description: 'تنبيه رسمي يُسجّل في الأرشيف — تكرار المخالفة يوصلك للمرحلة التالية' },
+    { title: 'ميوت',      icon: 'fa-volume-xmark',                description: 'كتم من المحادثات مدة تتراوح بين ساعة وسبعة أيام حسب نوع المخالفة' },
+    { title: 'طرد مؤقت',  icon: 'fa-person-walking-arrow-right',  description: 'طرد من السيرفر مؤقتاً مع بقاء سجل المخالفات محفوظاً بالكامل' },
+    { title: 'حظر مؤقت',  icon: 'fa-gavel',                       description: 'حظر مؤقت من السيرفر لمدة تحددها الإدارة حسب جسامة المخالفة' },
+    { title: 'حظر دائم',  icon: 'fa-ban',                         description: 'حظر نهائي من المجتمع — قرار الطاقم في هذه المرحلة نهائي' }
   ];
   /* لون المرحلة يُكشف من عنوانها — الترتيب مهم: «دائم» قبل «حظر» */
   var wsLv = function(t) {
@@ -55,7 +55,8 @@
     return 0;
   };
   var wrOrd = ['الأولى','الثانية','الثالثة','الرابعة','الخامسة','السادسة','السابعة','الثامنة','التاسعة','العاشرة'];
-  var wsOrd = function(n) { return n <= 10 ? wrOrd[n - 1] : String(n); };
+  /* تسمية المرحلة تلقائية من موقعها: الأولى تنبيه رسمي (ليست مخالفة) ثم مخالفة أولى/ثانية/الخ */
+  var wsKicker = function(n) { return n === 1 ? 'تنبيه رسمي' : 'مخالفة ' + (n - 1 <= 10 ? wrOrd[n - 2] : String(n - 1)); };
   var wrTotal = 0;
   wrOrder.forEach(function(c) { wrTotal += wrGrouped[c].length; });
   var wrPad = function(n) { return (n < 10 ? '0' : '') + n; };
@@ -149,7 +150,7 @@
         <div class="ws-top">
           <span class="ws-ico"><i class="fas <%= st.icon || 'fa-flag' %>"></i></span>
           <div class="ws-head">
-            <span class="ws-kicker">المرحلة <%= wsOrd(si + 1) %>:</span>
+            <span class="ws-kicker"><%= wsKicker(si + 1) %>:</span>
             <h3 class="ws-name"><%= st.title %></h3>
           </div>
         </div>

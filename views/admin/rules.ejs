@@ -150,14 +150,14 @@
         <button class="big-btn primary" onclick="toggleNewStageForm()"><i class="fas fa-plus"></i> مرحلة جديدة</button>
       </div>
     </div>
-    <p class="stages-hint"><i class="fas fa-circle-info"></i> نظام مستقل عن القوانين والأقسام — ترتيب المراحل هنا هو ترتيب عرضها بصفحة القوانين (جنب بعض)، ولون كل مرحلة يتحدد تلقائياً من عنوانها (تحذير/ميوت/طرد/حظر/دائم)</p>
+    <p class="stages-hint"><i class="fas fa-circle-info"></i> نظام مستقل عن القوانين والأقسام — ترتيب المراحل هنا هو ترتيب عرضها بصفحة القوانين (جنب بعض)، ولون كل مرحلة يتحدد تلقائياً من عنوانها (تحذير/ميوت/طرد/حظر/دائم) — والتسمية تلقائية حسب الترتيب: الأولى تنبيه رسمي ثم مخالفة أولى/ثانية/الخ</p>
 
     <div class="new-cat-form" id="newStageForm">
       <div class="form-row">
         <div class="form-group"><label>عنوان المرحلة</label><input type="text" class="form-input" id="newStageTitle" placeholder="مثال: تحذير"></div>
         <div class="form-group"><label>الأيقونة</label><input type="text" class="form-input" id="newStageIcon" placeholder="fa-flag" value="fa-flag"></div>
       </div>
-      <div class="form-group"><label>وصف المرحلة</label><textarea class="form-textarea" id="newStageDesc" rows="2" placeholder="مثال: المخالفة الأولى: تنبيه رسمي يُسجّل في الأرشيف"></textarea></div>
+      <div class="form-group"><label>وصف المرحلة</label><textarea class="form-textarea" id="newStageDesc" rows="2" placeholder="مثال: تنبيه رسمي يُسجّل في الأرشيف"></textarea></div>
       <div style="display:flex;gap:8px">
         <button class="big-btn primary" onclick="saveNewStage()"><i class="fas fa-save"></i> حفظ</button>
         <button class="big-btn secondary" onclick="toggleNewStageForm()">إلغاء</button>
