@@ -255,19 +255,19 @@
 .ftv2-cr-badge {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.32rem 0.85rem;
-    border-radius: 20px;
+    gap: 0.45rem;
+    padding: 0.42rem 1.05rem;
+    border-radius: 22px;
     background: rgba(var(--ftp-rgb), 0.07);
     border: 1px solid rgba(var(--ftp-rgb), 0.25);
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 0.66rem;
-    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.82rem;
+    font-weight: 700;
 }
 
 .ftv2-lock {
-    font-size: 0.55rem;
-    color: rgba(var(--ftp-rgb), 0.6);
+    font-size: 0.72rem;
+    color: rgba(var(--ftp-rgb), 0.85);
 }
 
 .ftv2-dev {
