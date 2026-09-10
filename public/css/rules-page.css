@@ -71,22 +71,6 @@ html { scroll-behavior: smooth; }
 }
 .wr-page .wf-reveal.visible { opacity: 1; transform: translateY(0); }
 
-/* ── كرات الكروم الزخرفية — ثابتة، مخفية على الشاشات الصغيرة ── */
-.wr-orb {
-    position: absolute;
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 0;
-    background: var(--wr-chrome-disc);
-    box-shadow:
-        0 30px 60px rgba(0,0,0,0.5),
-        inset -10px -14px 28px rgba(0,0,0,0.55),
-        inset 8px 10px 18px rgba(255,255,255,0.3),
-        0 0 44px rgba(var(--wr-accent-rgb),0.22);
-}
-.wr-orb-a { width: 130px; height: 130px; top: 170px; left: 4%; }
-.wr-orb-b { width: 58px; height: 58px; top: 620px; right: 5%; }
-
 /* ═══ هيرو الميثاق — عنوان كرومي معدني ═══ */
 .wr-hero {
     position: relative;
@@ -606,35 +590,36 @@ html { scroll-behavior: smooth; }
     background: repeating-linear-gradient(180deg, rgba(200,190,220,0.7) 0 3px, transparent 3px 6px);
     opacity: 0.65;
 }
-/* ── درجة 1: تحذير ── */
-.lv1 { border-color: rgba(var(--wr-lv1),0.55); box-shadow: 0 14px 34px rgba(0,0,0,0.45), 0 0 24px rgba(var(--wr-lv1),0.13), var(--wr-inset-light); }
+/* ── درجة 1: تحذير — أقصر درج، السلم يطول مع اشتداد العقوبة ── */
+.lv1 { width: 54%; border-color: rgba(var(--wr-lv1),0.55); box-shadow: 0 14px 34px rgba(0,0,0,0.45), 0 0 24px rgba(var(--wr-lv1),0.13), var(--wr-inset-light); }
 .lv1 .wl-ric { background: linear-gradient(160deg, #34d399, #0f9d58 60%, #0a6e3d); box-shadow: 0 10px 26px rgba(var(--wr-lv1),0.35), inset 0 2px 0 rgba(255,255,255,0.5), inset 0 -4px 8px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.2); }
 .lv1 h3 { color: #4ade80; text-shadow: 0 0 14px rgba(var(--wr-lv1),0.5); }
 .lv1 .wl-pill { color: #86efac; border: 1px solid rgba(var(--wr-lv1),0.5); background: rgba(var(--wr-lv1),0.1); }
 .lv1:hover { box-shadow: 0 18px 40px rgba(0,0,0,0.5), 0 0 34px rgba(var(--wr-lv1),0.24), var(--wr-inset-light); }
 .wl-con.c2 { background: repeating-linear-gradient(180deg, rgba(var(--wr-lv2),0.7) 0 3px, transparent 3px 6px); }
 /* ── درجة 2: ميوت ── */
-.lv2 { width: 92%; border-color: rgba(var(--wr-lv2),0.55); box-shadow: 0 14px 34px rgba(0,0,0,0.45), 0 0 24px rgba(var(--wr-lv2),0.13), var(--wr-inset-light); }
+.lv2 { width: 66%; border-color: rgba(var(--wr-lv2),0.55); box-shadow: 0 14px 34px rgba(0,0,0,0.45), 0 0 24px rgba(var(--wr-lv2),0.13), var(--wr-inset-light); }
 .lv2 .wl-ric { background: linear-gradient(160deg, #fde047, #eab308 55%, #a16207); }
 .lv2 h3 { color: #facc15; text-shadow: 0 0 14px rgba(var(--wr-lv2),0.5); }
 .lv2 .wl-pill { color: #fde047; border: 1px solid rgba(var(--wr-lv2),0.5); background: rgba(var(--wr-lv2),0.1); }
 .lv2:hover { box-shadow: 0 18px 40px rgba(0,0,0,0.5), 0 0 34px rgba(var(--wr-lv2),0.24), var(--wr-inset-light); }
 .wl-con.c3 { background: repeating-linear-gradient(180deg, rgba(var(--wr-lv3),0.7) 0 3px, transparent 3px 6px); }
 /* ── درجة 3: طرد مؤقت ── */
-.lv3 { width: 84%; border-color: rgba(var(--wr-lv3),0.55); box-shadow: 0 14px 34px rgba(0,0,0,0.45), 0 0 24px rgba(var(--wr-lv3),0.13), var(--wr-inset-light); }
+.lv3 { width: 78%; border-color: rgba(var(--wr-lv3),0.55); box-shadow: 0 14px 34px rgba(0,0,0,0.45), 0 0 24px rgba(var(--wr-lv3),0.13), var(--wr-inset-light); }
 .lv3 .wl-ric { background: linear-gradient(160deg, #fb923c, #f97316 55%, #c2410c); }
 .lv3 h3 { color: #fb923c; text-shadow: 0 0 14px rgba(var(--wr-lv3),0.5); }
 .lv3 .wl-pill { color: #fdba74; border: 1px solid rgba(var(--wr-lv3),0.5); background: rgba(var(--wr-lv3),0.1); }
 .lv3:hover { box-shadow: 0 18px 40px rgba(0,0,0,0.5), 0 0 34px rgba(var(--wr-lv3),0.24), var(--wr-inset-light); }
 .wl-con.c4 { background: repeating-linear-gradient(180deg, rgba(var(--wr-lv4),0.7) 0 3px, transparent 3px 6px); }
 /* ── درجة 4: حظر مؤقت ── */
-.lv4 { width: 76%; border-color: rgba(var(--wr-lv4),0.55); box-shadow: 0 14px 34px rgba(0,0,0,0.45), 0 0 24px rgba(var(--wr-lv4),0.13), var(--wr-inset-light); }
+.lv4 { width: 90%; border-color: rgba(var(--wr-lv4),0.55); box-shadow: 0 14px 34px rgba(0,0,0,0.45), 0 0 24px rgba(var(--wr-lv4),0.13), var(--wr-inset-light); }
 .lv4 .wl-ric { background: linear-gradient(160deg, #f87171, #ef4444 55%, #b91c1c); }
 .lv4 h3 { color: #f87171; text-shadow: 0 0 14px rgba(var(--wr-lv4),0.5); }
 .lv4 .wl-pill { color: #fca5a5; border: 1px solid rgba(var(--wr-lv4),0.5); background: rgba(var(--wr-lv4),0.1); }
 .lv4:hover { box-shadow: 0 18px 40px rgba(0,0,0,0.5), 0 0 34px rgba(var(--wr-lv4),0.24), var(--wr-inset-light); }
-/* ── درجة 5: حظر دائم — كاملة العرض وأثقل ظلاً ── */
+/* ── درجة 5: حظر دائم — الأطول (كاملة العرض) وأثقل ظلاً ── */
 .lv5 {
+    width: 100%;
     border-color: rgba(var(--wr-lv5),0.75);
     border-width: 1.5px;
     box-shadow: 0 18px 40px rgba(0,0,0,0.5), 0 0 30px rgba(var(--wr-lv5),0.25), var(--wr-inset-light);
@@ -698,13 +683,12 @@ html { scroll-behavior: smooth; }
 .wr-foot p i { color: rgba(var(--wr-accent-rgb),0.55); }
 .wr-foot .wr-foot-note { margin-top: 6px; font-size: 0.74rem; color: rgba(240,238,246,0.4); }
 
-/* ═══ تابلت: إخفاء الفهرس الجانبي والكرات ═══ */
+/* ═══ تابلت: إخفاء الفهرس الجانبي ═══ */
 @media (max-width: 960px) {
     .wr-main { grid-template-columns: 1fr; padding: 1.3rem 1rem 0; }
     .wr-aside { display: none; }
     .wr-cat { scroll-margin-top: 84px; }
     .wr-ladder { scroll-margin-top: 84px; }
-    .wr-orb { display: none; }
 }
 
 /* ═══ هاتف ═══ */
@@ -724,10 +708,13 @@ html { scroll-behavior: smooth; }
     .wr-rule { padding: 10px 11px; gap: 10px; border-radius: 12px; }
     .wr-rule-no { width: 30px; height: 30px; font-size: 0.75rem; }
     .wr-rule-text { font-size: 0.84rem; line-height: 1.55; }
-    /* السلم على الهاتف: كل الدرجات كاملة العرض */
+    /* السلم على الهاتف: التدرج محفوظ بخطوات ألطف حتى يبقى واضحاً */
     .wr-ladder { padding: 1.4rem 0.85rem 0; scroll-margin-top: 74px; }
     .wl-steps { max-width: 100%; }
-    .lv2, .lv3, .lv4 { width: 100%; }
+    .lv1 { width: 76%; }
+    .lv2 { width: 83%; }
+    .lv3 { width: 90%; }
+    .lv4 { width: 95%; }
     .wl-rung { padding: 0.8rem 0.9rem; gap: 10px; border-radius: 13px; }
     .wl-ric { width: 40px; height: 40px; border-radius: 12px; font-size: 0.9rem; }
     .wl-txt h3 { font-size: 0.9rem; }
