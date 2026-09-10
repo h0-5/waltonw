@@ -1,6 +1,12 @@
 const REQUIRED_GUILD_ID = process.env.DISCORD_GUILD_ID || '1476232552564916387';
 const JOIN_LINK = 'https://discord.gg/dkhSKu8hHF';
 
+// Dead-token cooldown — when Discord replies 401/403 the bot token is invalid:
+// stop paying a doomed API roundtrip on EVERY authed page load. One retry per
+// 5 min keeps self-healing once a fresh token lands in Railway variables.
+let guildCheckCooldownUntil = 0;
+let lastGuildErrLog = 0;
+
 const isAuthenticated = (req, res, next) => {
   if (req.user) {
     // Check if user is banned
@@ -66,6 +72,9 @@ const isInGuild = async (req, res, next) => {
       return next();
     }
 
+    // Token known-bad (recent 401/403) → skip the doomed call, fail open
+    if (Date.now() < guildCheckCooldownUntil) return next();
+
     // Use Bot Token to check member directly - most reliable method
     const response = await axios.get(
       `https://discord.com/api/v10/guilds/${REQUIRED_GUILD_ID}/members/${req.user.discord_id}`,
@@ -88,17 +97,24 @@ const isInGuild = async (req, res, next) => {
 
     return next();
   } catch (err) {
-    console.error('Guild check error:', err.message);
-    if (err.response && err.response.status === 404) {
-      // 404 = member not found in guild
+    const st = err.response && err.response.status;
+    // 404 = member not found in guild (valid token, real answer)
+    if (st === 404) {
       return res.render('pages/not-in-server', {
         title: 'انضم لسيرفرنا',
         joinLink: JOIN_LINK,
         error: 'not_in_server'
       });
     }
+    // 401/403 = invalid/revoked bot token — cooldown 5 min (log throttled to 1/min)
+    if (st === 401 || st === 403) {
+      guildCheckCooldownUntil = Date.now() + 5 * 60 * 1000;
+    }
+    if (Date.now() - lastGuildErrLog > 60000) {
+      lastGuildErrLog = Date.now();
+      console.error('Guild check error:', err.message);
+    }
     // On error, let user pass (don't block)
-    console.log('⚠️ Guild check failed, allowing access');
     return next();
   }
 };

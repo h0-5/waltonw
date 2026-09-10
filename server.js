@@ -4,6 +4,15 @@ const app = require('./app');
 const db = require('./config/database');
 const PORT = process.env.PORT || 3000;
 
+// Last-resort safety net — Node ≥15 kills the process on an unhandled rejection,
+// and one dead async handler must never 500 the whole site. Log loudly, stay up.
+process.on('unhandledRejection', (err) => {
+  console.error('[unhandledRejection]', err && err.message ? err.message : err);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err && err.message ? err.message : err);
+});
+
 const server = http.createServer(app);
 
 // Align with Railway proxy keep-alive (prevents random 502s under load)

@@ -228,17 +228,26 @@ router.get('/applications/form/:type', isAuthenticated, isInGuild, checkPageAcce
   const settings = await getSettings();
   const type = decodeURIComponent(req.params.type);
 
-  const [appSettings] = await db.execute('SELECT * FROM application_settings WHERE application_type = ?', [type]);
-  if (!appSettings.length) {
-    return res.status(404).render('pages/404', { title: '404 - الصفحة غير موجودة', settings });
-  }
-  const appSetting = appSettings[0];
+  // Guarded: a DB hiccup here must render the error page, never crash the process
+  let appSetting, questions;
+  try {
+    const [appSettings] = await db.execute('SELECT * FROM application_settings WHERE application_type = ?', [type]);
+    if (!appSettings.length) {
+      return res.status(404).render('pages/404', { title: '404 - الصفحة غير موجودة', settings });
+    }
+    appSetting = appSettings[0];
 
-  const [qRows] = await db.execute(
-    'SELECT id, question, type, required, options, max_selections, keyword, sort_order FROM application_questions WHERE application_type = ? ORDER BY sort_order ASC, id ASC',
-    [type]
-  );
-  const questions = qRows.map(q => q);
+    const [qRows] = await db.execute(
+      'SELECT id, question, type, required, options, max_selections, keyword, sort_order FROM application_questions WHERE application_type = ? ORDER BY sort_order ASC, id ASC',
+      [type]
+    );
+    questions = qRows.map(q => q);
+  } catch (e) {
+    return res.status(500).render('pages/error', {
+      title: 'خطأ في الخادم',
+      error: 'حدث خطأ غير متوقع، يرجى المحاولة لاحقاً'
+    });
+  }
 
   let pending = [];
   try {
