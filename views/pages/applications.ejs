@@ -4,7 +4,7 @@
 
 <%
 /* عدّ مرة واحدة بدل إعادة الحساب في كل موضع — أخف على السيرفر */
-/* صف «منظم فعاليات» من قاعدة البيانات يُستبدل ببطاقة «سيتوفر قريباً» الثابتة أدناه */
+/* صف «منظم فعاليات» مخفي من الصفحة نهائياً بطلب المالك — حُذفت بطاقته الثابتة كلياً */
 var visibleApps = applications.filter(function(a) {
     return !/فعاليات/.test(((a.title || '') + ' ' + (a.application_type || '')).trim());
 });
@@ -76,6 +76,10 @@ var openCount = visibleApps.filter(function(a) { return a.status === 'open'; }).
                     <% } %>
 
                     <% if (app.requirements) { %>
+                    <div class="h-reqs-head">
+                        <i class="fas fa-clipboard-check"></i>
+                        <span>شروط التقديم</span>
+                    </div>
                     <ul class="h-reqs">
                         <% app.requirements.split(/\r?\n/).filter(function(r){ return r.trim(); }).forEach(function(req) { %>
                         <li>
@@ -118,37 +122,6 @@ var openCount = visibleApps.filter(function(a) { return a.status === 'open'; }).
                 <p style="color: var(--text-dim);">لا توجد تقديمات متاحة حالياً</p>
             </div>
             <% } %>
-
-            <!-- بطاقة «منظم فعاليات» — إعلان قريب، ليست تقديماً: بلا رقم وبلا نموذج وبلا وصف -->
-            <article class="hcard soon reveal stagger-<%= ((visibleApps.length % 6) + 1) %>">
-                <div class="h-shine"></div>
-                <div class="h-glare"></div>
-
-                <span class="h-rar soon">
-                    <span class="d"></span>
-                    قريباً
-                </span>
-
-                <div class="h-core">
-                    <i class="fas fa-calendar-days"></i>
-                </div>
-
-                <h3 class="h-name">منظم فعاليات</h3>
-                <div class="h-type">
-                    <i class="fas fa-calendar-days"></i>
-                    فعاليات • دور جديد
-                </div>
-                <div class="h-div"></div>
-
-                <div class="h-act">
-                    <button disabled class="h-btn-off">
-                        <i class="fas fa-hourglass-half"></i>
-                        سيتوفر قريباً
-                    </button>
-                </div>
-
-                <div class="h-foot" dir="ltr">— WALTON FAMILY —</div>
-            </article>
         </div>
 
         <!-- Tip Card -->

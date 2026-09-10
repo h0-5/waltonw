@@ -395,7 +395,7 @@
 
 .hcard.tilting .h-glare { opacity: 1; }
 
-.hcard .h-core, .hcard .h-name, .hcard .h-type,
+.hcard .h-core, .hcard .h-name, .hcard .h-type, .hcard .h-reqs-head,
 .hcard .h-div, .hcard .h-desc, .hcard .h-reqs, .hcard .h-act, .hcard .h-foot {
     position: relative;
     z-index: 3;
@@ -567,30 +567,46 @@
     margin: 0 0 0.7rem;
 }
 
+/* عنوان واضح لقسم الشروط في كل كرت */
+.h-reqs-head {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.68rem;
+    font-weight: 800;
+    color: var(--ac);
+    margin: 0 0 0.45rem;
+}
+
+.h-reqs-head i {
+    font-size: 0.6rem;
+}
+
 .h-reqs {
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: 0.32rem;
+    gap: 0.4rem;
     background: rgba(255, 255, 255, 0.025);
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 11px;
-    padding: 0.6rem 0.7rem;
+    padding: 0.65rem 0.75rem;
     margin: 0 0 0.7rem;
 }
 
 .h-reqs li {
     display: flex;
     align-items: flex-start;
-    gap: 0.42rem;
-    font-size: 0.72rem;
-    color: rgba(240, 238, 246, 0.62);
-    line-height: 1.55;
+    gap: 0.45rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: rgba(240, 238, 246, 0.78);
+    line-height: 1.6;
 }
 
 .h-reqs .check {
-    width: 14px;
-    height: 14px;
+    width: 15px;
+    height: 15px;
     border-radius: 3px;
     background: rgba(var(--ac-rgb), 0.08);
     border: 1px solid rgba(var(--ac-rgb), 0.22);
@@ -598,8 +614,8 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    margin-top: 2px;
-    font-size: 0.45rem;
+    margin-top: 3px;
+    font-size: 0.5rem;
     color: var(--ac);
     clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
 }
