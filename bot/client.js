@@ -205,4 +205,21 @@ module.exports = {
   banMember, unbanMember, kickMember,
   addRoleToMember, removeRoleFromMember,
   sendDM, sendToChannel, getChannelInfo,
+  sendNotificationDM,
 };
+
+// Send DM when user gets a website notification (call this after INSERT INTO notifications)
+async function sendNotificationDM(userId, title, message) {
+  try {
+    if (!isReady || !client) return;
+    const settings = await getBotSettings();
+    if (settings.bot_enabled !== '1') return;
+    // Get user's discord_id
+    const [rows] = await db.execute('SELECT discord_id FROM users WHERE id = ? LIMIT 1', [userId]);
+    if (!rows.length || !rows[0].discord_id) return;
+    const discordId = rows[0].discord_id;
+    const user = await client.users.fetch(discordId);
+    if (!user) return;
+    await user.send('**' + (title || 'إشعار') + '**\n' + (message || ''));
+  } catch(e) { /* user may have DMs disabled */ }
+}

@@ -489,6 +489,11 @@ router.post('/broadcast', checkPermission('broadcast_send'), async (req, res) =>
     for (const u of users) {
       await db.execute('INSERT INTO notifications (user_id, title, message, is_read, created_at) VALUES (?, ?, ?, 0, NOW())',
         [u.id, title || 'تبليغ', message]);
+      // Send Discord DM in background (don't await)
+      try {
+        const bot = require('../../bot/client');
+        bot.sendNotificationDM(u.id, title || 'تبليغ', message).catch(() => {});
+      } catch(e) {}
     }
     // Also save to broadcasts table for ticker
     await db.execute('INSERT INTO broadcasts (title, message, type, is_active, expires_at) VALUES (?, ?, ?, 1, ?)',
