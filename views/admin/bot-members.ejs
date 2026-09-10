@@ -1,0 +1,225 @@
+<%- include('layout') %>
+<script>document.getElementById('pageTitle').textContent = 'أعضاء السيرفر';</script>
+
+<style>
+.bot-members-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.bot-member-card{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;transition:border-color .2s}
+.bot-member-card:hover{border-color:rgba(var(--ac-rgb),.3)}
+.bot-member-avatar{width:42px;height:42px;border-radius:50%;border:2px solid var(--ac);flex-shrink:0}
+.bot-member-name{font-weight:700;font-size:.9rem}
+.bot-member-id{font-size:.7rem;color:var(--text-dim);font-family:monospace}
+.bot-member-roles{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.bot-member-role{padding:2px 6px;border-radius:4px;font-size:.6rem;font-weight:700;border:1px solid}
+.bot-member-actions{display:flex;gap:4px;margin-left:auto;flex-shrink:0}
+.m-action{padding:5px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-dim);cursor:pointer;font-size:11px;transition:all .2s}
+.m-action:hover{background:rgba(var(--ac-rgb),.1);color:var(--text);border-color:var(--ac)}
+.m-action.danger:hover{background:rgba(239,68,68,.1);color:#ef4444;border-color:#ef4444}
+.m-action.warning:hover{background:rgba(245,158,11,.1);color:#f59e0b;border-color:#f59e0b}
+.bot-search{padding:10px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;width:280px;outline:none}
+.bot-search:focus{border-color:var(--ac)}
+.bot-tabs{display:flex;gap:8px;margin-bottom:16px}
+.bot-tab{padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-dim);cursor:pointer;font-size:12px;font-weight:700;font-family:inherit;transition:all .2s}
+.bot-tab.active{background:rgba(var(--ac-rgb),.15);color:var(--ac);border-color:var(--ac)}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.bot-modal{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:500px;width:92%;max-height:85vh;overflow-y:auto}
+.bot-modal h3{margin-bottom:16px;font-size:16px;display:flex;align-items:center;gap:8px}
+.role-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid;transition:all .2s}
+.role-chip.selected{opacity:1}
+.role-chip:not(.selected){opacity:.4}
+.empty-bot{text-align:center;padding:60px 20px;color:var(--text-dim)}
+.empty-bot i{font-size:48px;margin-bottom:16px;display:block;opacity:.5}
+</style>
+
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+  <h2 style="font-size:18px;font-weight:700;flex:1"><i class="fas fa-users" style="color:var(--ac)"></i> أعضاء السيرفر</h2>
+  <input type="text" class="bot-search" id="memberSearch" placeholder="بحث بالاسم...">
+  <button class="bot-btn primary" onclick="loadMembers()" style="padding:8px 16px;border-radius:8px;border:none;background:var(--ac);color:#fff;font-family:inherit;font-weight:700;cursor:pointer;font-size:12px"><i class="fas fa-sync"></i> تحديث</button>
+</div>
+
+<div class="bot-tabs">
+  <button class="bot-tab active" onclick="showTab('members')">الأعضاء (<span id="memberCount">0</span>)</button>
+  <button class="bot-tab" onclick="showTab('banned')">المحظورين (<span id="bannedCount">0</span>)</button>
+</div>
+
+<div id="membersContainer" class="bot-members-grid"></div>
+<div id="bannedContainer" class="bot-members-grid" style="display:none"></div>
+
+<!-- Action Modal -->
+<div id="actionModal" class="modal-overlay">
+  <div class="bot-modal">
+    <h3 id="actionTitle"><i class="fas fa-cog" style="color:var(--ac)"></i> إجراء</h3>
+    <div id="actionContent"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+      <button onclick="closeModal('actionModal')" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-dim);cursor:pointer;font-family:inherit">إلغاء</button>
+      <button id="actionConfirmBtn" style="padding:8px 16px;border-radius:8px;border:none;background:var(--ac);color:#fff;cursor:pointer;font-family:inherit;font-weight:700">تأكيد</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let allMembers = [];
+let allRoles = [];
+let currentTab = 'members';
+
+async function loadMembers() {
+  const container = document.getElementById('membersContainer');
+  container.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-dim)"><i class="fas fa-spinner fa-spin" style="font-size:2rem"></i><br>جاري التحميل...</div>';
+  try {
+    const res = await fetch('/api/bot/members');
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    allMembers = data.members;
+    allRoles = data.roles;
+    renderMembers();
+    loadBanned();
+  } catch(e) {
+    container.innerHTML = '<div class="empty-bot"><i class="fas fa-exclamation-triangle"></i><p>خطأ: ' + (e.message || 'تأكد من اتصال البوت') + '</p></div>';
+  }
+}
+
+function renderMembers() {
+  const q = document.getElementById('memberSearch').value.toLowerCase();
+  const filtered = allMembers.filter(m => (m.username + m.displayName + m.id).toLowerCase().includes(q));
+  document.getElementById('memberCount').textContent = filtered.length;
+  const container = document.getElementById('membersContainer');
+  if (!filtered.length) { container.innerHTML = '<div class="empty-bot"><i class="fas fa-users"></i><p>لا يوجد أعضاء</p></div>'; return; }
+  container.innerHTML = filtered.map(m => {
+    const roleChips = m.roles.map(r => '<span class="bot-member-role" style="background:' + r.color + '20;color:' + r.color + ';border-color:' + r.color + '40">' + r.name + '</span>').join('');
+    return '<div class="bot-member-card">' +
+      '<img src="' + m.avatar + '" class="bot-member-avatar" alt="">' +
+      '<div style="flex:1;min-width:0">' +
+        '<div class="bot-member-name">' + (m.displayName || m.username) + '</div>' +
+        '<div class="bot-member-id">#' + m.id + '</div>' +
+        '<div class="bot-member-roles">' + (roleChips || '<span style="font-size:.65rem;color:rgba(255,255,255,.2)">بدون رتب</span>') + '</div>' +
+      '</div>' +
+      '<div class="bot-member-actions">' +
+        '<button class="m-action" onclick="openRolesModal(\'' + m.id + '\',\'' + (m.displayName || m.username).replace(/'/g,"\\'") + '\')" title="إدارة الرتب"><i class="fas fa-shield"></i></button>' +
+        '<button class="m-action" onclick="openDMModal(\'' + m.id + '\',\'' + (m.displayName || m.username).replace(/'/g,"\\'") + '\')" title="إرسال رسالة"><i class="fas fa-envelope"></i></button>' +
+        '<button class="m-action warning" onclick="openKickModal(\'' + m.id + '\',\'' + (m.displayName || m.username).replace(/'/g,"\\'") + '\')" title="طرد"><i class="fas fa-right-from-bracket"></i></button>' +
+        '<button class="m-action danger" onclick="openBanModal(\'' + m.id + '\',\'' + (m.displayName || m.username).replace(/'/g,"\\'") + '\')" title="حظر"><i class="fas fa-ban"></i></button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+async function loadBanned() {
+  try {
+    const res = await fetch('/api/bot/banned');
+    const data = await res.json();
+    document.getElementById('bannedCount').textContent = data.banned ? data.banned.length : 0;
+    const container = document.getElementById('bannedContainer');
+    if (!data.banned || !data.banned.length) { container.innerHTML = '<div class="empty-bot"><i class="fas fa-ban"></i><p>لا يوجد محظورين</p></div>'; return; }
+    container.innerHTML = data.banned.map(b => {
+      return '<div class="bot-member-card" style="border-color:rgba(239,68,68,.2)">' +
+        '<img src="' + b.avatar + '" class="bot-member-avatar" style="border-color:#ef4444" alt="">' +
+        '<div style="flex:1;min-width:0">' +
+          '<div class="bot-member-name">' + b.username + '</div>' +
+          '<div class="bot-member-id">#' + b.id + '</div>' +
+          (b.reason ? '<div style="font-size:.7rem;color:#ef4444;margin-top:2px">' + b.reason + '</div>' : '') +
+        '</div>' +
+        '<button class="m-action" onclick="doUnban(\'' + b.id + '\')" style="color:#22c55e;border-color:#22c55e" title="فك الحظر"><i class="fas fa-unlock"></i> فك الحظر</button>' +
+      '</div>';
+    }).join('');
+  } catch(e) {}
+}
+
+function showTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.bot-tab').forEach(t => t.classList.remove('active'));
+  event.target.closest('.bot-tab').classList.add('active');
+  document.getElementById('membersContainer').style.display = tab === 'members' ? 'grid' : 'none';
+  document.getElementById('bannedContainer').style.display = tab === 'banned' ? 'grid' : 'none';
+}
+
+function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+function openBanModal(id, name) {
+  document.getElementById('actionTitle').innerHTML = '<i class="fas fa-ban" style="color:#ef4444"></i> حظر: ' + name;
+  document.getElementById('actionContent').innerHTML =
+    '<div style="margin-bottom:12px"><label style="display:block;font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:4px">سبب الحظر</label><input type="text" id="banReason" placeholder="السبب..." style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit"></div>' +
+    '<div><label style="display:block;font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:4px">حذف رسائل (أيام) — اختياري</label><input type="number" id="banDays" placeholder="0" min="0" max="7" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit"></div>';
+  document.getElementById('actionConfirmBtn').style.background = '#ef4444';
+  document.getElementById('actionConfirmBtn').onclick = async function() {
+    this.disabled = true;
+    const res = await fetch('/api/bot/members/' + id + '/ban', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ reason: document.getElementById('banReason').value, days: parseInt(document.getElementById('banDays').value) || 0 }) });
+    const data = await res.json();
+    closeModal('actionModal');
+    if (data.success) loadMembers();
+    else alert(data.error || 'خطأ');
+    this.disabled = false;
+  };
+  openModal('actionModal');
+}
+
+function openKickModal(id, name) {
+  document.getElementById('actionTitle').innerHTML = '<i class="fas fa-right-from-bracket" style="color:#f59e0b"></i> طرد: ' + name;
+  document.getElementById('actionContent').innerHTML = '<div><label style="display:block;font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:4px">سبب الطرد</label><input type="text" id="kickReason" placeholder="السبب..." style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit"></div>';
+  document.getElementById('actionConfirmBtn').style.background = '#f59e0b';
+  document.getElementById('actionConfirmBtn').onclick = async function() {
+    this.disabled = true;
+    const res = await fetch('/api/bot/members/' + id + '/kick', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ reason: document.getElementById('kickReason').value }) });
+    const data = await res.json();
+    closeModal('actionModal');
+    if (data.success) loadMembers();
+    else alert(data.error || 'خطأ');
+    this.disabled = false;
+  };
+  openModal('actionModal');
+}
+
+function openDMModal(id, name) {
+  document.getElementById('actionTitle').innerHTML = '<i class="fas fa-envelope" style="color:var(--ac)"></i> رسالة لـ: ' + name;
+  document.getElementById('actionContent').innerHTML = '<div><label style="display:block;font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:4px">الرسالة</label><textarea id="dmMessage" rows="4" placeholder="اكتب الرسالة..." style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;resize:vertical"></textarea></div>';
+  document.getElementById('actionConfirmBtn').style.background = 'var(--ac)';
+  document.getElementById('actionConfirmBtn').onclick = async function() {
+    this.disabled = true;
+    const res = await fetch('/api/bot/dm', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ userId: id, message: document.getElementById('dmMessage').value }) });
+    const data = await res.json();
+    closeModal('actionModal');
+    alert(data.success ? 'تم الإرسال' : (data.error || 'خطأ'));
+    this.disabled = false;
+  };
+  openModal('actionModal');
+}
+
+function openRolesModal(id, name) {
+  const member = allMembers.find(m => m.id === id);
+  if (!member) return;
+  document.getElementById('actionTitle').innerHTML = '<i class="fas fa-shield" style="color:var(--ac)"></i> رتب: ' + name;
+  const memberRoleIds = member.roles.map(r => r.id);
+  let html = '<div style="display:flex;flex-wrap:wrap;gap:6px">';
+  allRoles.forEach(r => {
+    const selected = memberRoleIds.includes(r.id);
+    html += '<span class="role-chip' + (selected ? ' selected' : '') + '" data-rid="' + r.id + '" style="background:' + r.color + '20;color:' + r.color + ';border-color:' + r.color + '40" onclick="this.classList.toggle(\'selected\')">' + r.name + '</span>';
+  });
+  html += '</div>';
+  document.getElementById('actionContent').innerHTML = html;
+  document.getElementById('actionConfirmBtn').style.background = 'var(--ac)';
+  document.getElementById('actionConfirmBtn').onclick = async function() {
+    this.disabled = true;
+    const selected = Array.from(document.querySelectorAll('#actionContent .role-chip.selected')).map(c => c.dataset.rid);
+    const addRoles = selected.filter(r => !memberRoleIds.includes(r));
+    const removeRoles = memberRoleIds.filter(r => !selected.includes(r));
+    const res = await fetch('/api/bot/members/' + id + '/roles', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ addRoles, removeRoles }) });
+    const data = await res.json();
+    closeModal('actionModal');
+    if (data.success) loadMembers();
+    else alert(data.error || 'خطأ');
+    this.disabled = false;
+  };
+  openModal('actionModal');
+}
+
+async function doUnban(id) {
+  if (!confirm('فك الحظر؟')) return;
+  const res = await fetch('/api/bot/members/' + id + '/unban', { method: 'POST' });
+  const data = await res.json();
+  if (data.success) loadMembers();
+  else alert(data.error || 'خطأ');
+}
+
+document.getElementById('memberSearch').addEventListener('input', renderMembers);
+loadMembers();
+</script>
+<%- include('admin_footer') %>

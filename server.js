@@ -391,6 +391,11 @@ async function start() {
 
   server.listen(PORT, () => {
     console.log(`\n  Walton Family Server running on http://localhost:${PORT}\n`);
+    // Auto-connect Discord bot if enabled
+    try {
+      const bot = require('./bot/client');
+      bot.connectBot().catch(() => {});
+    } catch(e) {}
   });
 }
 

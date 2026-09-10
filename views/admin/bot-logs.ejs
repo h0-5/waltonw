@@ -1,0 +1,61 @@
+<%- include('layout') %>
+<script>document.getElementById('pageTitle').textContent = 'سجل البوت';</script>
+
+<style>
+.bot-log-list{display:flex;flex-direction:column;gap:6px}
+.bot-log-item{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;font-size:13px}
+.bot-log-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px}
+.bot-log-icon.ban{background:rgba(239,68,68,.15);color:#ef4444}
+.bot-log-icon.unban{background:rgba(34,197,94,.15);color:#22c55e}
+.bot-log-icon.kick{background:rgba(245,158,11,.15);color:#f59e0b}
+.bot-log-icon.dm{background:rgba(var(--ac-rgb),.15);color:var(--ac)}
+.bot-log-icon.channel{background:rgba(59,130,246,.15);color:#3b82f6}
+.bot-log-icon.role{background:rgba(168,85,247,.15);color:#a855f7}
+.bot-log-info{flex:1;min-width:0}
+.bot-log-action{font-weight:700}
+.bot-log-detail{font-size:11px;color:var(--text-dim);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bot-log-time{font-size:11px;color:var(--text-dim);white-space:nowrap}
+</style>
+
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+  <h2 style="font-size:18px;font-weight:700;flex:1"><i class="fas fa-list" style="color:var(--ac)"></i> سجل البوت</h2>
+  <button onclick="loadLogs()" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-dim);cursor:pointer;font-family:inherit;font-size:12px"><i class="fas fa-sync"></i> تحديث</button>
+</div>
+
+<div class="bot-log-list" id="logsContainer">
+  <div style="text-align:center;padding:40px;color:var(--text-dim)"><i class="fas fa-spinner fa-spin" style="font-size:2rem"></i><br>جاري التحميل...</div>
+</div>
+
+<script>
+async function loadLogs() {
+  const container = document.getElementById('logsContainer');
+  try {
+    const res = await fetch('/api/bot/logs');
+    const data = await res.json();
+    if (!data.success || !data.logs.length) {
+      container.innerHTML = '<div style="text-align:center;padding:60px;color:var(--text-dim)"><i class="fas fa-clipboard-list" style="font-size:3rem;margin-bottom:12px;display:block;opacity:.3"></i><p>لا توجد سجلات بعد</p></div>';
+      return;
+    }
+    container.innerHTML = data.logs.map(log => {
+      const action = log.action.replace('bot_', '');
+      const iconMap = { ban_member: 'ban', unban_member: 'unban', kick_member: 'kick', send_dm: 'dm', send_channel: 'channel', manage_roles: 'role' };
+      const iconClass = iconMap[action] || 'channel';
+      const iconFA = { ban_member: 'fa-ban', unban_member: 'fa-unlock', kick_member: 'fa-right-from-bracket', send_dm: 'fa-envelope', send_channel: 'fa-bullhorn', manage_roles: 'fa-shield' };
+      const actionLabels = { ban_member: 'حظر عضو', unban_member: 'فك حظر', kick_member: 'طرد عضو', send_dm: 'إرسال DM', send_channel: 'إرسال لقناة', manage_roles: 'إدارة رتب' };
+      const date = new Date(log.created_at).toLocaleString('ar-SA', { dateStyle: 'short', timeStyle: 'short' });
+      return '<div class="bot-log-item">' +
+        '<div class="bot-log-icon ' + iconClass + '"><i class="fas ' + (iconFA[action] || 'fa-circle') + '"></i></div>' +
+        '<div class="bot-log-info">' +
+          '<div class="bot-log-action">' + (actionLabels[action] || action) + '</div>' +
+          '<div class="bot-log-detail">' + (log.username || '') + ' → #' + (log.target_id || '') + (log.details ? ' — ' + log.details : '') + '</div>' +
+        '</div>' +
+        '<div class="bot-log-time">' + date + '</div>' +
+      '</div>';
+    }).join('');
+  } catch(e) {
+    container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-dim)">خطأ في التحميل</div>';
+  }
+}
+loadLogs();
+</script>
+<%- include('admin_footer') %>

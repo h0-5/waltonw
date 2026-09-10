@@ -228,6 +228,7 @@ const profileApi = require('./routes/api/profile');
 const gamesApi = require('./routes/api/games');
 const applicationsApi = require('./routes/api/applications');
 const adminApi = require('./routes/api/admin');
+const botApi = require('./routes/api/bot');
 
 app.use('/', indexRoutes);
 app.use('/auth', authRoutes);
@@ -240,6 +241,7 @@ app.use('/api/games', gamesApi);
 app.use('/api/applications', applicationsApi);
 app.use('/api/admin', adminApi);
 app.use('/api/orders', adminApi);
+app.use('/api/bot', botApi);
 app.use('/api/notifications', adminApi);
 
 // Maintenance mode (after routes, before static)

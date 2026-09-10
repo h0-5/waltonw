@@ -1,0 +1,167 @@
+<%- include('layout') %>
+<script>document.getElementById('pageTitle').textContent = 'إعدادات البوت';</script>
+
+<style>
+.bot-status-card{display:flex;align-items:center;gap:16px;padding:20px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;margin-bottom:24px}
+.bot-status-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+.bot-status-dot.connected{background:#22c55e;box-shadow:0 0 8px #22c55e60;animation:pulse 2s infinite}
+.bot-status-dot.disconnected{background:#ef4444}
+.bot-status-dot.error{background:#f59e0b}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.bot-config-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.bot-config-grid .form-group{grid-column:span 1}
+.bot-config-grid .form-group.full{grid-column:1/-1}
+.bot-btn-group{display:flex;gap:8px;margin-top:20px}
+.bot-btn{padding:10px 20px;border-radius:8px;border:none;font-family:inherit;font-weight:700;cursor:pointer;font-size:13px;transition:all .3s;display:flex;align-items:center;gap:6px}
+.bot-btn.primary{background:var(--ac);color:#fff}
+.bot-btn.primary:hover{opacity:.9}
+.bot-btn.danger{background:#ef4444;color:#fff}
+.bot-btn.danger:hover{opacity:.9}
+.bot-btn.outline{background:transparent;color:var(--text-dim);border:1px solid var(--border)}
+.bot-btn.outline:hover{color:var(--text);border-color:rgba(255,255,255,.3)}
+.bot-guild-info{display:flex;align-items:center;gap:16px;padding:20px;background:rgba(var(--ac-rgb),.06);border:1px solid rgba(var(--ac-rgb),.15);border-radius:12px;margin-bottom:24px}
+.bot-guild-icon{width:64px;height:64px;border-radius:50%;border:2px solid var(--ac)}
+.bot-guild-name{font-size:1.1rem;font-weight:700;color:var(--text)}
+.bot-guild-meta{font-size:.8rem;color:var(--text-dim);margin-top:4px}
+.bot-note{padding:12px 16px;background:rgba(var(--ac-rgb),.06);border:1px solid rgba(var(--ac-rgb),.12);border-radius:8px;font-size:.8rem;color:var(--text-dim);line-height:1.6}
+.bot-note a{color:var(--ac);text-decoration:underline}
+.bot-note i{margin-left:6px}
+</style>
+
+<div id="botStatusCard" class="bot-status-card">
+  <div class="bot-status-dot disconnected" id="statusDot"></div>
+  <div style="flex:1">
+    <div style="font-weight:700;font-size:1rem" id="statusText">جاري التحقق...</div>
+    <div style="font-size:.8rem;color:var(--text-dim)" id="statusDetail"></div>
+  </div>
+  <div class="bot-btn-group">
+    <button class="bot-btn primary" onclick="connectBot()" id="btnConnect"><i class="fas fa-plug"></i> تشغيل</button>
+    <button class="bot-btn danger" onclick="disconnectBot()" id="btnDisconnect" style="display:none"><i class="fas fa-stop"></i> إيقاف</button>
+  </div>
+</div>
+
+<div id="guildInfo" class="bot-guild-info" style="display:none">
+  <img src="" class="bot-guild-icon" id="guildIcon" alt="">
+  <div>
+    <div class="bot-guild-name" id="guildName"></div>
+    <div class="bot-guild-meta" id="guildMeta"></div>
+  </div>
+</div>
+
+<div class="admin-card" style="margin-bottom:24px">
+  <h3 style="margin-bottom:16px"><i class="fas fa-cog" style="color:var(--ac)"></i> إعدادات الاتصال</h3>
+  <div class="bot-config-grid">
+    <div class="form-group full">
+      <label style="display:block;font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:4px">Bot Token</label>
+      <input type="password" id="botToken" placeholder="MTxxxxxxxxxxxxxxxx" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:monospace;font-size:13px">
+      <div class="bot-note" style="margin-top:8px"><i class="fas fa-info-circle"></i> التوكن من <a href="https://discord.com/developers/applications" target="_blank">Discord Developer Portal</a> — Bot → Token</div>
+    </div>
+    <div class="form-group">
+      <label style="display:block;font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:4px">Guild (Server) ID</label>
+      <input type="text" id="guildId" placeholder="1476232552564916387" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:monospace;font-size:13px">
+    </div>
+    <div class="form-group">
+      <label style="display:block;font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:4px">قناة السجلات (Log Channel ID)</label>
+      <input type="text" id="logChannelId" placeholder="optional" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:monospace;font-size:13px">
+    </div>
+    <div class="form-group">
+      <label style="display:block;font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:4px">قناة الترحيب (Welcome Channel ID)</label>
+      <input type="text" id="welcomeChannelId" placeholder="optional" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:monospace;font-size:13px">
+    </div>
+  </div>
+  <div class="bot-btn-group">
+    <button class="bot-btn primary" onclick="saveConfig()"><i class="fas fa-save"></i> حفظ الإعدادات</button>
+  </div>
+</div>
+
+<div class="admin-card">
+  <h3 style="margin-bottom:16px"><i class="fas fa-info-circle" style="color:var(--ac)"></i> خطوات التفعيل</h3>
+  <div style="font-size:.85rem;color:var(--text-dim);line-height:2">
+    <p>1. ادخل <a href="https://discord.com/developers/applications" target="_blank" style="color:var(--ac)">Discord Developer Portal</a></p>
+    <p>2. أ咬应用 جديدة أو استخدم الموجودة → Bot → أ咬 التوكن</p>
+    <p>3. فعّل <strong>Message Content Intent</strong> و <strong>Server Members Intent</strong> من Bot → Privileged Gateway Intents</p>
+    <p>4. انسخ رابط الدعوة من OAuth2 → URL Generator → اختر <code>bot</code> → الصلاحيات: <code>Ban Members, Kick Members, Manage Roles, Send Messages, Read Message History</code></p>
+    <p>5. الصق الرابط في المتصفح وادع البوت للسيرفر</p>
+    <p>6. انسخ Guild ID (Click Server Name → Copy Server ID) والصقه هنا</p>
+    <p>7. اضغط "حفظ الإعدادات" ثم "تشغيل"</p>
+  </div>
+</div>
+
+<script>
+async function checkStatus() {
+  try {
+    const res = await fetch('/api/bot/status');
+    const data = await res.json();
+    const dot = document.getElementById('statusDot');
+    const text = document.getElementById('statusText');
+    const detail = document.getElementById('statusDetail');
+    const btnConnect = document.getElementById('btnConnect');
+    const btnDisconnect = document.getElementById('btnDisconnect');
+    const guildInfo = document.getElementById('guildInfo');
+
+    if (data.connected && data.guild) {
+      dot.className = 'bot-status-dot connected';
+      text.textContent = 'متصل — ' + data.guild.name;
+      detail.textContent = data.guild.memberCount + ' عضو';
+      btnConnect.style.display = 'none';
+      btnDisconnect.style.display = 'flex';
+      guildInfo.style.display = 'flex';
+      document.getElementById('guildIcon').src = data.guild.icon || '/images/default-avatar.png';
+      document.getElementById('guildName').textContent = data.guild.name;
+      document.getElementById('guildMeta').textContent = data.guild.memberCount + ' عضو — ID: ' + data.guild.id;
+      document.getElementById('guildId').value = data.guild.id;
+    } else if (data.enabled) {
+      dot.className = 'bot-status-dot error';
+      text.textContent = 'មិនអាចភ្ជាប់បាន';
+      detail.textContent = 'تحقق من التوكن والصلاحيات';
+      btnConnect.style.display = 'flex';
+      btnDisconnect.style.display = 'none';
+      guildInfo.style.display = 'none';
+    } else {
+      dot.className = 'bot-status-dot disconnected';
+      text.textContent = 'معطّل';
+      detail.textContent = 'اضغط "تشغيل" لتشغيل البوت';
+      btnConnect.style.display = 'flex';
+      btnDisconnect.style.display = 'none';
+      guildInfo.style.display = 'none';
+    }
+  } catch(e) {
+    document.getElementById('statusText').textContent = 'خطأ في الاتصال';
+  }
+}
+
+async function connectBot() {
+  document.getElementById('btnConnect').innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الاتصال...';
+  await fetch('/api/bot/config', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({
+    bot_token: document.getElementById('botToken').value,
+    bot_guild_id: document.getElementById('guildId').value,
+    bot_log_channel_id: document.getElementById('logChannelId').value,
+    bot_welcome_channel_id: document.getElementById('welcomeChannelId').value,
+  })});
+  await fetch('/api/bot/connect', { method: 'POST' });
+  setTimeout(checkStatus, 3000);
+}
+
+async function disconnectBot() {
+  await fetch('/api/bot/disconnect', { method: 'POST' });
+  checkStatus();
+}
+
+async function saveConfig() {
+  const res = await fetch('/api/bot/config', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({
+    bot_token: document.getElementById('botToken').value,
+    bot_guild_id: document.getElementById('guildId').value,
+    bot_log_channel_id: document.getElementById('logChannelId').value,
+    bot_welcome_channel_id: document.getElementById('welcomeChannelId').value,
+  })});
+  const data = await res.json();
+  if (data.success) {
+    alert('تم الحفظ');
+  } else {
+    alert('خطأ: ' + (data.error || ''));
+  }
+}
+
+checkStatus();
+</script>
+<%- include('admin_footer') %>

@@ -171,6 +171,21 @@
         <i class="fas fa-scroll"></i><span>السجلات</span>
       </a>
       <% } %>
+      <% if (_canAccess('bot_manage')) { %>
+      <div class="nav-section-title">البوت</div>
+      <a href="/admin/bot" class="nav-item<%= _admPath === '/admin/bot' ? ' active' : '' %>">
+        <i class="fas fa-robot"></i><span>إعدادات البوت</span>
+      </a>
+      <a href="/admin/bot/members" class="nav-item<%= _admPath === '/admin/bot/members' ? ' active' : '' %>">
+        <i class="fas fa-users-gear"></i><span>أعضاء السيرفر</span>
+      </a>
+      <a href="/admin/bot/notify" class="nav-item<%= _admPath === '/admin/bot/notify' ? ' active' : '' %>">
+        <i class="fas fa-paper-plane"></i><span>إشعارات الديسكورد</span>
+      </a>
+      <a href="/admin/bot/logs" class="nav-item<%= _admPath === '/admin/bot/logs' ? ' active' : '' %>">
+        <i class="fas fa-clipboard-list"></i><span>سجل البوت</span>
+      </a>
+      <% } %>
       <div class="nav-divider"></div>
       <a href="/" class="nav-item">
         <i class="fas fa-home"></i><span>الموقع</span>

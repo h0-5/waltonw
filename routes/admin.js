@@ -908,4 +908,18 @@ router.get('/logs', checkPermission('logs_view'), async (req, res) => {
   }
 });
 
+// ===== Bot Pages =====
+router.get('/bot', checkPermission('bot_manage'), (req, res) => {
+  res.render('admin/bot-config', { title: 'إعدادات البوت', currentPath: req.path });
+});
+router.get('/bot/members', checkPermission('bot_manage'), (req, res) => {
+  res.render('admin/bot-members', { title: 'أعضاء السيرفر', currentPath: req.path });
+});
+router.get('/bot/notify', checkPermission('bot_manage'), (req, res) => {
+  res.render('admin/bot-notify', { title: 'إشعارات الديسكورد', currentPath: req.path });
+});
+router.get('/bot/logs', checkPermission('bot_manage'), (req, res) => {
+  res.render('admin/bot-logs', { title: 'سجل البوت', currentPath: req.path });
+});
+
 module.exports = router;
