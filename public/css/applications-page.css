@@ -327,13 +327,10 @@
     box-shadow: 0 0 15px rgba(var(--ac-rgb), 0.1);
 }
 
-/* ── HOLO COLLECTIBLE CARDS — كروت تجميع هولوغرافيك (شكل 3) ──
-   نفس حجم الصبح بالضبط (minmax 252px + 1fr) — الفرق الوحيد auto-fill بدل auto-fit:
-   المسارات الفارغة ما تنطوي، فالبطاقة تبقى بحجم الصف الممتلئ مهما حذفت أو أضفت تقديمات
-   [deploy re-trigger 2026-09-10 20:2x UTC — دفعة نشر بعد رسالة «للان نفس الحجم»] */
+/* ── HOLO COLLECTIBLE CARDS — كروت تجميع هولوغرافيك (شكل 3) ── */
 .deck {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(252px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(252px, 1fr));
     gap: 1.25rem;
     perspective: 1200px;
 }
