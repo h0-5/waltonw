@@ -1,0 +1,14 @@
+{
+  "name": "waltonw-discord-bot",
+  "version": "1.0.0",
+  "description": "Walton Family Discord Bot",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "mysql2": "^3.6.0",
+    "dotenv": "^16.3.1"
+  }
+}
