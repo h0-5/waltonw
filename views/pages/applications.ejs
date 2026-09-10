@@ -4,11 +4,8 @@
 
 <%
 /* عدّ مرة واحدة بدل إعادة الحساب في كل موضع — أخف على السيرفر */
-/* صف «منظم فعاليات» مخفي من الصفحة نهائياً بطلب المالك — حُذفت بطاقته الثابتة كلياً */
-var visibleApps = applications.filter(function(a) {
-    return !/فعاليات/.test(((a.title || '') + ' ' + (a.application_type || '')).trim());
-});
-var openCount = visibleApps.filter(function(a) { return a.status === 'open'; }).length;
+/* كل تقديمات قاعدة البيانات تُعرض كما هي — الإدارة حرة تضيف/تحذف بلا أي قيود عرض */
+var openCount = applications.filter(function(a) { return a.status === 'open'; }).length;
 %>
 
 <div class="cy-apps-page">
@@ -28,7 +25,7 @@ var openCount = visibleApps.filter(function(a) { return a.status === 'open'; }).
                 <div class="metric-label">تقديم مفتوح</div>
             </div>
             <div class="metric">
-                <div class="metric-val"><%= visibleApps.length %></div>
+                <div class="metric-val"><%= applications.length %></div>
                 <div class="metric-label">إجمالي التقديمات</div>
             </div>
         </div>
@@ -45,8 +42,8 @@ var openCount = visibleApps.filter(function(a) { return a.status === 'open'; }).
         </div>
 
         <div class="deck">
-            <% if (visibleApps.length > 0) { %>
-                <% visibleApps.forEach(function(app, ai) { %>
+            <% if (applications.length > 0) { %>
+                <% applications.forEach(function(app, ai) { %>
                 <article class="hcard <%= ['rar-gold','rar-epic','rar-rare'][ai % 3] %> reveal stagger-<%= (ai % 6) + 1 %>">
                     <div class="h-shine"></div>
                     <div class="h-glare"></div>

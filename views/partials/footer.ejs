@@ -232,17 +232,21 @@
   //   (rotateX/rotateY/perspective) على عناصر SVG الداخلية — تُسطّح أو تُهمل،
   //   الحرف div فوق الكلمة بداخله svg صغير بنفس آلية textLength — يطابق
   //   الحرف المطبوع بكسل-بكسل، والمنظور يُطبّق على الـ div (عنصر HTML كامل الأهلية)
-  // · النموذج (طلب المستخدم حرفياً: «لما تجيب ماوس على حرف يتحرك ما يحتاج تضغط»):
-  //   مجرّد المرور فوق حرف يفعّله فوراً بلا أي ضغطة — يبرز نحو المستخدم (translateZ+)
-  //   ويكبر ويتوهج توهجاً خارجياً، ومكان المؤشر داخل الحرف يغرسه للداخل (ميلان
-  //   منظوري + دفع للخلف يبلغ أقصاه عند قلب اللمس). الانتقال من حرف لحرف يطفئ
-  //   السابق ويشعل اللي بعده = موجة حية تتبع الماوس، ومغادرة الكلمة تُنشّل الكل
-  //   بنعومة. اللمس نفس الدلالات (الهاتف بلا مرور): الإصبع على حرف = بروز يبقى
-  //   بعد الرفع، وتمريره يغرس من مكان اللمس، ولمسة سريعة على المنبثق تعيده للسكون
+  // · النموذج (طلب المستخدم: «طبق نفس ميلان الـ 3d على احرف والتون فاميلي بالفتر
+  //   نفسه تماماً»): مجرّد المرور فوق حرف يفعّله فوراً بلا أي ضغطة — يبرز نحو
+  //   المستخدم (translateZ+) ويكبر ويتوهج، وميلانه المنظوري هو فيزياء كروت
+  //   التقديمات نفسها حرفياً: ±8° تتبع مكان المؤشر داخل صندوق الحرف المرئي،
+  //   ارتفاع -7px، مطاردة 0.5 أثناء التتبع وارتداد نابض 0.72 عند المغادرة حتى
+  //   السكون التام. الانتقال من حرف لحرف يطفئ السابق ويشعل اللي بعده = موجة حية
+  //   تتبع الماوس، ومغادرة الكلمة تُنشّل الكل بنعومة. اللمس (الهاتف بلا مرور)
+  //   كما هو: بروز يبقى بعد الرفع، وتمرير يغرس من مكان اللمس، ولمسة سريعة تُرجع
   // · الحركة حلقة rAF واحدة تعمل فقط أثناء انتقال القيم وتتوقف ذاتياً عند
   //   الاستقرار — لا مؤقتات خامل ولا حلقات دائمة، وأثر السكون على الأداء صفري
   if (!reduced && W5) {
-    var POPZ = 22, POPS = 1.2, MAXR = 14, MAXRX = 11, DENTZ = 30, PERSP = 340, HH = 34;
+    var POPZ = 58, POPS = 1.2, MAXR = 14, MAXRX = 11, DENTZ = 80, PERSP = 900, HH = 34;
+    // منظور 900px = منظور الكروت نفسه؛ POPZ/DENTZ (58/80) مكافئ بصرياً للـ 22/30 القدامى تحت منظور 340
+    // فيزياء الميلان = فيزياء كروت التقديمات حرفياً (نفس الأرقام بنصها)
+    var MAX = 8, LIFT = 7, CHASE = 0.5, RELEASE = 0.72, MIN = 0.6;
     var NS = 'http://www.w3.org/2000/svg';
     // [الحرف، مركز x، العرض المشدود (textLength)، مركز y البصري للصنف]
     // المركز الرأسي لكل صنف: قبعة (W/F) 9.4–54 → 31.7 / وسط صغير 20.5–54 → 37.25 / نازل (y) 20.5–66.5 → 43.5
@@ -269,7 +273,7 @@
       // محور الدوران بصرّ الحرف نفسه (وليس صندوقه الكامل) — انعكاس دقيق حول مركز الحرف
       d.style.transformOrigin = '50% ' + c[3] + '%';
       var hw = c[2] / 2 + 1.5; // نطاق اللمس بعرض الحرف كاملاً — الحروف المتتالية تغطي الكلمة كلها وفجوة الكلمتين فقط بلا حرف
-      letters.push({ el: d, cx: c[1], hw: hw, cy: c[3], pop: 0, popT: 0, dent: 0, dentT: 0, ndx: 0, ndy: 0, push: 0 });
+      letters.push({ el: d, cx: c[1], hw: hw, cy: c[3], pop: 0, popT: 0, dent: 0, dentT: 0, ndx: 0, ndy: 0, push: 0, ax: 0, ay: 0, az: 0, tx: 0, ty: 0, tl: 0, active: false });
       bands.push([c[1] - hw, c[1] + hw]);
     });
     // تثبيت الحروف بالبكسل فوق حجز viewBox داخل صندوق الـ svg — preserveAspectRatio
@@ -302,24 +306,28 @@
     function apply(L){
       // بروز نحو المستخدم دائماً بالمرور؛ الدفع للخلف حصري للضغط المتعمد (لمس) —
       // يستحيل هندسياً أن يُقرأ تفاعل الماوس «دخول للداخل» مهما كان مكان المؤشر
+      // الميلان: ميلان الكروت (ax/ay) + مكوّن غرس اللمس (ndx/ndy) — لا يجتمعان أبداً
       var tz = POPZ * L.pop - DENTZ * L.dent * L.push;
       var sc = 1 + (POPS - 1) * L.pop;        // الحجم ثابت طول التفاعل: الغرس لا يغيّر الحجم إطلاقاً
-      L.el.style.transform = 'perspective(' + PERSP + 'px) translateZ(' + tz.toFixed(2) + 'px) rotateX(' + (-MAXRX * L.ndy * L.dent).toFixed(2) + 'deg) rotateY(' + (MAXR * L.ndx * L.dent).toFixed(2) + 'deg) scale(' + sc.toFixed(3) + ')';
+      L.el.style.transform = 'perspective(' + PERSP + 'px) translateY(' + L.az.toFixed(2) + 'px) rotateX(' + (L.ax - MAXRX * L.ndy * L.dent).toFixed(2) + 'deg) rotateY(' + (L.ay + MAXR * L.ndx * L.dent).toFixed(2) + 'deg) translateZ(' + tz.toFixed(2) + 'px) scale(' + sc.toFixed(3) + ')';
     }
     function tick(){
       rafId = 0;
       var live2 = false;
       for (var i = 0; i < letters.length; i++) {
         var L = letters[i];
+        // مطاردة/ارتداد الكروت حرفياً: 0.5 أثناء التتبع، 0.28 (1-0.72) بعد المغادرة
+        var k = L.active ? CHASE : (1 - RELEASE);
+        L.ax += (L.tx - L.ax) * k;
+        L.ay += (L.ty - L.ay) * k;
+        L.az += (L.tl - L.az) * k;
         var dp = L.popT - L.pop, dd = L.dentT - L.dent;
-        if (Math.abs(dp) > 0.004 || Math.abs(dd) > 0.004) {
-          L.pop += dp * 0.22; L.dent += dd * 0.4; // بروز سريع ~200ms وغرس أسرع — استجابة فورية للمرور
-          if (Math.abs(L.popT - L.pop) <= 0.004) L.pop = L.popT;
-          if (Math.abs(L.dentT - L.dent) <= 0.004) L.dent = L.dentT;
-          if (L.pop === 0 && L.dent === 0) L.el.style.transform = ''; // سكون تام = صفر تكلفة
-          else apply(L);
-          live2 = true;
-        }
+        if (Math.abs(dp) > 0.004) { L.pop += dp * 0.22; if (Math.abs(L.popT - L.pop) <= 0.004) L.pop = L.popT; } // بروز سريع ~200ms
+        if (Math.abs(dd) > 0.004) { L.dent += dd * 0.4; if (Math.abs(L.dentT - L.dent) <= 0.004) L.dent = L.dentT; } // غرس أسرع
+        var settled = !L.active && Math.abs(L.ax) <= MIN && Math.abs(L.ay) <= MIN && Math.abs(L.az) <= 0.3 &&
+                      L.pop === 0 && L.dent === 0 && L.popT === 0 && L.dentT === 0; // البروز المستمر (popT=1) لا يعد سكوناً
+        if (settled) { L.ax = 0; L.ay = 0; L.az = 0; L.el.style.transform = ''; } // سكون تام = صفر تكلفة
+        else { apply(L); live2 = true; }
       }
       if (live2) rafId = requestAnimationFrame(tick);
     }
@@ -340,38 +348,49 @@
       kick();
     }
     function releaseAll(){
-      for (var i = 0; i < letters.length; i++) if (letters[i].popT) setPop(i, false);
+      for (var i = 0; i < letters.length; i++) {
+        if (letters[i].popT) setPop(i, false);
+        if (letters[i].active) { letters[i].active = false; letters[i].tx = 0; letters[i].ty = 0; letters[i].tl = 0; }
+      }
       releaseDents();
     }
     function hitAt(x){
       for (var b = 0; b < bands.length; b++) if (x >= bands[b][0] && x < bands[b][1]) return b;
       return -1;
     }
-    // الغرس من مكان المؤشر داخل الحرف:
-    // · مرور (ديسكتوب): ميلان فقط باتجاه المؤشر — الجهة الملموسة تبتعد بميلانها
-    //   والحرف يظل بارزاً (+22) بلا أي دفع للخلف، ومركز الحرف = صفر ميلان
-    // · ضغط متعمد (لمس): غرس كامل — أعمق ما يكون عند قلب اللمس (غوص مستقيم
-   //   بلا ميلان) ويتلاشى نحو الأطراف (نموذج «ضغطة اليد بهاتف»)
-    var TILT = 0.85;
-    function dentAt(xSvg, ySvg, fullPress){
+    // الغرس: حصري لضغطة اللمس (الديسكتوب ميلانه الآن فيزياء الكروت عبر tiltAt) —
+    // أعمق غرس عند قلب اللمس ويتلاشى نحو أطراف الحرف (نموذج «ضغطة اليد بهاتف»)
+    function dentAt(xSvg, ySvg){
       if (isNaN(xSvg) || !(ySvg > 0 && ySvg < 100)) { releaseDents(); return; }
       var hit = hitAt(xSvg);
       if (hit < 0) { releaseDents(); return; }
       var L = letters[hit];
       var ndx = (xSvg - L.cx) / L.hw; if (ndx > 1) ndx = 1; else if (ndx < -1) ndx = -1;
       var ndy = (ySvg - L.cy) / HH; if (ndy > 1) ndy = 1; else if (ndy < -1) ndy = -1;
-      var depth;
-      if (fullPress) {
-        var prox = 1 - Math.max(Math.abs(ndx), Math.abs(ndy)); // أعمق غرس عند قلب اللمس
-        depth = prox * prox * (3 - 2 * prox);                  // يتلاشى نحو أطراف الحرف
-      } else {
-        depth = TILT; // المرور: ميلان كامل الاتساع يتبع اتجاه المؤشر
-      }
-      L.push = fullPress ? 1 : 0;
+      var prox = 1 - Math.max(Math.abs(ndx), Math.abs(ndy)); // أعمق غرس عند قلب اللمس
+      var depth = prox * prox * (3 - 2 * prox);              // يتلاشى نحو أطراف الحرف
+      L.push = 1;
       L.ndx = ndx; L.ndy = ndy; L.dentT = depth;
       if (dented !== hit) {
         if (dented >= 0) letters[dented].dentT = 0;
         dented = hit;
+      }
+      kick();
+    }
+    // ميلان الكروت = ميلان كروت التقديمات نفسه: الأهداف من مكان المؤشر داخل الصندوق
+    // المرئي للحرف (±0.5 كما في الكروت) والفيزياء (مطاردة/ارتداد) في tick حرفياً
+    function tiltAt(xSvg, ySvg, hit){
+      for (var i = 0; i < letters.length; i++) {
+        var L = letters[i];
+        if (i === hit) {
+          if (!L.active) { L.active = true; L.tl = -LIFT; }
+          var px = (xSvg - L.cx) / L.hw * 0.5; if (px > 0.5) px = 0.5; else if (px < -0.5) px = -0.5;
+          var py = (ySvg - L.cy) / (HH * 2); if (py > 0.5) py = 0.5; else if (py < -0.5) py = -0.5;
+          L.ty = px * MAX * 2;
+          L.tx = -py * MAX * 2;
+        } else if (L.active) {
+          L.active = false; L.tx = 0; L.ty = 0; L.tl = 0;
+        }
       }
       kick();
     }
@@ -407,7 +426,7 @@
         tMoved += Math.abs(t.clientX - tLX) + Math.abs(t.clientY - tLY);
         tLX = t.clientX; tLY = t.clientY;
         var p = svgPoint(t.clientX, t.clientY);
-        if (p && p[1] > 0 && p[1] < 100) { popHit(p[0]); dentAt(p[0], p[1], true); }
+        if (p && p[1] > 0 && p[1] < 100) { popHit(p[0]); dentAt(p[0], p[1]); }
       }, { passive: true });
       svg.addEventListener('touchend', function(){
         releaseDents();
@@ -417,13 +436,13 @@
       }, { passive: true });
       svg.addEventListener('touchcancel', function(){ releaseDents(); tHit = -1; }, { passive: true });
     } else {
-      // الديسكتوب: مجرّد المرور يفعّل — بلا أي ضغطة (الموديل الجديد كلياً)،
-      // ومغادرة منطقة الكلمة تُنشّل كل شيء بنعومة
+      // الديسكتوب: مجرّد المرور يفعّل — بلا أي ضغطة، وميلان الحرف فيزياء الكروت
+      // نفسها (tiltAt أعلاه)، ومغادرة منطقة الكلمة تُنشّل كل شيء بنعومة
       wrap.addEventListener('mousemove', function(e){
         var p = svgPoint(e.clientX, e.clientY);
         // حاجز رأسي: المرور فوق منطقة الكلمة لكن خارج شريط الحروف نفسه (فوقها/تحتها
         // بصندوق الـ 17rem الطويل) لا يفعل الحروف بمجرد تطابق المحور الأفقي
-        if (p && p[1] > 0 && p[1] < 100) { popHit(p[0]); dentAt(p[0], p[1], false); }
+        if (p && p[1] > 0 && p[1] < 100) { var hit = popHit(p[0]); tiltAt(p[0], p[1], hit); }
         else releaseAll();
       }, { passive: true });
       wrap.addEventListener('mouseleave', releaseAll);

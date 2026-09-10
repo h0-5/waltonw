@@ -674,7 +674,7 @@ router.post('/company/requests/:id/reject', checkPermission('company_edit'), asy
 // Service Request from user
 router.post('/service-request', require('../../middleware/auth').isAuthenticated, async (req, res) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'ظٹط¬ط¨ طھط³ط¬ظٹظ„ ط§ظ„ط¯ط®ظˆظ„' });
+    if (!req.user) return res.status(401).json({ error: 'يجب تسجيل الدخول' });
     const { service_id, package_id } = req.body;
     await db.execute('INSERT INTO service_requests (service_id, user_id, answers, status, total_price, package_id) VALUES (?, ?, ?, ?, ?, ?)',
       [service_id, req.user.id, JSON.stringify([]), 'pending', 0, package_id || 0]);
@@ -692,10 +692,10 @@ const fs = require('fs');
 router.post('/applications/:id/approve', checkPermission('apps_approve'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    if (!id || id <= 0) return res.status(400).json({ error: 'ط±ظ‚ظ… ط؛ظٹط± طµط­ظٹط­' });
+    if (!id || id <= 0) return res.status(400).json({ error: 'رقم غير صحيح' });
     const [app] = await db.query('SELECT * FROM submitted_applications WHERE id = ? LIMIT 1', [id]);
-    if (!app || !app.length) return res.status(404).json({ error: 'ط§ظ„ط·ظ„ط¨ ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
-    if (app[0].status !== 'pending') return res.status(400).json({ error: 'ظٹظ…ظƒظ† ظ‚ط¨ظˆظ„ ط§ظ„ط·ظ„ط¨ط§طھ ط§ظ„ظ…ط¹ظ„ظ‚ط© ظپظ‚ط·' });
+    if (!app || !app.length) return res.status(404).json({ error: 'الطلب غير موجود' });
+    if (app[0].status !== 'pending') return res.status(400).json({ error: 'يمكن قبول الطلبات المعلقة فقط' });
 
     await db.query(
       "UPDATE submitted_applications SET status = 'waiting_join', reviewed_by = ?, reviewed_at = NOW(), review_notes = ? WHERE id = ?",
@@ -719,7 +719,7 @@ router.post('/applications/:id/approve', checkPermission('apps_approve'), async 
     res.json({ success: true });
   } catch(e) {
     console.error('Approve app error:', e.message);
-    res.status(500).json({ error: 'ط­ط¯ط« ط®ط·ط£' });
+    res.status(500).json({ error: 'حدث خطأ' });
   }
 });
 
@@ -727,10 +727,10 @@ router.post('/applications/:id/approve', checkPermission('apps_approve'), async 
 router.post('/applications/:id/reject', checkPermission('apps_reject'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    if (!id || id <= 0) return res.status(400).json({ error: 'ط±ظ‚ظ… ط؛ظٹط± طµط­ظٹط­' });
+    if (!id || id <= 0) return res.status(400).json({ error: 'رقم غير صحيح' });
     const [app] = await db.query('SELECT * FROM submitted_applications WHERE id = ? LIMIT 1', [id]);
-    if (!app || !app.length) return res.status(404).json({ error: 'ط§ظ„ط·ظ„ط¨ ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
-    if (app[0].status !== 'pending') return res.status(400).json({ error: 'ظٹظ…ظƒظ† ط±ظپط¶ ط§ظ„ط·ظ„ط¨ط§طھ ط§ظ„ظ…ط¹ظ„ظ‚ط© ظپظ‚ط·' });
+    if (!app || !app.length) return res.status(404).json({ error: 'الطلب غير موجود' });
+    if (app[0].status !== 'pending') return res.status(400).json({ error: 'يمكن رفض الطلبات المعلقة فقط' });
 
     const notes = typeof req.body.notes === 'string' ? req.body.notes.substring(0, 1000) : '';
     let cooldownUntil = null;
@@ -753,7 +753,7 @@ router.post('/applications/:id/reject', checkPermission('apps_reject'), async (r
     res.json({ success: true });
   } catch(e) {
     console.error('Reject app error:', e.message);
-    res.status(500).json({ error: 'ط­ط¯ط« ط®ط·ط£' });
+    res.status(500).json({ error: 'حدث خطأ' });
   }
 });
 
@@ -761,9 +761,9 @@ router.post('/applications/:id/reject', checkPermission('apps_reject'), async (r
 router.post('/applications/:id/delete', checkPermission('apps_delete'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    if (!id || id <= 0) return res.status(400).json({ error: 'ط±ظ‚ظ… ط؛ظٹط± طµط­ظٹط­' });
+    if (!id || id <= 0) return res.status(400).json({ error: 'رقم غير صحيح' });
     const [app] = await db.query('SELECT id FROM submitted_applications WHERE id = ? LIMIT 1', [id]);
-    if (!app || !app.length) return res.status(404).json({ error: 'ط§ظ„ط·ظ„ط¨ ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
+    if (!app || !app.length) return res.status(404).json({ error: 'الطلب غير موجود' });
 
     await db.query('DELETE FROM submitted_applications WHERE id = ?', [id]);
     await db.query(
@@ -774,7 +774,7 @@ router.post('/applications/:id/delete', checkPermission('apps_delete'), async (r
     res.json({ success: true });
   } catch(e) {
     console.error('Delete app error:', e.message);
-    res.status(500).json({ error: 'ط­ط¯ط« ط®ط·ط£' });
+    res.status(500).json({ error: 'حدث خطأ' });
   }
 });
 
@@ -791,7 +791,7 @@ router.get('/applications/questions/:type', checkPermission('app_types_view'), a
 router.post('/applications/questions', checkPermission('app_types_edit'), async (req, res) => {
   try {
     const { application_type, question, type, required, options, order_index, max_selections } = req.body;
-    if (!application_type || !question) return res.status(400).json({ error: 'ط§ظ„ط¨ظٹط§ظ†ط§طھ ظ†ط§ظ‚طµط©' });
+    if (!application_type || !question) return res.status(400).json({ error: 'البيانات ناقصة' });
     const validTypes = ['text','textarea','number','select','radio','multiple_choice','true_false','server_name','image'];
     const qType = validTypes.includes(type) ? type : 'text';
     const opts = typeof options === 'string' ? options.substring(0, 5000) : '';
@@ -804,7 +804,7 @@ router.post('/applications/questions', checkPermission('app_types_edit'), async 
     res.json({ success: true });
   } catch(e) {
     console.error('Add question error:', e.message);
-    res.status(500).json({ error: 'ط­ط¯ط« ط®ط·ط£' });
+    res.status(500).json({ error: 'حدث خطأ' });
   }
 });
 
@@ -812,10 +812,10 @@ router.post('/applications/questions', checkPermission('app_types_edit'), async 
 router.delete('/applications/questions/:id', checkPermission('app_types_edit'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    if (!id) return res.status(400).json({ error: 'ط±ظ‚ظ… ط؛ظٹط± طµط­ظٹط­' });
+    if (!id) return res.status(400).json({ error: 'رقم غير صحيح' });
     await db.query('DELETE FROM application_questions WHERE id = ?', [id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: 'ط­ط¯ط« ط®ط·ط£' }); }
+  } catch(e) { res.status(500).json({ error: 'حدث خطأ' }); }
 });
 
 // Get settings for type
@@ -851,7 +851,7 @@ router.put('/applications/settings/:type', checkPermission('app_types_edit'), as
     res.json({ success: true });
   } catch(e) {
     console.error('Update settings error:', e.message);
-    res.status(500).json({ error: 'ط­ط¯ط« ط®ط·ط£' });
+    res.status(500).json({ error: 'حدث خطأ' });
   }
 });
 
@@ -859,11 +859,14 @@ router.put('/applications/settings/:type', checkPermission('app_types_edit'), as
 router.post('/applications/types', checkPermission('app_types_edit'), async (req, res) => {
   try {
     const { application_type, title, description, requirements, image, status } = req.body;
-    if (!application_type || !/^[a-zA-Z0-9_\-]+$/.test(application_type)) {
-      return res.status(400).json({ error: 'ط§ظ„ظ†ظˆط¹ ظٹط¬ط¨ ط£ظ† ظٹط­طھظˆظٹ ط¹ظ„ظ‰ ط£ط­ط±ظپ ط¥ظ†ط¬ظ„ظٹط²ظٹط© ظˆط£ط±ظ‚ط§ظ… ظپظ‚ط·' });
+    // حرية كاملة للإدارة (طلب المالك): أي اسم نوع مقبول — مسافات/عربي/رموز عادية —
+    // والفحص للسلامة فقط: طول معقول بلا محارف تحكم أو رموز تكسر روابط المسار
+    if (!application_type || String(application_type).trim().length === 0 || String(application_type).length > 100 ||
+        /[/<>"'`\\\u0000-\u001f\u007f]/.test(application_type)) {
+      return res.status(400).json({ error: 'النوع يحتوي رموزاً غير مسموحة أو يتجاوز 100 حرف' });
     }
     const [exists] = await db.query('SELECT id FROM application_settings WHERE application_type = ?', [application_type]);
-    if (exists && exists.length) return res.status(400).json({ error: 'ظ‡ط°ط§ ط§ظ„ظ†ظˆط¹ ظ…ظˆط¬ظˆط¯ ط¨ط§ظ„ظپط¹ظ„' });
+    if (exists && exists.length) return res.status(400).json({ error: 'هذا النوع موجود بالفعل' });
     await db.query(
       'INSERT INTO application_settings (application_type, title, description, requirements, image, status) VALUES (?, ?, ?, ?, ?, ?)',
       [application_type, (title||'').substring(0,255), (description||'').substring(0,5000), (requirements||'').substring(0,5000), (image||'').substring(0,255), status === 'open' ? 'open' : 'closed']
@@ -871,7 +874,7 @@ router.post('/applications/types', checkPermission('app_types_edit'), async (req
     res.json({ success: true });
   } catch(e) {
     console.error('Add type error:', e.message);
-    res.status(500).json({ error: 'ط­ط¯ط« ط®ط·ط£' });
+    res.status(500).json({ error: 'حدث خطأ' });
   }
 });
 
@@ -885,7 +888,7 @@ router.put('/applications/types/:id', checkPermission('app_types_edit'), async (
       [(title||'').substring(0,255), (description||'').substring(0,5000), (requirements||'').substring(0,5000), (image||'').substring(0,255), status === 'open' ? 'open' : 'closed', id]
     );
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: 'ط­ط¯ط« ط®ط·ط£' }); }
+  } catch(e) { res.status(500).json({ error: 'حدث خطأ' }); }
 });
 
 // Toggle type status
@@ -895,7 +898,7 @@ router.post('/applications/types/status', checkPermission('app_types_edit'), asy
     const s = ['open','closed'].includes(status) ? status : 'closed';
     await db.query('UPDATE application_settings SET status = ?, updated_at = NOW() WHERE application_type = ?', [s, application_type]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: 'ط­ط¯ط« ط®ط·ط£' }); }
+  } catch(e) { res.status(500).json({ error: 'حدث خطأ' }); }
 });
 
 // Delete type
@@ -903,11 +906,11 @@ router.delete('/applications/types/:id', checkPermission('app_types_edit'), asyn
   try {
     const id = parseInt(req.params.id);
     const [type] = await db.query('SELECT application_type FROM application_settings WHERE id = ?', [id]);
-    if (!type || !type.length) return res.status(404).json({ error: 'ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
+    if (!type || !type.length) return res.status(404).json({ error: 'غير موجود' });
     await db.query('DELETE FROM application_questions WHERE application_type = ?', [type[0].application_type]);
     await db.query('DELETE FROM application_settings WHERE id = ?', [id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: 'ط­ط¯ط« ط®ط·ط£' }); }
+  } catch(e) { res.status(500).json({ error: 'حدث خطأ' }); }
 });
 
 // ===== Roles & Permissions API =====
