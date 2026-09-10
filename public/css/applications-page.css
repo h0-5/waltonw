@@ -328,12 +328,11 @@
 }
 
 /* ── HOLO COLLECTIBLE CARDS — كروت تجميع هولوغرافيك (شكل 3) ──
-   حجم البطاقة ثابت 264px مهما زاد/نقص عدد التقديمات — الزيادة تلف لصف ثانٍ بنفس الحجم
-   (auto-fit يطوي المسارات الفارغة + justify-content: center يوسّط الصف، فلا تتمدد البطاقات عند النقص) */
+   نفس حجم الصبح بالضبط (minmax 252px + 1fr) — الفرق الوحيد auto-fill بدل auto-fit:
+   المسارات الفارغة ما تنطوي، فالبطاقة تبقى بحجم الصف الممتلئ مهما حذفت أو أضفت تقديمات */
 .deck {
     display: grid;
-    grid-template-columns: repeat(auto-fit, 264px);
-    justify-content: center;
+    grid-template-columns: repeat(auto-fill, minmax(252px, 1fr));
     gap: 1.25rem;
     perspective: 1200px;
 }
