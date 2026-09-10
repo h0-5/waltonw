@@ -234,6 +234,8 @@
     .news-ticker-item{position:absolute;width:100%;opacity:0;transform:translateY(20px);transition:all 0.5s ease;font-size:0.82rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .news-ticker-item.active{opacity:1;transform:translateY(0)}
     .news-ticker-item strong{color:var(--ac);margin-left:6px}
+    .news-ticker-timer{flex-shrink:0;font-size:0.65rem;color:var(--ac);background:rgba(var(--ac-rgb),0.15);padding:3px 8px;border-radius:6px;font-weight:700;font-family:monospace;display:flex;align-items:center;gap:4px;white-space:nowrap}
+    .news-ticker-timer i{font-size:0.6rem}
     .news-ticker-close{flex-shrink:0;background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:0.8rem;padding:4px;border-radius:4px;transition:color 0.2s}
     .news-ticker-close:hover{color:var(--text)}
   </style>
@@ -270,9 +272,27 @@
         return true;
       });
       if (!items.length) return;
+      function formatCountdown(ms) {
+        if (ms <= 0) return 'منتهي';
+        var s = Math.floor(ms / 1000);
+        var d = Math.floor(s / 86400); s %= 86400;
+        var h = Math.floor(s / 3600); s %= 3600;
+        var m = Math.floor(s / 60); s %= 60;
+        if (d > 0) return d + ' يوم ' + h + ' س';
+        if (h > 0) return h + ' س ' + m + ' د';
+        if (m > 0) return m + ' د ' + s + ' ث';
+        return s + ' ث';
+      }
       content.innerHTML = items.map(function(b, i) {
+        var timerHtml = '';
+        if (b.expires_at) {
+          var diff = new Date(b.expires_at).getTime() - Date.now();
+          if (diff > 0) {
+            timerHtml = '<span class="news-ticker-timer" data-expires="' + b.expires_at + '"><i class="fas fa-hourglass-half"></i> ' + formatCountdown(diff) + '</span>';
+          }
+        }
         return '<div class="news-ticker-item' + (i === 0 ? ' active' : '') + '">' +
-          (b.title ? '<strong>' + b.title + '</strong>' : '') + b.message +
+          (b.title ? '<strong>' + b.title + '</strong>' : '') + b.message + timerHtml +
         '</div>';
       }).join('');
       ticker.classList.add('show');
@@ -284,7 +304,21 @@
           all[currentIndex].classList.add('active');
         }, 4000);
       }
-      // Mark all as seen
+      setInterval(function() {
+        var timers = content.querySelectorAll('.news-ticker-timer');
+        timers.forEach(function(el) {
+          var expires = el.getAttribute('data-expires');
+          if (!expires) return;
+          var diff = new Date(expires).getTime() - Date.now();
+          if (diff <= 0) {
+            el.innerHTML = '<i class="fas fa-hourglass-end"></i> منتهي';
+            el.style.color = '#ef4444';
+            el.style.background = 'rgba(239,68,68,0.15)';
+          } else {
+            el.innerHTML = '<i class="fas fa-hourglass-half"></i> ' + formatCountdown(diff);
+          }
+        });
+      }, 1000);
       items.forEach(function(b) { dismissed[b.id] = Date.now(); });
       saveDismissed();
     });
