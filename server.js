@@ -306,6 +306,22 @@ async function migrate() {
     }
   } catch(e) { console.log('orders.product_id:', e.message); }
 
+  // Add is_virtual flag to roles table to hide fake/synced Discord roles
+  try {
+    const [cols] = await db.query("SHOW COLUMNS FROM roles LIKE 'is_virtual'");
+    if (cols.length === 0) {
+      await db.query("ALTER TABLE roles ADD COLUMN is_virtual TINYINT(1) DEFAULT 0");
+      console.log('✅ roles.is_virtual added');
+    }
+  } catch(e) {}
+  // Mark known virtual/synced roles as hidden
+  const virtualRoles = ['developer','founder','vice_founder','chairman','present_member','vice_president','leadership','family_member','company_member','deputy_leadership','executive','deputy_executive','supervisor'];
+  try {
+    for (const vr of virtualRoles) {
+      await db.query("UPDATE roles SET is_virtual = 1 WHERE name = ? AND is_virtual = 0", [vr]);
+    }
+  } catch(e) {}
+
   // Seed default roles
   try {
     const [existing] = await db.query('SELECT COUNT(*) as c FROM roles');
@@ -337,7 +353,7 @@ async function migrate() {
 }
 
 // Bump this when tables/ALTERs change in migrate() — '6' adds analytics + guard tables
-const SCHEMA_VERSION = '9';
+const SCHEMA_VERSION = '10';
 
 async function start() {
   // Skip the ~50-table migration when schema is already current:

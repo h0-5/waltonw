@@ -171,7 +171,8 @@
 const SIDE_ROLES = <%- JSON.stringify(sideRoles) %>;
 const ROLES = <%- JSON.stringify(roles) %>;
 const MY_ROLE = '<%= currentUser.role %>';
-const ROLE_RANK = {owner:0,developer:1,founder:2,vice_founder:3,chairman:4,present_member:5,vice_president:6,leadership:7,family_member:8,admin:9,moderator:10,support:11,member:12,trial:13,user:14};
+const ROLE_RANK = {};
+ROLES.forEach(function(r, i) { ROLE_RANK[r.name] = i; });
 function getRank(r){return ROLE_RANK[r]!==undefined?ROLE_RANK[r]:99}
 const MY_RANK = getRank(MY_ROLE);
 
