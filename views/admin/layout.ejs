@@ -87,6 +87,7 @@
       <% if (_canAccess('users_view')) { %>
       <a href="/admin/users" class="nav-item<%= _admPath === '/admin/users' ? ' active' : '' %>">
         <i class="fas fa-users"></i><span>المستخدمين</span>
+        <small style="display:block;font-size:0.6rem;color:rgba(255,255,255,0.3);margin-top:1px">إدارة + تعيين الرتب</small>
       </a>
       <% } %>
       <% if (_canAccess('products_view')) { %>
@@ -154,6 +155,7 @@
       <% if (_canAccess('roles_config_view')) { %>
       <a href="/admin/roles" class="nav-item<%= _admPath === '/admin/roles' ? ' active' : '' %>">
         <i class="fas fa-user-shield"></i><span>الرتب</span>
+        <small style="display:block;font-size:0.6rem;color:rgba(255,255,255,0.3);margin-top:1px">إعدادات الصلاحيات</small>
       </a>
       <% } %>
       <% if (_canAccess('users_ban')) { %>

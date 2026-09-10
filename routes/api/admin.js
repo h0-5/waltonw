@@ -13,11 +13,7 @@ router.post('/users/update', checkPermission('users_edit'), async (req, res) => 
 });
 
 router.post('/users/role', checkPermission('users_edit'), async (req, res) => {
-  const { user_id, role } = req.body;
-  try {
-    await db.execute('UPDATE users SET role = ? WHERE id = ?', [role, user_id]);
-    res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  return res.status(403).json({ error: 'تم تعطيل هذا المسار. استخدم PATCH /api/admin/users/:id من صفحة إدارة المستخدمين' });
 });
 
 router.post('/users/ban', checkPermission('users_ban'), async (req, res) => {
@@ -1026,32 +1022,9 @@ router.get('/roles/:id/members', checkPermission('roles_config_view'), async (re
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// Assign role to user
+// Assign role to user — DISABLED: use PATCH /api/admin/users/:id instead
 router.post('/roles/:id/assign', checkPermission('roles_assign'), async (req, res) => {
-  try {
-    const roleId = req.params.id;
-    const { user_id, reason } = req.body;
-    if (!user_id) return res.status(400).json({ error: 'user_id مطلوب' });
-
-    const [targetRole] = await db.execute('SELECT * FROM roles WHERE id = ?', [roleId]);
-    if (!targetRole.length) return res.status(404).json({ error: 'الرتبة غير موجودة' });
-
-    // Only owner can assign owner role
-    if (targetRole[0].name === 'owner' && req.user.role !== 'owner') {
-      return res.status(403).json({ error: 'فقط المالك يمكنه تعيين رتبة المالك' });
-    }
-
-    // Check can_assign_roles
-    const [myPerms] = await db.execute('SELECT can_assign_roles FROM roles WHERE name = ?', [req.user.role]);
-    if (myPerms.length && !myPerms[0].can_assign_roles && req.user.role !== 'owner') {
-      return res.status(403).json({ error: 'ليس لديك صلاحية تعيين رتب' });
-    }
-
-    await db.execute('UPDATE users SET role = ? WHERE id = ?', [targetRole[0].name, user_id]);
-    await db.execute('INSERT INTO role_assignments (role_id, user_id, assigned_by, reason, assigned_at) VALUES (?, ?, ?, ?, NOW())',
-      [roleId, user_id, req.user.id, reason || '']);
-    res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  return res.status(403).json({ error: 'تم تعطيل هذا التعيين. استخدم صفحة إدارة المستخدمين (/admin/users) لتعيين الرتب' });
 });
 
 // Get user role permissions (for frontend use)

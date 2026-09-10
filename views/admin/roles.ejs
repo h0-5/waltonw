@@ -125,15 +125,11 @@
               </div>
             </div>
 
-            <!-- Members -->
+            <!-- Members (view only — role assignment is done from /admin/users) -->
             <div class="settings-section">
               <h3><i class="fas fa-users"></i> الأعضاء بهذه الرتبة</h3>
               <div id="roleMembersList"><div class="skeleton" style="height:40px;margin-bottom:8px"></div><div class="skeleton" style="height:40px;margin-bottom:8px"></div></div>
-              <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.05);display:flex;gap:0.5rem">
-                <input type="text" id="assignUserId" placeholder="ID المستخدم" style="flex:1;padding:8px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(var(--ac-rgb),0.2);border-radius:8px;color:#fff;font-family:inherit">
-                <input type="text" id="assignReason" placeholder="السبب" style="flex:2;padding:8px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(var(--ac-rgb),0.2);border-radius:8px;color:#fff;font-family:inherit">
-                <button class="admin-btn primary small" onclick="assignRole()"><i class="fas fa-user-plus"></i></button>
-              </div>
+              <p style="margin-top:0.75rem;font-size:0.8rem;color:rgba(255,255,255,0.3)"><i class="fas fa-info-circle"></i> لتعيين رتبة لمستخدم، اذهب إلى <a href="/admin/users" style="color:var(--ac);text-decoration:underline">إدارة المستخدمين</a></p>
             </div>
           </div>
 
@@ -758,18 +754,6 @@ async function loadMembers(roleId) {
       list.innerHTML = '<div style="text-align:center;padding:1.5rem;color:rgba(255,255,255,0.3)">لا يوجد أعضاء</div>';
     }
   } catch(e) {}
-}
-
-async function assignRole() {
-  const userId = document.getElementById('assignUserId').value.trim();
-  const reason = document.getElementById('assignReason').value.trim();
-  if (!userId) return showConfirm('خطأ', 'أدخل ID', '<i class="fas fa-exclamation-circle" style="color:#ef4444"></i>', true);
-  try {
-    const res = await fetch('/api/admin/roles/' + selectedRoleId + '/assign', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: parseInt(userId), reason }) });
-    const data = await res.json();
-    if (data.success) { loadMembers(selectedRoleId); document.getElementById('assignUserId').value = ''; document.getElementById('assignReason').value = ''; showConfirm('تم', 'تم التعيين', '<i class="fas fa-check-circle" style="color:#22c55e"></i>', false); }
-    else showConfirm('خطأ', data.error || 'خطأ', '<i class="fas fa-exclamation-circle" style="color:#ef4444"></i>', true);
-  } catch(e) { showConfirm('خطأ', 'حدث خطأ', '<i class="fas fa-exclamation-circle" style="color:#ef4444"></i>', true); }
 }
 
 // Save everything
