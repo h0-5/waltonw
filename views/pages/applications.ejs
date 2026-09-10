@@ -10,7 +10,7 @@
             <div class="hex-ring-inner"></div>
             <i class="fas fa-file-signature"></i>
         </div>
-        <h1 class="page-heading">التقديمات</h1>
+        <h1 class="page-heading apps-title" data-text="التقديمات">التقديمات</h1>
         <p class="cy-apps-hero-sub">اختر التقديم المناسب لك من القائمة أدناه، وكن جزءاً من مجتمعنا المتميز</p>
         <div class="cy-apps-hero-line"></div>
         <div class="hero-metrics">
@@ -38,82 +38,71 @@
         <div class="deck">
             <% if (applications.length > 0) { %>
                 <% applications.forEach(function(app, ai) { %>
-                <article class="card reveal stagger-<%= (ai % 6) + 1 %>">
-                    <div class="holo-border"></div>
-                    <div class="top-shine"></div>
-                    <div class="inner-light"></div>
+                <article class="hcard <%= ['rar-gold','rar-epic','rar-rare'][ai % 3] %> reveal stagger-<%= (ai % 6) + 1 %>">
+                    <div class="h-shine"></div>
+                    <div class="h-glare"></div>
 
-                    <div class="status <%= app.status === 'open' ? 'open' : 'closed' %>">
-                        <span class="dot"></span>
-                        <%= app.status === 'open' ? 'مفتوح للتقديم' : 'مغلق حالياً' %>
+                    <span class="h-rar <%= app.status === 'open' ? 'open' : 'closed' %>">
+                        <span class="d"></span>
+                        <%= app.status === 'open' ? 'متاح للتقديم' : 'مغلق حالياً' %>
+                    </span>
+
+                    <div class="h-no" dir="ltr">NO.<%= String(ai + 1).padStart(3, '0') %> — WTN</div>
+
+                    <div class="h-core">
+                        <% if (app.image) { %>
+                            <img loading="lazy" src="<%= app.image %>" alt="<%= app.title || app.application_type %>">
+                        <% } else { %>
+                            <i class="fas fa-<%= app.application_type === 'Join Family' ? 'users' : 'user-shield' %>"></i>
+                        <% } %>
                     </div>
 
-                    <div class="card-head">
-                        <div class="icon-box">
-                            <div class="icon">
-                                <% if (app.image) { %>
-                                    <img loading="lazy" src="<%= app.image %>" alt="<%= app.title || app.application_type %>">
-                                <% } else { %>
-                                    <div class="fallback">
-                                        <i class="fas fa-<%= app.application_type === 'Join Family' ? 'users' : 'user-shield' %>"></i>
-                                    </div>
-                                <% } %>
-                            </div>
-                        </div>
-                        <div class="title-wrap">
-                            <h3><%= app.title || app.application_type %></h3>
-                            <span class="tag">
-                                <i class="fas fa-<%= app.application_type === 'Join Family' ? 'users' : 'user-shield' %>"></i>
-                                <%= app.application_type === 'Join Family' ? 'عضوية' : 'إدارة' %>
-                            </span>
-                        </div>
+                    <h3 class="h-name"><%= app.title || app.application_type %></h3>
+                    <div class="h-type">
+                        <i class="fas fa-<%= app.application_type === 'Join Family' ? 'users' : 'user-shield' %>"></i>
+                        <%= app.application_type === 'Join Family' ? 'عضوية • متاحة للجميع' : 'إدارة' %>
                     </div>
+                    <div class="h-div"></div>
 
-                    <div class="card-body">
-                        <% if (app.description) { %>
-                        <p class="desc"><%= app.description %></p>
-                        <% } %>
+                    <% if (app.description) { %>
+                    <p class="h-desc"><%= app.description %></p>
+                    <% } %>
 
-                        <% if (app.requirements) { %>
-                        <div class="reqs">
-                            <div class="reqs-title">
-                                <i class="fas fa-shield-alt"></i>
-                                المتطلبات الأساسية
-                            </div>
-                            <ul>
-                                <% app.requirements.split(/\r?\n/).filter(function(r){ return r.trim(); }).forEach(function(req) { %>
-                                <li>
-                                    <span class="check"><i class="fas fa-check"></i></span>
-                                    <span><%= req.trim() %></span>
-                                </li>
-                                <% }); %>
-                            </ul>
-                        </div>
-                        <% } %>
+                    <% if (app.requirements) { %>
+                    <ul class="h-reqs">
+                        <% app.requirements.split(/\r?\n/).filter(function(r){ return r.trim(); }).forEach(function(req) { %>
+                        <li>
+                            <span class="check"><i class="fas fa-check"></i></span>
+                            <span><%= req.trim() %></span>
+                        </li>
+                        <% }); %>
+                    </ul>
+                    <% } %>
 
-                        <div class="actions">
-                            <% if (app.status === 'open') { %>
-                                <% if (typeof user !== 'undefined' && user) { %>
-                                <a href="/applications/form/<%= encodeURIComponent(app.application_type) %>" class="btn">
-                                    <span class="shimmer"></span>
-                                    <i class="fas fa-paper-plane"></i>
-                                    تقديم الطلب الآن
-                                </a>
-                                <% } else { %>
-                                <a href="/auth/discord" class="btn btn-login">
-                                    <span class="shimmer"></span>
-                                    <i class="fas fa-sign-in-alt"></i>
-                                    تسجيل الدخول للتقديم
-                                </a>
-                                <% } %>
+                    <div class="h-act">
+                        <% if (app.status === 'open') { %>
+                            <% if (typeof user !== 'undefined' && user) { %>
+                            <a href="/applications/form/<%= encodeURIComponent(app.application_type) %>" class="h-btn">
+                                <span class="shimmer"></span>
+                                <i class="fas fa-paper-plane"></i>
+                                تقديم الطلب الآن
+                            </a>
                             <% } else { %>
-                            <button disabled class="btn-off">
-                                <i class="fas fa-lock"></i>
-                                غير متاح حالياً
-                            </button>
+                            <a href="/auth/discord" class="h-btn h-btn-login">
+                                <span class="shimmer"></span>
+                                <i class="fas fa-sign-in-alt"></i>
+                                تسجيل الدخول للتقديم
+                            </a>
                             <% } %>
-                        </div>
+                        <% } else { %>
+                        <button disabled class="h-btn-off">
+                            <i class="fas fa-lock"></i>
+                            غير متاح حالياً
+                        </button>
+                        <% } %>
                     </div>
+
+                    <div class="h-foot" dir="ltr">— WALTON FAMILY —</div>
                 </article>
                 <% }); %>
             <% } else { %>
@@ -122,6 +111,41 @@
                 <p style="color: var(--text-dim);">لا توجد تقديمات متاحة حالياً</p>
             </div>
             <% } %>
+
+            <!-- بطاقة دور «منظم فعاليات» — سيتوفر قريباً -->
+            <article class="hcard soon reveal stagger-<%= ((applications.length % 6) + 1) %>">
+                <div class="h-shine"></div>
+                <div class="h-glare"></div>
+
+                <span class="h-rar soon">
+                    <span class="d"></span>
+                    قريباً
+                </span>
+
+                <div class="h-no" dir="ltr">NO.<%= String(applications.length + 1).padStart(3, '0') %> — WTN</div>
+
+                <div class="h-core">
+                    <i class="fas fa-calendar-days"></i>
+                </div>
+
+                <h3 class="h-name">منظم فعاليات</h3>
+                <div class="h-type">
+                    <i class="fas fa-calendar-days"></i>
+                    تنظيم • دور جديد
+                </div>
+                <div class="h-div"></div>
+
+                <p class="h-desc">دور مخصص لتنظيم الفعاليات والمسابقات داخل العائلة — يُفتح التقديم عليه قريباً، وتابعوا الإعلان.</p>
+
+                <div class="h-act">
+                    <button disabled class="h-btn-off">
+                        <i class="fas fa-hourglass-half"></i>
+                        سيتوفر قريباً
+                    </button>
+                </div>
+
+                <div class="h-foot" dir="ltr">— WALTON FAMILY —</div>
+            </article>
         </div>
 
         <!-- Tip Card -->
@@ -150,6 +174,63 @@
         });
     }, { threshold: 0.12 });
     els.forEach(function(el){ io.observe(el); });
+})();
+
+// Holo 3D Tilt — نفس فيزياء حروف WALTON بالفوتر: تتبّع المؤشر ل إطار + ارتداد نابض عند المغادرة
+(function(){
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var MAX = 8, LIFT = 7, CHASE = 0.5, RELEASE = 0.72, MIN = 0.6;
+    var live = null, touchGate = 0;
+    // اللمس ما يولّد تمايل: أي لمس يمنع أحداث الماوس المزيفة 900ms
+    document.addEventListener('touchstart', function(){ touchGate = Date.now(); }, { passive: true, capture: true });
+    document.querySelectorAll('.deck .hcard').forEach(function(card){
+        if (card.dataset.tilt) return;
+        card.dataset.tilt = '1';
+        var raf = null, active = false;
+        var ax = 0, ay = 0, az = 0, tx = 0, ty = 0, tl = 0, rect = null;
+        function frame(){
+            var k = active ? CHASE : (1 - RELEASE);
+            ax += (tx - ax) * k;
+            ay += (ty - ay) * k;
+            az += (tl - az) * k;
+            card.style.transform = 'perspective(900px) translateY(' + az.toFixed(2) + 'px) rotateX(' + ax.toFixed(2) + 'deg) rotateY(' + ay.toFixed(2) + 'deg)';
+            if (active || Math.abs(ax) > MIN || Math.abs(ay) > MIN || Math.abs(az) > 0.3) {
+                raf = requestAnimationFrame(frame);
+            } else {
+                raf = null;
+                card.style.transform = '';
+                card.style.transition = '';
+                card.classList.remove('tilting');
+                if (live === card) live = null;
+            }
+        }
+        card.addEventListener('mouseenter', function(e){
+            if (Date.now() - touchGate < 900) return;
+            rect = card.getBoundingClientRect();
+            active = true; tx = 0; ty = 0; tl = -LIFT;
+            card.style.transition = 'box-shadow .4s ease, border-color .4s ease';
+            card.classList.add('tilting');
+            live = card;
+            if (!raf) raf = requestAnimationFrame(frame);
+        });
+        card.addEventListener('mousemove', function(e){
+            if (Date.now() - touchGate < 900) return;
+            if (!rect) rect = card.getBoundingClientRect();
+            var px = (e.clientX - rect.left) / rect.width - 0.5;
+            var py = (e.clientY - rect.top) / rect.height - 0.5;
+            ty = px * MAX * 2;
+            tx = -py * MAX * 2;
+            card.style.setProperty('--mx', (e.clientX - rect.left).toFixed(1) + 'px');
+            card.style.setProperty('--my', (e.clientY - rect.top).toFixed(1) + 'px');
+        });
+        card.addEventListener('mouseleave', function(){
+            active = false; tx = 0; ty = 0; tl = 0; rect = null;
+        });
+        card.__invalidate = function(){ rect = null; };
+    });
+    window.addEventListener('scroll', function(){
+        if (live && live.__invalidate) live.__invalidate();
+    }, { passive: true });
 })();
 </script>
 
