@@ -555,9 +555,12 @@ html { scroll-behavior: smooth; }
 }
 .wl-txt p {
     margin: 3px 0 0;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: rgba(230,230,242,0.62);
+    font-size: 0.85rem;
+    /* وزن 500 وليس 600: IBM Plex Sans Arabic محمّل بـ 400/500 فقط —
+       الوزن 600 كان يُصنَّع عريضاً مصطنعاً فيبدو مشوشاً وغير واضح (بلاغ المستخدم:
+       «نوعية الخط سيئة وغير واضح») + رفع التباين 0.62→0.88 والحجم 0.8→0.85rem */
+    font-weight: 500;
+    color: rgba(236,234,246,0.88);
     line-height: 1.6;
 }
 /* أيقونة معدنية ملونة بدرجة التصعيد */
@@ -718,7 +721,7 @@ html { scroll-behavior: smooth; }
     .wl-rung { padding: 0.8rem 0.9rem; gap: 10px; border-radius: 13px; }
     .wl-ric { width: 40px; height: 40px; border-radius: 12px; font-size: 0.9rem; }
     .wl-txt h3 { font-size: 0.9rem; }
-    .wl-txt p { font-size: 0.74rem; }
+    .wl-txt p { font-size: 0.78rem; }
     .wl-pill { padding: 4px 9px; font-size: 0.58rem; }
     .wl-con { margin-right: 34px; height: 12px; }
     .wl-foot span { font-size: 0.65rem; padding: 5px 12px; }
