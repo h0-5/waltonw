@@ -78,10 +78,11 @@ var openCount = applications.filter(function(a) { return a.status === 'open'; })
                         <span>شروط التقديم</span>
                     </div>
                     <ul class="h-reqs">
-                        <% app.requirements.split(/\r?\n/).filter(function(r){ return r.trim(); }).forEach(function(req) { %>
+                        <% /* تفكيك قوي: سطر لكل شرط، وإن كُتبت كسلسلة واحدة تنفصل عند الفواصل العربية والمنقوطة والشرائط والنقاط — مهما كانت طريقة الكتابة تظهر قائمة واضحة */ %>
+                        <% app.requirements.split(/\r?\n/).map(function(line) { return line.split(/[\u060C\u061B,;|•]/); }).reduce(function(a, b) { return a.concat(b); }, []).map(function(r) { return r.trim(); }).filter(function(r) { return r.length > 1; }).slice(0, 8).forEach(function(req) { %>
                         <li>
                             <span class="check"><i class="fas fa-check"></i></span>
-                            <span><%= req.trim() %></span>
+                            <span><%= req %></span>
                         </li>
                         <% }); %>
                     </ul>
