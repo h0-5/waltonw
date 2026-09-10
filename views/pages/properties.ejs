@@ -3,6 +3,10 @@
 <link rel="stylesheet" href="/css/properties-inline.css">
 <%- include('../partials/navbar') %>
 
+<%
+/* حلقتا القسمين متشابهتان لكنهما مقصودتان منفصلتين — لكل قسم أيقونته وكلمة نوعه (قصر/مركبة) */
+%>
+
 <div class="cy-props-page" dir="rtl">
     <div class="cy-props-hero">
         <div class="cy-props-hero-icon">
@@ -10,76 +14,120 @@
             <div class="hex-ring-inner"></div>
             <i class="fas fa-building"></i>
         </div>
-        <h1 class="page-heading">ممتلكات العائلة</h1>
-        <p class="cy-props-hero-sub">جميع ممتلكات عائلة والتون</p>
+        <h1 class="page-heading" data-text="ممتلكات العائلة">ممتلكات العائلة</h1>
+        <p class="cy-props-hero-sub">جولة داخل خزنة عائلة والتون — من القصور إلى المركبات</p>
         <div class="cy-props-hero-line"></div>
+        <div class="cy-props-metrics">
+            <div class="cy-pm">
+                <div class="cy-pm-val"><%= palaces.length %></div>
+                <div class="cy-pm-label">قصر</div>
+            </div>
+            <div class="cy-pm">
+                <div class="cy-pm-val"><%= vehicles.length %></div>
+                <div class="cy-pm-label">مركبة</div>
+            </div>
+            <div class="cy-pm">
+                <div class="cy-pm-val"><%= palaces.length + vehicles.length %></div>
+                <div class="cy-pm-label">إجمالي الممتلكات</div>
+            </div>
+        </div>
     </div>
 
     <div class="cy-props-main">
         <div class="cy-props-tabs">
             <button onclick="showTab('palaces')" id="tab-palaces" class="cy-props-tab cy-props-tab-active">
                 <i class="fas fa-landmark"></i>القصور
+                <span class="cy-tab-count"><%= palaces.length %></span>
             </button>
             <button onclick="showTab('vehicles')" id="tab-vehicles" class="cy-props-tab">
                 <i class="fas fa-car"></i>المركبات
+                <span class="cy-tab-count"><%= vehicles.length %></span>
             </button>
         </div>
 
         <div id="section-palaces" class="active">
             <% if (palaces.length === 0) { %>
-            <div class="cy-empty wf-reveal">
+            <div class="cy-empty">
                 <div class="cy-empty-icon"><i class="fas fa-landmark"></i></div>
                 <h3>لا توجد قصور مضافة حالياً</h3>
                 <p>سيتم إضافة الممتلكات قريباً</p>
             </div>
             <% } else { %>
-            <% palaces.forEach(function(p, i) { %>
-            <div class="cy-prop-card wf-reveal" style="transition-delay:<%= i * 0.08 %>s">
-                <div class="corner-tl"></div>
-                <div class="corner-br"></div>
-                <div class="cy-prop-header">
-                    <div class="cy-prop-icon"><i class="fas fa-landmark"></i></div>
-                    <h3 class="cy-prop-title"><%= p.title %></h3>
-                </div>
-                <div class="cy-prop-img-wrap" onclick="openLightbox(this.dataset.img)" data-img="<%= p.image %>">
-                    <img src="<%= p.image %>" alt="<%= p.title %>" loading="<%= i <= 1 ? 'eager' : 'lazy' %>" decoding="async">
-                    <div class="cy-prop-img-hint"><i class="fas fa-search-plus"></i> تكبير</div>
-                </div>
+            <div class="cy-prop-grid">
+                <% palaces.forEach(function(p, i) { %>
+                <article class="cy-prop-card" style="animation-delay:<%= i * 0.08 %>s"
+                         data-img="<%= p.image %>" data-title="<%= p.title %>"
+                         onclick="openLightbox(<%= i %>, 'section-palaces')">
+                    <div class="corner-tl"></div>
+                    <div class="corner-br"></div>
+                    <span class="cy-prop-idx">#<%= String(i + 1).padStart(2, '0') %></span>
+                    <div class="cy-prop-media">
+                        <img src="<%= p.image %>" alt="<%= p.title %>" loading="<%= i <= 1 ? 'eager' : 'lazy' %>" decoding="async"
+                             onerror="this.closest('.cy-prop-card').classList.add('img-fail')">
+                        <div class="cy-prop-shine"></div>
+                    </div>
+                    <div class="cy-prop-cap">
+                        <span class="cy-prop-cap-ico"><i class="fas fa-landmark"></i></span>
+                        <div class="cy-prop-cap-txt">
+                            <h3 class="cy-prop-title"><%= p.title %></h3>
+                            <span class="cy-prop-kind">قصر من ممتلكات العائلة</span>
+                        </div>
+                        <span class="cy-prop-zoom"><i class="fas fa-search-plus"></i>تكبير</span>
+                    </div>
+                </article>
+                <% }); %>
             </div>
-            <% }); %>
             <% } %>
         </div>
 
         <div id="section-vehicles">
             <% if (vehicles.length === 0) { %>
-            <div class="cy-empty wf-reveal">
+            <div class="cy-empty">
                 <div class="cy-empty-icon"><i class="fas fa-car"></i></div>
                 <h3>لا توجد مركبات مضافة حالياً</h3>
                 <p>سيتم إضافة المركبات قريباً</p>
             </div>
             <% } else { %>
-            <% vehicles.forEach(function(p, i) { %>
-            <div class="cy-prop-card wf-reveal" style="transition-delay:<%= i * 0.08 %>s">
-                <div class="corner-tl"></div>
-                <div class="corner-br"></div>
-                <div class="cy-prop-header">
-                    <div class="cy-prop-icon"><i class="fas fa-car"></i></div>
-                    <h3 class="cy-prop-title"><%= p.title %></h3>
-                </div>
-                <div class="cy-prop-img-wrap" onclick="openLightbox(this.dataset.img)" data-img="<%= p.image %>">
-                    <img src="<%= p.image %>" alt="<%= p.title %>" loading="<%= i <= 1 ? 'eager' : 'lazy' %>" decoding="async">
-                    <div class="cy-prop-img-hint"><i class="fas fa-search-plus"></i> تكبير</div>
-                </div>
+            <div class="cy-prop-grid">
+                <% vehicles.forEach(function(p, i) { %>
+                <article class="cy-prop-card" style="animation-delay:<%= i * 0.08 %>s"
+                         data-img="<%= p.image %>" data-title="<%= p.title %>"
+                         onclick="openLightbox(<%= i %>, 'section-vehicles')">
+                    <div class="corner-tl"></div>
+                    <div class="corner-br"></div>
+                    <span class="cy-prop-idx">#<%= String(i + 1).padStart(2, '0') %></span>
+                    <div class="cy-prop-media">
+                        <img src="<%= p.image %>" alt="<%= p.title %>" loading="<%= i <= 1 ? 'eager' : 'lazy' %>" decoding="async"
+                             onerror="this.closest('.cy-prop-card').classList.add('img-fail')">
+                        <div class="cy-prop-shine"></div>
+                    </div>
+                    <div class="cy-prop-cap">
+                        <span class="cy-prop-cap-ico"><i class="fas fa-car"></i></span>
+                        <div class="cy-prop-cap-txt">
+                            <h3 class="cy-prop-title"><%= p.title %></h3>
+                            <span class="cy-prop-kind">مركبة من أسطول العائلة</span>
+                        </div>
+                        <span class="cy-prop-zoom"><i class="fas fa-search-plus"></i>تكبير</span>
+                    </div>
+                </article>
+                <% }); %>
             </div>
-            <% }); %>
             <% } %>
         </div>
     </div>
 </div>
 
-<div id="lightbox" class="cy-lightbox" onclick="closeLightbox()">
-    <img id="lightboxImg" src="" alt="صورة مكبرة">
-    <button class="cy-lightbox-close" onclick="closeLightbox()"><i class="fas fa-times"></i></button>
+<div id="lightbox" class="cy-lightbox" onclick="closeLightbox(event)">
+    <button class="cy-lb-nav cy-lb-prev" onclick="lbNav(event, -1)" aria-label="السابق"><i class="fas fa-chevron-right"></i></button>
+    <figure class="cy-lb-fig" onclick="lbNav(event, 1)">
+        <img id="lightboxImg" src="" alt="صورة مكبرة">
+        <figcaption class="cy-lb-cap">
+            <span class="cy-lb-title" id="lbTitle"></span>
+            <span class="cy-lb-count" id="lbCount" dir="ltr"></span>
+        </figcaption>
+    </figure>
+    <button class="cy-lb-nav cy-lb-next" onclick="lbNav(event, 1)" aria-label="التالي"><i class="fas fa-chevron-left"></i></button>
+    <button class="cy-lightbox-close" onclick="closeLightbox(event)"><i class="fas fa-times"></i></button>
 </div>
 
 <script>
@@ -96,9 +144,45 @@ function showTab(tab) {
         tabV.classList.add('cy-props-tab-active'); tabP.classList.remove('cy-props-tab-active');
     }
 }
-function openLightbox(src) { document.getElementById('lightboxImg').src = src; document.getElementById('lightbox').classList.add('open'); if (event) event.stopPropagation(); }
-function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); document.getElementById('lightboxImg').src = ''; }
-document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeLightbox(); });
+
+/* ── Lightbox كمعرض: تجميع بطاقات القسم الحالي + تنقّل سابق/تالي + عدّاد ── */
+var lbItems = [], lbIdx = 0;
+function renderLB() {
+    var it = lbItems[lbIdx];
+    if (!it) return;
+    document.getElementById('lightboxImg').src = it.img;
+    document.getElementById('lbTitle').textContent = it.title;
+    document.getElementById('lbCount').textContent = (lbIdx + 1) + ' / ' + lbItems.length;
+    var one = lbItems.length < 2;
+    document.querySelector('.cy-lb-prev').style.display = one ? 'none' : 'flex';
+    document.querySelector('.cy-lb-next').style.display = one ? 'none' : 'flex';
+}
+function openLightbox(idx, sectionId) {
+    lbItems = Array.prototype.map.call(document.querySelectorAll('#' + sectionId + ' .cy-prop-card'), function(c) {
+        return { img: c.getAttribute('data-img'), title: c.getAttribute('data-title') };
+    });
+    lbIdx = idx;
+    renderLB();
+    document.getElementById('lightbox').classList.add('open');
+}
+function lbNav(e, d) {
+    if (e) e.stopPropagation();
+    if (lbItems.length < 2) return;
+    lbIdx = (lbIdx + d + lbItems.length) % lbItems.length;
+    renderLB();
+}
+function closeLightbox(e) {
+    if (e) e.stopPropagation();
+    document.getElementById('lightbox').classList.remove('open');
+    document.getElementById('lightboxImg').src = '';
+}
+document.addEventListener('keydown', function(e) {
+    if (!document.getElementById('lightbox').classList.contains('open')) return;
+    if (e.key === 'Escape') closeLightbox();
+    /* RTL: السهم اليمين يرجع للسابق واليسار يتقدّم للتالي */
+    if (e.key === 'ArrowRight') lbNav(null, -1);
+    if (e.key === 'ArrowLeft') lbNav(null, 1);
+});
 </script>
 
 <%- include('../partials/footer') %>
