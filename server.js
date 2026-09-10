@@ -146,7 +146,8 @@ async function migrate() {
     `CREATE TABLE IF NOT EXISTS user_boxes (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, box_name VARCHAR(255) NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
     `CREATE TABLE IF NOT EXISTS admin_warnings (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, username VARCHAR(100), issued_by INT, issuer_name VARCHAR(100), reason TEXT, severity VARCHAR(20) DEFAULT 'medium', is_read TINYINT(1) DEFAULT 0, is_deleted TINYINT(1) DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
     `CREATE TABLE IF NOT EXISTS admin_excuses (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, username VARCHAR(100), reason TEXT, start_date DATE, end_date DATE, status VARCHAR(20) DEFAULT 'pending', reviewer_id INT, reviewer_name VARCHAR(100), reviewer_note TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, reviewed_at DATETIME)`,
-    `CREATE TABLE IF NOT EXISTS admin_profile_logs (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, username VARCHAR(100), action VARCHAR(100), target_name VARCHAR(255), details TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`
+    `CREATE TABLE IF NOT EXISTS admin_profile_logs (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, username VARCHAR(100), action VARCHAR(100), target_name VARCHAR(255), details TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE TABLE IF NOT EXISTS bot_actions (id INT AUTO_INCREMENT PRIMARY KEY, action VARCHAR(50) NOT NULL, target_discord_id VARCHAR(50), target_name VARCHAR(100), reason TEXT, duration_minutes INT DEFAULT 0, role_name VARCHAR(100), status VARCHAR(20) DEFAULT 'pending', result TEXT, created_by INT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, executed_at DATETIME)`
   ];
 
   for (const sql of tables) {

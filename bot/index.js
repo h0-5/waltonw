@@ -290,7 +290,153 @@ client.once(Events.ClientReady, async (c) => {
   console.log(`   Servers: ${c.guilds.cache.size}`);
   c.user.setActivity('Walton Family', { type: 3 });
   await registerCommands();
+  if (db) {
+    startActionPoller();
+  }
 });
+
+// ===== Bot Actions Poller (Website → Discord) =====
+async function processBotAction(action) {
+  const guild = client.guilds.cache.get(GUILD_ID);
+  if (!guild) return;
+
+  try {
+    switch (action.action) {
+      case 'ban': {
+        const member = await guild.members.fetch(action.target_discord_id).catch(() => null);
+        if (!member) {
+          await db.execute('UPDATE bot_actions SET status = ?, result = ?, executed_at = NOW() WHERE id = ?', ['failed', 'Member not found in server', action.id]);
+          return;
+        }
+        if (!member.bannable) {
+          await db.execute('UPDATE bot_actions SET status = ?, result = ?, executed_at = NOW() WHERE id = ?', ['failed', 'Bot cannot ban this member', action.id]);
+          return;
+        }
+        await member.ban({ reason: action.reason || 'Banned from website' });
+        await syncWebsiteBan(member.user, 'ban', action.reason);
+        await logToChannel('🔨 تم الحظر (من الموقع)', `**${member.user.tag}** حُظر بواسطة الموقع\n**السبب:** ${action.reason || 'N/A'}`, 0xef4444);
+        await db.execute('UPDATE bot_actions SET status = ?, executed_at = NOW() WHERE id = ?', ['completed', action.id]);
+        break;
+      }
+      case 'unban': {
+        try {
+          await guild.members.unban(action.target_discord_id);
+          const user = await client.users.fetch(action.target_discord_id).catch(() => null);
+          if (user) await syncWebsiteBan(user, 'unban');
+          await logToChannel('✅ تم فك الحظر (من الموقع)', `**${action.target_name || action.target_discord_id}** فُك حظره`, 0x22c55e);
+          await db.execute('UPDATE bot_actions SET status = ?, executed_at = NOW() WHERE id = ?', ['completed', action.id]);
+        } catch (e) {
+          await db.execute('UPDATE bot_actions SET status = ?, result = ?, executed_at = NOW() WHERE id = ?', ['failed', e.message, action.id]);
+        }
+        break;
+      }
+      case 'kick': {
+        const member = await guild.members.fetch(action.target_discord_id).catch(() => null);
+        if (!member) {
+          await db.execute('UPDATE bot_actions SET status = ?, result = ?, executed_at = NOW() WHERE id = ?', ['failed', 'Member not found', action.id]);
+          return;
+        }
+        if (!member.kickable) {
+          await db.execute('UPDATE bot_actions SET status = ?, result = ?, executed_at = NOW() WHERE id = ?', ['failed', 'Bot cannot kick this member', action.id]);
+          return;
+        }
+        await member.kick(action.reason || 'Kicked from website');
+        await logToChannel('🚪 تم الطرد (من الموقع)', `**${member.user.tag}** طُرد\n**السبب:** ${action.reason || 'N/A'}`, 0xf59e0b);
+        await db.execute('UPDATE bot_actions SET status = ?, executed_at = NOW() WHERE id = ?', ['completed', action.id]);
+        break;
+      }
+      case 'mute': {
+        const member = await guild.members.fetch(action.target_discord_id).catch(() => null);
+        if (!member) {
+          await db.execute('UPDATE bot_actions SET status = ?, result = ?, executed_at = NOW() WHERE id = ?', ['failed', 'Member not found', action.id]);
+          return;
+        }
+        const duration = (action.duration_minutes || 10) * 60 * 1000;
+        await member.timeout(duration, action.reason || 'Muted from website');
+        await logToChannel('🔇 تم الكتم (من الموقع)', `**${member.user.tag}** صُمت لمدة ${action.duration_minutes || 10} دقيقة\n**السبب:** ${action.reason || 'N/A'}`, 0x9ca3af);
+        await db.execute('UPDATE bot_actions SET status = ?, executed_at = NOW() WHERE id = ?', ['completed', action.id]);
+        break;
+      }
+      case 'unmute': {
+        const member = await guild.members.fetch(action.target_discord_id).catch(() => null);
+        if (!member) {
+          await db.execute('UPDATE bot_actions SET status = ?, result = ?, executed_at = NOW() WHERE id = ?', ['failed', 'Member not found', action.id]);
+          return;
+        }
+        await member.timeout(null, 'Unmuted from website');
+        await logToChannel('🔊 تم فك الكتم (من الموقع)', `**${member.user.tag}** فُك كتمه`, 0x22c55e);
+        await db.execute('UPDATE bot_actions SET status = ?, executed_at = NOW() WHERE id = ?', ['completed', action.id]);
+        break;
+      }
+      case 'warn': {
+        const member = await guild.members.fetch(action.target_discord_id).catch(() => null);
+        if (!member) {
+          await db.execute('UPDATE bot_actions SET status = ?, result = ?, executed_at = NOW() WHERE id = ?', ['failed', 'Member not found', action.id]);
+          return;
+        }
+        try {
+          await member.send(`⚠️ لقد حُذرنت في ${guild.name}\n**السبب:** ${action.reason || 'No reason'}`);
+        } catch (e) {}
+        await logToChannel('⚠️ تحذير (من الموقع)', `**${member.user.tag}** حُذر\n**السبب:** ${action.reason || 'N/A'}`, 0xf59e0b);
+        await db.execute('UPDATE bot_actions SET status = ?, executed_at = NOW() WHERE id = ?', ['completed', action.id]);
+        break;
+      }
+      case 'add_role': {
+        const member = await guild.members.fetch(action.target_discord_id).catch(() => null);
+        if (!member) {
+          await db.execute('UPDATE bot_actions SET status = ?, result = ?, executed_at = NOW() WHERE id = ?', ['failed', 'Member not found', action.id]);
+          return;
+        }
+        const role = guild.roles.cache.find(r => r.name === action.role_name);
+        if (!role) {
+          await db.execute('UPDATE bot_actions SET status = ?, result = ?, executed_at = NOW() WHERE id = ?', ['failed', `Role "${action.role_name}" not found`, action.id]);
+          return;
+        }
+        await member.roles.add(role);
+        await logToChannel('🛡️ تغيير رتبة (من الموقع)', `**${member.user.tag}** حصل على رتبة **${role.name}**`, 0xbc13fe);
+        await db.execute('UPDATE bot_actions SET status = ?, executed_at = NOW() WHERE id = ?', ['completed', action.id]);
+        break;
+      }
+      case 'remove_role': {
+        const member = await guild.members.fetch(action.target_discord_id).catch(() => null);
+        if (!member) {
+          await db.execute('UPDATE bot_actions SET status = ?, result = ?, executed_at = NOW() WHERE id = ?', ['failed', 'Member not found', action.id]);
+          return;
+        }
+        const role = guild.roles.cache.find(r => r.name === action.role_name);
+        if (!role) {
+          await db.execute('UPDATE bot_actions SET status = ?, result = ?, executed_at = NOW() WHERE id = ?', ['failed', `Role "${action.role_name}" not found`, action.id]);
+          return;
+        }
+        await member.roles.remove(role);
+        await logToChannel('🛡️ إزالة رتبة (من الموقع)', `**${member.user.tag}** شُالت منه رتبة **${role.name}**`, 0xf59e0b);
+        await db.execute('UPDATE bot_actions SET status = ?, executed_at = NOW() WHERE id = ?', ['completed', action.id]);
+        break;
+      }
+      default:
+        await db.execute('UPDATE bot_actions SET status = ?, result = ?, executed_at = NOW() WHERE id = ?', ['failed', `Unknown action: ${action.action}`, action.id]);
+    }
+  } catch (e) {
+    console.error('Bot action error:', e);
+    await db.execute('UPDATE bot_actions SET status = ?, result = ?, executed_at = NOW() WHERE id = ?', ['failed', e.message, action.id]);
+  }
+}
+
+function startActionPoller() {
+  console.log('🔄 Bot action poller started (every 5s)');
+  setInterval(async () => {
+    if (!db) return;
+    try {
+      const [actions] = await db.execute('SELECT * FROM bot_actions WHERE status = ? ORDER BY created_at ASC LIMIT 5', ['pending']);
+      for (const action of actions) {
+        await db.execute('UPDATE bot_actions SET status = ? WHERE id = ?', ['processing', action.id]);
+        await processBotAction(action);
+      }
+    } catch (e) {
+      console.error('Action poller error:', e.message);
+    }
+  }, 5000);
+}
 
 // ===== Member Join =====
 client.on(Events.GuildMemberAdd, async (member) => {

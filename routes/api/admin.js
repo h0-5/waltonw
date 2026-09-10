@@ -1401,4 +1401,44 @@ router.post('/profile/excuses/:id/review', checkPermission('admin_profile_view')
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== Bot Actions (Website → Discord) =====
+router.post('/bot/action', checkPermission('admin_manage'), async (req, res) => {
+  try {
+    const { action, target_discord_id, target_name, reason, duration_minutes, role_name } = req.body;
+    if (!action || !target_discord_id) {
+      return res.status(400).json({ error: 'action and target_discord_id are required' });
+    }
+    const validActions = ['ban', 'unban', 'kick', 'mute', 'unmute', 'warn', 'add_role', 'remove_role'];
+    if (!validActions.includes(action)) {
+      return res.status(400).json({ error: 'Invalid action' });
+    }
+    const [result] = await db.execute(
+      'INSERT INTO bot_actions (action, target_discord_id, target_name, reason, duration_minutes, role_name, status, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [action, target_discord_id, target_name || '', reason || '', duration_minutes || 0, role_name || '', 'pending', req.user.id]
+    );
+    res.json({ success: true, id: result.insertId });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.get('/bot/actions', checkPermission('admin_manage'), async (req, res) => {
+  try {
+    const [actions] = await db.execute('SELECT * FROM bot_actions ORDER BY created_at DESC LIMIT 50');
+    res.json({ success: true, actions });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.get('/bot/actions/pending', checkPermission('admin_manage'), async (req, res) => {
+  try {
+    const [actions] = await db.execute('SELECT * FROM bot_actions WHERE status IN (?, ?) ORDER BY created_at ASC', ['pending', 'processing']);
+    res.json({ success: true, actions });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.delete('/bot/actions/:id', checkPermission('admin_manage'), async (req, res) => {
+  try {
+    await db.execute('DELETE FROM bot_actions WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 module.exports = router;
