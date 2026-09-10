@@ -338,6 +338,18 @@ async function start() {
     console.log('✅ Schema up-to-date (v' + SCHEMA_VERSION + ') — skipping migration');
   }
 
+  // شفاء ذاتي لأعمدة حرجة قد تنقص قواعد قديمة رقمها محدَّث (الإنتاج: users بدون عمود in_guild
+  // لأن الجدول أُنشئ بكود أقدم و migrate يتخطى لعدالة الإصدار) — استعلام information_schema واحد رخيص كل إقلاع
+  try {
+    const [gcols] = await db.query(
+      "SELECT COUNT(*) AS n FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'in_guild'"
+    );
+    if (!gcols[0].n) {
+      await db.query("ALTER TABLE users ADD COLUMN in_guild TINYINT(1) DEFAULT 0");
+      console.log('✅ Added missing users.in_guild column');
+    }
+  } catch (e) { console.log('⚠️ in_guild ensure failed:', e.message); }
+
   server.listen(PORT, () => {
     console.log(`\n  Walton Family Server running on http://localhost:${PORT}\n`);
   });
