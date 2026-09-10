@@ -2,6 +2,15 @@
 <link rel="stylesheet" href="/css/applications-page.css">
 <%- include('../partials/navbar') %>
 
+<%
+/* عدّ مرة واحدة بدل إعادة الحساب في كل موضع — أخف على السيرفر */
+/* صف «منظم فعاليات» من قاعدة البيانات يُستبدل ببطاقة «سيتوفر قريباً» الثابتة أدناه */
+var visibleApps = applications.filter(function(a) {
+    return !/فعاليات/.test(((a.title || '') + ' ' + (a.application_type || '')).trim());
+});
+var openCount = visibleApps.filter(function(a) { return a.status === 'open'; }).length;
+%>
+
 <div class="cy-apps-page">
     <!-- Hero Section -->
     <div class="cy-apps-hero">
@@ -15,11 +24,11 @@
         <div class="cy-apps-hero-line"></div>
         <div class="hero-metrics">
             <div class="metric">
-                <div class="metric-val"><%= applications.filter(function(a){ return a.status === 'open'; }).length %></div>
+                <div class="metric-val"><%= openCount %></div>
                 <div class="metric-label">تقديم مفتوح</div>
             </div>
             <div class="metric">
-                <div class="metric-val"><%= applications.length %></div>
+                <div class="metric-val"><%= visibleApps.length %></div>
                 <div class="metric-label">إجمالي التقديمات</div>
             </div>
         </div>
@@ -32,12 +41,12 @@
                 <span class="bar"></span>
                 التقديمات المتاحة
             </h2>
-            <span class="sec-badge"><%= applications.filter(function(a){ return a.status === 'open'; }).length %> مفتوح</span>
+            <span class="sec-badge"><%= openCount %> مفتوح</span>
         </div>
 
         <div class="deck">
-            <% if (applications.length > 0) { %>
-                <% applications.forEach(function(app, ai) { %>
+            <% if (visibleApps.length > 0) { %>
+                <% visibleApps.forEach(function(app, ai) { %>
                 <article class="hcard <%= ['rar-gold','rar-epic','rar-rare'][ai % 3] %> reveal stagger-<%= (ai % 6) + 1 %>">
                     <div class="h-shine"></div>
                     <div class="h-glare"></div>
@@ -50,7 +59,7 @@
                     <div class="h-no" dir="ltr">NO.<%= String(ai + 1).padStart(3, '0') %> — WTN</div>
 
                     <div class="h-core">
-                        <% if (app.image) { %>
+                        <% if (app.image && /^(https?:\/\/|\/)/i.test(String(app.image))) { %>
                             <img loading="lazy" src="<%= app.image %>" alt="<%= app.title || app.application_type %>">
                         <% } else { %>
                             <i class="fas fa-<%= app.application_type === 'Join Family' ? 'users' : 'user-shield' %>"></i>
@@ -112,8 +121,8 @@
             </div>
             <% } %>
 
-            <!-- بطاقة دور «منظم فعاليات» — سيتوفر قريباً -->
-            <article class="hcard soon reveal stagger-<%= ((applications.length % 6) + 1) %>">
+            <!-- بطاقة «منظم فعاليات» — إعلان قريب، ليست تقديماً: بلا رقم وبلا نموذج -->
+            <article class="hcard soon reveal stagger-<%= ((visibleApps.length % 6) + 1) %>">
                 <div class="h-shine"></div>
                 <div class="h-glare"></div>
 
@@ -122,8 +131,6 @@
                     قريباً
                 </span>
 
-                <div class="h-no" dir="ltr">NO.<%= String(applications.length + 1).padStart(3, '0') %> — WTN</div>
-
                 <div class="h-core">
                     <i class="fas fa-calendar-days"></i>
                 </div>
@@ -131,11 +138,11 @@
                 <h3 class="h-name">منظم فعاليات</h3>
                 <div class="h-type">
                     <i class="fas fa-calendar-days"></i>
-                    تنظيم • دور جديد
+                    فعاليات • دور جديد
                 </div>
                 <div class="h-div"></div>
 
-                <p class="h-desc">دور مخصص لتنظيم الفعاليات والمسابقات داخل العائلة — يُفتح التقديم عليه قريباً، وتابعوا الإعلان.</p>
+                <p class="h-desc">دور مخصص لتنظيم الفعاليات والمسابقات داخل العائلة — تابعوا الإعلانات.</p>
 
                 <div class="h-act">
                     <button disabled class="h-btn-off">

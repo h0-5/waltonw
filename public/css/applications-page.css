@@ -1,5 +1,7 @@
 ﻿/* ═══════════════════════════════════════════════════════════════
    CYBERPUNK & GAMING UI — APPLICATIONS PAGE — WALTON FAMILY v9
+   جولة التخفيف: صفر backdrop-filter، كل الحركات infinite على transform/opacity
+   فقط (تركيب GPU بلا إعادة رسم)، وحُذفت بقايا CSS الميت (فوتر + cooldown قديم)
    ═══════════════════════════════════════════════════════════════ */
 
 .cy-apps-page {
@@ -231,11 +233,10 @@
     display: inline-flex;
     align-items: center;
     gap: 0;
-    background: rgba(10, 9, 16, 0.7);
+    background: rgba(10, 9, 16, 0.85);
     border: 1px solid rgba(var(--ac-rgb), 0.15);
     padding: 0.75rem 1.5rem;
     border-radius: 14px;
-    backdrop-filter: blur(6px);
     position: relative;
     z-index: 2;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
@@ -309,15 +310,14 @@
 }
 
 .sec-badge {
-    background: rgba(10, 9, 16, 0.6);
+    background: rgba(10, 9, 16, 0.85);
     border: 1px solid rgba(var(--ac-rgb), 0.12);
     padding: 0.35rem 0.9rem;
     border-radius: 8px;
     font-size: 0.75rem;
     color: rgba(240, 240, 245, 0.3);
     font-weight: 600;
-    backdrop-filter: blur(6px);
-    transition: 0.3s;
+    transition: border-color 0.3s, color 0.3s, box-shadow 0.3s;
     font-family: 'Space Grotesk', monospace;
 }
 
@@ -358,21 +358,23 @@
     will-change: transform;
 }
 
-/* اللمعان الهولوغرامي المتحرك */
+/* اللمعان الهولوغرامي المتحرك — شريط يتحرك بـ transform فقط (تركيب GPU، صفر إعادة رسم) */
 .hcard .h-shine {
     position: absolute;
-    inset: 0;
-    border-radius: inherit;
+    top: -20%;
+    bottom: -20%;
+    left: 0;
+    width: 55%;
     pointer-events: none;
     z-index: 1;
-    background: linear-gradient(115deg, transparent 32%, rgba(var(--ac-rgb), 0.1) 45%, rgba(255, 255, 255, 0.12) 50%, rgba(var(--ac-rgb), 0.1) 55%, transparent 68%);
-    background-size: 230% 230%;
+    background: linear-gradient(115deg, transparent 0%, rgba(var(--ac-rgb), 0.1) 32%, rgba(255, 255, 255, 0.12) 50%, rgba(var(--ac-rgb), 0.1) 68%, transparent 100%);
+    transform: translateX(230%);
     animation: holoSweep 5.2s ease-in-out infinite;
 }
 
 @keyframes holoSweep {
-    0%, 100% { background-position: 110% 0; }
-    50% { background-position: -10% 0; }
+    0%, 100% { transform: translateX(230%); }
+    50% { transform: translateX(-200%); }
 }
 
 .hcard:nth-child(2) .h-shine { animation-delay: -1.3s; }
@@ -445,6 +447,12 @@
 
 .h-rar.soon .d { animation: beat 2s infinite; }
 
+/* نبض نقطة الحالة — كان مستدعى بلا تعريف (ما كان ينبض فعلياً)، الآن مكتمل: transform فقط ورخيص */
+@keyframes beat {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.5); }
+}
+
 /* رقم الكرت */
 .h-no {
     font-family: 'Space Grotesk', monospace;
@@ -503,8 +511,7 @@
 .hcard.rar-gold .h-foot { color: rgba(245, 196, 83, 0.55); }
 
 .hcard.rar-gold .h-shine {
-    background: linear-gradient(115deg, transparent 32%, rgba(245, 196, 83, 0.09) 45%, rgba(255, 255, 255, 0.12) 50%, rgba(245, 196, 83, 0.09) 55%, transparent 68%);
-    background-size: 230% 230%;
+    background: linear-gradient(115deg, transparent 0%, rgba(245, 196, 83, 0.09) 32%, rgba(255, 255, 255, 0.12) 50%, rgba(245, 196, 83, 0.09) 68%, transparent 100%);
 }
 
 .hcard.rar-rare { border-color: rgba(96, 165, 250, 0.32); }
@@ -519,8 +526,7 @@
 .hcard.rar-rare .h-foot { color: rgba(96, 165, 250, 0.55); }
 
 .hcard.rar-rare .h-shine {
-    background: linear-gradient(115deg, transparent 32%, rgba(96, 165, 250, 0.09) 45%, rgba(255, 255, 255, 0.12) 50%, rgba(96, 165, 250, 0.09) 55%, transparent 68%);
-    background-size: 230% 230%;
+    background: linear-gradient(115deg, transparent 0%, rgba(96, 165, 250, 0.09) 32%, rgba(255, 255, 255, 0.12) 50%, rgba(96, 165, 250, 0.09) 68%, transparent 100%);
 }
 
 /* بطاقة «قريباً» */
@@ -639,11 +645,12 @@
 .h-btn .shimmer {
     position: absolute;
     top: 0;
-    left: -100%;
+    left: 0;
     width: 100%;
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
-    transition: 0.7s;
+    transform: translateX(-100%);
+    transition: transform 0.7s ease;
 }
 
 .h-btn:hover {
@@ -651,7 +658,7 @@
     box-shadow: 0 10px 35px rgba(var(--ac-rgb), 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
-.h-btn:hover .shimmer { left: 100%; }
+.h-btn:hover .shimmer { transform: translateX(100%); }
 .h-btn:active { transform: translateY(-1px); }
 .h-btn i { font-size: 0.78rem; }
 
@@ -694,71 +701,6 @@
     color: rgba(var(--ac-rgb), 0.6);
 }
 
-/* Cooldown Box */
-.cd-box {
-    background: linear-gradient(145deg, rgba(245, 158, 11, 0.08), rgba(245, 158, 11, 0.02));
-    border: 1px solid rgba(245, 158, 11, 0.2);
-    border-radius: 12px;
-    padding: 0.875rem;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-    transition: 0.3s;
-}
-
-.cd-box::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 200%;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, #f59e0b, transparent);
-    animation: cdSlide 3s linear infinite;
-}
-
-@keyframes cdSlide {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(50%); }
-}
-
-.cd-head {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: #f59e0b;
-    margin-bottom: 0.4rem;
-}
-
-.cd-head i {
-    animation: cdSpin 4s linear infinite;
-}
-
-@keyframes cdSpin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-.cd-time {
-    font-family: 'Space Grotesk', monospace;
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: #fcd34d;
-    letter-spacing: 0.1em;
-    direction: ltr;
-    text-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
-}
-
-.cd-label {
-    font-size: 0.65rem;
-    color: rgba(240, 240, 245, 0.3);
-    margin-top: 0.2rem;
-    font-weight: 500;
-}
-
 /* ── TIP CARD ── */
 .tip-sec {
     margin-top: 2rem;
@@ -766,8 +708,7 @@
 }
 
 .tip-card {
-    background: linear-gradient(165deg, rgba(10, 9, 16, 0.75) 0%, rgba(20, 15, 35, 0.6) 100%);
-    backdrop-filter: blur(12px);
+    background: linear-gradient(165deg, rgba(10, 9, 16, 0.9) 0%, rgba(20, 15, 35, 0.82) 100%);
     border-radius: 20px;
     border: 1px solid rgba(var(--ac-rgb), 0.08);
     padding: 2rem;
@@ -775,8 +716,6 @@
     position: relative;
     overflow: hidden;
     transition: transform 0.5s, box-shadow 0.5s, border-color 0.5s;
-    will-change: transform;
-    transform: translateZ(0);
 }
 
 .tip-card::before {
@@ -850,7 +789,7 @@
 .reveal {
     opacity: 0;
     transform: translateY(30px);
-    transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .reveal.visible {
@@ -883,11 +822,6 @@
     .h-desc { font-size: 0.75rem; }
     .h-btn, .h-btn-off { padding: 0.75rem 1rem; font-size: 0.78rem; }
     .tip-card { padding: 1.5rem; border-radius: 16px; }
-
-    /* Compact footer responsive */
-    .apps-footer .ft-inner { flex-direction: column; text-align: center; gap: 1.5rem; }
-    .apps-footer .ft-links-col { justify-content: center; }
-    .apps-footer .ft-bottom { flex-direction: column; gap: 0.5rem; text-align: center; }
 }
 
 @media (min-width: 769px) and (max-width: 1023px) {
@@ -912,7 +846,6 @@
     .h-btn:hover { transform: none; }
     .tip-card:hover .tip-icon { transform: none; }
     .hex-ring { animation: none; }
-    .cd-head i { animation: none; }
     .apps-title, .apps-title::before, .apps-title::after { animation: none; }
     .apps-title::before, .apps-title::after { display: none; }
     .h-shine { display: none; }
@@ -925,188 +858,6 @@
     .h-btn:hover { transform: none; }
     .tip-card:hover { transform: none; }
     .tip-card:hover .tip-icon { transform: none; }
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   COMPACT FOOTER — APPLICATIONS PAGE
-   ═══════════════════════════════════════════════════════════════ */
-
-.apps-footer {
-    margin-top: 0;
-    background: linear-gradient(180deg, transparent 0%, rgba(8, 4, 8, 0.98) 6%, #050305 100%);
-}
-
-.apps-footer .ft-inner {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 2rem 2rem 0;
-    direction: rtl;
-    gap: 2rem;
-}
-
-.ft-brand-col { flex: 1.2; }
-
-.ft-brand-logo {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    margin-bottom: 0.4rem;
-}
-
-.ft-brand-logo img {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    object-fit: contain;
-    border: 2px solid rgba(var(--ac-rgb), 0.3);
-    box-shadow: 0 0 20px rgba(var(--ac-rgb), 0.15);
-}
-
-.ft-brand-name {
-    font-size: 1.1rem;
-    font-weight: 900;
-    background: linear-gradient(90deg, var(--ac), #fff);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 0.2rem;
-}
-
-.ft-brand-desc {
-    color: rgba(255, 255, 255, 0.35);
-    font-size: 0.75rem;
-    line-height: 1.5;
-    margin-bottom: 0.75rem;
-}
-
-.ft-social-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 10px;
-    background: rgba(88, 101, 242, 0.12);
-    border: 1px solid rgba(88, 101, 242, 0.25);
-    color: #5865f2;
-    font-size: 0.9rem;
-    text-decoration: none;
-    transition: all 0.3s;
-}
-
-.ft-social-btn:hover {
-    background: rgba(88, 101, 242, 0.25);
-    transform: translateY(-2px);
-}
-
-.ft-links-col {
-    display: flex;
-    gap: 4rem;
-}
-
-.ft-links-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-}
-
-.ft-col-title {
-    font-size: 0.8rem;
-    font-weight: 800;
-    color: #fff;
-    margin-bottom: 0.5rem;
-}
-
-.ft-link {
-    color: rgba(255, 255, 255, 0.4);
-    font-size: 0.78rem;
-    text-decoration: none;
-    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-    font-weight: 500;
-    position: relative;
-    display: inline-block;
-    transform: translateY(0);
-}
-
-.ft-link::after {
-    content: '';
-    position: absolute;
-    bottom: -2px;
-    right: 0;
-    width: 0;
-    height: 1.5px;
-    background: var(--ac);
-    transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 0 8px rgba(var(--ac-rgb), 0.4);
-}
-
-.ft-link:hover {
-    color: #fff;
-    transform: translateY(-2px);
-    text-shadow: 0 0 12px rgba(var(--ac-rgb), 0.3);
-}
-
-.ft-link:hover::after {
-    width: 100%;
-}
-
-/* Bottom Bar */
-.apps-footer .ft-bottom {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 0.8rem 2rem;
-    max-width: 1100px;
-    margin: 1.5rem auto 0;
-    border-top: 1px solid rgba(var(--ac-rgb), 0.08);
-    flex-wrap: wrap;
-}
-
-.ft-bottom-right,
-.ft-bottom-center,
-.ft-bottom-left {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.3);
-}
-
-.ft-systems-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.25rem 0.7rem;
-    border-radius: 20px;
-    background: rgba(34, 197, 94, 0.1);
-    border: 1px solid rgba(34, 197, 94, 0.25);
-    color: #22c55e;
-    font-size: 0.65rem;
-    font-weight: 700;
-}
-
-.ft-systems-badge i {
-    font-size: 0.4rem;
-    animation: beat 1.5s ease-in-out infinite;
-}
-
-.ft-cr-lock {
-    font-size: 0.6rem;
-    color: rgba(var(--ac-rgb), 0.4);
-}
-
-.ft-bottom-left strong {
-    font-weight: 800;
-    background: linear-gradient(90deg, var(--ac), rgba(var(--ac-rgb), 0.6));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
 }
 
 /* ── SCROLLBAR ── */
