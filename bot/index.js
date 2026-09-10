@@ -6,7 +6,7 @@ const { Client, GatewayIntentBits, Events, Partials, EmbedBuilder, REST, Routes,
 const mysql = require('mysql2/promise');
 
 // ===== Config =====
-const TOKEN = process.env.BOT_TOKEN || 'MTU0NzUyOTI4Nzg2MTY2NTg3Mg.GR8ueg.oMNFPFeMg_K-XLF7utkp02KRD9g8c0gyqb_dGo';
+const TOKEN = process.env.BOT_TOKEN || 'MTU0NzUyOTI4Nzg2MTY2NTg3Mg.G_SHA4.RKbjuZXMhokVZRvxt97-QwIr9K4SF1l1Z7yMUs';
 const GUILD_ID = process.env.GUILD_ID || '1547529287861665872';
 const CLIENT_ID = process.env.CLIENT_ID || process.env.BOT_CLIENT_ID || '1547529287861665872';
 const LOG_CHANNEL_ID = process.env.LOG_CHANNEL_ID || '1495959992321441932';
