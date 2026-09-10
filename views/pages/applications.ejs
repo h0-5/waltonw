@@ -8,12 +8,7 @@
 var visibleApps = applications.filter(function(a) {
     return !/فعاليات/.test(((a.title || '') + ' ' + (a.application_type || '')).trim());
 });
-/* الكرت الأول (NO.001) يُعرض كإعلان «سيتوفر قريباً» بالكامل — لإلغاء الحجب لاحقاً احذف فرع ai === 0 من الحلقة */
-/* والمقاييس تحتسب المعروض فقط: كرت «قريباً» لا يُحسب مفتوحاً */
-var openCount = 0;
-for (var i = visibleApps.length ? 1 : 0; i < visibleApps.length; i++) {
-    if (visibleApps[i].status === 'open') openCount++;
-}
+var openCount = visibleApps.filter(function(a) { return a.status === 'open'; }).length;
 %>
 
 <div class="cy-apps-page">
@@ -52,36 +47,6 @@ for (var i = visibleApps.length ? 1 : 0; i < visibleApps.length; i++) {
         <div class="deck">
             <% if (visibleApps.length > 0) { %>
                 <% visibleApps.forEach(function(app, ai) { %>
-                <% if (ai === 0) { %>
-                <!-- الكرت الأول NO.001 — إعلان «سيتوفر قريباً»: كل كلام التقديم مستبدل والزر غير متاح -->
-                <article class="hcard soon reveal stagger-1">
-                    <div class="h-shine"></div>
-                    <div class="h-glare"></div>
-
-                    <span class="h-rar soon">
-                        <span class="d"></span>
-                        قريباً
-                    </span>
-
-                    <div class="h-no" dir="ltr">NO.001 — WTN</div>
-
-                    <div class="h-core">
-                        <i class="fas fa-calendar-days"></i>
-                    </div>
-
-                    <h3 class="h-name">سيتوفر قريباً</h3>
-                    <div class="h-div"></div>
-
-                    <div class="h-act">
-                        <button disabled class="h-btn-off">
-                            <i class="fas fa-lock"></i>
-                            غير متاح حالياً
-                        </button>
-                    </div>
-
-                    <div class="h-foot" dir="ltr">— WALTON FAMILY —</div>
-                </article>
-                <% } else { %>
                 <article class="hcard <%= ['rar-gold','rar-epic','rar-rare'][ai % 3] %> reveal stagger-<%= (ai % 6) + 1 %>">
                     <div class="h-shine"></div>
                     <div class="h-glare"></div>
@@ -90,8 +55,6 @@ for (var i = visibleApps.length ? 1 : 0; i < visibleApps.length; i++) {
                         <span class="d"></span>
                         <%= app.status === 'open' ? 'متاح للتقديم' : 'مغلق حالياً' %>
                     </span>
-
-                    <div class="h-no" dir="ltr">NO.<%= String(ai + 1).padStart(3, '0') %> — WTN</div>
 
                     <div class="h-core">
                         <% if (app.image && /^(https?:\/\/|\/)/i.test(String(app.image))) { %>
@@ -148,7 +111,6 @@ for (var i = visibleApps.length ? 1 : 0; i < visibleApps.length; i++) {
 
                     <div class="h-foot" dir="ltr">— WALTON FAMILY —</div>
                 </article>
-                <% } %>
                 <% }); %>
             <% } else { %>
             <div style="text-align: center; padding: 3rem; background: rgba(10,9,16,0.7); border-radius: 24px; border: 1px solid rgba(var(--ac-rgb),0.08); grid-column: 1/-1;">

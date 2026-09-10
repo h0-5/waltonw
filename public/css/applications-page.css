@@ -395,7 +395,7 @@
 
 .hcard.tilting .h-glare { opacity: 1; }
 
-.hcard .h-no, .hcard .h-core, .hcard .h-name, .hcard .h-type,
+.hcard .h-core, .hcard .h-name, .hcard .h-type,
 .hcard .h-div, .hcard .h-desc, .hcard .h-reqs, .hcard .h-act, .hcard .h-foot {
     position: relative;
     z-index: 3;
@@ -453,16 +453,6 @@
     50% { transform: scale(1.5); }
 }
 
-/* رقم الكرت */
-.h-no {
-    font-family: 'Space Grotesk', monospace;
-    font-size: 0.6rem;
-    font-weight: 600;
-    letter-spacing: 2px;
-    color: rgba(240, 238, 246, 0.38);
-    margin-bottom: 0.75rem;
-}
-
 /* نواة الكرت */
 .h-core {
     width: 88px;
@@ -475,7 +465,7 @@
     font-size: 2.1rem;
     color: #fff;
     flex-shrink: 0;
-    background: radial-gradient(circle at 35% 30%, rgba(var(--ac-rgb), 0.85), rgba(147, 15, 198, 0.35) 70%);
+    background: radial-gradient(circle at 35% 30%, rgba(var(--ac-rgb), 0.85), rgba(var(--ac-dark-rgb, 147, 15, 198), 0.35) 70%);
     box-shadow: 0 0 34px rgba(var(--ac-rgb), 0.4), inset 0 0 20px rgba(255, 255, 255, 0.15);
     position: relative;
 }
@@ -531,7 +521,7 @@
 
 /* بطاقة «قريباً» */
 .hcard.soon .h-core {
-    background: radial-gradient(circle at 35% 30%, rgba(245, 196, 83, 0.55), rgba(147, 15, 198, 0.22) 70%);
+    background: radial-gradient(circle at 35% 30%, rgba(245, 196, 83, 0.55), rgba(var(--ac-dark-rgb, 147, 15, 198), 0.22) 70%);
     box-shadow: 0 0 26px rgba(245, 196, 83, 0.2), inset 0 0 20px rgba(255, 255, 255, 0.1);
     color: rgba(255, 255, 255, 0.85);
 }
@@ -748,7 +738,7 @@
 .tip-icon {
     width: 60px;
     height: 60px;
-    background: linear-gradient(135deg, rgba(var(--ac-rgb), 0.15), rgba(139, 92, 246, 0.08), rgba(10, 9, 16, 0.5));
+    background: linear-gradient(135deg, rgba(var(--ac-rgb), 0.15), rgba(var(--ac-dark-rgb, 139, 92, 246), 0.08), rgba(10, 9, 16, 0.5));
     border: 1px solid rgba(var(--ac-rgb), 0.2);
     border-radius: 16px;
     display: inline-flex;
