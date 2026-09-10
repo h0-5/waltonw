@@ -460,22 +460,28 @@ router.get('/rule-stages', checkPermission('rules_view'), async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// لون مخصص للمرحلة — hex صحيح (#rgb/#rrggbb) أو null (تلقائي: يتحدد من العنوان)
+function stageColor(color) {
+  const c = String(color || '').trim();
+  return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(c) ? c : null;
+}
+
 router.post('/rule-stages', checkPermission('rules_add'), async (req, res) => {
   try {
-    const { title, description, icon, sort_order } = req.body;
+    const { title, description, icon, sort_order, color } = req.body;
     if (!title || !String(title).trim()) return res.status(400).json({ error: 'عنوان المرحلة مطلوب' });
-    const [result] = await db.execute('INSERT INTO rule_stages (title, description, icon, sort_order) VALUES (?, ?, ?, ?)',
-      [String(title).trim().slice(0, 100), String(description || '').trim().slice(0, 500), icon || 'fa-flag', parseInt(sort_order) || 0]);
+    const [result] = await db.execute('INSERT INTO rule_stages (title, description, icon, color, sort_order) VALUES (?, ?, ?, ?, ?)',
+      [String(title).trim().slice(0, 100), String(description || '').trim().slice(0, 500), icon || 'fa-flag', stageColor(color), parseInt(sort_order) || 0]);
     res.json({ success: true, id: result.insertId });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 router.put('/rule-stages/:id', checkPermission('rules_add'), async (req, res) => {
   try {
-    const { title, description, icon, sort_order } = req.body;
+    const { title, description, icon, sort_order, color } = req.body;
     if (!title || !String(title).trim()) return res.status(400).json({ error: 'عنوان المرحلة مطلوب' });
-    await db.execute('UPDATE rule_stages SET title=?, description=?, icon=?, sort_order=? WHERE id=?',
-      [String(title).trim().slice(0, 100), String(description || '').trim().slice(0, 500), icon || 'fa-flag', parseInt(sort_order) || 0, req.params.id]);
+    await db.execute('UPDATE rule_stages SET title=?, description=?, icon=?, color=?, sort_order=? WHERE id=?',
+      [String(title).trim().slice(0, 100), String(description || '').trim().slice(0, 500), icon || 'fa-flag', stageColor(color), parseInt(sort_order) || 0, req.params.id]);
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });

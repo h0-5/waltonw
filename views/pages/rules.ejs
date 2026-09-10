@@ -145,8 +145,10 @@
       <% wrStages.forEach(function(st, si) {
            var lv = wsLv(st.title);
            var stDesc = (st.description || '').toString();
+           var stColor = (st.color || '').toString().trim();
+           if (!/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(stColor)) stColor = '';
       %>
-      <div class="ws-card ws-lv<%= lv %>">
+      <div class="ws-card ws-lv<%= lv %><%= stColor ? ' ws-custom' : '' %>"<% if (stColor) { %> style="--ws-c:<%= stColor %>"<% } %>>
         <div class="ws-top">
           <span class="ws-ico"><i class="fas <%= st.icon || 'fa-flag' %>"></i></span>
           <div class="ws-head">

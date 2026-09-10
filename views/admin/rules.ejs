@@ -49,7 +49,7 @@
 .stages-hint{margin:0 0 12px;font-size:.75rem;color:var(--text-dim);display:flex;align-items:center;gap:6px}
 .stage-badge{width:28px;height:28px;border-radius:8px;background:rgba(var(--ac-rgb),.12);display:flex;align-items:center;justify-content:center;color:var(--ac);font-size:.75rem;flex-shrink:0}
 .stage-desc-preview{color:var(--text-dim);font-size:.78rem}
-.stage-edit-grid{display:grid;grid-template-columns:1fr auto auto auto auto;gap:8px;align-items:center;flex:1}
+.stage-edit-grid{display:grid;grid-template-columns:1fr auto auto auto auto auto auto;gap:8px;align-items:center;flex:1}
 @media(max-width:720px){.stage-edit-grid{grid-template-columns:1fr auto}}
 .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:8px;font-weight:700;font-size:.85rem;z-index:99999;font-family:Cairo,sans-serif;animation:fadeInOut 2.5s forwards}
 @keyframes fadeInOut{0%{opacity:0;transform:translateX(-50%) translateY(-10px)}10%{opacity:1;transform:translateX(-50%) translateY(0)}80%{opacity:1}100%{opacity:0}}
@@ -150,12 +150,30 @@
         <button class="big-btn primary" onclick="toggleNewStageForm()"><i class="fas fa-plus"></i> مرحلة جديدة</button>
       </div>
     </div>
-    <p class="stages-hint"><i class="fas fa-circle-info"></i> نظام مستقل عن القوانين والأقسام — ترتيب المراحل هنا هو ترتيب عرضها بصفحة القوانين (جنب بعض)، ولون كل مرحلة يتحدد تلقائياً من عنوانها (تحذير/ميوت/طرد/حظر/دائم) — والتسمية تلقائية حسب الترتيب: الأولى تنبيه رسمي ثم مخالفة أولى/ثانية/الخ</p>
+    <p class="stages-hint"><i class="fas fa-circle-info"></i> نظام مستقل عن القوانين والأقسام — ترتيب المراحل هنا هو ترتيب عرضها بصفحة القوانين (جنب بعض) — حرية كاملة: خصص لون كل مرحلة وأيقونتها كما تريد، ولو تركت اللون تلقائي يتحدد من العنوان (تحذير/ميوت/طرد/حظر/دائم) — والتسمية تلقائية حسب الترتيب: الأولى تنبيه رسمي ثم مخالفة أولى/ثانية/الخ</p>
+
+    <datalist id="wrFaIcons">
+      <option value="fa-flag"></option>
+      <option value="fa-triangle-exclamation"></option>
+      <option value="fa-volume-xmark"></option>
+      <option value="fa-person-walking-arrow-right"></option>
+      <option value="fa-gavel"></option>
+      <option value="fa-ban"></option>
+      <option value="fa-skull"></option>
+      <option value="fa-clock"></option>
+      <option value="fa-comment-slash"></option>
+      <option value="fa-user-slash"></option>
+      <option value="fa-shield-halved"></option>
+      <option value="fa-fire"></option>
+      <option value="fa-star"></option>
+      <option value="fa-crown"></option>
+    </datalist>
 
     <div class="new-cat-form" id="newStageForm">
       <div class="form-row">
         <div class="form-group"><label>عنوان المرحلة</label><input type="text" class="form-input" id="newStageTitle" placeholder="مثال: تحذير"></div>
-        <div class="form-group"><label>الأيقونة</label><input type="text" class="form-input" id="newStageIcon" placeholder="fa-flag" value="fa-flag"></div>
+        <div class="form-group"><label>الأيقونة (حرية كاملة)</label><div style="display:flex;align-items:center;gap:8px"><input type="text" class="form-input" id="newStageIcon" list="wrFaIcons" placeholder="fa-flag" value="fa-flag" style="flex:1" oninput="document.getElementById('newStageIconPrev').className='fas '+(this.value.trim()||'fa-flag')"><span class="stage-badge" style="width:34px;height:34px;font-size:.85rem"><i id="newStageIconPrev" class="fas fa-flag"></i></span></div></div>
+        <div class="form-group"><label>اللون</label><div style="display:flex;align-items:center;gap:8px"><input type="color" id="newStageColor" value="#bc13fe" style="width:46px;height:38px;padding:2px;border:1px solid rgba(255,255,255,.12);border-radius:8px;background:transparent;cursor:pointer" disabled><label style="display:flex;align-items:center;gap:5px;font-size:.72rem;color:var(--text-dim);white-space:nowrap;cursor:pointer"><input type="checkbox" id="newStageAuto" checked onchange="document.getElementById('newStageColor').disabled=this.checked"> تلقائي</label></div></div>
       </div>
       <div class="form-group"><label>وصف المرحلة</label><textarea class="form-textarea" id="newStageDesc" rows="2" placeholder="مثال: تنبيه رسمي يُسجّل في الأرشيف"></textarea></div>
       <div style="display:flex;gap:8px">
@@ -179,10 +197,12 @@
             </div>
           </div>
           <div class="rule-card editing" id="stage-edit-<%= st.id %>" style="display:none">
-            <span class="stage-badge"><i class="fas <%= st.icon || 'fa-flag' %>"></i></span>
+            <span class="stage-badge"><i id="stage-edit-ico-<%= st.id %>" class="fas <%= st.icon || 'fa-flag' %>"></i></span>
             <div class="stage-edit-grid">
               <input type="text" class="form-input" id="stage-edit-title-<%= st.id %>" value="<%= st.title %>" placeholder="العنوان">
-              <input type="text" class="form-input" id="stage-edit-icon-<%= st.id %>" value="<%= st.icon || 'fa-flag' %>" placeholder="fa-flag" style="max-width:110px">
+              <input type="text" class="form-input" id="stage-edit-icon-<%= st.id %>" value="<%= st.icon || 'fa-flag' %>" list="wrFaIcons" placeholder="fa-flag" style="max-width:110px" oninput="document.getElementById('stage-edit-ico-<%= st.id %>').className='fas '+(this.value.trim()||'fa-flag')">
+              <input type="color" id="stage-edit-color-<%= st.id %>" value="<%= st.color || '#bc13fe' %>" style="width:42px;height:36px;padding:2px;border:1px solid rgba(255,255,255,.12);border-radius:8px;background:transparent;cursor:pointer" <%= st.color ? '' : 'disabled' %>>
+              <label style="display:flex;align-items:center;gap:4px;font-size:.68rem;color:var(--text-dim);white-space:nowrap;cursor:pointer"><input type="checkbox" id="stage-edit-auto-<%= st.id %>" <%= st.color ? '' : 'checked' %> onchange="document.getElementById('stage-edit-color-<%= st.id %>').disabled=this.checked"> تلقائي</label>
               <input type="number" class="form-input" id="stage-edit-sort-<%= st.id %>" value="<%= st.sort_order || 0 %>" style="max-width:64px">
               <button class="sm-btn save" onclick="saveStage(<%= st.id %>)"><i class="fas fa-check"></i></button>
               <button class="sm-btn cancel" onclick="cancelEditStage(<%= st.id %>)"><i class="fas fa-times"></i></button>
@@ -354,8 +374,9 @@ async function saveNewStage() {
   var title = document.getElementById('newStageTitle').value.trim();
   var icon = document.getElementById('newStageIcon').value.trim();
   var description = document.getElementById('newStageDesc').value.trim();
+  var color = document.getElementById('newStageAuto').checked ? '' : document.getElementById('newStageColor').value;
   if (!title) return alert('عنوان المرحلة مطلوب');
-  var res = await fetch('/api/admin/rule-stages', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ title: title, icon: icon||'fa-flag', description: description, sort_order: 0 }) });
+  var res = await fetch('/api/admin/rule-stages', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ title: title, icon: icon||'fa-flag', description: description, color: color, sort_order: 0 }) });
   var r = await res.json();
   if (r.success) location.reload(); else alert(r.error || 'خطأ');
 }
@@ -372,7 +393,7 @@ async function moveStage(id, dir) {
   var tmp = st.sort_order;
   st.sort_order = other.sort_order;
   other.sort_order = tmp;
-  var body = function(s){ return JSON.stringify({ title: s.title, description: s.description||'', icon: s.icon||'fa-flag', sort_order: s.sort_order }); };
+  var body = function(s){ return JSON.stringify({ title: s.title, description: s.description||'', icon: s.icon||'fa-flag', color: s.color||'', sort_order: s.sort_order }); };
   await fetch('/api/admin/rule-stages/' + st.id, { method:'PUT', headers:{'Content-Type':'application/json'}, body: body(st) });
   await fetch('/api/admin/rule-stages/' + other.id, { method:'PUT', headers:{'Content-Type':'application/json'}, body: body(other) });
   location.reload();
@@ -391,8 +412,9 @@ async function saveStage(id) {
   var icon = document.getElementById('stage-edit-icon-' + id).value.trim();
   var description = document.getElementById('stage-edit-desc-' + id).value.trim();
   var sort = parseInt(document.getElementById('stage-edit-sort-' + id).value) || 0;
+  var color = document.getElementById('stage-edit-auto-' + id).checked ? '' : document.getElementById('stage-edit-color-' + id).value;
   if (!title) return alert('عنوان المرحلة مطلوب');
-  var res = await fetch('/api/admin/rule-stages/' + id, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ title: title, icon: icon||'fa-flag', description: description, sort_order: sort }) });
+  var res = await fetch('/api/admin/rule-stages/' + id, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ title: title, icon: icon||'fa-flag', description: description, color: color, sort_order: sort }) });
   var r = await res.json();
   if (r.success) location.reload(); else alert(r.error || 'خطأ');
 }

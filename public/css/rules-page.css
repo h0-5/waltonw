@@ -628,6 +628,14 @@ html { scroll-behavior: smooth; }
 .ws-lv0 .ws-ico { background: linear-gradient(160deg, rgba(var(--wr-accent-rgb),0.65), rgba(var(--wr-accent-rgb),0.25)); }
 .ws-lv0 .ws-name { color: var(--wr-light); text-shadow: 0 0 14px rgba(var(--wr-accent-rgb),0.5); }
 .ws-lv0:hover { box-shadow: 0 18px 40px rgba(0,0,0,0.5), 0 0 30px rgba(var(--wr-accent-rgb),0.16), var(--wr-inset-light); }
+/* ── لون مخصص من الإدارة (--ws-c يتوضع inline) — يتغلب على ألوان المستويات كلها ── */
+.ws-card.ws-custom { border-color: color-mix(in srgb, var(--ws-c) 45%, transparent); }
+.ws-card.ws-custom .ws-ico {
+    background: linear-gradient(160deg, color-mix(in srgb, var(--ws-c) 80%, #ffffff), var(--ws-c) 55%, color-mix(in srgb, var(--ws-c) 62%, #000000));
+    box-shadow: 0 8px 22px color-mix(in srgb, var(--ws-c) 38%, transparent), inset 0 2px 0 rgba(255,255,255,0.5), inset 0 -4px 8px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.2);
+}
+.ws-card.ws-custom .ws-name { color: var(--ws-c); text-shadow: 0 0 14px color-mix(in srgb, var(--ws-c) 55%, transparent); }
+.ws-card.ws-custom:hover { box-shadow: 0 18px 40px rgba(0,0,0,0.5), 0 0 30px color-mix(in srgb, var(--ws-c) 22%, transparent), var(--wr-inset-light); }
 
 /* حبات السلم السفلية */
 .wl-foot {

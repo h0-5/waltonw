@@ -82,6 +82,29 @@ io.on('connection', (socket) => {
   });
 });
 
+// بذرة مراحل العقوبات: تُزرع فقط إذا كان الجدول فارغاً (أول إنشاء له) —
+// نفس النصوص الافتراضية اللي كانت الصفحة العامة تعرضها، حتى تديرها من الإدارة مباشرة
+// دالة مستقلة تستدعى من migrate() ومن الشفاء الذاتي في start() — لا تلمس بيانات المستخدم أبداً
+async function seedRuleStagesIfEmpty() {
+  try {
+    const [stCnt] = await db.query('SELECT COUNT(*) AS c FROM rule_stages');
+    if (!stCnt.length || stCnt[0].c === 0) {
+      const defaultStages = [
+        ['تحذير', 'fa-triangle-exclamation', 'تنبيه رسمي يُسجّل في الأرشيف — تكرار المخالفة يوصلك للمرحلة التالية'],
+        ['ميوت', 'fa-volume-xmark',                'كتم من المحادثات مدة تتراوح بين ساعة وسبعة أيام حسب نوع المخالفة'],
+        ['طرد مؤقت', 'fa-person-walking-arrow-right', 'طرد من السيرفر مؤقتاً مع بقاء سجل المخالفات محفوظاً بالكامل'],
+        ['حظر مؤقت', 'fa-gavel',                   'حظر مؤقت من السيرفر لمدة تحددها الإدارة حسب جسامة المخالفة'],
+        ['حظر دائم', 'fa-ban',                     'حظر نهائي من المجتمع — قرار الطاقم في هذه المرحلة نهائي']
+      ];
+      for (let i = 0; i < defaultStages.length; i++) {
+        await db.query('INSERT INTO rule_stages (title, description, icon, sort_order) VALUES (?, ?, ?, ?)',
+          [defaultStages[i][0], defaultStages[i][2], defaultStages[i][1], i + 1]);
+      }
+      console.log('✅ rule_stages seeded (5 default stages)');
+    }
+  } catch (e) { console.log('⚠️ rule_stages seed skipped:', e.message); }
+}
+
 async function migrate() {
   console.log('🔄 Running migration...');
   const tables = [
@@ -113,7 +136,7 @@ async function migrate() {
     `CREATE TABLE IF NOT EXISTS notifications (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, title VARCHAR(255), message TEXT, type VARCHAR(20) DEFAULT 'info', link TEXT, is_read TINYINT(1) DEFAULT 0, sender_id INT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
     `CREATE TABLE IF NOT EXISTS user_achievements (id INT AUTO_INCREMENT PRIMARY KEY, discord_id VARCHAR(50), achievement_name VARCHAR(100), earned_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
     `CREATE TABLE IF NOT EXISTS rule_categories (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), icon VARCHAR(50), sort_order INT DEFAULT 0)`,
-    `CREATE TABLE IF NOT EXISTS rule_stages (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(100), description TEXT, icon VARCHAR(50) DEFAULT 'fa-flag', sort_order INT DEFAULT 0)`,
+    `CREATE TABLE IF NOT EXISTS rule_stages (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(100), description TEXT, icon VARCHAR(50) DEFAULT 'fa-flag', color VARCHAR(20) DEFAULT NULL, sort_order INT DEFAULT 0)`,
     `CREATE TABLE IF NOT EXISTS giveaway_participants (id INT AUTO_INCREMENT PRIMARY KEY, giveaway_id INT, user_id INT, username VARCHAR(100), platform VARCHAR(20) DEFAULT 'site')`,
     `CREATE TABLE IF NOT EXISTS giveaway_winners (id INT AUTO_INCREMENT PRIMARY KEY, giveaway_id INT, user_id INT, username VARCHAR(100), selected_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
     `CREATE TABLE IF NOT EXISTS application_settings (id INT AUTO_INCREMENT PRIMARY KEY, application_type VARCHAR(100) UNIQUE, status VARCHAR(20) DEFAULT 'open', title VARCHAR(255), description TEXT, requirements TEXT, icon VARCHAR(50), color VARCHAR(20))`,
@@ -161,26 +184,7 @@ async function migrate() {
     }
   }
   console.log('✅ Migration done');
-
-  // بذرة مراحل العقوبات: تُزرع فقط إذا كان الجدول فارغاً (أول إنشاء له) —
-  // نفس النصوص الافتراضية اللي كانت الصفحة العامة تعرضها، حتى تديرها من الإدارة مباشرة
-  try {
-    const [stCnt] = await db.query('SELECT COUNT(*) AS c FROM rule_stages');
-    if (!stCnt.length || stCnt[0].c === 0) {
-      const defaultStages = [
-        ['تحذير', 'fa-triangle-exclamation', 'تنبيه رسمي يُسجّل في الأرشيف — تكرار المخالفة يوصلك للمرحلة التالية'],
-        ['ميوت', 'fa-volume-xmark', 'كتم من المحادثات مدة تتراوح بين ساعة وسبعة أيام حسب نوع المخالفة'],
-        ['طرد مؤقت', 'fa-person-walking-arrow-right', 'طرد من السيرفر مؤقتاً مع بقاء سجل المخالفات محفوظاً بالكامل'],
-        ['حظر مؤقت', 'fa-gavel', 'حظر مؤقت من السيرفر لمدة تحددها الإدارة حسب جسامة المخالفة'],
-        ['حظر دائم', 'fa-ban', 'حظر نهائي من المجتمع — قرار الطاقم في هذه المرحلة نهائي']
-      ];
-      for (let i = 0; i < defaultStages.length; i++) {
-        await db.query('INSERT INTO rule_stages (title, description, icon, sort_order) VALUES (?, ?, ?, ?)',
-          [defaultStages[i][0], defaultStages[i][2], defaultStages[i][1], i + 1]);
-      }
-      console.log('✅ rule_stages seeded (5 default stages)');
-    }
-  } catch (e) { console.log('⚠️ rule_stages seed skipped:', e.message); }
+  await seedRuleStagesIfEmpty();
 
   // Fix: ensure columns exist (table may have been created before these columns were added)
   const userFixes = [
@@ -374,8 +378,9 @@ async function migrate() {
   } catch(e) { console.error('Role seed error:', e.message); }
 }
 
-// Bump this when tables/ALTERs change in migrate() — '11' creates rule_stages (+default seed) that v10-skip missed (Task 74 shipped the table without a bump)
-const SCHEMA_VERSION = '11';
+// Bump this when tables/ALTERs change in migrate() — '12' adds rule_stages.color (custom stage color from admin)
+// ('11' أنشأ جدول rule_stages نفسه — وقد يُتخطّى إنشاؤه على Railway رغم ترقية الإصدار، لذا الشفاء الذاتي في start() ينشئه كل إقلاع)
+const SCHEMA_VERSION = '12';
 
 async function start() {
   // Skip the ~50-table migration when schema is already current:
@@ -410,6 +415,26 @@ async function start() {
       console.log('✅ Added missing users.in_guild column');
     }
   } catch (e) { console.log('⚠️ in_guild ensure failed:', e.message); }
+
+  // شفاء ذاتي لجدول مراحل العقوبات — مستقل تماماً عن schema_version (الإنتاج كان الجدول مفقوداً فيه
+  // رغم ترقية الإصدار) — فحص information_schema رخيص كل إقلاع يضمن: الجدول موجود + عمود اللون موجود + بذرة لو فارغ
+  try {
+    const [stTbl] = await db.query(
+      "SELECT COUNT(*) AS n FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'rule_stages'"
+    );
+    if (!stTbl[0].n) {
+      await db.query("CREATE TABLE IF NOT EXISTS rule_stages (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(100), description TEXT, icon VARCHAR(50) DEFAULT 'fa-flag', color VARCHAR(20) DEFAULT NULL, sort_order INT DEFAULT 0)");
+      console.log('✅ rule_stages table self-healed (was missing)');
+    }
+    const [stColor] = await db.query(
+      "SELECT COUNT(*) AS n FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'rule_stages' AND COLUMN_NAME = 'color'"
+    );
+    if (!stColor[0].n) {
+      await db.query("ALTER TABLE rule_stages ADD COLUMN color VARCHAR(20) DEFAULT NULL");
+      console.log('✅ rule_stages.color column self-healed');
+    }
+    await seedRuleStagesIfEmpty();
+  } catch (e) { console.log('⚠️ rule_stages self-heal failed:', e.message); }
 
   server.listen(PORT, () => {
     console.log(`\n  Walton Family Server running on http://localhost:${PORT}\n`);
