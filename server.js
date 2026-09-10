@@ -151,6 +151,20 @@ async function migrate() {
   }
   console.log('✅ Migration done');
 
+  // Fix: ensure columns exist (table may have been created before these columns were added)
+  const userFixes = [
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS in_guild TINYINT(1) DEFAULT 0",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_picture TEXT",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS cover_photo TEXT",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS total_game_points INT DEFAULT 0",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS warn_count INT DEFAULT 0",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_muted TINYINT(1) DEFAULT 0"
+  ];
+  for (const sql of userFixes) {
+    try { await db.query(sql); } catch (e) { /* column already exists */ }
+  }
+  console.log('✅ users columns verified');
+
   // Fix roles table - recreate with correct schema
   try {
     const [cols] = await db.query("SHOW COLUMNS FROM roles LIKE 'is_admin_role'");
