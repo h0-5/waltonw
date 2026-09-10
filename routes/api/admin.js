@@ -703,7 +703,11 @@ router.post('/applications/:id/approve', checkPermission('apps_approve'), async 
 
     const [typeSetting] = await db.query('SELECT site_role FROM application_settings WHERE application_type = ?', [app[0].application_type]);
     if (typeSetting && typeSetting.length && typeSetting[0].site_role) {
-      await db.query('UPDATE users SET role = ? WHERE id = ?', [typeSetting[0].site_role, app[0].user_id]);
+      const [applicant] = await db.query('SELECT role FROM users WHERE id = ?', [app[0].user_id]);
+      const adminRoles = ['owner', 'admin', 'moderator', 'support'];
+      if (!applicant.length || !adminRoles.includes(applicant[0].role)) {
+        await db.query('UPDATE users SET role = ? WHERE id = ?', [typeSetting[0].site_role, app[0].user_id]);
+      }
     }
 
     await db.query(
