@@ -333,6 +333,11 @@ a.ds-card:hover, .ds-card-hover:hover {
   z-index: 5;
 }
 .ds-brand img { width: 40px; height: 40px; object-fit: contain; }
+/* الكمبيوتر فقط: الختم أكبر (بطلب المستخدم: «كبر اللوغو بالهدر على كمبيوتر مب الهاتف بس») —
+   40→52px (+30%) يتوسط براحٍ في شريط 70px؛ الهاتف يبقى 40px لأن شريطه 56px لا يتحمّل أكبر */
+@media (min-width: 1024px) {
+  .ds-brand img { width: 52px; height: 52px; }
+}
 .ds-brand-name { font-family: var(--font-head); font-weight: 800; font-size: 15px; color: var(--text); line-height: 1.2; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8); }
 .ds-brand-sub { font-size: 11px; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8); }
 
