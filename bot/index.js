@@ -2,16 +2,24 @@ require('dotenv').config();
 const { Client, GatewayIntentBits, Events, Partials, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
 const mysql = require('mysql2/promise');
 
-// ===== Database =====
-const db = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT) || 3306,
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'waltonw',
-  waitForConnections: true,
-  connectionLimit: 5,
-});
+// ===== Database (Optional) =====
+let db = null;
+const DB_ENABLED = process.env.DB_HOST && process.env.DB_USER && process.env.DB_PASSWORD;
+
+if (DB_ENABLED) {
+  db = mysql.createPool({
+    host: process.env.DB_HOST,
+    port: parseInt(process.env.DB_PORT) || 3306,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME || 'waltonw',
+    waitForConnections: true,
+    connectionLimit: 5,
+  });
+  console.log('📦 Database: Enabled');
+} else {
+  console.log('📦 Database: Disabled (no DB credentials)');
+}
 
 // ===== Config =====
 const TOKEN = process.env.BOT_TOKEN;
@@ -65,6 +73,7 @@ async function logToChannel(title, description, color) {
 }
 
 async function syncWebsiteBan(discordUser, action, reason) {
+  if (!db) return;
   try {
     const [users] = await db.execute('SELECT id FROM users WHERE discord_id = ?', [discordUser.id]);
     if (!users.length) return;
@@ -186,10 +195,12 @@ const commands = {
       const member = message.mentions.members.first();
       if (!member) return message.reply('❌ حدد العضو: `!warn @user [سبب]`');
       const reason = args.slice(1).join(' ') || 'No reason provided';
-      try {
-        await db.execute('INSERT INTO admin_warnings (user_id, username, issued_by, issuer_name, reason, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
-          [0, member.user.username, message.author.id, message.author.username, reason]);
-      } catch(e) {}
+      if (db) {
+        try {
+          await db.execute('INSERT INTO admin_warnings (user_id, username, issued_by, issuer_name, reason, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
+            [0, member.user.username, message.author.id, message.author.username, reason]);
+        } catch(e) {}
+      }
       await logToChannel('⚠️ تحذير', `**${member.user.tag}** حُذر بواسطة ${message.author}\n**السبب:** ${reason}`, 0xf59e0b);
       await message.reply(`✅ تم تحذير ${member.user.tag}`);
       try { await member.send(`⚠️ لقد حُذرنت في ${message.guild.name}\n**السبب:** ${reason}`); } catch(e) {}
@@ -323,12 +334,14 @@ client.on(Events.MessageCreate, async (message) => {
 client.on(Events.GuildMemberAdd, async (member) => {
   if (member.guild.id !== GUILD_ID) return;
   // Sync with website
-  try {
-    const [users] = await db.execute('SELECT id FROM users WHERE discord_id = ?', [member.id]);
-    if (users.length) {
-      await db.execute('UPDATE users SET in_guild = 1 WHERE id = ?', [users[0].id]);
-    }
-  } catch(e) {}
+  if (db) {
+    try {
+      const [users] = await db.execute('SELECT id FROM users WHERE discord_id = ?', [member.id]);
+      if (users.length) {
+        await db.execute('UPDATE users SET in_guild = 1 WHERE id = ?', [users[0].id]);
+      }
+    } catch(e) {}
+  }
   // Welcome message
   if (WELCOME_CHANNEL_ID) {
     try {
@@ -350,12 +363,14 @@ client.on(Events.GuildMemberAdd, async (member) => {
 // ===== Member Leave =====
 client.on(Events.GuildMemberRemove, async (member) => {
   if (member.guild.id !== GUILD_ID) return;
-  try {
-    const [users] = await db.execute('SELECT id FROM users WHERE discord_id = ?', [member.id]);
-    if (users.length) {
-      await db.execute('UPDATE users SET in_guild = 0 WHERE id = ?', [users[0].id]);
-    }
-  } catch(e) {}
+  if (db) {
+    try {
+      const [users] = await db.execute('SELECT id FROM users WHERE discord_id = ?', [member.id]);
+      if (users.length) {
+        await db.execute('UPDATE users SET in_guild = 0 WHERE id = ?', [users[0].id]);
+      }
+    } catch(e) {}
+  }
   await logToChannel('➖ عضو خرج', `${member.user.tag} (${member.id})`, 0xef4444);
 });
 
