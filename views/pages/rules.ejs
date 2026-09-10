@@ -2,7 +2,7 @@
 <%- include('../partials/navbar') %>
 
 <%
-  /* ===== تجميع القوانين حسب القسم + فصل سلّم العقوبات كقسم مستقل ===== */
+  /* ===== تجميع القوانين حسب القسم ===== */
   var wrGrouped = {}, wrOrder = [], wrStatic = false;
   if (typeof rules !== 'undefined' && rules && rules.length) {
     rules.forEach(function(r) {
@@ -32,30 +32,20 @@
         'يجب أن يكون اسم المستخدم لائقاً',
         'يمنع الخوض في النقاشات الحساسة أو الجدلية.',
         'يمنع الابتزاز ممنوع منعاً باتاً ويعرضك للحظر'
-      ],
-      'العقوبات': [
-        'المخالفة الأولى : تحذير',
-        'المخالفة الثانية : ميوت ( 1h - 7days)',
-        'مخالفة الثالثة : طرد مؤقت',
-        'مخالفة الرابعة : حظر مؤقت',
-        'مخالفة الخامسة : حظر دائم من المجتمع'
       ]
     };
-    wrOrder = ['قوانين عامة', 'العقوبات'];
+    wrOrder = ['قوانين عامة'];
   }
-  /* ===== سلّم العقوبات: أي قسم اسمه يحوي «عقوب» يُسحب من الأقسام ويعرض لوحده تحت الجميع ===== */
-  var wrLadderName = '';
-  for (var i = 0; i < wrOrder.length; i++) {
-    if (wrOrder[i].indexOf('عقوب') !== -1) { wrLadderName = wrOrder[i]; break; }
-  }
-  var wrLadderItems = [];
-  if (wrLadderName) {
-    wrLadderItems = wrGrouped[wrLadderName];
-    wrOrder.splice(wrOrder.indexOf(wrLadderName), 1);
-    delete wrGrouped[wrLadderName];
-  }
-  /* كشف درجة المخالفة من نصها — الترتيب مهم: «دائم» قبل «حظر» */
-  var wrLv = function(t) {
+  /* ===== مراحل العقوبات: نظام مستقل تماماً عن القوانين — من جدول rule_stages مع fallback ثابت ===== */
+  var wrStages = (typeof stages !== 'undefined' && stages && stages.length) ? stages : [
+    { title: 'تحذير',     icon: 'fa-triangle-exclamation',        description: 'المخالفة الأولى: تنبيه رسمي يُسجّل في الأرشيف — تكرار المخالفة يوصلك للمرحلة التالية' },
+    { title: 'ميوت',      icon: 'fa-volume-xmark',                description: 'المخالفة الثانية: كتم من المحادثات مدة تتراوح بين ساعة وسبعة أيام حسب نوع المخالفة' },
+    { title: 'طرد مؤقت',  icon: 'fa-person-walking-arrow-right',  description: 'المخالفة الثالثة: طرد من السيرفر مؤقتاً مع بقاء سجل المخالفات محفوظاً بالكامل' },
+    { title: 'حظر مؤقت',  icon: 'fa-gavel',                       description: 'المخالفة الرابعة: حظر مؤقت من السيرفر لمدة تحددها الإدارة حسب جسامة المخالفة' },
+    { title: 'حظر دائم',  icon: 'fa-ban',                         description: 'المخالفة الخامسة: حظر نهائي من المجتمع — قرار الطاقم في هذه المرحلة نهائي' }
+  ];
+  /* لون المرحلة يُكشف من عنوانها — الترتيب مهم: «دائم» قبل «حظر» */
+  var wsLv = function(t) {
     t = t || '';
     if (t.indexOf('دائم') !== -1) return 5;
     if (t.indexOf('حظر') !== -1) return 4;
@@ -64,17 +54,10 @@
     if (t.indexOf('تحذير') !== -1 || t.indexOf('إنذار') !== -1 || t.indexOf('انذار') !== -1) return 1;
     return 0;
   };
-  var wrLadderMeta = {
-    1: { t: 'تحذير',     ic: 'fa-triangle-exclamation' },
-    2: { t: 'ميوت',      ic: 'fa-volume-xmark' },
-    3: { t: 'طرد مؤقت',  ic: 'fa-person-walking-arrow-right' },
-    4: { t: 'حظر مؤقت',  ic: 'fa-gavel' },
-    5: { t: 'حظر دائم',  ic: 'fa-ban' },
-    0: { t: 'مخالفة',    ic: 'fa-circle-exclamation' }
-  };
+  var wrOrd = ['الأولى','الثانية','الثالثة','الرابعة','الخامسة','السادسة','السابعة','الثامنة','التاسعة','العاشرة'];
+  var wsOrd = function(n) { return n <= 10 ? wrOrd[n - 1] : String(n); };
   var wrTotal = 0;
   wrOrder.forEach(function(c) { wrTotal += wrGrouped[c].length; });
-  wrTotal += wrLadderItems.length;
   var wrPad = function(n) { return (n < 10 ? '0' : '') + n; };
 %>
 
@@ -92,8 +75,8 @@
     <div class="wr-hero-chips">
       <span class="wr-chip"><i class="fas fa-layer-group"></i><%= wrOrder.length %> أقسام</span>
       <span class="wr-chip"><i class="fas fa-file-lines"></i><%= wrTotal %> مادة</span>
-      <% if (wrLadderItems.length) { %>
-      <span class="wr-chip"><i class="fas fa-arrow-down"></i><%= wrLadderItems.length %> درجات تصعيد</span>
+      <% if (wrStages.length) { %>
+      <span class="wr-chip"><i class="fas fa-arrow-down"></i><%= wrStages.length %> مراحل عقوبات</span>
       <% } %>
     </div>
     <div class="wr-hero-line"></div>
@@ -149,30 +132,29 @@
     </div>
   </div>
 
-  <!-- ═══ سلّم العقوبات المتدرج — قسم مستقل تحت جميع الأقسام وخارج الفهرس ═══ -->
-  <% if (wrLadderItems.length) { %>
-  <section class="wr-ladder wf-reveal" id="wr-ladder" aria-label="سلّم العقوبات المتدرج">
+  <!-- ═══ مراحل العقوبات — بطاقات جنب بعض، نظام مستقل تحت جميع الأقسام وخارج الفهرس ═══ -->
+  <% if (wrStages.length) { %>
+  <section class="wr-ladder wf-reveal" id="wr-ladder" aria-label="مراحل العقوبات">
     <div class="wl-head">
       <span class="wl-ico"><i class="fas fa-gavel"></i></span>
-      <h2 class="wl-title">سلّم العقوبات المتدرج</h2>
-      <p class="wl-sub">كل مخالفة تأخذ درجة — والدرجة الخامسة نهائية</p>
+      <h2 class="wl-title">مراحل العقوبات</h2>
+      <p class="wl-sub">كل مخالفة توصلك للمرحلة التالية — والمرحلة الأخيرة نهائية</p>
     </div>
-    <div class="wl-steps">
-      <% wrLadderItems.forEach(function(item, li) { 
-           var lv = wrLv(wrText(item));
-           var meta = wrLadderMeta[lv];
+    <div class="wl-stages">
+      <% wrStages.forEach(function(st, si) {
+           var lv = wsLv(st.title);
+           var stDesc = (st.description || '').toString();
       %>
-      <div class="wl-rung lv<%= lv %>">
-        <span class="wl-ric"><i class="fas <%= meta.ic %>"></i></span>
-        <div class="wl-txt">
-          <h3><%= meta.t %></h3>
-          <p><%= wrText(item) %></p>
+      <div class="ws-card ws-lv<%= lv %>">
+        <div class="ws-top">
+          <span class="ws-ico"><i class="fas <%= st.icon || 'fa-flag' %>"></i></span>
+          <div class="ws-head">
+            <span class="ws-kicker">المرحلة <%= wsOrd(si + 1) %>:</span>
+            <h3 class="ws-name"><%= st.title %></h3>
+          </div>
         </div>
-        <span class="wl-pill">المخالفة <%= li + 1 %></span>
+        <div class="ws-desc"><p><%= stDesc %></p></div>
       </div>
-      <% if (li < wrLadderItems.length - 1) { %>
-      <span class="wl-con c<%= Math.min(wrLv(wrText(wrLadderItems[li + 1])), 4) %>"></span>
-      <% } %>
       <% }); %>
     </div>
     <div class="wl-foot">

@@ -107,7 +107,7 @@
 
 .cy-form-hero h1 {
     font-size: clamp(2rem, 5vw, 3rem);
-    font-weight: 900;
+    font-weight: 700;
     line-height: 1.15;
     margin: 0 0 0.5rem 0;
     letter-spacing: -0.02em;
@@ -257,7 +257,7 @@
 }
 
 .cy-form-card-head h3 {
-    font-weight: 800;
+    font-weight: 700;
     font-size: 1.05rem;
     color: #fff;
     margin: 0;
@@ -293,7 +293,7 @@
     border: 1px solid rgba(var(--accent-rgb,167,139,250),0.2);
     color: var(--accent, #d24dff);
     font-size: 0.7rem;
-    font-weight: 800;
+    font-weight: 700;
     flex-shrink: 0;
 }
 
@@ -422,7 +422,7 @@
     border: none;
     border-radius: 12px;
     font-size: 1.1rem;
-    font-weight: 800;
+    font-weight: 700;
     font-family: inherit;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -729,7 +729,7 @@
 .cy-success h3 {
     color: #fff;
     font-size: 1.3rem;
-    font-weight: 800;
+    font-weight: 700;
     margin-bottom: 0.5rem;
 }
 
@@ -827,7 +827,7 @@
 
 .cy-progress-count {
     font-size: 0.8rem;
-    font-weight: 800;
+    font-weight: 700;
     color: var(--accent, #d24dff);
     font-variant-numeric: tabular-nums;
 }
@@ -887,7 +887,7 @@
 .cy-q-error::before {
     content: '\f06a';
     font-family: 'Font Awesome 6 Free';
-    font-weight: 900;
+    font-weight: 700;
     font-size: 0.75rem;
     flex-shrink: 0;
 }

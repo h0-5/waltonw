@@ -113,6 +113,7 @@ async function migrate() {
     `CREATE TABLE IF NOT EXISTS notifications (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, title VARCHAR(255), message TEXT, type VARCHAR(20) DEFAULT 'info', link TEXT, is_read TINYINT(1) DEFAULT 0, sender_id INT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
     `CREATE TABLE IF NOT EXISTS user_achievements (id INT AUTO_INCREMENT PRIMARY KEY, discord_id VARCHAR(50), achievement_name VARCHAR(100), earned_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
     `CREATE TABLE IF NOT EXISTS rule_categories (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), icon VARCHAR(50), sort_order INT DEFAULT 0)`,
+    `CREATE TABLE IF NOT EXISTS rule_stages (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(100), description TEXT, icon VARCHAR(50) DEFAULT 'fa-flag', sort_order INT DEFAULT 0)`,
     `CREATE TABLE IF NOT EXISTS giveaway_participants (id INT AUTO_INCREMENT PRIMARY KEY, giveaway_id INT, user_id INT, username VARCHAR(100), platform VARCHAR(20) DEFAULT 'site')`,
     `CREATE TABLE IF NOT EXISTS giveaway_winners (id INT AUTO_INCREMENT PRIMARY KEY, giveaway_id INT, user_id INT, username VARCHAR(100), selected_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
     `CREATE TABLE IF NOT EXISTS application_settings (id INT AUTO_INCREMENT PRIMARY KEY, application_type VARCHAR(100) UNIQUE, status VARCHAR(20) DEFAULT 'open', title VARCHAR(255), description TEXT, requirements TEXT, icon VARCHAR(50), color VARCHAR(20))`,

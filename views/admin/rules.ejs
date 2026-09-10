@@ -45,6 +45,12 @@
 .new-cat-form{background:rgba(var(--ac-rgb),.05);border:1px solid rgba(var(--ac-rgb),.15);border-radius:12px;padding:16px;margin-bottom:20px;display:none}
 .new-cat-form.show{display:block}
 .empty-msg{text-align:center;padding:2rem;color:var(--text-dim);font-size:.85rem}
+.stages-section{margin-top:28px;border-color:rgba(var(--ac-rgb),.18)}
+.stages-hint{margin:0 0 12px;font-size:.75rem;color:var(--text-dim);display:flex;align-items:center;gap:6px}
+.stage-badge{width:28px;height:28px;border-radius:8px;background:rgba(var(--ac-rgb),.12);display:flex;align-items:center;justify-content:center;color:var(--ac);font-size:.75rem;flex-shrink:0}
+.stage-desc-preview{color:var(--text-dim);font-size:.78rem}
+.stage-edit-grid{display:grid;grid-template-columns:1fr auto auto auto auto;gap:8px;align-items:center;flex:1}
+@media(max-width:720px){.stage-edit-grid{grid-template-columns:1fr auto}}
 .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:8px;font-weight:700;font-size:.85rem;z-index:99999;font-family:Cairo,sans-serif;animation:fadeInOut 2.5s forwards}
 @keyframes fadeInOut{0%{opacity:0;transform:translateX(-50%) translateY(-10px)}10%{opacity:1;transform:translateX(-50%) translateY(0)}80%{opacity:1}100%{opacity:0}}
 </style>
@@ -55,6 +61,7 @@
     <div class="rules-stats">
       <span><i class="fas fa-layer-group" style="color:var(--ac)"></i> <%= categories.length %> أقسام</span>
       <span><i class="fas fa-file-lines" style="color:var(--ac)"></i> <%= rules.length %> قوانين</span>
+      <span><i class="fas fa-stairs" style="color:var(--ac)"></i> <%= stages.length %> مراحل</span>
     </div>
     <button class="big-btn primary" onclick="toggleNewCatForm()"><i class="fas fa-folder-plus"></i> قسم جديد</button>
   </div>
@@ -131,6 +138,62 @@
     <% } else { %>
       <div class="empty-msg"><i class="fas fa-folder-open" style="font-size:2rem;display:block;margin-bottom:8px;opacity:.4"></i> لا توجد أقسام. أضف قسم أولاً.</div>
     <% } %>
+  </div>
+
+  <!-- ═══ مراحل العقوبات — نظام مستقل تماماً عن القوانين والأقسام (فصل بطلب المستخدم) ═══ -->
+  <div class="cat-section stages-section" id="stagesSection">
+    <div class="cat-header">
+      <div class="cat-icon"><i class="fas fa-stairs"></i></div>
+      <h3>مراحل العقوبات</h3>
+      <span class="cat-count"><%= stages.length %> مراحل</span>
+      <div class="cat-actions">
+        <button class="big-btn primary" onclick="toggleNewStageForm()"><i class="fas fa-plus"></i> مرحلة جديدة</button>
+      </div>
+    </div>
+    <p class="stages-hint"><i class="fas fa-circle-info"></i> نظام مستقل عن القوانين والأقسام — ترتيب المراحل هنا هو ترتيب عرضها بصفحة القوانين (جنب بعض)، ولون كل مرحلة يتحدد تلقائياً من عنوانها (تحذير/ميوت/طرد/حظر/دائم)</p>
+
+    <div class="new-cat-form" id="newStageForm">
+      <div class="form-row">
+        <div class="form-group"><label>عنوان المرحلة</label><input type="text" class="form-input" id="newStageTitle" placeholder="مثال: تحذير"></div>
+        <div class="form-group"><label>الأيقونة</label><input type="text" class="form-input" id="newStageIcon" placeholder="fa-flag" value="fa-flag"></div>
+      </div>
+      <div class="form-group"><label>وصف المرحلة</label><textarea class="form-textarea" id="newStageDesc" rows="2" placeholder="مثال: المخالفة الأولى: تنبيه رسمي يُسجّل في الأرشيف"></textarea></div>
+      <div style="display:flex;gap:8px">
+        <button class="big-btn primary" onclick="saveNewStage()"><i class="fas fa-save"></i> حفظ</button>
+        <button class="big-btn secondary" onclick="toggleNewStageForm()">إلغاء</button>
+      </div>
+    </div>
+
+    <div id="stagesContainer">
+      <% if (stages.length > 0) { %>
+        <% stages.forEach(function(st, si) { %>
+          <div class="rule-card" id="stage-card-<%= st.id %>">
+            <span class="stage-badge"><i class="fas <%= st.icon || 'fa-flag' %>"></i></span>
+            <span class="rule-text"><strong><%= st.title %></strong><% if (st.description) { %> <span class="stage-desc-preview">— <%= st.description %></span><% } %></span>
+            <span class="rule-order">#<%= st.sort_order || 0 %></span>
+            <div class="rule-actions" id="stage-actions-<%= st.id %>">
+              <% if (si > 0) { %><button class="sm-btn" onclick="moveStage(<%= st.id %>, 'up')" title="تحريك لأعلى"><i class="fas fa-arrow-up"></i></button><% } %>
+              <% if (si < stages.length - 1) { %><button class="sm-btn" onclick="moveStage(<%= st.id %>, 'down')" title="تحريك لأسفل"><i class="fas fa-arrow-down"></i></button><% } %>
+              <button class="sm-btn edit" onclick="editStageInline(<%= st.id %>)" title="تعديل"><i class="fas fa-pen"></i></button>
+              <button class="sm-btn del" onclick="deleteStage(<%= st.id %>)" title="حذف"><i class="fas fa-trash"></i></button>
+            </div>
+          </div>
+          <div class="rule-card editing" id="stage-edit-<%= st.id %>" style="display:none">
+            <span class="stage-badge"><i class="fas <%= st.icon || 'fa-flag' %>"></i></span>
+            <div class="stage-edit-grid">
+              <input type="text" class="form-input" id="stage-edit-title-<%= st.id %>" value="<%= st.title %>" placeholder="العنوان">
+              <input type="text" class="form-input" id="stage-edit-icon-<%= st.id %>" value="<%= st.icon || 'fa-flag' %>" placeholder="fa-flag" style="max-width:110px">
+              <input type="number" class="form-input" id="stage-edit-sort-<%= st.id %>" value="<%= st.sort_order || 0 %>" style="max-width:64px">
+              <button class="sm-btn save" onclick="saveStage(<%= st.id %>)"><i class="fas fa-check"></i></button>
+              <button class="sm-btn cancel" onclick="cancelEditStage(<%= st.id %>)"><i class="fas fa-times"></i></button>
+              <textarea class="form-textarea" id="stage-edit-desc-<%= st.id %>" rows="2" placeholder="وصف المرحلة" style="grid-column:1/-1"><%= st.description || '' %></textarea>
+            </div>
+          </div>
+        <% }); %>
+      <% } else { %>
+        <div class="empty-msg"><i class="fas fa-stairs" style="font-size:2rem;display:block;margin-bottom:8px;opacity:.4"></i> لا توجد مراحل — صفحة القوانين ستعرض المراحل الافتراضية الخمس تلقائياً</div>
+      <% } %>
+    </div>
   </div>
 </div>
 
@@ -278,5 +341,67 @@ async function deleteRule(id) {
 
 var allRules = <%- JSON.stringify(rules) %>;
 var allCats = <%- JSON.stringify(categories) %>;
+var allStages = <%- JSON.stringify(stages) %>;
+
+// ═══ مراحل العقوبات — مستقلة تماماً عن إدارة القوانين والأقسام ═══
+function toggleNewStageForm() {
+  var f = document.getElementById('newStageForm');
+  f.classList.toggle('show');
+  if (f.classList.contains('show')) document.getElementById('newStageTitle').focus();
+}
+
+async function saveNewStage() {
+  var title = document.getElementById('newStageTitle').value.trim();
+  var icon = document.getElementById('newStageIcon').value.trim();
+  var description = document.getElementById('newStageDesc').value.trim();
+  if (!title) return alert('عنوان المرحلة مطلوب');
+  var res = await fetch('/api/admin/rule-stages', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ title: title, icon: icon||'fa-flag', description: description, sort_order: 0 }) });
+  var r = await res.json();
+  if (r.success) location.reload(); else alert(r.error || 'خطأ');
+}
+
+async function moveStage(id, dir) {
+  var st = allStages.find(function(s){ return s.id === id; });
+  if (!st) return;
+  var sorted = allStages.slice().sort(function(a,b){ return (a.sort_order||0)-(b.sort_order||0) || a.id-b.id; });
+  var idx = sorted.findIndex(function(s){ return s.id === id; });
+  var other = null;
+  if (dir === 'up' && idx > 0) other = sorted[idx-1];
+  if (dir === 'down' && idx < sorted.length - 1) other = sorted[idx+1];
+  if (!other) return;
+  var tmp = st.sort_order;
+  st.sort_order = other.sort_order;
+  other.sort_order = tmp;
+  var body = function(s){ return JSON.stringify({ title: s.title, description: s.description||'', icon: s.icon||'fa-flag', sort_order: s.sort_order }); };
+  await fetch('/api/admin/rule-stages/' + st.id, { method:'PUT', headers:{'Content-Type':'application/json'}, body: body(st) });
+  await fetch('/api/admin/rule-stages/' + other.id, { method:'PUT', headers:{'Content-Type':'application/json'}, body: body(other) });
+  location.reload();
+}
+
+function editStageInline(id) {
+  document.getElementById('stage-edit-' + id).style.display = 'flex';
+  document.getElementById('stage-card-' + id).style.display = 'none';
+}
+function cancelEditStage(id) {
+  document.getElementById('stage-edit-' + id).style.display = 'none';
+  document.getElementById('stage-card-' + id).style.display = 'flex';
+}
+async function saveStage(id) {
+  var title = document.getElementById('stage-edit-title-' + id).value.trim();
+  var icon = document.getElementById('stage-edit-icon-' + id).value.trim();
+  var description = document.getElementById('stage-edit-desc-' + id).value.trim();
+  var sort = parseInt(document.getElementById('stage-edit-sort-' + id).value) || 0;
+  if (!title) return alert('عنوان المرحلة مطلوب');
+  var res = await fetch('/api/admin/rule-stages/' + id, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ title: title, icon: icon||'fa-flag', description: description, sort_order: sort }) });
+  var r = await res.json();
+  if (r.success) location.reload(); else alert(r.error || 'خطأ');
+}
+
+async function deleteStage(id) {
+  if (!confirm('حذف هذه المرحلة؟')) return;
+  var res = await fetch('/api/admin/rule-stages/' + id, { method:'DELETE' });
+  var r = await res.json();
+  if (r.success) { showToast('تم الحذف'); location.reload(); } else alert(r.error || 'خطأ');
+}
 </script>
 <%- include('admin_footer') %>

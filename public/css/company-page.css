@@ -150,7 +150,7 @@
 /* Title */
 .cy-co-hero h1 {
     font-size: clamp(2.2rem, 6vw, 3.2rem);
-    font-weight: 900;
+    font-weight: 700;
     line-height: 1.15;
     margin: 0 0 0.5rem 0;
     letter-spacing: -0.02em;
@@ -246,7 +246,7 @@
     color: #0f101d !important;
     border-color: transparent !important;
     box-shadow: 0 0 15px rgba(var(--accent-rgb),0.25);
-    font-weight: 800;
+    font-weight: 700;
 }
 
 .cy-co-tab-active i {
@@ -361,7 +361,7 @@
 }
 
 .cy-co-title {
-    font-weight: 800;
+    font-weight: 700;
     font-size: 1.05rem;
     color: #fff;
     margin: 0;
@@ -757,7 +757,7 @@
 .cy-co-empty h3 {
     color: rgba(255,255,255,0.6);
     font-size: 1.1rem;
-    font-weight: 800;
+    font-weight: 700;
     margin-bottom: 0.3rem;
 }
 

@@ -131,7 +131,7 @@
 /* ── Title ── */
 .cy-page-hero-title {
     font-size: clamp(1.2rem, 3vw, 1.6rem);
-    font-weight: 900;
+    font-weight: 700;
     margin: 0 0 0.3rem;
     background: linear-gradient(135deg, #fff 10%, rgba(var(--ac-rgb), 0.7) 50%, var(--ac) 90%);
     background-size: 200% auto;

@@ -81,7 +81,7 @@ body {
 
 .games-hero-title {
     font-size: clamp(2.2rem, 6vw, 3.2rem);
-    font-weight: 900;
+    font-weight: 700;
     background: linear-gradient(90deg, #fff, rgba(var(--ac-rgb),0.8), var(--ac), rgba(var(--ac-rgb),0.8), #fff);
     background-size: 200% auto;
     -webkit-background-clip: text;
@@ -139,7 +139,7 @@ body {
 
 .games-stat-pill span {
     color: var(--ac);
-    font-weight: 900;
+    font-weight: 700;
     font-size: 1rem;
 }
 
@@ -176,7 +176,7 @@ body {
     align-items: center;
     gap: 0.8rem;
     font-size: 1.1rem;
-    font-weight: 800;
+    font-weight: 700;
     color: rgba(255,255,255,0.85);
     margin-bottom: 1.2rem;
     padding-bottom: 0.6rem;
@@ -195,7 +195,7 @@ body {
     font-size: 0.7rem;
     padding: 0.15rem 0.6rem;
     border-radius: 30px;
-    font-weight: 800;
+    font-weight: 700;
 }
 
 /* ==================== Games Grid ==================== */
@@ -303,7 +303,7 @@ body {
 /* ==================== Badges ==================== */
 .game-type-tag {
     font-size: 0.65rem;
-    font-weight: 800;
+    font-weight: 700;
     padding: 0.2rem 0.6rem;
     border-radius: 30px;
     position: absolute;
@@ -318,7 +318,7 @@ body {
     top: 0.8rem;
     left: 0.8rem;
     font-size: 0.65rem;
-    font-weight: 800;
+    font-weight: 700;
     padding: 0.2rem 0.6rem;
     border-radius: 30px;
     letter-spacing: 0.04em;
@@ -329,7 +329,7 @@ body {
 /* ==================== Text ==================== */
 .game-title {
     font-size: 1rem;
-    font-weight: 800;
+    font-weight: 700;
     color: rgba(255,255,255,0.95);
     line-height: 1.3;
 }
@@ -359,7 +359,7 @@ body {
     border: 1px solid rgba(16,185,129,0.3);
     padding: 0.15rem 0.6rem;
     border-radius: 20px;
-    font-weight: 800;
+    font-weight: 700;
 }
 
 /* ==================== Play Button ==================== */

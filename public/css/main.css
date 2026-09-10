@@ -108,7 +108,7 @@ button { cursor: pointer; font-family: inherit; }
 .nav-logo { display: flex; align-items: center; gap: 10px; }
 .logo-text {
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 700;
   background: linear-gradient(135deg, var(--ac), var(--ac-light));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -291,7 +291,7 @@ button { cursor: pointer; font-family: inherit; }
    ========================================== */
 .section-title {
   display: flex; align-items: center; gap: 12px;
-  font-size: 26px; font-weight: 800; margin-bottom: 32px;
+  font-size: 26px; font-weight: 700; margin-bottom: 32px;
 }
 .section-title i { color: var(--ac); }
 
@@ -388,14 +388,14 @@ button { cursor: pointer; font-family: inherit; }
 .hero-content { position: relative; z-index: 1; max-width: 800px; padding: 40px 20px; }
 .hero-title {
   font-size: clamp(32px, 5vw, 52px);
-  font-weight: 900;
+  font-weight: 700;
   line-height: 1.2;
   margin-bottom: 20px;
 }
 .hero-logo {
   display: inline-block;
   font-size: clamp(48px, 8vw, 72px);
-  font-weight: 900;
+  font-weight: 700;
   background: linear-gradient(135deg, var(--ac), var(--ac-light), #fff);
   background-size: 200% auto;
   -webkit-background-clip: text;
@@ -435,7 +435,7 @@ button { cursor: pointer; font-family: inherit; }
   font-size: 22px;
   color: var(--ac);
 }
-.stat-value { font-size: 32px; font-weight: 900; color: var(--ac); }
+.stat-value { font-size: 32px; font-weight: 700; color: var(--ac); }
 .stat-label { color: var(--text-dim); font-size: 14px; }
 
 /* ==========================================
@@ -606,7 +606,7 @@ button { cursor: pointer; font-family: inherit; }
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  font-weight: 800;
+  font-weight: 700;
 }
 .footer-desc { color: var(--text-dim); font-size: 14px; line-height: 1.8; margin-bottom: 16px; }
 .footer-social { display: flex; gap: 10px; }
@@ -664,7 +664,7 @@ button { cursor: pointer; font-family: inherit; }
   position: relative; z-index: 1;
 }
 .error-code {
-  font-size: 120px; font-weight: 900;
+  font-size: 120px; font-weight: 700;
   background: linear-gradient(135deg, var(--ac), var(--purple));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -1230,7 +1230,7 @@ button { cursor: pointer; font-family: inherit; }
   border-radius: var(--radius-lg);
   backdrop-filter: var(--glass-blur);
 }
-.badge-icon { display: block; font-size: 44px; font-weight: 900; color: var(--ac); margin-bottom: 10px; }
+.badge-icon { display: block; font-size: 44px; font-weight: 700; color: var(--ac); margin-bottom: 10px; }
 .badge-text { display: block; font-size: 16px; margin-bottom: 6px; }
 .badge-year { color: var(--text-faint); font-size: 13px; }
 .team-section, .values-section { padding: 60px 0; position: relative; z-index: 1; }
@@ -1305,7 +1305,7 @@ button { cursor: pointer; font-family: inherit; }
   display: flex; align-items: center; justify-content: center;
   background: rgba(var(--ac-rgb),0.15);
   border-radius: 50%;
-  font-weight: 800; color: var(--ac); font-size: 14px;
+  font-weight: 700; color: var(--ac); font-size: 14px;
 }
 .rule-content p { color: var(--text-dim); font-size: 13px; line-height: 1.7; }
 

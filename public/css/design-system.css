@@ -42,6 +42,8 @@ body {
   background-color: var(--bg);
 }
 h1, h2, h3, h4 { font-family: var(--font-head); }
+/* b/strong الافتراضي «bolder» نسبي — فوق 700 يصبح 900 مصطنعاً (لا وجه حقيقي 900 بالموقع) */
+b, strong { font-weight: 700; }
 
 :focus-visible {
   outline: 2px solid var(--accent);

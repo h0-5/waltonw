@@ -128,7 +128,7 @@ img { pointer-events: none; user-select: none; -webkit-user-drag: none; }
 
 .cy-hero h1 {
     font-size: clamp(2.2rem, 6vw, 3.2rem);
-    font-weight: 900;
+    font-weight: 700;
     line-height: 1.15;
     margin: 0 0 0.5rem 0;
     letter-spacing: -0.02em;
@@ -217,7 +217,7 @@ img { pointer-events: none; user-select: none; -webkit-user-drag: none; }
     color: #fff !important;
     border-color: transparent !important;
     box-shadow: 0 0 15px rgba(var(--purple-rgb),0.25);
-    font-weight: 800;
+    font-weight: 700;
 }
 
 /* ── Main Container ── */
@@ -489,7 +489,7 @@ img { pointer-events: none; user-select: none; -webkit-user-drag: none; }
     padding: 3px 10px;
     border-radius: 50px;
     font-size: 0.65rem;
-    font-weight: 800;
+    font-weight: 700;
     color: var(--accent);
     border: 1px solid rgba(var(--accent-rgb),0.2);
 }
@@ -511,7 +511,7 @@ img { pointer-events: none; user-select: none; -webkit-user-drag: none; }
     padding: 3px 10px;
     border-radius: 50px;
     font-size: 0.65rem;
-    font-weight: 800;
+    font-weight: 700;
     color: #fff;
     box-shadow: 0 2px 8px rgba(239,68,68,0.3);
 }
@@ -521,7 +521,7 @@ img { pointer-events: none; user-select: none; -webkit-user-drag: none; }
     padding: 3px 10px;
     border-radius: 50px;
     font-size: 0.65rem;
-    font-weight: 800;
+    font-weight: 700;
     color: #fff;
 }
 
@@ -530,7 +530,7 @@ img { pointer-events: none; user-select: none; -webkit-user-drag: none; }
     padding: 3px 10px;
     border-radius: 50px;
     font-size: 0.65rem;
-    font-weight: 800;
+    font-weight: 700;
     color: #fff;
 }
 
@@ -544,7 +544,7 @@ img { pointer-events: none; user-select: none; -webkit-user-drag: none; }
 }
 
 .cy-card-title {
-    font-weight: 800;
+    font-weight: 700;
     font-size: 1.1rem;
     color: #fff;
     margin: 0 0 0.3rem 0;
@@ -565,7 +565,7 @@ img { pointer-events: none; user-select: none; -webkit-user-drag: none; }
 .cy-card-title .card-id {
     font-family: 'Courier New', monospace;
     font-size: 0.65rem;
-    font-weight: 800;
+    font-weight: 700;
     color: rgba(var(--accent-rgb),0.5);
     background: rgba(var(--accent-rgb),0.06);
     padding: 2px 7px;
@@ -816,7 +816,7 @@ img { pointer-events: none; user-select: none; -webkit-user-drag: none; }
 .cy-empty-title {
     color: var(--text);
     font-size: 1.2rem;
-    font-weight: 800;
+    font-weight: 700;
     margin: 0 0 0.5rem 0;
     position: relative;
 }
@@ -1005,7 +1005,7 @@ img { pointer-events: none; user-select: none; -webkit-user-drag: none; }
 
 .cy-buy-title {
     font-size: 1.15rem;
-    font-weight: 800;
+    font-weight: 700;
     color: #fff;
     text-align: center;
     margin-bottom: 0.75rem;
@@ -1032,7 +1032,7 @@ img { pointer-events: none; user-select: none; -webkit-user-drag: none; }
 
 .cy-buy-price-new {
     font-size: 1.4rem;
-    font-weight: 800;
+    font-weight: 700;
     color: var(--gold);
     display: flex;
     align-items: center;
@@ -1047,7 +1047,7 @@ img { pointer-events: none; user-select: none; -webkit-user-drag: none; }
     padding: 2px 10px;
     border-radius: 20px;
     font-size: 0.62rem;
-    font-weight: 800;
+    font-weight: 700;
     color: #fff;
     box-shadow: 0 2px 8px rgba(239,68,68,0.3);
 }
@@ -1078,7 +1078,7 @@ img { pointer-events: none; user-select: none; -webkit-user-drag: none; }
 
 .cy-buy-qty-btn:hover { background: rgba(var(--accent-rgb),0.18); border-color: rgba(var(--accent-rgb),0.4); }
 .cy-buy-qty-btn:active { transform: scale(0.92); }
-.cy-buy-qty-val { font-size: 1.15rem; font-weight: 800; color: #fff; min-width: 36px; text-align: center; }
+.cy-buy-qty-val { font-size: 1.15rem; font-weight: 700; color: #fff; min-width: 36px; text-align: center; }
 
 .cy-buy-field { margin-bottom: 0.6rem; }
 .cy-buy-label { display: block; font-size: 0.76rem; font-weight: 600; color: var(--text-dim); margin-bottom: 4px; }
@@ -1222,7 +1222,7 @@ img { pointer-events: none; user-select: none; -webkit-user-drag: none; }
 /* Result modal extras */
 .cy-res-section { text-align: center; padding: 0.5rem 0; position: relative; }
 .cy-res-icon-box { width: 72px; height: 72px; border-radius: 20px; border: 2px solid rgba(var(--accent-rgb),0.4); display: flex; align-items: center; justify-content: center; margin: 0 auto 0.75rem; }
-.cy-res-title { font-size: 0.95rem; font-weight: 800; color: #fff; margin-bottom: 0.35rem; }
+.cy-res-title { font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 0.35rem; }
 .cy-res-desc { font-size: 0.8rem; color: var(--text-dim); }
 .cy-res-rarity { display: inline-block; padding: 3px 12px; border-radius: 20px; border: 1px solid; font-size: 0.72rem; font-weight: 700; margin-top: 0.35rem; }
 .cy-res-balance { text-align: center; font-size: 0.82rem; color: var(--text-dim); margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border); }

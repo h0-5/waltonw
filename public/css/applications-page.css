@@ -117,7 +117,7 @@
 
 .cy-apps-hero h1 {
     font-size: clamp(2.2rem, 6vw, 3.2rem);
-    font-weight: 900;
+    font-weight: 700;
     line-height: 1.15;
     margin: 0 0 0.5rem 0;
     letter-spacing: -0.02em;
@@ -295,7 +295,7 @@
 
 .sec-title {
     font-size: 1.15rem;
-    font-weight: 800;
+    font-weight: 700;
     display: flex;
     align-items: center;
     gap: 0.6rem;
@@ -413,7 +413,7 @@
     padding: 0.22rem 0.65rem;
     border-radius: 99px;
     font-size: 0.62rem;
-    font-weight: 800;
+    font-weight: 700;
     border: 1px solid transparent;
 }
 
@@ -533,7 +533,7 @@
 .h-name {
     text-align: center;
     font-size: 1.05rem;
-    font-weight: 900;
+    font-weight: 700;
     color: var(--text, #f0eef6);
     line-height: 1.35;
     margin: 0 0 0.15rem;
@@ -573,7 +573,7 @@
     align-items: center;
     gap: 0.4rem;
     font-size: 0.68rem;
-    font-weight: 800;
+    font-weight: 700;
     color: var(--ac);
     margin: 0 0 0.45rem;
 }
@@ -778,7 +778,7 @@
 
 .tip-card h3 {
     font-size: 1.2rem;
-    font-weight: 800;
+    font-weight: 700;
     margin-bottom: 0.5rem;
     color: var(--text, #f0f0f5);
 }

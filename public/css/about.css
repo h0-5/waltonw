@@ -142,7 +142,7 @@ body { font-family: 'Cairo', 'Segoe UI', sans-serif; }
 /* Title */
 .cy-about-hero h1 {
     font-size: clamp(2.2rem, 6vw, 3.2rem);
-    font-weight: 900;
+    font-weight: 700;
     line-height: 1.15;
     margin: 0 0 0.5rem 0;
     letter-spacing: -0.02em;
@@ -302,7 +302,7 @@ body { font-family: 'Cairo', 'Segoe UI', sans-serif; }
 /* ── Section Title ── */
 .about-section-title {
     font-size: 1.5rem;
-    font-weight: 900;
+    font-weight: 700;
     text-align: center;
     margin-bottom: 2rem;
     color: var(--text);
@@ -399,7 +399,7 @@ body { font-family: 'Cairo', 'Segoe UI', sans-serif; }
     padding: 4px 14px;
     font-family: 'Space Grotesk', monospace;
     font-size: 0.65rem;
-    font-weight: 800;
+    font-weight: 700;
     color: var(--accent);
     letter-spacing: 2px;
     text-transform: uppercase;
@@ -494,13 +494,13 @@ body { font-family: 'Cairo', 'Segoe UI', sans-serif; }
 .member-card .mc-avatar .avatar-fallback {
     font-size: 1.1rem;
     color: var(--accent-light);
-    font-weight: 800;
+    font-weight: 700;
     font-family: 'Space Grotesk', monospace;
 }
 
 .member-card .mc-name {
     font-size: 0.82rem;
-    font-weight: 800;
+    font-weight: 700;
     color: var(--text);
     margin-bottom: 0.15rem;
     position: relative;

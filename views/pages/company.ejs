@@ -163,7 +163,7 @@ function openSvcForm(sid) {
             var img = pkg.image_type === 'emoji' ? '<span style="font-size:2.5rem">' + pkg.image_value + '</span>' : '<img src="' + pkg.image_value + '" style="width:64px;height:64px;border-radius:12px;object-fit:cover">';
             h += '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:1rem;margin-bottom:.8rem;display:flex;gap:.8rem;align-items:center;cursor:pointer;transition:all .2s" onclick="selectPackage(' + sid + ',' + pkg.id + ')">'
                 + img + '<div style="flex:1"><div style="color:#fff;font-weight:700">' + pkg.name + '</div>'
-                + '<div style="color:var(--accent);font-weight:800;font-size:.85rem">$' + (+pkg.price).toFixed(2) + ' · ' + pkg.days + ' يوم</div></div></div>';
+                + '<div style="color:var(--accent);font-weight:700;font-size:.85rem">$' + (+pkg.price).toFixed(2) + ' · ' + pkg.days + ' يوم</div></div></div>';
         });
         document.getElementById('svcPkgStep').innerHTML = h;
     } else { showSvcQuestions(sid); }
@@ -190,7 +190,7 @@ function showSvcQuestions(sid) {
         else if (q.type === 'image')
             h += '<input type="file" name="sq_' + q.id + '" accept="image/*" ' + (r?'required':'') + ' style="width:100%;padding:.6rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-size:.85rem;box-sizing:border-box">';
         else if (q.type === 'price')
-            h += '<div style="color:var(--accent);font-weight:900;font-size:1.6rem;text-align:center">$' + (+q.price_per_day).toFixed(2) + '</div><input type="hidden" name="sq_' + q.id + '" value="1">';
+            h += '<div style="color:var(--accent);font-weight: 800;font-size:1.6rem;text-align:center">$' + (+q.price_per_day).toFixed(2) + '</div><input type="hidden" name="sq_' + q.id + '" value="1">';
         h += '</div>';
     });
     document.getElementById('svcFormQuestions').innerHTML = h;

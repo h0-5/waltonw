@@ -452,6 +452,41 @@ router.delete('/rule-categories/:id', checkPermission('rules_delete'), async (re
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// Rule Stages API — مراحل العقوبات: نظام مستقل تماماً عن القوانين وأقسامها (نفس نمط إدارتها)
+router.get('/rule-stages', checkPermission('rules_view'), async (req, res) => {
+  try {
+    const [stages] = await db.execute('SELECT * FROM rule_stages ORDER BY sort_order ASC, id ASC');
+    res.json(stages);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.post('/rule-stages', checkPermission('rules_add'), async (req, res) => {
+  try {
+    const { title, description, icon, sort_order } = req.body;
+    if (!title || !String(title).trim()) return res.status(400).json({ error: 'عنوان المرحلة مطلوب' });
+    const [result] = await db.execute('INSERT INTO rule_stages (title, description, icon, sort_order) VALUES (?, ?, ?, ?)',
+      [String(title).trim().slice(0, 100), String(description || '').trim().slice(0, 500), icon || 'fa-flag', parseInt(sort_order) || 0]);
+    res.json({ success: true, id: result.insertId });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.put('/rule-stages/:id', checkPermission('rules_add'), async (req, res) => {
+  try {
+    const { title, description, icon, sort_order } = req.body;
+    if (!title || !String(title).trim()) return res.status(400).json({ error: 'عنوان المرحلة مطلوب' });
+    await db.execute('UPDATE rule_stages SET title=?, description=?, icon=?, sort_order=? WHERE id=?',
+      [String(title).trim().slice(0, 100), String(description || '').trim().slice(0, 500), icon || 'fa-flag', parseInt(sort_order) || 0, req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.delete('/rule-stages/:id', checkPermission('rules_delete'), async (req, res) => {
+  try {
+    await db.execute('DELETE FROM rule_stages WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // Discounts API
 router.post('/discounts', checkPermission('discounts_manage'), async (req, res) => {
   try {

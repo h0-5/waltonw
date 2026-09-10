@@ -46,8 +46,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-  <!-- خطان للهوية الجديدة (Cairo عناوين + IBM Plex Sans Arabic نصوص) — Space Grotesk وCinzel تبقى لصفحات/أنميشن قديمة حتى مرحلتها — حذف Noto Sans Arabic وفّر 4 ملفات -->
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet">
+  <!-- خطان للهوية الجديدة (Cairo عناوين + IBM Plex Sans Arabic نصوص) — Space Grotesk وCinzel تبقى لصفحات/أنميشن قديمة حتى مرحلتها — حذف Noto Sans Arabic وفّر 4 ملفات
+       الأوزان المحمّلة = كل الأوزان المستخدمة فعلاً بالكود (بلاغ المستخدم: «طبق نفس الموضوع ع خطوط كل الموقع»):
+       أي وزن غير محمّل كان المتصفح يصنعه مصطنعاً فيبدو مشوشاً — كايرو اكتمل 400-800 وPlex حتى 700 (أقصاه المتاح) — ملفات variable نفسها بلا زيادة حجم -->
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet">
   
   <!-- Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -230,7 +232,7 @@
     .news-ticker-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:12px}
     .news-ticker-icon{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:rgba(var(--ac-rgb),0.15);display:flex;align-items:center;justify-content:center;color:var(--ac);font-size:0.75rem;animation:tickPulse 2s ease-in-out infinite}
     @keyframes tickPulse{0%,100%{opacity:1}50%{opacity:0.5}}
-    .news-ticker-label{flex-shrink:0;font-size:0.7rem;font-weight:800;color:var(--ac);background:rgba(var(--ac-rgb),0.12);padding:3px 10px;border-radius:6px;letter-spacing:0.5px}
+    .news-ticker-label{flex-shrink:0;font-size:0.7rem;font-weight:700;color:var(--ac);background:rgba(var(--ac-rgb),0.12);padding:3px 10px;border-radius:6px;letter-spacing:0.5px}
     .news-ticker-content{flex:1;overflow:hidden;position:relative;height:22px}
     .news-ticker-item{position:absolute;width:100%;opacity:0;transform:translateY(20px);transition:all 0.5s ease;font-size:0.82rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .news-ticker-item.active{opacity:1;transform:translateY(0)}

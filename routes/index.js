@@ -183,7 +183,8 @@ router.get('/rules', isAuthenticated, isInGuild, checkPageAccess('/rules'), asyn
   const settings = await getSettings();
   const rules = await safeQuery('SELECT * FROM rules ORDER BY sort_order ASC');
   const categories = await safeQuery('SELECT * FROM rule_categories ORDER BY sort_order ASC');
-  res.render('pages/rules', { title: 'القواعد', rules, categories, settings });
+  const stages = await safeQuery('SELECT * FROM rule_stages ORDER BY sort_order ASC, id ASC');
+  res.render('pages/rules', { title: 'القواعد', rules, categories, stages, settings });
 });
 
 // Store

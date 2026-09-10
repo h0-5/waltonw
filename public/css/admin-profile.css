@@ -142,7 +142,7 @@
   opacity: 0.05;
   color: var(--prof-accent);
   font-family: 'Font Awesome 6 Free';
-  font-weight: 900;
+  font-weight: 700;
 }
 .stat-card .stat-value {
   font-size: 1.8rem;
