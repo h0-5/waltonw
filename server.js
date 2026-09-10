@@ -162,6 +162,26 @@ async function migrate() {
   }
   console.log('✅ Migration done');
 
+  // بذرة مراحل العقوبات: تُزرع فقط إذا كان الجدول فارغاً (أول إنشاء له) —
+  // نفس النصوص الافتراضية اللي كانت الصفحة العامة تعرضها، حتى تديرها من الإدارة مباشرة
+  try {
+    const [stCnt] = await db.query('SELECT COUNT(*) AS c FROM rule_stages');
+    if (!stCnt.length || stCnt[0].c === 0) {
+      const defaultStages = [
+        ['تحذير', 'fa-triangle-exclamation', 'تنبيه رسمي يُسجّل في الأرشيف — تكرار المخالفة يوصلك للمرحلة التالية'],
+        ['ميوت', 'fa-volume-xmark', 'كتم من المحادثات مدة تتراوح بين ساعة وسبعة أيام حسب نوع المخالفة'],
+        ['طرد مؤقت', 'fa-person-walking-arrow-right', 'طرد من السيرفر مؤقتاً مع بقاء سجل المخالفات محفوظاً بالكامل'],
+        ['حظر مؤقت', 'fa-gavel', 'حظر مؤقت من السيرفر لمدة تحددها الإدارة حسب جسامة المخالفة'],
+        ['حظر دائم', 'fa-ban', 'حظر نهائي من المجتمع — قرار الطاقم في هذه المرحلة نهائي']
+      ];
+      for (let i = 0; i < defaultStages.length; i++) {
+        await db.query('INSERT INTO rule_stages (title, description, icon, sort_order) VALUES (?, ?, ?, ?)',
+          [defaultStages[i][0], defaultStages[i][2], defaultStages[i][1], i + 1]);
+      }
+      console.log('✅ rule_stages seeded (5 default stages)');
+    }
+  } catch (e) { console.log('⚠️ rule_stages seed skipped:', e.message); }
+
   // Fix: ensure columns exist (table may have been created before these columns were added)
   const userFixes = [
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS in_guild TINYINT(1) DEFAULT 0",
@@ -354,8 +374,8 @@ async function migrate() {
   } catch(e) { console.error('Role seed error:', e.message); }
 }
 
-// Bump this when tables/ALTERs change in migrate() — '6' adds analytics + guard tables
-const SCHEMA_VERSION = '10';
+// Bump this when tables/ALTERs change in migrate() — '11' creates rule_stages (+default seed) that v10-skip missed (Task 74 shipped the table without a bump)
+const SCHEMA_VERSION = '11';
 
 async function start() {
   // Skip the ~50-table migration when schema is already current:

@@ -759,14 +759,15 @@ router.get('/roles', checkPermission('roles_config_view'), async (req, res) => {
 
 // Rules Management
 router.get('/rules', checkPermission('rules_view'), async (req, res) => {
-  try {
-    const [rules] = await db.execute('SELECT * FROM rules ORDER BY sort_order ASC, id ASC');
-    const [categories] = await db.execute('SELECT * FROM rule_categories ORDER BY sort_order ASC, id ASC');
-    const [stages] = await db.execute('SELECT * FROM rule_stages ORDER BY sort_order ASC, id ASC');
-    res.render('admin/rules', { title: 'إدارة القوانين', rules, categories, stages, currentPath: req.path });
-  } catch(err) {
-    res.render('admin/rules', { title: 'إدارة القوانين', rules: [], categories: [], stages: [], currentPath: req.path });
-  }
+  // كل استعلام محروس لوحده — عطب جدول واحد ما يصفرّش الصفحة كلها
+  const safeAll = async (sql) => {
+    try { const [rows] = await db.execute(sql); return rows; }
+    catch(e) { console.log('⚠️ admin/rules query failed:', e.message); return []; }
+  };
+  const rules = await safeAll('SELECT * FROM rules ORDER BY sort_order ASC, id ASC');
+  const categories = await safeAll('SELECT * FROM rule_categories ORDER BY sort_order ASC, id ASC');
+  const stages = await safeAll('SELECT * FROM rule_stages ORDER BY sort_order ASC, id ASC');
+  res.render('admin/rules', { title: 'إدارة القوانين', rules, categories, stages, currentPath: req.path });
 });
 
 // Discounts Management
