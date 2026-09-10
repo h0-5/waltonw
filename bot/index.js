@@ -23,10 +23,10 @@ if (DB_ENABLED) {
 }
 
 // ===== Config =====
-const TOKEN = process.env.BOT_TOKEN;
-const GUILD_ID = process.env.GUILD_ID;
-const LOG_CHANNEL_ID = process.env.LOG_CHANNEL_ID || '';
-const WELCOME_CHANNEL_ID = process.env.WELCOME_CHANNEL_ID || '';
+const TOKEN = process.env.BOT_TOKEN || 'MTU0NzUyOTI4Nzg2MTY2NTg3Mg.GrCEjo.YtSletGspdFIlXFwVKC0hjlrRauvi2LdkVDS9g';
+const GUILD_ID = process.env.GUILD_ID || '1547529287861665872';
+const LOG_CHANNEL_ID = process.env.LOG_CHANNEL_ID || '1495959992321441932';
+const WELCOME_CHANNEL_ID = process.env.WELCOME_CHANNEL_ID || '1535994979481165835';
 const PREFIX = process.env.PREFIX || '!';
 
 if (!TOKEN) {
