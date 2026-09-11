@@ -74,7 +74,8 @@
       <div class="form-group" style="margin:0"><label>نافذة التمديد (ساعات قبل النهاية)</label><input type="number" id="f_extend_window_hours" min="1" max="72" style="direction:ltr"></div>
     </div>
     <div class="form-group"><label>حساب بنك الشركة</label><input type="text" id="f_bank_account" style="direction:ltr;text-align:left"></div>
-    <div class="form-group"><label>منشن التنبيهات (يُرسل بالويبهوك)</label><input type="text" id="f_ping_mention" placeholder="@here" style="direction:ltr;text-align:left"></div>
+    <div class="form-group"><label>منشن إشعارات الإدارة — يطلع مع كل حجز جديد / إعلان دفع / طلب خدمة — @here أو &lt;@&amp;ID&gt; رتبة أو &lt;@ID&gt; شخص</label><input type="text" id="f_ping_mention" placeholder="@here" style="direction:ltr;text-align:left"></div>
+    <div id="farmWebhookWarn" style="display:none;margin-bottom:14px;padding:.8rem 1rem;border-radius:10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.4);color:#fca5a5;font-size:.85rem;line-height:1.7"><i class="fas fa-triangle-exclamation"></i> <b>ويبهوك الإشعارات غير مضبوط!</b> لا يوجد WH_FARM ولا WH_COMPANY بمتغيرات البيئة — كل إشعارات الحجز والطلبات راح تنفقد بدون ما توصل ديسكورد. أضف واحد منهم بمتغيرات Railway ثم أعد النشر.</div>
     <button type="submit" class="admin-btn primary"><i class="fas fa-save"></i> حفظ الإعدادات</button>
   </form>
 </div>
@@ -415,6 +416,7 @@ function farmRenderCfg() {
   const c = farmData.config;
   document.getElementById('farmCfgLoading').style.display = 'none';
   document.getElementById('farmCfgForm').style.display = '';
+  document.getElementById('farmWebhookWarn').style.display = farmData.webhook_ok ? 'none' : '';
   document.getElementById('f_price_1d').value = c.price_1d;
   document.getElementById('f_price_3d').value = c.price_3d;
   document.getElementById('f_price_5d').value = c.price_5d;

@@ -24,6 +24,15 @@ function notifyCompany(payload) {
   sendWebhook(key, Object.assign({ footer: 'Walton Family — Company Services' }, payload)).catch(() => {});
 }
 
+/* منشن إشعارات الإدارة — نفس مفتاح المزرعة (منشن واحد للشركة كلها) */
+async function notifyMention() {
+  try {
+    const [rows] = await db.execute('SELECT ping_mention FROM farm_config WHERE id = 1');
+    if (rows.length && rows[0].ping_mention) return String(rows[0].ping_mention).slice(0, 32);
+  } catch (e) {}
+  return '@here';
+}
+
 function toIso(s) {
   if (!s) return null;
   if (s instanceof Date) return s.toISOString();
@@ -77,6 +86,12 @@ router.post('/service-request', isAuthenticated, async (req, res) => {
           return res.status(400).json({ error: 'أرفق الصورة المطلوبة: ' + q.question });
         }
         if (hasFile) {
+          if (file.truncated) {
+            return res.status(400).json({ error: 'الصورة أكبر من الحد المسموح (5 ميجا): ' + q.question });
+          }
+          if (file.mimetype && String(file.mimetype).indexOf('image/') !== 0) {
+            return res.status(400).json({ error: 'الملف المرفق لازم يكون صورة: ' + q.question });
+          }
           const ext = String(file.name || 'img.png').split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
           const fname = 'req_' + Date.now() + '_' + Math.floor(Math.random() * 1e4) + '.' + ext;
           fs.mkdirSync(uploadDir, { recursive: true });
@@ -102,13 +117,14 @@ router.post('/service-request', isAuthenticated, async (req, res) => {
       'INSERT INTO service_requests (service_id, user_id, answers, status, total_price, package_id) VALUES (?, ?, ?, ?, ?, ?)',
       [serviceId, req.user.id, JSON.stringify(answers), 'pending', totalPrice, packageId || 0]);
 
-    // ويبهوك للإدارة
+    // ويبهوك للإدارة — بمنشن مباشر للشخص الكبير مع كل طلب جديد
     const detail = answers.filter(a => a.type !== 'image' && a.a)
       .map(a => `${a.q}: ${a.a}`).join('\n') || '—';
     const imgsCount = answers.filter(a => a.type === 'image' && a.a).length;
     notifyCompany({
       title: '🛎️ طلب خدمة جديد — ' + svc[0].title,
       color: 0xbc13fe,
+      content: await notifyMention(),
       description: detail !== '—' ? detail.substring(0, 500) : '',
       fields: [
         { name: 'رقم الطلب', value: '#' + ins.insertId, inline: true },

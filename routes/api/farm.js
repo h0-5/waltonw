@@ -321,6 +321,17 @@ router.post('/book', isAuthenticated, async (req, res) => {
 
     const rent = priceOf(cfg, days);
     const deposit = Math.round(rent * Number(cfg.deposit_pct) / 100);
+    // الحجز بدون فلوس ممنوع — الأسعار لازم تكون مضبوطة من الإدارة قبل أي حجز
+    if (!(rent > 0) || !(deposit > 0)) {
+      return res.status(400).json({ error: 'أسعار الخدمة غير مضبوطة من إدارة الشركة — ما ينعكس إنشاء الحجز حالياً' });
+    }
+    // ضد الحجز المجاني المتكرر: تجاوز المهلة مرتين خلال 24 ساعة = ما ينحجز مرة ثانية حتى تراجع الإدارة
+    const [spam] = await db.execute(
+      "SELECT COUNT(*) AS n FROM farm_bookings WHERE user_id = ? AND status = 'expired' AND created_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)",
+      [req.user.id]);
+    if (Number(spam[0].n) >= 2) {
+      return res.status(400).json({ error: 'عندك حجوزات انتهت مهلتها بدون دفع خلال آخر 24 ساعة — راجع إدارة الشركة قبل الحجز مرة ثانية' });
+    }
     const [ins] = await db.execute(
       `INSERT INTO farm_bookings (ref, user_id, username, discord_id, farm_no, farm_id, duration_days, rent_amount, deposit_amount, status, payment_deadline)
        VALUES ('', ?, ?, ?, ?, ?, ?, ?, ?, 'pending_payment', DATE_ADD(NOW(), INTERVAL ? HOUR))`,
@@ -329,9 +340,11 @@ router.post('/book', isAuthenticated, async (req, res) => {
     await db.execute('UPDATE farm_bookings SET ref = ? WHERE id = ?', [ref, ins.insertId]);
     await logEvent(ins.insertId, req.user.username, 'user', 'book', `حجز ${days} يوم — إيجار ${money(rent)}$ — عربون ${money(deposit)}$ — مهلة ${cfg.payment_window_hours} ساعات`);
 
+    // إشعار للإدارة (الشخص الكبير) بمنشن مباشر — كل حجز جديد يوصل بالويبهوك
     farmNotify({
       title: '🌾 حجز مزرعة جديد — بانتظار العربون',
       color: 0xbc13fe,
+      content: cfg.ping_mention,
       fields: [
         { name: 'المرجع', value: ref, inline: true },
         { name: 'المستأجر', value: String(req.user.username), inline: true },
@@ -453,6 +466,7 @@ router.post('/bookings/:id/extend', isAuthenticated, async (req, res) => {
     farmNotify({
       title: '⏳ طلب تمديد حجز — بانتظار العربون',
       color: 0xbc13fe,
+      content: cfg.ping_mention,
       fields: [
         { name: 'المرجع', value: b.ref, inline: true },
         { name: 'المستأجر', value: b.username, inline: true },
@@ -516,6 +530,7 @@ router.post('/bookings/:id/workers', isAuthenticated, async (req, res) => {
     farmNotify({
       title: '👷 طلب إضافة عامل — بانتظار الدفع',
       color: 0xbc13fe,
+      content: cfg.ping_mention,
       fields: [
         { name: 'المرجع', value: b.ref, inline: true },
         { name: 'المستأجر', value: b.username, inline: true },
@@ -588,6 +603,8 @@ adminRouter.get('/data', async (req, res) => {
     res.json({
       config: cfg,
       busy,
+      // إذا ما في ويبهوك مضبوط (WH_FARM/WH_COMPANY) كل إشعارات الإدارة تنصك بصمت — نحذر الإدارة بهذي العلامة
+      webhook_ok: !!(webhooks.WH_FARM || webhooks.WH_COMPANY),
       farms: farmsRaw.map(f => ({
         id: f.id, name: f.name, enabled: Number(f.enabled) === 1,
         busy: !!busy[f.id], sort_order: Number(f.sort_order) || 0
@@ -868,11 +885,12 @@ async function processTick() {
   const [expired] = await db.execute("SELECT * FROM farm_bookings WHERE status = 'pending_payment' AND payment_deadline <= NOW()");
   if (expired.length) {
     await db.execute("UPDATE farm_bookings SET status = 'expired' WHERE status = 'pending_payment' AND payment_deadline <= NOW()");
+    const cfgE = await getConfig();
     for (const b of expired) {
       await logEvent(b.id, 'system', 'system', 'expire', `تجاوز مهلة الدفع (${b.payment_deadline}) — أُلغي تلقائياً`);
       farmNotify({ title: '⌛ انتهت مهلة الدفع — أُلغي الحجز تلقائياً', color: 0xef4444, fields: [
         { name: 'المرجع', value: b.ref, inline: true }, { name: 'المستأجر', value: b.username, inline: true },
-        { name: 'المهلة', value: '3 ساعات', inline: true }
+        { name: 'المهلة', value: Number(cfgE.payment_window_hours) + ' ساعات', inline: true }
       ] });
     }
   }
