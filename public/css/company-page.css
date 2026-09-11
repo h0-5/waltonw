@@ -10,11 +10,10 @@
    CYBERPUNK & GAMING UI â€” COMPANY PAGE â€” WALTON FAMILY
    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 :root {
-    --bg-deep: #0f101d;
-    /* --bg = خلفية الجسم الأساسية #0b0c18 مثل باقي الصفحات (كانت تسحق ثيم الجسم الموحد) */
-    --bg: #0b0c18;
-    --bg-card: rgba(26, 27, 46, 0.7);
-    --bg-card-solid: #1a1b2e;
+    /* الثيم يُورَّث من إعدادات الموقع (الإعدادات → المظهر) مثل باقي الصفحات —
+       --bg-deep/--bg/--bg-card/--bg-card-solid/--text/--text-dim كانت ثوابت تطغى
+       على حقن header.ejs (بما أن هذا الملف يُحمَّل بعده) — الآن main.css يعطي الافتراضي
+       وheader.ejs يحقن تخصيص المستخدم فوقه — ممنوع إعادة تعريفها هنا بقيم ثابتة */
     --accent: var(--ac, #ecf780);
     --accent-rgb: var(--ac-rgb, 236, 247, 128);
     --accent-dim: rgba(var(--accent-rgb), 0.12);
@@ -26,10 +25,10 @@
     --purple-dark: #4a0880;
     --purple-dim: rgba(var(--purple-rgb), 0.15);
     --purple-glow: rgba(var(--purple-rgb), 0.3);
-    --border: rgba(var(--accent-rgb), 0.12);
+    /* --border: افتراضياً مُصبغ بالأكسنت (شكل الصفحة التاريخي)، وعند تخصيص لون الحدود
+       من الإعدادات يحقن header.ejs ‏--border-user فيتقدّم عليه */
+    --border: var(--border-user, rgba(var(--accent-rgb), 0.12));
     --border-hover: rgba(var(--accent-rgb), 0.35);
-    --text: #f0eef6;
-    --text-dim: rgba(240, 238, 246, 0.5);
     --danger: #ff3860;
     --neon-green: #39ff14;
     --amber: #f59e0b;
@@ -41,9 +40,11 @@
 }
 
 /* â”€â”€ Cyberpunk Background Grid â”€â”€ */
+/* ‌الخلفية الدفينة الثابتة أُزيلت (شفافة) — الصفحة ترث خلفية الموقع من الإعدادات
+   (صورة/لون body) مثل باقي الصفحات، وتبقى شبكة السيبربانك فوقها */
 .cy-co-page {
     min-height: 100vh;
-    background-color: var(--bg-deep);
+    background-color: transparent;
     background-image:
         repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(var(--purple-rgb),0.03) 59px, rgba(var(--purple-rgb),0.03) 60px),
         repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(var(--purple-rgb),0.03) 59px, rgba(var(--purple-rgb),0.03) 60px);
@@ -262,7 +263,7 @@
 /* â”€â”€ Company Item Card â€” Inventory Slot Style â”€â”€ */
 .cy-co-card {
     position: relative;
-    background: linear-gradient(160deg, rgba(26, 27, 46, 0.98), rgba(10, 9, 16, 0.95));
+    background: linear-gradient(160deg, var(--bg-card-solid, #1a1b2e), rgba(10, 9, 16, 0.95));
     border: 1px solid var(--border);
     border-radius: 14px;
     overflow: hidden;
@@ -363,7 +364,7 @@
 .cy-co-title {
     font-weight: 700;
     font-size: 1.05rem;
-    color: #fff;
+    color: var(--text, #fff);
     margin: 0;
 }
 

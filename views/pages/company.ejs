@@ -105,9 +105,9 @@
 </div>
 
 <div id="svcModal" class="cy-co-lightbox" style="display:none;z-index:200" onclick="closeSvcModal()">
-    <div style="background:#0d0a14;border:1px solid rgba(var(--accent-rgb),0.25);border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;margin:2rem auto;position:relative" onclick="event.stopPropagation()">
+    <div style="background:var(--bg-card-solid, #0d0a14);border:1px solid rgba(var(--accent-rgb),0.25);border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;margin:2rem auto;position:relative" onclick="event.stopPropagation()">
         <div style="padding:1.25rem 1.5rem;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;gap:.5rem">
-            <h3 id="svcModalTitle" style="color:#fff;font-weight:800;font-size:1.1rem;margin:0"><i class="fas fa-concierge-bell" style="color:var(--accent)"></i> طلب خدمة</h3>
+            <h3 id="svcModalTitle" style="color:var(--text, #fff);font-weight:800;font-size:1.1rem;margin:0"><i class="fas fa-concierge-bell" style="color:var(--accent)"></i> طلب خدمة</h3>
             <span id="svcPkgBadge" style="margin-right:auto;font-size:.7rem;padding:2px 10px;border-radius:6px;background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.25);display:none"></span>
         </div>
         <div id="svcPkgStep" style="padding:1.25rem 1.5rem"></div>
@@ -162,7 +162,7 @@ function openSvcForm(sid) {
         pkgs.forEach(function(pkg) {
             var img = pkg.image_type === 'emoji' ? '<span style="font-size:2.5rem">' + pkg.image_value + '</span>' : '<img src="' + pkg.image_value + '" style="width:64px;height:64px;border-radius:12px;object-fit:cover">';
             h += '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:1rem;margin-bottom:.8rem;display:flex;gap:.8rem;align-items:center;cursor:pointer;transition:all .2s" onclick="selectPackage(' + sid + ',' + pkg.id + ')">'
-                + img + '<div style="flex:1"><div style="color:#fff;font-weight:700">' + pkg.name + '</div>'
+                + img + '<div style="flex:1"><div style="color:var(--text, #fff);font-weight:700">' + pkg.name + '</div>'
                 + '<div style="color:var(--accent);font-weight:700;font-size:.85rem">$' + (+pkg.price).toFixed(2) + ' · ' + pkg.days + ' يوم</div></div></div>';
         });
         document.getElementById('svcPkgStep').innerHTML = h;
@@ -184,9 +184,9 @@ function showSvcQuestions(sid) {
     var h = '';
     qs.forEach(function(q) {
         var r = q.required == 1;
-        h += '<div style="margin-bottom:1.2rem"><label style="color:#fff;font-weight:600;font-size:.9rem;display:block;margin-bottom:.5rem">' + q.question + (r?' <span style="color:#ef4444">*</span>':'') + '</label>';
+        h += '<div style="margin-bottom:1.2rem"><label style="color:var(--text, #fff);font-weight:600;font-size:.9rem;display:block;margin-bottom:.5rem">' + q.question + (r?' <span style="color:#ef4444">*</span>':'') + '</label>';
         if (q.type === 'text' || q.type === 'datetime' || q.type === 'character_name')
-            h += '<input type="text" name="sq_' + q.id + '" ' + (r?'required':'') + ' placeholder="أدخل الإجابة..." style="width:100%;padding:.7rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-size:.85rem;box-sizing:border-box">';
+            h += '<input type="text" name="sq_' + q.id + '" ' + (r?'required':'') + ' placeholder="أدخل الإجابة..." style="width:100%;padding:.7rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:var(--text, #fff);font-size:.85rem;box-sizing:border-box">';
         else if (q.type === 'image')
             h += '<input type="file" name="sq_' + q.id + '" accept="image/*" ' + (r?'required':'') + ' style="width:100%;padding:.6rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-size:.85rem;box-sizing:border-box">';
         else if (q.type === 'price')

@@ -105,7 +105,8 @@
       --bg-glass: <%= _cardColor %>;<% } %>
       <% if (_textColor) { %>--text: <%= _textColor %>;
       --text-dim: <%= _textColor %>99;<% } %>
-      <% if (_borderColor) { %>--border: <%= _borderColor %>;<% } %>
+      <% if (_borderColor) { %>--border: <%= _borderColor %>;
+      --border-user: <%= _borderColor %>;<% } %>
     }
     <% /* خلفية الموقع الموحدة لكل الصفحات — الرئيسية مثلها. لون الخلفية الأساسي يترك لـ main.css
           (بنفسجي داكن #0b0c18) ما لم يخصص المستخدم لوناً من الإعدادات */ %>
