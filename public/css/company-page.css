@@ -876,6 +876,7 @@
    ───────────────────────────────────────────────────────── */
 .cy-farm-badge { display:inline-flex; align-items:center; gap:6px; margin-right:auto; font-size:.72rem; font-weight:800; padding:4px 12px; border-radius:8px; border:1px solid; white-space:nowrap; }
 .cy-farm-badge.ok { background:rgba(52,211,153,.12); color:#34d399; border-color:rgba(52,211,153,.3); }
+.cy-farm-badge.future { background:rgba(56,189,248,.12); color:#38bdf8; border-color:rgba(56,189,248,.3); }
 .cy-farm-badge.no { background:rgba(239,68,68,.12); color:#ef4444; border-color:rgba(239,68,68,.3); }
 .cy-farm-badge.off { background:rgba(148,163,184,.12); color:#94a3b8; border-color:rgba(148,163,184,.3); }
 
@@ -884,6 +885,7 @@
 .cy-farm-avail span i { font-size:.7rem; }
 .cy-farm-avail .free i { color:#34d399; }
 .cy-farm-avail .busy i { color:#ef4444; }
+.cy-farm-avail .future i { color:#38bdf8; }
 .cy-farm-avail .disabled i { color:#94a3b8; }
 
 .cy-farm-price-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:8px; margin-top:1rem; }

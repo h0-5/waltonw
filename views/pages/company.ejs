@@ -167,6 +167,7 @@
 
             <div style="font-size:.8rem;color:rgba(255,255,255,.6);margin:.9rem 0 .5rem">حالة المزارع:</div>
             <div class="cy-farm-avail" id="farmAvail" style="margin-bottom:.9rem"></div>
+            <div id="farmFutureNote" style="display:none;margin:-.3rem 0 .9rem;padding:.65rem .85rem;border-radius:10px;background:rgba(56,189,248,.07);border:1px solid rgba(56,189,248,.28);font-size:.78rem;color:rgba(255,255,255,.85);line-height:1.7"></div>
 
             <div style="font-size:.8rem;color:rgba(255,255,255,.6);margin-bottom:.8rem">اختر المدة — المدد ثابتة والأسعار من إدارة الشركة:</div>
             <div class="cy-f-dur-grid" id="farmDurGrid"></div>
@@ -392,6 +393,8 @@ function farmRenderCard() {
         badge.className = 'cy-farm-badge off'; badge.innerHTML = '<i class="fas fa-lock"></i> الخدمة مقفلة حالياً';
     } else if (farmState.anyFree) {
         badge.className = 'cy-farm-badge ok'; badge.innerHTML = '<i class="fas fa-check-circle"></i> متوفر — احجز الآن';
+    } else if (farmState.anyQueueable) {
+        badge.className = 'cy-farm-badge future'; badge.innerHTML = '<i class="fas fa-clock"></i> مشغولة — تقدر تحجز للفترة الجاية';
     } else {
         badge.className = 'cy-farm-badge no'; badge.innerHTML = '<i class="fas fa-times-circle"></i> غير متوفر';
     }
@@ -399,15 +402,17 @@ function farmRenderCard() {
         avail.innerHTML = farmState.farms.map(function(f) {
             var cls, ic, txt;
             if (!f.enabled) { cls = 'disabled'; ic = 'fa-pause'; txt = f.name + ' — موقوفة'; }
-            else if (f.free) { cls = 'free'; ic = 'fa-check'; txt = f.name + ' — متاحة'; }
+            else if (f.free) { cls = 'free'; ic = 'fa-check'; txt = f.name + ' — متاحة الآن'; }
+            else if (f.queueable && f.busy_until_iso) { cls = 'future'; ic = 'fa-clock'; txt = f.name + ' — مشغولة، الحجز الجديد يبدأ ' + farmFmtDT(f.busy_until_iso); }
             else { cls = 'busy'; ic = 'fa-lock'; txt = f.name + ' — محجوزة'; }
             return '<span class="' + cls + '"><i class="fas ' + ic + '"></i> ' + txt + '</span>';
         }).join('');
     }
     if (btn) {
         if (!farmState.serviceOpen) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-lock"></i> الخدمة مقفلة'; }
-        else if (!farmState.anyFree) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-times-circle"></i> غير متوفر'; }
-        else { btn.disabled = false; btn.innerHTML = '<i class="fas fa-seedling"></i> حجز المزرعة'; }
+        else if (farmState.anyFree) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-seedling"></i> حجز المزرعة'; }
+        else if (farmState.anyQueueable) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-clock"></i> حجز — يبدأ بعد الحجز الحالي'; }
+        else { btn.disabled = true; btn.innerHTML = '<i class="fas fa-times-circle"></i> غير متوفر'; }
     }
 }
 
@@ -418,6 +423,19 @@ function openFarmBook() {
     g.innerHTML = farmState.config.prices.map(function(p) {
         return '<div class="cy-f-dur-chip" data-d="' + p.days + '" onclick="farmPickDur(' + p.days + ')"><b>' + p.days + ' يوم</b><span>' + farmMoney(p.price) + '$</span></div>';
     }).join('');
+    var fn = document.getElementById('farmFutureNote');
+    if (fn) {
+        if (!farmState.anyFree && farmState.anyQueueable) {
+            var earliest = null;
+            (farmState.farms || []).forEach(function(f) {
+                if (f.enabled && f.queueable && f.busy_until_iso && (!earliest || f.busy_until_iso < earliest)) earliest = f.busy_until_iso;
+            });
+            fn.style.display = '';
+            fn.innerHTML = '<i class="fas fa-clock" style="color:#38bdf8"></i> <b style="color:#38bdf8">حجز مستقبلي:</b> كل المزارع مشغولة حالياً — حجزك راح يبدأ تلقائياً بعد انتهاء الحجز الحالي' +
+                (earliest ? ' (أقرب بداية متاحة: <b>' + farmFmtDT(earliest) + '</b>)' : '') + '. ' +
+                '<b>العربون يتحول اليوم (أول يوم حجز)</b> — وعداد النص الثاني يبدأ آخر ' + farmState.config.remainder_window_hours + ' ساعات قبل بداية حجزك.';
+        } else fn.style.display = 'none';
+    }
     document.getElementById('farmBookSummary').style.display = 'none';
     var cb = document.getElementById('farmPledge');
     if (cb) cb.checked = false;
@@ -515,11 +533,14 @@ function farmRenderMy() {
              '<span>الإيجار: <b>' + farmMoney(b.rent_amount) + '$</b></span>' +
              '<span>العربون: <b style="color:var(--accent)">' + farmMoney(b.deposit_amount) + '$</b></span>' +
              '<span>الإنشاء: <b>' + farmFmtDT(b.created_iso) + '</b></span>' +
+             (b.is_future && b.scheduled_start_iso ? '<span style="color:#38bdf8"><i class="fas fa-clock"></i> البداية المتوقعة: <b>' + farmFmtDT(b.scheduled_start_iso) + '</b></span>' : '') +
              (b.start_iso ? '<span>البداية: <b>' + farmFmtDT(b.start_iso) + '</b></span>' : '') +
              (b.end_iso ? '<span>النهاية: <b>' + farmFmtDT(b.end_iso) + '</b></span>' : '') +
              '</div>';
         if (b.status === 'pending_payment' && b.deadline_iso) {
-            h += '<div style="margin-top:.6rem;font-size:.8rem;color:rgba(255,255,255,.7)">مهلة الدفع تنتهي خلال <span class="cy-f-count" data-dl="' + b.deadline_iso + '">—</span> — حوّل ' + farmMoney(b.deposit_amount) + '$ على <b style="direction:ltr;display:inline-block">' + farmState.config.bank_account + '</b> واضغط «دفعت العربون»</div>';
+            h += '<div style="margin-top:.6rem;font-size:.8rem;color:rgba(255,255,255,.7)">' +
+                 (b.is_future ? '<b style="color:#38bdf8">حجز مستقبلي</b> — يبدأ ' + farmFmtDT(b.scheduled_start_iso) + ' بعد انتهاء الحجز الحالي، والعربون اليوم (أول يوم حجز) — ' : '') +
+                 'مهلة الدفع تنتهي خلال <span class="cy-f-count" data-dl="' + b.deadline_iso + '">—</span> — حوّل ' + farmMoney(b.deposit_amount) + '$ على <b style="direction:ltr;display:inline-block">' + farmState.config.bank_account + '</b> واضغط «دفعت العربون»</div>';
         }
         if (b.status === 'pending_confirm') {
             h += '<div style="margin-top:.6rem;font-size:.8rem;color:#c084fc"><i class="fas fa-hourglass-half"></i> أعلنت الدفع — بانتظار تأكيد الإدارة لوصول المبلغ</div>';
@@ -527,7 +548,11 @@ function farmRenderMy() {
         if (b.status === 'confirmed' && b.remainder) {
             h += '<div style="margin-top:.7rem;padding:.65rem .85rem;border-radius:10px;background:rgba(56,189,248,.07);border:1px solid rgba(56,189,248,.28);font-size:.8rem;color:rgba(255,255,255,.85);line-height:1.7">';
             h += '<b style="color:#38bdf8"><i class="fas fa-sack-dollar"></i> النص الثاني: ' + farmMoney(b.remainder.amount) + '$</b> — حوّله على <b style="direction:ltr;display:inline-block">' + farmState.config.bank_account + '</b> ';
-            if (b.remainder.status === 'pending_payment' && b.remainder.forfeit_iso) {
+            if (b.remainder.status === 'confirmed' && b.is_future) {
+                h += '— <b style="color:#34d399">انسدد كامل الإيجار ✅</b> حجزك راح يبدأ تلقائياً ' + farmFmtDT(b.scheduled_start_iso) + ' وتجيك إشعار الإضافة لفاكشن العائلة وقتها';
+            } else if (b.remainder.status === 'pending_payment' && b.remainder.counter_start_iso && !b.remainder.counter_open) {
+                h += '— عداد النص الثاني يبدأ خلال <span class="cy-f-count" data-dl="' + b.remainder.counter_start_iso + '">—</span> (آخر ' + farmState.config.remainder_window_hours + ' ساعات قبل بداية حجزك' + (b.scheduled_start_iso ? ' — ' + farmFmtDT(b.scheduled_start_iso) : '') + ') — وإذا وصل قبل البداية بساعة وما انحول <b style="color:#ef4444">ينلغي الحجز وتخسر العربون ' + farmMoney(b.deposit_amount) + '$</b>';
+            } else if (b.remainder.status === 'pending_payment' && b.remainder.forfeit_iso) {
                 h += 'قبل <span class="cy-f-count" data-dl="' + b.remainder.forfeit_iso + '">—</span> — إذا وصل قبل بداية الحجز بساعة وما انحول <b style="color:#ef4444">ينلغي الحجز وتخسر العربون ' + farmMoney(b.deposit_amount) + '$</b>';
             } else if (b.remainder.status === 'pending_confirm') {
                 h += '— أعلنت الدفع ✅ بانتظار تأكيد الإدارة، وبعد التأكيد ينبدا حجزك';

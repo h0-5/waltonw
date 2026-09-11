@@ -415,7 +415,7 @@ const FARM_W_BADGE = {
   rejected: ['مرفوض', '#ef4444']
 };
 function farmMoney(n) { return Number(n || 0).toLocaleString('en-US'); }
-function farmDT(s) { return s ? String(s).slice(0, 16) : '—'; }
+function farmDT(s) { return s ? String(s).slice(0, 16).replace('T', ' ') : '—'; }
 function farmBadge(map, st) {
   const m = map[st] || [st, '#94a3b8'];
   return `<span style="font-size:.72rem;font-weight:800;color:${m[1]};background:${m[1]}1f;border:1px solid ${m[1]}55;padding:3px 10px;border-radius:7px;white-space:nowrap">${m[0]}</span>`;
@@ -481,9 +481,9 @@ function farmRenderBookings() {
     <td>${b.farm_name || '#' + (b.farm_id || b.farm_no)}</td>
     <td>${b.duration_days} يوم${b.extend_days && b.extend_status === 'confirmed' ? ` <span style="color:#34d399">+${b.extend_days}</span>` : ''}</td>
     <td style="direction:ltr">${farmMoney(b.rent_amount)}$ / <b style="color:var(--accent)">${farmMoney(b.deposit_amount)}$</b>${b.status === 'confirmed' ? `<br><span style="font-size:.72rem;color:#38bdf8">نص ثاني ${farmMoney(b.remainder_amount || (b.rent_amount - b.deposit_amount))}$</span>` : ''}</td>
-    <td><div style="display:flex;flex-direction:column;align-items:flex-start;gap:5px">${farmBadge(FARM_ST_BADGE, b.status)}${b.status === 'confirmed' ? `<span style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:var(--text-dim);white-space:nowrap">النص الثاني: ${farmBadge(FARM_R_BADGE, b.remainder_status || 'pending_payment')}</span>` : ''}${b.extend_status === 'pending_payment' || b.extend_status === 'pending_confirm' ? `<span style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:var(--text-dim);white-space:nowrap">تمديد ${b.extend_days} يوم ${farmBadge(FARM_ST_BADGE, b.extend_status)}</span>` : ''}</div></td>
+    <td><div style="display:flex;flex-direction:column;align-items:flex-start;gap:5px">${farmBadge(FARM_ST_BADGE, b.status)}${b.status === 'confirmed' ? `<span style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:var(--text-dim);white-space:nowrap">النص الثاني: ${farmBadge(FARM_R_BADGE, b.remainder_status || 'pending_payment')}</span>` : ''}${b.is_future ? `<span style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:#38bdf8;white-space:nowrap"><i class="fas fa-clock"></i> مستقبلي — يبدأ ${farmDT(b.scheduled_start_iso)}</span>` : ''}${b.status === 'confirmed' && (b.remainder_status || '') === 'confirmed' && b.is_future ? '<span style="font-size:.7rem;color:#34d399;white-space:nowrap">مدفوع كامل — يتفعل بوقته</span>' : ''}${b.extend_status === 'pending_payment' || b.extend_status === 'pending_confirm' ? `<span style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:var(--text-dim);white-space:nowrap">تمديد ${b.extend_days} يوم ${farmBadge(FARM_ST_BADGE, b.extend_status)}</span>` : ''}</div></td>
     <td>${b.status === 'active' || b.status === 'ended' ? (Number(b.faction_added) === 1 ? '<span style="color:#34d399">مضاف</span>' : '<span style="color:#eab308">بانتظار الإضافة</span>') + (b.status === 'ended' ? '<br>' + (Number(b.faction_removed) === 1 ? '<span style="color:#34d399">منزال</span>' : '<span style="color:#eab308">بانتظار الإزالة</span>') : '') : '—'}</td>
-    <td style="font-size:.78rem">${farmDT(b.start_at)}<br>${farmDT(b.end_at)}</td>
+    <td style="font-size:.78rem">${b.is_future ? `<span style="color:#38bdf8">مجدول: ${farmDT(b.scheduled_start_iso)}</span><br><span style="color:var(--text-dim)">${farmDT(b.start_at)}</span>` : `${farmDT(b.start_at)}<br>${farmDT(b.end_at)}`}</td>
     <td style="display:flex;gap:4px;flex-wrap:wrap">${farmBkActions(b)}</td>
   </tr>`).join('');
 }
