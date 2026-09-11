@@ -733,7 +733,7 @@ router.get('/roles', checkPermission('roles_config_view'), async (req, res) => {
     // Member counts per role
     let roleMemberCounts = {};
     try {
-      const [mc] = await db.execute('SELECT role, COUNT(*) as cnt FROM users GROUP BY role');
+      const [mc] = await db.execute('SELECT TRIM(role) as role, COUNT(*) as cnt FROM users WHERE role IS NOT NULL AND role != "" GROUP BY TRIM(role)');
       mc.forEach(r => { roleMemberCounts[r.role] = r.cnt; });
     } catch(e) {}
 

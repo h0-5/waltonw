@@ -1072,7 +1072,7 @@ router.get('/roles/:id/members', checkPermission('roles_config_view'), async (re
     const roleId = req.params.id;
     const [role] = await db.execute('SELECT name FROM roles WHERE id = ?', [roleId]);
     if (!role.length) return res.json({ members: [] });
-    const [members] = await db.execute('SELECT id, username, profile_picture, discord_id, created_at FROM users WHERE role = ?', [role[0].name]);
+    const [members] = await db.execute('SELECT id, username, profile_picture, discord_id, created_at FROM users WHERE TRIM(role) = ?', [role[0].name]);
     res.json({ members });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
