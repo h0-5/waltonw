@@ -10,11 +10,9 @@
 <div class="cy-props-page" dir="rtl">
     <div class="cy-props-hero">
         <div class="cy-props-hero-icon">
-            <div class="hex-ring"></div>
-            <div class="hex-ring-inner"></div>
             <i class="fas fa-building"></i>
         </div>
-        <h1 class="page-heading" data-text="ممتلكات العائلة">ممتلكات العائلة</h1>
+        <h1 class="page-heading">ممتلكات <span>العائلة</span></h1>
         <p class="cy-props-hero-sub">جولة داخل خزنة عائلة والتون — من القصور إلى المركبات</p>
         <div class="cy-props-hero-line"></div>
         <div class="cy-props-metrics">
@@ -55,24 +53,21 @@
             <% } else { %>
             <div class="cy-prop-grid">
                 <% palaces.forEach(function(p, i) { %>
-                <article class="cy-prop-card" style="animation-delay:<%= i * 0.08 %>s"
+                <article class="cy-prop-card" style="animation-delay:<%= i * 0.06 %>s"
                          data-img="<%= p.image %>" data-title="<%= p.title %>"
                          onclick="openLightbox(<%= i %>, 'section-palaces')">
-                    <div class="corner-tl"></div>
-                    <div class="corner-br"></div>
-                    <span class="cy-prop-idx">#<%= String(i + 1).padStart(2, '0') %></span>
+                    <span class="cy-prop-idx">القطعة <%= String(i + 1).padStart(2, '0') %></span>
+                    <span class="cy-prop-kind-chip"><i class="fas fa-landmark"></i>قصر</span>
                     <div class="cy-prop-media">
-                        <img src="<%= p.image %>" alt="<%= p.title %>" loading="<%= i <= 1 ? 'eager' : 'lazy' %>" decoding="async"
+                        <img src="<%= p.image %>" alt="<%= p.title %>" loading="<%= i <= 3 ? 'eager' : 'lazy' %>" decoding="async"
                              onerror="this.closest('.cy-prop-card').classList.add('img-fail')">
-                        <div class="cy-prop-shine"></div>
                     </div>
-                    <div class="cy-prop-cap">
-                        <span class="cy-prop-cap-ico"><i class="fas fa-landmark"></i></span>
-                        <div class="cy-prop-cap-txt">
+                    <div class="cy-prop-body">
+                        <div class="cy-prop-row">
                             <h3 class="cy-prop-title"><%= p.title %></h3>
-                            <span class="cy-prop-kind">قصر من ممتلكات العائلة</span>
+                            <span class="cy-prop-zoom"><i class="fas fa-search-plus"></i></span>
                         </div>
-                        <span class="cy-prop-zoom"><i class="fas fa-search-plus"></i>تكبير</span>
+                        <span class="cy-prop-kind">قصر من ممتلكات العائلة</span>
                     </div>
                 </article>
                 <% }); %>
@@ -90,24 +85,21 @@
             <% } else { %>
             <div class="cy-prop-grid">
                 <% vehicles.forEach(function(p, i) { %>
-                <article class="cy-prop-card" style="animation-delay:<%= i * 0.08 %>s"
+                <article class="cy-prop-card" style="animation-delay:<%= i * 0.06 %>s"
                          data-img="<%= p.image %>" data-title="<%= p.title %>"
                          onclick="openLightbox(<%= i %>, 'section-vehicles')">
-                    <div class="corner-tl"></div>
-                    <div class="corner-br"></div>
-                    <span class="cy-prop-idx">#<%= String(i + 1).padStart(2, '0') %></span>
+                    <span class="cy-prop-idx">القطعة <%= String(i + 1).padStart(2, '0') %></span>
+                    <span class="cy-prop-kind-chip"><i class="fas fa-car"></i>مركبة</span>
                     <div class="cy-prop-media">
-                        <img src="<%= p.image %>" alt="<%= p.title %>" loading="<%= i <= 1 ? 'eager' : 'lazy' %>" decoding="async"
+                        <img src="<%= p.image %>" alt="<%= p.title %>" loading="<%= i <= 3 ? 'eager' : 'lazy' %>" decoding="async"
                              onerror="this.closest('.cy-prop-card').classList.add('img-fail')">
-                        <div class="cy-prop-shine"></div>
                     </div>
-                    <div class="cy-prop-cap">
-                        <span class="cy-prop-cap-ico"><i class="fas fa-car"></i></span>
-                        <div class="cy-prop-cap-txt">
+                    <div class="cy-prop-body">
+                        <div class="cy-prop-row">
                             <h3 class="cy-prop-title"><%= p.title %></h3>
-                            <span class="cy-prop-kind">مركبة من أسطول العائلة</span>
+                            <span class="cy-prop-zoom"><i class="fas fa-search-plus"></i></span>
                         </div>
-                        <span class="cy-prop-zoom"><i class="fas fa-search-plus"></i>تكبير</span>
+                        <span class="cy-prop-kind">مركبة من أسطول العائلة</span>
                     </div>
                 </article>
                 <% }); %>

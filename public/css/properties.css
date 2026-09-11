@@ -1,32 +1,25 @@
 /* ═══════════════════════════════════════════════════════════════
-   CYBERPUNK & GAMING UI — PROPERTIES PAGE — WALTON FAMILY
-   جولة «خزنة الممتلكات»: شبكة ثابتة الحجم + كروت ميديا بترقيم مخزون
+   WALTON FAMILY — PROPERTIES PAGE — «الشبكة الأنيقة»
+   بطاقات صغيرة ثابتة الحجم (مثل بطاقات التقديمات) لا تتأثر بعدد
+   الممتلكات: auto-fill يحفظ المسارات الفارغة فلا تتمدد البطاقة أبداً
    + Lightbox كمعرض بتنقّل سابق/تالي — كل الحركات transform/opacity فقط
    ═══════════════════════════════════════════════════════════════ */
 :root {
     --bg-deep: #0f101d;
-    /* --bg = خلفية الجسم الأساسية #0b0c18 مثل باقي الصفحات (كانت تسحق ثيم الجسم الموحد) */
+    /* --bg = خلفية الجسم الأساسية #0b0c18 مثل باقي الصفحات */
     --bg: #0b0c18;
     --bg-card: rgba(26, 27, 46, 0.7);
     --bg-card-solid: #1a1b2e;
     --accent: var(--ac, #d24dff);
-    --accent-rgb: var(--ac-rgb, 167, 139, 250);
+    --accent-rgb: var(--ac-rgb, 188, 19, 254);
     --accent-dim: rgba(var(--accent-rgb), 0.12);
-    --accent-glow: rgba(var(--accent-rgb), 0.25);
-    --accent-light: var(--ac-light, #c4b5fd);
-    --accent-light-rgb: var(--ac-light-rgb, 196, 181, 253);
     --purple: #bc13fe;
     --purple-rgb: 188, 19, 254;
-    --purple-dark: #930fc6;
-    --purple-dim: rgba(188, 19, 254, 0.15);
-    --purple-glow: rgba(188, 19, 254, 0.3);
-    --border: rgba(167, 139, 250, 0.12);
-    --border-hover: rgba(167, 139, 250, 0.35);
+    --border: rgba(167, 139, 250, 0.14);
+    --border-hover: rgba(188, 19, 254, 0.5);
     --text: #f0eef6;
     --text-dim: rgba(240, 238, 246, 0.5);
-    --danger: #ff3860;
-    --neon-green: #39ff14;
-    --amber: #f59e0b;
+    --gold: #f5c453;
 }
 
 * {
@@ -34,7 +27,7 @@
     box-sizing: border-box;
 }
 
-/* ── Cyberpunk Background Grid ── */
+/* ── خلفية الصفحة: شبكة خفيفة + توهجات — نفس لغة باقي الصفحات ── */
 .cy-props-page {
     min-height: 100vh;
     background-color: var(--bg-deep);
@@ -45,7 +38,6 @@
     padding-bottom: 3rem;
 }
 
-/* Ambient glow */
 .cy-props-page::before {
     content: '';
     position: fixed;
@@ -71,145 +63,80 @@
     z-index: 0;
 }
 
-/* ── Hero Section ── */
+/* ── Hero — بطل مدمج: أيقونة في بلاطة + عنوان نظيف ── */
 .cy-props-hero {
     width: 100%;
-    padding: 3.5rem 1.5rem 2.5rem;
+    padding: calc(var(--nav-h, 70px) + 2.5rem) 1.5rem 2.2rem;
     text-align: center;
     position: relative;
-    background: linear-gradient(180deg, rgba(var(--purple-rgb),0.15) 0%, rgba(var(--purple-rgb),0.05) 40%, transparent 100%);
+    background: linear-gradient(180deg, rgba(var(--purple-rgb),0.10) 0%, rgba(var(--purple-rgb),0.03) 45%, transparent 100%);
     overflow: hidden;
     z-index: 1;
 }
 
-.cy-props-hero::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 50%;
-    transform: translateX(-50%);
-    width: 1px; height: 60px;
-    background: linear-gradient(180deg, var(--accent), transparent);
-    opacity: 0.4;
-}
-
-.cy-props-hero::after {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-image:
-        repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(var(--purple-rgb),0.04) 39px, rgba(var(--purple-rgb),0.04) 40px),
-        repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(var(--purple-rgb),0.04) 39px, rgba(var(--purple-rgb),0.04) 40px);
-    pointer-events: none;
-}
-
-/* Hex Ring Icon */
+/* بلاطة الأيقونة — مربعة مدورة بدل الحلقات السداسية */
 .cy-props-hero-icon {
-    display: inline-flex;
+    width: 64px; height: 64px;
+    margin: 0 auto 1.1rem;
+    border-radius: 18px;
+    background: rgba(var(--accent-rgb), 0.10);
+    border: 1px solid rgba(var(--accent-rgb), 0.30);
+    color: var(--accent);
+    font-size: 1.5rem;
+    display: flex;
     align-items: center;
     justify-content: center;
-    width: 80px; height: 80px;
-    position: relative;
-    margin-bottom: 1.2rem;
-    z-index: 2;
-}
-
-.cy-props-hero-icon .hex-ring {
-    position: absolute;
-    inset: -8px;
-    border: 1.5px solid rgba(var(--accent-rgb),0.2);
-    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-    animation: hexPulse 4s ease-in-out infinite;
-}
-
-.cy-props-hero-icon .hex-ring-inner {
-    position: absolute;
-    inset: -2px;
-    border: 1px solid rgba(var(--accent-rgb),0.35);
-    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-}
-
-@keyframes hexPulse {
-    0%, 100% { opacity: 0.5; }
-    50% { opacity: 0.85; }
-}
-
-.cy-props-hero-icon i {
-    font-size: 2.2rem;
-    color: var(--accent);
-    text-shadow: 0 0 12px rgba(var(--accent-rgb),0.6);
+    box-shadow: 0 0 30px rgba(var(--purple-rgb), 0.15);
     position: relative;
     z-index: 2;
 }
 
-/* Title */
 .cy-props-hero h1 {
-    font-size: clamp(2.2rem, 6vw, 3.2rem);
-    font-weight: 700;
-    line-height: 1.15;
+    font-size: clamp(1.9rem, 5vw, 2.4rem);
+    font-weight: 800;
+    line-height: 1.2;
     margin: 0 0 0.5rem 0;
-    letter-spacing: -0.02em;
+    color: var(--text);
     position: relative;
     z-index: 2;
-    background: linear-gradient(135deg, #ffffff 10%, var(--accent-light, #c4b5fd) 40%, var(--accent, #d24dff) 70%, var(--purple, #bc13fe) 100%);
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    filter: drop-shadow(0 0 20px rgba(var(--purple-rgb),0.2));
 }
 
-@keyframes heroTitleShine {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
+.cy-props-hero h1 span { color: var(--accent); }
 
 .cy-props-hero-sub {
     color: var(--text-dim);
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     font-weight: 400;
-    margin: 0 0 1.5rem 0;
+    margin: 0 0 1.3rem 0;
     position: relative;
     z-index: 2;
 }
 
 .cy-props-hero-line {
-    width: 120px;
+    width: 110px;
     height: 2px;
     margin: 0 auto;
-    background: linear-gradient(90deg, var(--accent), var(--purple));
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
     border-radius: 2px;
     position: relative;
     z-index: 2;
 }
 
-.cy-props-hero-line::after {
-    content: '';
-    position: absolute;
-    inset: -3px;
-    background: linear-gradient(90deg, var(--accent), var(--purple));
-    border-radius: 4px;
-    filter: blur(6px);
-    opacity: 0.4;
-}
-
-/* ── Hero Metrics — عدّادات الخزنة (قصور / مركبات / إجمالي) ── */
+/* ── عدادات الخزنة (قصور / مركبات / إجمالي) ── */
 .cy-props-metrics {
     display: inline-flex;
     align-items: stretch;
-    margin-top: 1.4rem;
+    margin-top: 1.3rem;
     background: rgba(10, 9, 16, 0.55);
-    border: 1px solid rgba(var(--accent-rgb), 0.12);
+    border: 1px solid rgba(var(--accent-rgb), 0.14);
     border-radius: 14px;
-    padding: 0.7rem 0.3rem;
+    padding: 0.65rem 0.3rem;
     position: relative;
     z-index: 2;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
 }
 
 .cy-pm {
-    padding: 0 1.3rem;
+    padding: 0 1.2rem;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -218,27 +145,26 @@
 }
 
 .cy-pm + .cy-pm {
-    border-inline-start: 1px solid rgba(var(--accent-rgb), 0.1);
+    border-inline-start: 1px solid rgba(var(--accent-rgb), 0.12);
 }
 
 .cy-pm-val {
-    font-size: 1.45rem;
+    font-size: 1.3rem;
     font-weight: 800;
     line-height: 1.1;
     color: var(--accent);
-    text-shadow: 0 0 14px rgba(var(--accent-rgb), 0.45);
     font-variant-numeric: tabular-nums;
 }
 
 .cy-pm-label {
-    font-size: 0.68rem;
+    font-size: 0.67rem;
     font-weight: 600;
     color: var(--text-dim);
 }
 
 /* ── Main Container ── */
 .cy-props-main {
-    max-width: 1120px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 0 1.5rem 3rem;
     position: relative;
@@ -248,24 +174,22 @@
 /* ── Tab Navigation ── */
 .cy-props-tabs {
     display: flex;
-    gap: 0.75rem;
+    gap: 0.6rem;
     justify-content: center;
-    margin-bottom: 2rem;
+    margin-bottom: 1.8rem;
     flex-wrap: wrap;
     padding: 0 1rem;
 }
 
 .cy-props-tab {
-    padding: 0.65rem 1.5rem;
+    padding: 0.6rem 1.4rem;
     border-radius: 50px;
     font-weight: 700;
     font-size: 0.85rem;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.18s ease;
     border: 1px solid var(--border);
     background: var(--bg-card);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
     color: var(--text-dim);
     display: inline-flex;
     align-items: center;
@@ -273,12 +197,12 @@
 }
 
 .cy-props-tab:hover {
-    border-color: var(--border-hover);
+    border-color: rgba(var(--accent-rgb), 0.4);
     color: var(--text);
 }
 
 .cy-props-tab-active {
-    background: linear-gradient(135deg, var(--accent), rgba(var(--accent-rgb),0.7)) !important;
+    background: var(--accent) !important;
     color: #fff !important;
     border-color: transparent !important;
     box-shadow: 0 0 15px rgba(var(--accent-rgb),0.25);
@@ -286,10 +210,10 @@
 }
 
 .cy-props-tab i {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
 }
 
-/* عدّاد التبويب — شريحة صغيرة بجانب الاسم */
+/* عدّاد التبويب */
 .cy-tab-count {
     min-width: 20px;
     height: 20px;
@@ -312,116 +236,99 @@
     color: #fff;
 }
 
-/* ── Property Grid — حجم البطاقة ثابت 500px مهما زاد/نقص عدد الممتلكات
-      (الزيادة تلف لصف ثانٍ بنفس الحجم — auto-fill + justify-content: center يوسّطان الصف) ── */
+/* ═══════════════════════════════════════════════════════════
+   Property Grid — بطاقات صغيرة ثابتة الحجم
+   auto-fill (وليس auto-fit): المسارات الفارغة تبقى موجودة
+   فلا تتمدد البطاقة مهما قلّ عدد الممتلكات — الحجم ثابت
+   لا علاقة له بعددها، مثل فكرة صفحة القوانين والتقديمات
+   ═══════════════════════════════════════════════════════════ */
 .cy-prop-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, 500px);
-    justify-content: center;
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(min(252px, 100%), 1fr));
+    gap: 1.1rem;
 }
 
-/* ── Property Card — كرت مخزون: صورة كاملة + ترقيم #01 + شريط عنوان سفلي ── */
+/* ── Property Card — صورة 16:10 + شريط معلومات تحت الصورة ── */
 .cy-prop-card {
     position: relative;
     background: linear-gradient(160deg, rgba(26, 27, 46, 0.98), rgba(10, 9, 16, 0.95));
     border: 1px solid var(--border);
-    border-radius: 16px;
+    border-radius: 14px;
     overflow: hidden;
     cursor: pointer;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
-    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.35s ease, box-shadow 0.35s ease;
-    /* دخول متدرّج يُعاد تشغيله مع كل تبديل تبويب (display none→block يعيد الأنيميشن) */
-    animation: propIn 0.55s cubic-bezier(0.22, 0.9, 0.3, 1) backwards;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+    /* دخول متدرّج يُعاد تشغيله مع كل تبديل تبويب */
+    animation: propIn 0.5s cubic-bezier(0.22, 0.9, 0.3, 1) backwards;
 }
 
 @keyframes propIn {
-    from { opacity: 0; transform: translateY(22px) scale(0.97); }
+    from { opacity: 0; transform: translateY(18px) scale(0.97); }
     to { opacity: 1; transform: none; }
 }
 
 .cy-prop-card:hover {
     transform: translateY(-5px);
     border-color: var(--border-hover);
-    box-shadow: 0 18px 44px rgba(0,0,0,0.45), 0 0 24px -6px rgba(var(--purple-rgb),0.25);
+    box-shadow: 0 14px 34px rgba(0,0,0,0.45), 0 0 22px -6px rgba(var(--purple-rgb),0.3);
 }
 
-/* Gradient border glow */
-.cy-prop-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    padding: 1px;
-    border-radius: inherit;
-    background: linear-gradient(160deg, rgba(var(--accent-rgb),0.4), transparent 40%, transparent 60%, rgba(var(--purple-rgb),0.4));
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    pointer-events: none;
-    z-index: 10;
-}
-
-/* Corner accents */
-.cy-prop-card .corner-tl {
-    position: absolute;
-    top: 0; left: 0;
-    width: 20px; height: 20px;
-    border-top: 2px solid var(--accent);
-    border-left: 2px solid var(--accent);
-    border-radius: 16px 0 0 0;
-    opacity: 0.4;
-    transition: opacity 0.3s;
-    pointer-events: none;
-    z-index: 11;
-}
-
-.cy-prop-card .corner-br {
-    position: absolute;
-    bottom: 0; right: 0;
-    width: 20px; height: 20px;
-    border-bottom: 2px solid var(--purple);
-    border-right: 2px solid var(--purple);
-    border-radius: 0 0 16px 0;
-    opacity: 0.4;
-    transition: opacity 0.3s;
-    pointer-events: none;
-    z-index: 11;
-}
-
-.cy-prop-card:hover .corner-tl,
-.cy-prop-card:hover .corner-br { opacity: 1; }
-
-.cy-prop-card:hover::before {
-    background: linear-gradient(160deg, rgba(var(--accent-rgb),0.5), transparent 30%, transparent 70%, rgba(var(--purple-rgb),0.5));
-}
-
-/* ── رقم المخزون #01 — شريحة قُطرية أعلى البطاقة ── */
+/* ── ترقيم القطعة — شريحة قُطرية أعلى الصورة ── */
 .cy-prop-idx {
     position: absolute;
-    top: 12px;
-    inset-inline-start: 12px;
+    top: 10px;
+    inset-inline-start: 10px;
     z-index: 5;
-    font-size: 0.72rem;
+    font-size: 0.66rem;
     font-weight: 800;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
     color: #fff;
-    padding: 4px 10px;
+    padding: 4px 9px;
     background: rgba(10, 9, 16, 0.72);
     border: 1px solid rgba(var(--accent-rgb), 0.35);
     clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
-    text-shadow: 0 0 8px rgba(var(--accent-rgb), 0.5);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     font-variant-numeric: tabular-nums;
 }
 
+/* ── شارة النوع (قصر / مركبة) أعلى الصورة بطرفها الآخر ── */
+.cy-prop-kind-chip {
+    position: absolute;
+    top: 10px;
+    inset-inline-end: 10px;
+    z-index: 5;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.64rem;
+    font-weight: 700;
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(var(--accent-rgb), 0.18);
+    border: 1px solid rgba(var(--accent-rgb), 0.4);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.cy-prop-kind-chip i { font-size: 0.6rem; }
+
 /* ── الصورة ── */
 .cy-prop-media {
     position: relative;
     width: 100%;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: 16 / 10;
     overflow: hidden;
     background: linear-gradient(135deg, rgba(var(--purple-rgb),0.08), rgba(var(--accent-rgb),0.03));
+}
+
+.cy-prop-media::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 62%, rgba(10, 9, 16, 0.45) 100%);
+    pointer-events: none;
 }
 
 .cy-prop-media img {
@@ -429,7 +336,7 @@
     height: 100%;
     object-fit: cover;
     pointer-events: none;
-    transition: transform 0.5s ease;
+    transition: transform 0.45s ease;
 }
 
 .cy-prop-card:hover .cy-prop-media img {
@@ -438,121 +345,76 @@
 
 /* فشل تحميل الصورة → أيقونة بديلة بدل الإطار المكسور */
 .cy-prop-card.img-fail .cy-prop-media img { display: none; }
-.cy-prop-card.img-fail .cy-prop-media::after {
+.cy-prop-card.img-fail .cy-prop-media::after { display: none; }
+.cy-prop-card.img-fail .cy-prop-media::before {
     content: '\f03e';
     font-family: 'Font Awesome 5 Free', 'Font Awesome 6 Free';
     font-weight: 900;
-    font-size: 2.6rem;
+    font-size: 2rem;
     color: rgba(var(--accent-rgb), 0.3);
     position: absolute;
     inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    z-index: 1;
 }
 
-/* ── لمعان سريع عند الـ hover فقط (transform فقط — GPU بلا إعادة رسم) ── */
-.cy-prop-shine {
-    position: absolute;
-    top: -20%;
-    bottom: -20%;
-    left: 0;
-    width: 55%;
-    pointer-events: none;
-    z-index: 3;
-    background: linear-gradient(115deg, transparent 0%, rgba(var(--accent-rgb), 0.10) 32%, rgba(255, 255, 255, 0.13) 50%, rgba(var(--accent-rgb), 0.10) 68%, transparent 100%);
-    transform: translateX(-160%) skewX(-8deg);
+/* ── شريط المعلومات — تحت الصورة: الاسم + زر تكبير + النوع ── */
+.cy-prop-body {
+    padding: 11px 13px 13px;
+    background: transparent;
+    position: relative;
+    z-index: 2;
 }
 
-.cy-prop-card:hover .cy-prop-shine {
-    animation: propSweep 1.1s ease forwards;
-}
-
-@keyframes propSweep {
-    to { transform: translateX(300%) skewX(-8deg); }
-}
-
-/* ── شريط العنوان السفلي — حجاب متدرج + أيقونة + الاسم + نوع الملكية ── */
-.cy-prop-cap {
-    position: absolute;
-    inset-inline: 0;
-    bottom: 0;
-    z-index: 4;
+.cy-prop-row {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 2.4rem 1.1rem 0.95rem;
-    background: linear-gradient(180deg, transparent 0%, rgba(8, 7, 15, 0.55) 35%, rgba(8, 7, 15, 0.93) 100%);
-    pointer-events: none;
-}
-
-.cy-prop-cap-ico {
-    width: 38px;
-    height: 38px;
-    flex-shrink: 0;
-    border-radius: 11px;
-    background: rgba(var(--accent-rgb), 0.14);
-    border: 1px solid rgba(var(--accent-rgb), 0.3);
-    color: var(--accent);
-    font-size: 0.95rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.12);
-    transition: box-shadow 0.3s ease, border-color 0.3s ease;
-}
-
-.cy-prop-card:hover .cy-prop-cap-ico {
-    border-color: rgba(var(--accent-rgb), 0.55);
-    box-shadow: 0 0 16px rgba(var(--accent-rgb), 0.3);
-}
-
-.cy-prop-cap-txt {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 3px;
 }
 
 .cy-prop-title {
     font-weight: 800;
-    font-size: 1.02rem;
+    font-size: 0.95rem;
     color: #fff;
     margin: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    text-shadow: 0 1px 8px rgba(0,0,0,0.5);
+    min-width: 0;
 }
 
-.cy-prop-kind {
-    font-size: 0.68rem;
-    font-weight: 600;
-    color: var(--text-dim);
-}
-
-/* زر «تكبير» يظهر عند الـ hover */
+/* زر التكبير — أيقونة تظهر عند الـ hover فقط */
 .cy-prop-zoom {
-    margin-inline-start: auto;
     flex-shrink: 0;
-    font-size: 0.65rem;
-    font-weight: 700;
-    color: var(--accent);
-    background: rgba(10, 9, 16, 0.72);
-    border: 1px solid rgba(var(--accent-rgb), 0.25);
-    padding: 4px 9px;
+    width: 26px;
+    height: 26px;
     border-radius: 8px;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    justify-content: center;
+    font-size: 0.66rem;
+    color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.12);
+    border: 1px solid rgba(var(--accent-rgb), 0.3);
     opacity: 0;
-    transform: translateY(6px);
-    transition: opacity 0.3s ease, transform 0.3s ease;
+    transform: translateY(4px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .cy-prop-card:hover .cy-prop-zoom {
     opacity: 1;
     transform: none;
+}
+
+.cy-prop-kind {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-dim);
 }
 
 /* ── Empty State ── */
@@ -561,27 +423,25 @@
     padding: 3.5rem 2rem;
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 20px;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    border-radius: 18px;
 }
 
 .cy-empty-icon {
-    width: 70px; height: 70px;
+    width: 66px; height: 66px;
     background: rgba(var(--accent-rgb),0.08);
     border: 1px solid rgba(var(--accent-rgb),0.15);
-    border-radius: 18px;
+    border-radius: 17px;
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0 auto 1.2rem;
     color: rgba(var(--accent-rgb),0.35);
-    font-size: 1.8rem;
+    font-size: 1.7rem;
 }
 
 .cy-empty h3 {
     color: rgba(255,255,255,0.6);
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     font-weight: 700;
     margin-bottom: 0.3rem;
 }
@@ -714,33 +574,24 @@
 
 /* ── Touch devices ── */
 @media (hover: none) and (pointer: coarse) {
-    .cy-prop-card:hover { transform: none; box-shadow: 0 4px 24px rgba(0,0,0,0.3); }
-    .cy-prop-card:hover .corner-tl,
-    .cy-prop-card:hover .corner-br { opacity: 0.4; }
+    .cy-prop-card:hover { transform: none; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
     .cy-prop-card:hover .cy-prop-media img { transform: none; }
-    .cy-prop-card:hover .cy-prop-shine { animation: none; }
     .cy-prop-zoom { display: none; } /* اللمس ما عنده hover — الضغط يفتح المعرض مباشرة */
-}
-
-/* ── Tablet: عمود واحد بعرض الحاوية (الشبكة الثابتة تبدأ من 1024px) ── */
-@media (max-width: 1023px) {
-    .cy-prop-grid { grid-template-columns: 1fr; }
 }
 
 /* ── Mobile ── */
 @media (max-width: 640px) {
-    .cy-props-hero { padding: 2.5rem 1rem 2rem; }
-    .cy-props-hero-icon { width: 64px; height: 64px; }
-    .cy-props-hero-icon i { font-size: 1.8rem; }
+    .cy-props-hero { padding: calc(var(--nav-h, 56px) + 1.8rem) 1rem 1.8rem; }
+    .cy-props-hero-icon { width: 56px; height: 56px; font-size: 1.3rem; border-radius: 16px; }
     .cy-props-main { padding: 0 1rem 2rem; }
-    .cy-props-tabs { gap: 0.5rem; }
-    .cy-props-tab { padding: 0.55rem 1.2rem; font-size: 0.8rem; }
-    .cy-pm { padding: 0 0.9rem; }
-    .cy-pm-val { font-size: 1.2rem; }
-    .cy-prop-card { border-radius: 13px; }
-    .cy-prop-cap { padding: 1.8rem 0.9rem 0.8rem; gap: 10px; }
-    .cy-prop-cap-ico { width: 34px; height: 34px; font-size: 0.85rem; border-radius: 9px; }
-    .cy-prop-title { font-size: 0.95rem; }
+    .cy-props-tabs { gap: 0.45rem; }
+    .cy-props-tab { padding: 0.5rem 1.1rem; font-size: 0.8rem; }
+    .cy-pm { padding: 0 0.85rem; }
+    .cy-pm-val { font-size: 1.15rem; }
+    .cy-prop-grid { gap: 0.85rem; }
+    .cy-prop-card { border-radius: 12px; }
+    .cy-prop-body { padding: 10px 11px 12px; }
+    .cy-prop-title { font-size: 0.9rem; }
     .cy-lb-nav { width: 38px; height: 38px; font-size: 0.9rem; }
     .cy-lb-prev { right: 8px; }
     .cy-lb-next { left: 8px; }
@@ -748,10 +599,10 @@
 
 /* ── Small Mobile ── */
 @media (max-width: 480px) {
-    .cy-props-hero h1 { font-size: 1.8rem; }
-    .cy-props-hero-sub { font-size: 0.85rem; }
-    .cy-prop-card { border-radius: 11px; }
-    .cy-prop-cap-ico { width: 30px; height: 30px; font-size: 0.78rem; border-radius: 8px; }
-    .cy-prop-title { font-size: 0.9rem; }
-    .cy-prop-kind { font-size: 0.63rem; }
+    .cy-props-hero h1 { font-size: 1.65rem; }
+    .cy-props-hero-sub { font-size: 0.83rem; }
+    .cy-prop-title { font-size: 0.87rem; }
+    .cy-prop-kind { font-size: 0.65rem; }
+    .cy-prop-idx { font-size: 0.62rem; padding: 3px 8px; }
+    .cy-prop-kind-chip { font-size: 0.6rem; padding: 3px 8px; }
 }
