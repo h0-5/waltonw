@@ -152,8 +152,9 @@
         </div>
         <div class="cy-f-box-body">
             <ul class="cy-farm-rules cy-f-rules-mini">
-                <li><i class="fas fa-coins"></i><span><b>العربون:</b> <%= farmState.config.deposit_pct %>% من الإيجار على بنك الشركة — وباقي المبلغ يتأكد مع الإدارة.</span></li>
-                <li><i class="fas fa-hourglass-half"></i><span><b>مهلة الدفع:</b> <%= farmState.config.payment_window_hours %> ساعات — بعدها ينلغى تلقائياً.</span></li>
+                <li><i class="fas fa-coins"></i><span><b>العربون:</b> <%= farmState.config.deposit_pct %>% من الإيجار على بنك الشركة — وبعد تأكيده تحوّل <b>النص الثاني</b> (باقي الإيجار) وإلا ما ينعكس الحجز.</span></li>
+                <li><i class="fas fa-hourglass-half"></i><span><b>مهلة الدفع:</b> <%= farmState.config.payment_window_hours %> ساعات للعربون — بعدها ينلغى تلقائياً.</span></li>
+                <li><i class="fas fa-hourglass-start"></i><span><b>النص الثاني:</b> بعد تأكيد العربون يبقى عندك <%= farmState.config.remainder_window_hours %> ساعات — وإلا قبل البداية بساعة ينلغي الحجز <b>وتخسر العربون</b>.</span></li>
                 <li><i class="fas fa-ban"></i><span><b>الإلغاء:</b> يخسر <%= Math.round(farmState.config.deposit_pct / 2) %>% من العربون — آخر موعد قبل البداية بـ <%= farmState.config.cancel_cutoff_hours %> ساعات.</span></li>
                 <li><i class="fas fa-clock-rotate-left"></i><span><b>التمديد:</b> فقط خلال آخر <%= farmState.config.extend_window_hours %> ساعة قبل الانتهاء.</span></li>
                 <li><i class="fas fa-users"></i><span><b>اضافة عمال:</b> حتى <%= farmState.config.max_workers %> بـ <%= Number(farmState.config.worker_price).toLocaleString('en-US') %>$ للعامل — اسم شخصية كاملة وصحيحة.</span></li>
@@ -371,6 +372,11 @@ async function farmRefresh() {
     } catch (e) {}
 }
 
+function openFarmMy() {
+    document.getElementById('farmMyModal').classList.add('open');
+    farmRenderMy();
+}
+
 function farmRenderCard() {
     var badge = document.getElementById('farmBadge');
     var avail = document.getElementById('farmAvail');
@@ -465,6 +471,7 @@ function farmWorkerRow(w) {
 function farmBkActions(b) {
     var h = '';
     if (b.can.pay) h += '<button class="cy-farm-btn warn small" onclick="farmPaid(' + b.id + ')"><i class="fas fa-money-bill"></i> دفعت العربون</button>';
+    if (b.can.payRemainder) h += '<button class="cy-farm-btn warn small" onclick="farmRemainderPaid(' + b.id + ')"><i class="fas fa-sack-dollar"></i> دفعت النص الثاني</button>';
     if (b.can.extend) h += '<button class="cy-farm-btn primary small" onclick="openFarmExt(' + b.id + ')"><i class="fas fa-clock-rotate-left"></i> تمديد</button>';
     if (b.can.addWorker) h += '<button class="cy-farm-btn ghost small" onclick="farmWorkerAdd(' + b.id + ')"><i class="fas fa-user-plus"></i> اضافة عامل</button>';
     if (b.can.cancel) {
@@ -517,6 +524,16 @@ function farmRenderMy() {
         if (b.status === 'pending_confirm') {
             h += '<div style="margin-top:.6rem;font-size:.8rem;color:#c084fc"><i class="fas fa-hourglass-half"></i> أعلنت الدفع — بانتظار تأكيد الإدارة لوصول المبلغ</div>';
         }
+        if (b.status === 'confirmed' && b.remainder) {
+            h += '<div style="margin-top:.7rem;padding:.65rem .85rem;border-radius:10px;background:rgba(56,189,248,.07);border:1px solid rgba(56,189,248,.28);font-size:.8rem;color:rgba(255,255,255,.85);line-height:1.7">';
+            h += '<b style="color:#38bdf8"><i class="fas fa-sack-dollar"></i> النص الثاني: ' + farmMoney(b.remainder.amount) + '$</b> — حوّله على <b style="direction:ltr;display:inline-block">' + farmState.config.bank_account + '</b> ';
+            if (b.remainder.status === 'pending_payment' && b.remainder.forfeit_iso) {
+                h += 'قبل <span class="cy-f-count" data-dl="' + b.remainder.forfeit_iso + '">—</span> — إذا وصل قبل بداية الحجز بساعة وما انحول <b style="color:#ef4444">ينلغي الحجز وتخسر العربون ' + farmMoney(b.deposit_amount) + '$</b>';
+            } else if (b.remainder.status === 'pending_confirm') {
+                h += '— أعلنت الدفع ✅ بانتظار تأكيد الإدارة، وبعد التأكيد ينبدا حجزك';
+            }
+            h += '</div>';
+        }
         if (b.status === 'active' && !b.faction_added) {
             h += '<div style="margin-top:.6rem;font-size:.8rem;color:#34d399"><i class="fas fa-users"></i> بانتظار إضافتك لفاكشن العائلة — الإدارة تتولاه</div>';
         }
@@ -556,6 +573,11 @@ async function farmPost(url, body) {
 async function farmPaid(id) {
     var d = await farmPost('/api/farm/bookings/' + id + '/mark-paid');
     farmToast(d.success ? '💰 ' + d.message : (d.error || 'خطأ'), !d.success);
+    if (d.success) farmRefresh();
+}
+async function farmRemainderPaid(id) {
+    var d = await farmPost('/api/farm/bookings/' + id + '/remainder-mark-paid');
+    farmToast(d.success ? '💵 ' + d.message : (d.error || 'خطأ'), !d.success);
     if (d.success) farmRefresh();
 }
 async function farmCancel(id) {

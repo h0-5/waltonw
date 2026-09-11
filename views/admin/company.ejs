@@ -72,6 +72,7 @@
       <div class="form-group" style="margin:0"><label>مهلة الدفع (ساعات)</label><input type="number" id="f_payment_window_hours" min="1" max="72" style="direction:ltr"></div>
       <div class="form-group" style="margin:0"><label>حد الإلغاء (ساعات قبل البداية)</label><input type="number" id="f_cancel_cutoff_hours" min="0" max="72" style="direction:ltr"></div>
       <div class="form-group" style="margin:0"><label>نافذة التمديد (ساعات قبل النهاية)</label><input type="number" id="f_extend_window_hours" min="1" max="72" style="direction:ltr"></div>
+      <div class="form-group" style="margin:0"><label>مهلة النص الثاني (ساعات بعد تأكيد العربون)</label><input type="number" id="f_remainder_window_hours" min="1" max="72" style="direction:ltr"></div>
     </div>
     <div class="form-group"><label>حساب بنك الشركة</label><input type="text" id="f_bank_account" style="direction:ltr;text-align:left"></div>
     <div class="form-group"><label>منشن إشعارات الإدارة — يطلع مع كل حجز جديد / إعلان دفع / طلب خدمة — @here أو &lt;@&amp;ID&gt; رتبة أو &lt;@ID&gt; شخص</label><input type="text" id="f_ping_mention" placeholder="@here" style="direction:ltr;text-align:left"></div>
@@ -395,10 +396,17 @@ var farmData = null;
 const FARM_ST_BADGE = {
   pending_payment: ['بانتظار الدفع', '#eab308'],
   pending_confirm: ['بانتظار التأكيد', '#c084fc'],
+  confirmed: ['مؤكد — بالنص الثاني', '#38bdf8'],
   active: ['فعال', '#34d399'],
   ended: ['منتهي', '#94a3b8'],
   cancelled: ['ملغي', '#ef4444'],
   expired: ['انتهت المهلة', '#ef4444']
+};
+const FARM_R_BADGE = {
+  pending_payment: ['بانتظار تحويله', '#eab308'],
+  pending_confirm: ['بانتظار التأكيد', '#c084fc'],
+  confirmed: ['مؤكد', '#34d399'],
+  rejected: ['مرفوض', '#ef4444']
 };
 const FARM_W_BADGE = {
   pending_payment: ['بانتظار الدفع', '#eab308'],
@@ -429,6 +437,7 @@ function farmRenderCfg() {
   document.getElementById('f_payment_window_hours').value = c.payment_window_hours;
   document.getElementById('f_cancel_cutoff_hours').value = c.cancel_cutoff_hours;
   document.getElementById('f_extend_window_hours').value = c.extend_window_hours;
+  document.getElementById('f_remainder_window_hours').value = (c.remainder_window_hours != null ? c.remainder_window_hours : 6);
   document.getElementById('f_bank_account').value = c.bank_account || '';
   document.getElementById('f_ping_mention').value = c.ping_mention || '';
 }
@@ -440,7 +449,7 @@ async function farmSaveCfg(e) {
     price_7d: g('f_price_7d'), price_10d: g('f_price_10d'), price_14d: g('f_price_14d'),
     worker_price: g('f_worker_price'), max_workers: g('f_max_workers'), deposit_pct: g('f_deposit_pct'),
     payment_window_hours: g('f_payment_window_hours'), cancel_cutoff_hours: g('f_cancel_cutoff_hours'),
-    extend_window_hours: g('f_extend_window_hours'), bank_account: g('f_bank_account'),
+    extend_window_hours: g('f_extend_window_hours'), remainder_window_hours: g('f_remainder_window_hours'), bank_account: g('f_bank_account'),
     ping_mention: g('f_ping_mention')
   };
   const res = await fetch('/api/farm/admin/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -452,6 +461,8 @@ function farmBkActions(b) {
     `<button class="admin-btn ${cls} small" onclick="farmAct('${url}','${confirmMsg || ''}')">${label}</button>`;
   let h = '';
   if (b.status === 'pending_confirm') h += btn(`/api/farm/admin/bookings/${b.id}/confirm-payment`, '<i class="fas fa-check"></i> تأكيد استلام العربون', 'success', 'تأكد أن العربون وصل بنك الشركة فعلاً — تأكيد الاستلام؟');
+  if (b.status === 'confirmed' && (b.remainder_status || 'pending_payment') === 'pending_confirm') h += btn(`/api/farm/admin/bookings/${b.id}/confirm-remainder`, '<i class="fas fa-sack-dollar"></i> تأكيد استلام النص الثاني', 'success', 'تأكد أن النص الثاني وصل بنك الشركة فعلاً — بعد التأكيد ينبدا الحجز ويطلع اشعار إضافة المستأجر للفاكشن؟');
+  if (b.status === 'confirmed' && (b.remainder_status || 'pending_payment') === 'pending_confirm') h += btn(`/api/farm/admin/bookings/${b.id}/reject-remainder`, '<i class="fas fa-xmark"></i> رفض النص الثاني', 'danger', 'رفض = إلغاء الحجز وخسارة المستأجر للعربون كاملاً والمزرعة ترجع متاحة — متأكد؟');
   if (b.status === 'active' && !b.faction_added) h += btn(`/api/farm/admin/bookings/${b.id}/faction-add`, '<i class="fas fa-users"></i> تمت إضافته للفاكشن', 'success', 'تأكيد أن المستأجر انضاف للفاكشن؟ (يوقف التنبيه الساعي)');
   if (b.extend_status === 'pending_confirm') h += btn(`/api/farm/admin/bookings/${b.id}/confirm-extension`, '<i class="fas fa-clock"></i> تأكيد عربون التمديد', 'success', 'تأكد وصول عربون التمديد — تأكيد التمديد؟');
   if (b.status === 'ended' && !b.faction_removed && !b.remove_confirm1_by) h += btn(`/api/farm/admin/bookings/${b.id}/remove-confirm-1`, '<i class="fas fa-user-minus"></i> تأكيد إزالة ١/٢', 'success', 'التأكيد الأول: تأكد أن المستأجر المنتهي راح ينزال من الفاكشن؟');
@@ -469,8 +480,8 @@ function farmRenderBookings() {
     <td>${b.username || '—'}</td>
     <td>${b.farm_name || '#' + (b.farm_id || b.farm_no)}</td>
     <td>${b.duration_days} يوم${b.extend_days && b.extend_status === 'confirmed' ? ` <span style="color:#34d399">+${b.extend_days}</span>` : ''}</td>
-    <td style="direction:ltr">${farmMoney(b.rent_amount)}$ / <b style="color:var(--accent)">${farmMoney(b.deposit_amount)}$</b></td>
-    <td>${farmBadge(FARM_ST_BADGE, b.status)}${b.extend_status === 'pending_payment' || b.extend_status === 'pending_confirm' ? '<br><span style="font-size:.7rem;color:var(--text-dim)">تمديد ' + b.extend_days + ' يوم</span> ' + farmBadge(FARM_ST_BADGE, b.extend_status) : ''}</td>
+    <td style="direction:ltr">${farmMoney(b.rent_amount)}$ / <b style="color:var(--accent)">${farmMoney(b.deposit_amount)}$</b>${b.status === 'confirmed' ? `<br><span style="font-size:.72rem;color:#38bdf8">نص ثاني ${farmMoney(b.remainder_amount || (b.rent_amount - b.deposit_amount))}$</span>` : ''}</td>
+    <td>${farmBadge(FARM_ST_BADGE, b.status)}${b.status === 'confirmed' ? '<br><span style="font-size:.7rem;color:var(--text-dim)">النص الثاني: </span>' + farmBadge(FARM_R_BADGE, b.remainder_status || 'pending_payment') : ''}${b.extend_status === 'pending_payment' || b.extend_status === 'pending_confirm' ? '<br><span style="font-size:.7rem;color:var(--text-dim)">تمديد ' + b.extend_days + ' يوم</span> ' + farmBadge(FARM_ST_BADGE, b.extend_status) : ''}</td>
     <td>${b.status === 'active' || b.status === 'ended' ? (Number(b.faction_added) === 1 ? '<span style="color:#34d399">مضاف</span>' : '<span style="color:#eab308">بانتظار الإضافة</span>') + (b.status === 'ended' ? '<br>' + (Number(b.faction_removed) === 1 ? '<span style="color:#34d399">منزال</span>' : '<span style="color:#eab308">بانتظار الإزالة</span>') : '') : '—'}</td>
     <td style="font-size:.78rem">${farmDT(b.start_at)}<br>${farmDT(b.end_at)}</td>
     <td style="display:flex;gap:4px;flex-wrap:wrap">${farmBkActions(b)}</td>

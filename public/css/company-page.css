@@ -948,6 +948,7 @@
 .cy-f-st { font-size:.7rem; font-weight:800; padding:3px 10px; border-radius:7px; border:1px solid; }
 .cy-f-st.pending_payment { background:rgba(234,179,8,.12); color:#eab308; border-color:rgba(234,179,8,.3); }
 .cy-f-st.pending_confirm { background:rgba(188,19,254,.14); color:#c084fc; border-color:rgba(188,19,254,.35); }
+.cy-f-st.confirmed { background:rgba(56,189,248,.12); color:#38bdf8; border-color:rgba(56,189,248,.35); }
 .cy-f-st.active { background:rgba(52,211,153,.12); color:#34d399; border-color:rgba(52,211,153,.3); }
 .cy-f-st.ended { background:rgba(148,163,184,.12); color:#94a3b8; border-color:rgba(148,163,184,.3); }
 .cy-f-st.cancelled, .cy-f-st.expired { background:rgba(239,68,68,.12); color:#ef4444; border-color:rgba(239,68,68,.3); }

@@ -1,12 +1,18 @@
 /*
  * نظام استئجار المزارع — شركة والتون
  * خدمة واحدة تحسب على مزرعتين (لكل مزرعة تفعيل مستقل)
- * التدفق: حجز → عربون (50% من الإيجار) على حساب بنك الشركة → المستأجر يعلن الدفع
- *          → الإدارة تؤكد وصول المبلغ يدوياً → الحجز يبدأ → تنبيه ساعي لإضافته للفاكشن
- *          → عند النهاية: إشعار + إزالة المستأجر من الفاكشن بتأكدين
- * القواعد: مهلة دفع 3 ساعات (إلغاء تلقائي) — الإلغاء يخسر 50% من العربون وآخر موعده
- *          قبل بداية الحجز بـ 6 ساعات — التمديد فقط قبل انتهاء الحجز بـ 24 ساعة
- *          — المدد ثابتة (1/3/5/7/10/14 يوم) والأسعار نص قابل للتعديل من لوحة الإدارة
+ * التدفق (دفع على دفعتين):
+ *   حجز → عربون (50% من الإيجار) خلال مهلة الدفع → المستأجر يعلن الدفع → الإدارة تأكد
+ *        → الحجز «مؤكد» والبداية متجددة بعد (مهلة النص الثاني = 6 ساعات افتراضياً)
+ *        → المستأجر يوصله تنبيه فوراً (قبل بداية الحجز بـ 6 ساعات) يحوّل النص الثاني
+ *        → الإدارة تأكد وصول النص الثاني → الحجز «فعال» ويبدأ → وبس عندها يطلع اشعار
+ *          «أضيفوه للفاكشن» بالمنشن + تنبيه ساعي حتى التأكيد
+ *        → إذا وصل قبل بداية الحجز بساعة والنص الثاني ما انحول → ينلغي تلقائياً
+ *          ويخسر العربون (فلوس أول تحويل)
+ *   عند النهاية: إشعار + إزالة المستأجر من الفاكشن بتأكدين
+ * القواعد: مهلة دفع العربون 3 ساعات (إلغاء تلقائي) — الإلغاء اليدوي يخسر 50% من
+ *          العربون — التمديد فقط قبل انتهاء الحجز بـ 24 ساعة — المدد ثابتة
+ *          (1/3/5/7/10/14 يوم) والأسعار نص قابل للتعديل من لوحة الإدارة
  */
 const express = require('express');
 const router = express.Router();
@@ -21,11 +27,21 @@ const PRICE_COL = { 1: 'price_1d', 3: 'price_3d', 5: 'price_5d', 7: 'price_7d', 
 const STATUS_AR = {
   pending_payment: 'بانتظار دفع العربون',
   pending_confirm: 'بانتظار تأكيد الإدارة',
+  confirmed: 'مؤكد — بانتظار النص الثاني',
   active: 'حجز فعال',
   ended: 'منتهي',
   cancelled: 'ملغي',
   expired: 'انتهت المهلة'
 };
+const RSTATUS_AR = {
+  pending_payment: 'بانتظار تحويل النص الثاني',
+  pending_confirm: 'بانتظار تأكيد الإدارة',
+  confirmed: 'مؤكد',
+  rejected: 'مرفوض'
+};
+/* العازل قبل البداية: النص الثاني لازم ينحول قبل بداية الحجز بساعة على الأقل —
+   إذا وصل هالموعد وما انحول، الحجز ينلغي تلقائياً والمستأجر يخسر العربون */
+const FORFEIT_BUFFER_HOURS = 1;
 const WSTATUS_AR = {
   pending_payment: 'بانتظار الدفع',
   pending_confirm: 'بانتظار تأكيد الإدارة',
@@ -59,6 +75,7 @@ async function ensureFarmSchema() {
     payment_window_hours INT DEFAULT 3,
     cancel_cutoff_hours INT DEFAULT 6,
     extend_window_hours INT DEFAULT 24,
+    remainder_window_hours INT DEFAULT 6,
     ping_mention VARCHAR(32) DEFAULT '@here',
     updated_at DATETIME NULL
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
@@ -123,6 +140,13 @@ async function ensureFarmSchema() {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
   await db.query('INSERT IGNORE INTO farm_config (id) VALUES (1)');
+  /* أعمدة «النص الثاني» — الدفع على دفعتين (ترحيل شفاء ذاتي) */
+  try {
+    await ensureColumn('farm_bookings', 'remainder_amount', 'remainder_amount BIGINT NOT NULL DEFAULT 0');
+    await ensureColumn('farm_bookings', 'remainder_status', "remainder_status VARCHAR(20) DEFAULT ''");
+    await ensureColumn('farm_bookings', 'remainder_deadline', 'remainder_deadline DATETIME NULL');
+    await ensureColumn('farm_config', 'remainder_window_hours', 'remainder_window_hours INT DEFAULT 6');
+  } catch (e) { console.error('[farm] remainder cols:', e.message); }
   /* ترحيل من المزارع الثابتة (1/2) إلى الجدول الديناميكي — مرة واحدة */
   try {
     await ensureColumn('farm_bookings', 'farm_id', 'farm_id INT NULL');
@@ -176,6 +200,18 @@ async function logEvent(bookingId, actor, actorType, action, details) {
   } catch (e) {}
 }
 
+/* تنبيه المستأجر: إشعار داخل الموقع + رسالة ديسكورد خاصة (إذا البوت فعال) */
+async function renterNotify(userId, title, message) {
+  try {
+    await db.execute('INSERT INTO notifications (user_id, title, message, is_read, created_at) VALUES (?, ?, ?, 0, NOW())',
+      [userId, title, message]);
+  } catch (e) {}
+  try {
+    const bot = require('../../bot/client');
+    bot.sendNotificationDM(userId, title, message).catch(() => {});
+  } catch (e) {}
+}
+
 async function getConfig() {
   const [rows] = await db.execute('SELECT * FROM farm_config WHERE id = 1');
   if (!rows.length) {
@@ -188,9 +224,11 @@ async function getConfig() {
 
 function priceOf(cfg, days) { return Number(cfg[PRICE_COL[days]] || 0); }
 
-/* المزرعة مشغولة إذا: عربون بانتظار تأكيد + بانتظار دفع (بمهلة سارية) + حجز فعال لم ينتهِ */
+/* المزرعة مشغولة إذا: عربون بانتظار تأكيد + بانتظار دفع (بمهلة سارية) + حجز مؤكد
+   (محجوز لصاحبه حتى يسدد النص الثاني) + حجز فعال لم ينتهِ */
 const BUSY_WHERE = `(status = 'pending_confirm'
   OR (status = 'pending_payment' AND payment_deadline > NOW())
+  OR status = 'confirmed'
   OR (status = 'active' AND end_at > NOW()))`;
 
 async function farmsBusy() {
@@ -227,7 +265,8 @@ async function getPublicState(userId) {
       deposit_pct: Number(cfg.deposit_pct),
       payment_window_hours: Number(cfg.payment_window_hours),
       cancel_cutoff_hours: Number(cfg.cancel_cutoff_hours),
-      extend_window_hours: Number(cfg.extend_window_hours)
+      extend_window_hours: Number(cfg.extend_window_hours),
+      remainder_window_hours: Number(cfg.remainder_window_hours || 6)
     },
     myBookings: []
   };
@@ -260,6 +299,18 @@ async function serializeUserBookings(userId, cfg) {
       now >= endMs - Number(cfg.extend_window_hours) * 3600e3 && now < endMs;
     const startMs = toIso(b.start_at) ? new Date(toIso(b.start_at)).getTime() : 0;
     const cancelBeforeStart = startMs > 0 && now <= startMs - Number(cfg.cancel_cutoff_hours) * 3600e3;
+    /* النص الثاني: يظهر لحجوزات «مؤكد» — الموعد الأخير للتحويل = قبل البداية بساعة */
+    const rDeadlineIso = toIso(b.remainder_deadline);
+    const rDeadlineMs = rDeadlineIso ? new Date(rDeadlineIso).getTime() : 0;
+    const forfeitIso = rDeadlineIso ? new Date(rDeadlineMs - FORFEIT_BUFFER_HOURS * 3600e3).toISOString() : null;
+    const remainder = b.status === 'confirmed' ? {
+      amount: Number(b.rent_amount) - Number(b.deposit_amount),
+      status: b.remainder_status || 'pending_payment',
+      statusLabel: RSTATUS_AR[b.remainder_status || 'pending_payment'] || (b.remainder_status || 'pending_payment'),
+      start_iso: rDeadlineIso,
+      forfeit_iso: forfeitIso,
+      forfeit_left: forfeitIso ? Math.max(0, Math.floor((new Date(forfeitIso).getTime() - now) / 1000)) : 0
+    } : null;
     return {
       id: b.id, ref: b.ref, farm_no: Number(b.farm_no), farm_id: Number(b.farm_id) || 0,
       farm_name: b.farm_name || ('مزرعة #' + b.farm_no), duration_days: Number(b.duration_days),
@@ -269,6 +320,7 @@ async function serializeUserBookings(userId, cfg) {
       deadline_iso: toIso(b.payment_deadline), deadline_left: deadlineLeft(b.payment_deadline),
       faction_added: Number(b.faction_added) === 1, faction_removed: Number(b.faction_removed) === 1,
       cancel_penalty: Number(b.cancel_penalty),
+      remainder,
       extend: b.extend_days ? {
         days: Number(b.extend_days), rent: Number(b.extend_rent), deposit: Number(b.extend_deposit),
         status: b.extend_status, deadline_iso: toIso(b.extend_deadline), deadline_left: deadlineLeft(b.extend_deadline)
@@ -276,8 +328,9 @@ async function serializeUserBookings(userId, cfg) {
       workers,
       can: {
         pay: b.status === 'pending_payment',
-        cancel: b.status === 'pending_payment' || b.status === 'pending_confirm' || (b.status === 'active' && cancelBeforeStart),
-        cancelPenalty: b.status === 'pending_confirm' || (b.status === 'active' && cancelBeforeStart)
+        payRemainder: b.status === 'confirmed' && (b.remainder_status || 'pending_payment') === 'pending_payment',
+        cancel: b.status === 'pending_payment' || b.status === 'pending_confirm' || b.status === 'confirmed' || (b.status === 'active' && cancelBeforeStart),
+        cancelPenalty: b.status === 'pending_confirm' || b.status === 'confirmed' || (b.status === 'active' && cancelBeforeStart)
           ? Math.round(Number(b.deposit_amount) / 2) : 0,
         extend: extendWindow && !extPending,
         addWorker: b.status === 'active' && liveWorkers < Number(cfg.max_workers)
@@ -356,7 +409,7 @@ router.post('/book', isAuthenticated, async (req, res) => {
         { name: 'مهلة الدفع', value: Number(cfg.payment_window_hours) + ' ساعات من الآن', inline: false }
       ]
     });
-    res.json({ success: true, ref, deposit, rent, farm_no: farmRow.id, farm_name: farmRow.name, message: `تم إنشاء الحجز ${ref} على ${farmRow.name} — حوّل العربون ${money(deposit)}$ على بنك الشركة ثم اضغط «دفعت العربون»` });
+    res.json({ success: true, ref, deposit, rent, farm_no: farmRow.id, farm_name: farmRow.name, message: `تم إنشاء الحجز ${ref} على ${farmRow.name} — حوّل العربون ${money(deposit)}$ على بنك الشركة واضغط «دفعت العربون» — وبعد تأكيده حوّل النص الثاني قبل بداية الحجز` });
   } catch (e) {
     console.error('[farm] book:', e.message);
     res.status(500).json({ error: 'خطأ بإنشاء الحجز' });
@@ -392,6 +445,40 @@ router.post('/bookings/:id/mark-paid', isAuthenticated, async (req, res) => {
   }
 });
 
+// المستأجر أعلن تحويل النص الثاني (باقي الإيجار) — لازم يكون قبل ساعة من بداية الحجز
+router.post('/bookings/:id/remainder-mark-paid', isAuthenticated, async (req, res) => {
+  try {
+    const [rows] = await db.execute('SELECT * FROM farm_bookings WHERE id = ? AND user_id = ?', [req.params.id, req.user.id]);
+    if (!rows.length) return res.status(404).json({ error: 'الحجز غير موجود' });
+    const b = rows[0];
+    if (b.status !== 'confirmed') return res.status(400).json({ error: 'هذا الحجز مو بانتظار النص الثاني' });
+    if ((b.remainder_status || 'pending_payment') !== 'pending_payment') return res.status(400).json({ error: 'أعلنت الدفع مسبقاً — بانتظار تأكيد الإدارة' });
+    const dl = toIso(b.remainder_deadline);
+    if (dl && Date.now() > new Date(dl).getTime() - FORFEIT_BUFFER_HOURS * 3600e3) {
+      return res.status(400).json({ error: 'انتهى موعد تحويل النص الثاني (قبل بداية الحجز بساعة) — راجع إدارة الشركة' });
+    }
+    await db.execute("UPDATE farm_bookings SET remainder_status = 'pending_confirm' WHERE id = ?", [b.id]);
+    await logEvent(b.id, req.user.username, 'user', 'remainder_paid', 'أعلن تحويل النص الثاني — بانتظار تأكيد الإدارة');
+    const cfg = await getConfig();
+    farmNotify({
+      title: '💰 المستأجر أعلن تحويل النص الثاني — يلزم التحقق',
+      color: 0xf5c453,
+      content: cfg.ping_mention,
+      fields: [
+        { name: 'المرجع', value: b.ref, inline: true },
+        { name: 'المستأجر', value: b.username, inline: true },
+        { name: 'النص الثاني', value: money(b.remainder_amount) + '$', inline: true },
+        { name: 'بنك الشركة', value: cfg.bank_account, inline: false },
+        { name: 'الإجراء', value: 'لوحة الإدارة ← إدارة الخدمات ← تأكيد استلام النص الثاني', inline: false }
+      ]
+    });
+    res.json({ success: true, message: 'تم — راح تراجع الإدارة وصول النص الثاني وينبدأ حجزك' });
+  } catch (e) {
+    console.error('[farm] remainder-mark-paid:', e.message);
+    res.status(500).json({ error: 'خطأ' });
+  }
+});
+
 // إلغاء الحجز (المستأجر) — خسارة 50% من العربون إذا كان معلن الدفع/مبدوء، وآخر موعد قبل البداية بـ 6 ساعات
 router.post('/bookings/:id/cancel', isAuthenticated, async (req, res) => {
   try {
@@ -402,7 +489,7 @@ router.post('/bookings/:id/cancel', isAuthenticated, async (req, res) => {
     let penalty = 0;
     if (b.status === 'pending_payment') {
       penalty = 0; // ما دفع شي بعد
-    } else if (b.status === 'pending_confirm') {
+    } else if (b.status === 'pending_confirm' || b.status === 'confirmed') {
       penalty = Math.round(Number(b.deposit_amount) / 2); // 50% من العربون
     } else if (b.status === 'active') {
       const start = toIso(b.start_at);
@@ -453,7 +540,7 @@ router.post('/bookings/:id/extend', isAuthenticated, async (req, res) => {
     if (Date.now() >= endMs) return res.status(400).json({ error: 'الحجز انتهى — ما ينعكس التمديد' });
     // المزرعة لازم تكون فاضية بعد النهاية (احتياط — ما تنحجز مستقبلاً)
     const [clash] = await db.execute(
-      `SELECT id FROM farm_bookings WHERE farm_id = ? AND id != ? AND (status = 'pending_confirm' OR (status = 'pending_payment' AND payment_deadline > NOW())) LIMIT 1`,
+      `SELECT id FROM farm_bookings WHERE farm_id = ? AND id != ? AND (status = 'pending_confirm' OR status = 'confirmed' OR (status = 'pending_payment' AND payment_deadline > NOW())) LIMIT 1`,
       [b.farm_id, b.id]);
     if (clash.length) return res.status(400).json({ error: 'المزرعة محجوزة بعد انتهاء حجزك — غير متوفر التمديد' });
 
@@ -646,13 +733,14 @@ adminRouter.post('/config', async (req, res) => {
       Math.min(num(b.payment_window_hours, Number(cfg.payment_window_hours), 72), 72),
       Math.min(num(b.cancel_cutoff_hours, Number(cfg.cancel_cutoff_hours), 72), 72),
       Math.min(num(b.extend_window_hours, Number(cfg.extend_window_hours), 72), 72),
+      Math.min(Math.max(num(b.remainder_window_hours, Number(cfg.remainder_window_hours || 6), 72), 1), 72),
       String(b.ping_mention || cfg.ping_mention).slice(0, 32)
     ];
     await db.execute(
       `UPDATE farm_config SET bank_account=?,
        price_1d=?, price_3d=?, price_5d=?, price_7d=?, price_10d=?, price_14d=?,
        worker_price=?, max_workers=?, deposit_pct=?, payment_window_hours=?,
-       cancel_cutoff_hours=?, extend_window_hours=?, ping_mention=?, updated_at=NOW() WHERE id=1`, vals);
+       cancel_cutoff_hours=?, extend_window_hours=?, remainder_window_hours=?, ping_mention=?, updated_at=NOW() WHERE id=1`, vals);
     await logEvent(null, req.user.username, 'admin', 'config', 'تحديث إعدادات خدمة المزارع');
     res.json({ success: true });
   } catch (e) {
@@ -712,20 +800,66 @@ async function getBooking(id) {
   return rows[0] || null;
 }
 
-// تأكيد استلام العربون → الحجز يبدأ
+// تأكيد استلام العربون → الحجز «مؤكد» — البداية متجددة بعد مهلة النص الثاني (6 ساعات افتراضياً)
+// ولا يطلع اشعار الإضافة للفاكشن إلا بعد تأكيد وصول النص الثاني
 adminRouter.post('/bookings/:id/confirm-payment', async (req, res) => {
   try {
     const b = await getBooking(req.params.id);
     if (!b) return res.status(404).json({ error: 'غير موجود' });
     if (b.status !== 'pending_confirm') return res.status(400).json({ error: 'الحجز مو بانتظار تأكيد الدفع' });
+    const cfg = await getConfig();
+    const remainder = Math.max(0, Number(b.rent_amount) - Number(b.deposit_amount));
+    const rHours = Math.max(1, Number(cfg.remainder_window_hours) || 6);
     await db.execute(
-      "UPDATE farm_bookings SET status = 'active', start_at = NOW(), end_at = DATE_ADD(NOW(), INTERVAL ? DAY) WHERE id = ?",
+      "UPDATE farm_bookings SET status = 'confirmed', remainder_amount = ?, remainder_status = 'pending_payment', remainder_deadline = DATE_ADD(NOW(), INTERVAL ? HOUR) WHERE id = ?",
+      [remainder, rHours, b.id]);
+    await logEvent(b.id, req.user.username, 'admin', 'confirm_payment',
+      `تأكيد استلام العربون — الحجز مؤكد والبداية متجددة بعد ${rHours} ساعات إذا انسدد النص الثاني (${money(remainder)}$)`);
+    /* تنبيه المستأجر — يوصله قبل بداية حجزه بـ rHours (6 ساعات افتراضياً) */
+    const startStr = new Date(Date.now() + rHours * 3600e3 + 3 * 3600e3).toISOString().slice(0, 16).replace('T', ' ');
+    const lastPayStr = new Date(Date.now() + (rHours - FORFEIT_BUFFER_HOURS) * 3600e3 + 3 * 3600e3).toISOString().slice(0, 16).replace('T', ' ');
+    renterNotify(b.user_id, '⏰ تنبيه قبل بداية حجز مزرعتك بـ ' + rHours + ' ساعات',
+      `عربون حجزك ${b.ref} انستلم ✅ — حجزك راح يبدأ بعد ${rHours} ساعات (${startStr}). ` +
+      `لازم تحوّل النص الثاني ${money(remainder)}$ على بنك الشركة ${cfg.bank_account} قبل ${lastPayStr} — ` +
+      `إذا ما حوّلته قبل بداية الحجز بساعة ينلغي الحجز وتخسر العربون ${money(b.deposit_amount)}$`);
+    farmNotify({
+      title: '✅ تم تأكيد استلام العربون — الحجز مؤكد',
+      color: 0x34d399,
+      description: `البداية متجددة بعد ${rHours} ساعات — بانتظار تحويل النص الثاني (${money(remainder)}$). ` +
+        'اشعار الإضافة للفاكشن ما راح يطلع إلا بعد تأكيد وصول النص الثاني.',
+      fields: [
+        { name: 'المرجع', value: b.ref, inline: true },
+        { name: 'المستأجر', value: b.username, inline: true },
+        { name: 'المزرعة', value: b.farm_name || String(b.farm_no), inline: true },
+        { name: 'المدة', value: b.duration_days + ' يوم', inline: true },
+        { name: 'النص الثاني المطلوب', value: money(remainder) + '$', inline: true },
+        { name: 'بداية الحجز المتجددة', value: startStr, inline: true },
+        { name: 'بنك الشركة', value: cfg.bank_account, inline: false },
+        { name: '⚠️ قبل البداية بساعة', value: `إذا ما انحول النص الثاني ينلغي الحجز ويخسر العربون (${money(b.deposit_amount)}$) — الإدارة تنبهل بالساعة`, inline: false }
+      ]
+    });
+    res.json({ success: true });
+  } catch (e) {
+    console.error('[farm] confirm-payment:', e.message);
+    res.status(500).json({ error: 'خطأ' });
+  }
+});
+
+// تأكيد استلام النص الثاني → الحجز يبدأ + بس عندها يطلع اشعار الإضافة للفاكشن
+adminRouter.post('/bookings/:id/confirm-remainder', async (req, res) => {
+  try {
+    const b = await getBooking(req.params.id);
+    if (!b) return res.status(404).json({ error: 'غير موجود' });
+    if (b.status !== 'confirmed') return res.status(400).json({ error: 'الحجز مو بانتظار النص الثاني' });
+    if ((b.remainder_status || 'pending_payment') !== 'pending_confirm') return res.status(400).json({ error: 'المستأجر ما أعلن تحويل النص الثاني بعد' });
+    await db.execute(
+      "UPDATE farm_bookings SET status = 'active', remainder_status = 'confirmed', start_at = NOW(), end_at = DATE_ADD(NOW(), INTERVAL ? DAY) WHERE id = ?",
       [Number(b.duration_days), b.id]);
-    await logEvent(b.id, req.user.username, 'admin', 'confirm_payment', `تأكيد استلام العربون — بدأ الحجز ${b.duration_days} يوم`);
+    await logEvent(b.id, req.user.username, 'admin', 'confirm_remainder', `تأكيد استلام النص الثاني — انسدد كامل الإيجار وبدأ الحجز ${b.duration_days} يوم`);
     const cfg = await getConfig();
     const endStr = new Date(Date.now() + Number(b.duration_days) * 864e5 + 3 * 3600e3).toISOString().slice(0, 16).replace('T', ' ');
     farmNotify({
-      title: '✅ تم تأكيد استلام العربون — الحجز فعال',
+      title: '✅ انسدد كامل الإيجار — الحجز فعال',
       color: 0x34d399,
       content: cfg.ping_mention + ' لازم تضيفون المستأجر للفاكشن — تنبيه ساعي راح يذكر حتى التأكيد',
       fields: [
@@ -736,9 +870,42 @@ adminRouter.post('/bookings/:id/confirm-payment', async (req, res) => {
         { name: 'ينتهي', value: endStr, inline: true }
       ]
     });
+    renterNotify(b.user_id, '🌾 بدأ حجز مزرعتك',
+      `تم تأكيد استلام النص الثاني — حجزك ${b.ref} فعال الآن. بانتظار إضافتك لفاكشن العائلة من إدارة الشركة.`);
     res.json({ success: true });
   } catch (e) {
-    console.error('[farm] confirm-payment:', e.message);
+    console.error('[farm] confirm-remainder:', e.message);
+    res.status(500).json({ error: 'خطأ' });
+  }
+});
+
+// رفض النص الثاني (ما وصل) → إلغاء الحجز وخسارة المستأجر للعربون (فلوس أول تحويل)
+adminRouter.post('/bookings/:id/reject-remainder', async (req, res) => {
+  try {
+    const b = await getBooking(req.params.id);
+    if (!b) return res.status(404).json({ error: 'غير موجود' });
+    if (b.status !== 'confirmed') return res.status(400).json({ error: 'الحجز مو بانتظار النص الثاني' });
+    if (!['pending_payment', 'pending_confirm'].includes(b.remainder_status || 'pending_payment')) return res.status(400).json({ error: 'ما ينعكس الرفض' });
+    await db.execute(
+      "UPDATE farm_bookings SET status = 'cancelled', remainder_status = 'rejected', cancel_penalty = ? WHERE id = ?",
+      [Number(b.deposit_amount), b.id]);
+    await logEvent(b.id, req.user.username, 'admin', 'reject_remainder',
+      `رفض النص الثاني — انلغي الحجز وخسر المستأجر العربون (${money(b.deposit_amount)}$)`);
+    farmNotify({
+      title: '🚫 ما انأكد وصول النص الثاني — انلغي الحجز',
+      color: 0xef4444,
+      description: `المزرعة رجعت متاحة — المستأجر خسر العربون (${money(b.deposit_amount)}$) حسب نظام الشركة`,
+      fields: [
+        { name: 'المرجع', value: b.ref, inline: true },
+        { name: 'المستأجر', value: b.username, inline: true },
+        { name: 'بواسطة', value: req.user.username, inline: true }
+      ]
+    });
+    renterNotify(b.user_id, '🚫 انلغي حجز مزرعتك',
+      `ما انأكد وصول النص الثاني لحجزك ${b.ref} قبل الموعد — انلغي الحجز وخسرت العربون ${money(b.deposit_amount)}$ حسب نظام الشركة.`);
+    res.json({ success: true });
+  } catch (e) {
+    console.error('[farm] reject-remainder:', e.message);
     res.status(500).json({ error: 'خطأ' });
   }
 });
@@ -925,6 +1092,36 @@ async function processTick() {
       });
     }
   }
+  // 4) النص الثاني ما انحول قبل بداية الحجز بساعة → إلغاء تلقائي وخسارة العربون
+  const [forfeit] = await db.execute(
+    `SELECT b.*, f.name AS farm_name FROM farm_bookings b LEFT JOIN farm_farms f ON b.farm_id = f.id
+     WHERE b.status = 'confirmed'
+     AND (b.remainder_status = '' OR b.remainder_status = 'pending_payment' OR b.remainder_status IS NULL)
+     AND b.remainder_deadline IS NOT NULL
+     AND DATE_SUB(b.remainder_deadline, INTERVAL ${FORFEIT_BUFFER_HOURS} HOUR) <= NOW()`);
+  if (forfeit.length) {
+    const ids = forfeit.map(b => b.id);
+    await db.execute(
+      `UPDATE farm_bookings SET status = 'cancelled', remainder_status = '', cancel_penalty = deposit_amount
+       WHERE id IN (${ids.map(() => '?').join(',')})`, ids);
+    for (const b of forfeit) {
+      await logEvent(b.id, 'system', 'system', 'remainder_forfeit',
+        `النص الثاني ما انحول قبل بداية الحجز بساعة — انلغي تلقائياً وخسر العربون (${money(b.deposit_amount)}$)`);
+      farmNotify({
+        title: '❌ ما انحول النص الثاني — انلغي الحجز تلقائياً',
+        color: 0xef4444,
+        description: `وصل قبل بداية الحجز بساعة وما انحول النص الثاني — المزرعة رجعت متاحة والمستأجر خسر العربون (${money(b.deposit_amount)}$)`,
+        fields: [
+          { name: 'المرجع', value: b.ref, inline: true },
+          { name: 'المستأجر', value: b.username, inline: true },
+          { name: 'المزرعة', value: b.farm_name || String(b.farm_no), inline: true }
+        ]
+      });
+      renterNotify(b.user_id, '❌ انلغي حجز مزرعتك',
+        `وصل قبل بداية حجزك ${b.ref} ساعة وما انحول النص الثاني (${money(Number(b.rent_amount) - Number(b.deposit_amount))}$) — ` +
+        `انلغي الحجز تلقائياً وخسرت العربون ${money(b.deposit_amount)}$ حسب نظام الشركة.`);
+    }
+  }
 }
 
 // تنبيه ساعي: مستأجرين فعالين لسا ما انضافوا للفاكشن
@@ -956,4 +1153,4 @@ function startFarmCron() {
   console.log('🌾 Farm cron: tick every minute + faction-add ping hourly');
 }
 
-module.exports = { router, ensureFarmSchema, startFarmCron, getPublicState };
+module.exports = { router, ensureFarmSchema, startFarmCron, getPublicState, processTick };
