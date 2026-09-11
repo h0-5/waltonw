@@ -84,7 +84,7 @@
   </div>
 
   <!-- ═══ شرائح الأقسام (هاتف — لاصقة تحت الهدر) ═══ -->
-  <nav class="wr-chips" aria-label="فهرس الأقسام">
+  <nav class="wr-chips" aria-label="الاقسام">
     <div class="wr-chips-track">
       <% wrOrder.forEach(function(cat, ci) { %>
       <a href="#wr-cat-<%= ci %>" class="wr-chip-link<%= ci === 0 ? ' active' : '' %>">
@@ -98,7 +98,7 @@
   <div class="wr-main">
     <aside class="wr-aside">
       <div class="wr-aside-box">
-        <div class="wr-aside-title"><i class="fas fa-list-check"></i> فهرس الميثاق</div>
+        <div class="wr-aside-title"><i class="fas fa-list-check"></i> الاقسام</div>
         <% wrOrder.forEach(function(cat, ci) { %>
         <a href="#wr-cat-<%= ci %>" class="wr-aside-link<%= ci === 0 ? ' active' : '' %>">
           <span class="wr-aside-num"><%= wrPad(ci + 1) %></span>
@@ -106,7 +106,6 @@
           <span class="wr-aside-count"><%= wrGrouped[cat].length %></span>
         </a>
         <% }); %>
-        <div class="wr-aside-note"><i class="fas fa-wand-magic-sparkles"></i> الفهرس يتولد تلقائياً من الأقسام — أي قسم تضيفه من لوحة الإدارة يظهر هنا فوراً</div>
       </div>
     </aside>
 

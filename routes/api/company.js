@@ -15,6 +15,8 @@ const webhooks = require('../../config/webhooks');
 
 const REQ_STATUS_AR = { pending: 'بانتظار المراجعة', approved: 'مقبول', rejected: 'مرفوض' };
 const MAX_PENDING_PER_USER = 5;
+/* وسم البناء — يظهر برسالة الخطأ وويبهوك التشخيص حتى نعرف أن نسخة السايت محدّثة فعلاً */
+const SVC_BUILD = 'svc-b7';
 /* نفس نمط أسماء الشخصيات بنظام المزرعة — الاسم الكامل مطلوب بأسئلة الخدمات */
 const NAME_RE = /^[A-Za-z]{2,16}_[A-Za-z]{2,16}(_[A-Za-z]{2,16})?$/;
 
@@ -53,13 +55,21 @@ async function ensureCompanySchema() {
     total_price DECIMAL(10,2) DEFAULT 0, package_id INT DEFAULT 0,
     admin_id INT NULL, reviewed_at DATETIME NULL
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
-  /* أعمدة قد تنقص بقواعد قديمة — كل واحد بمحاولة مستقلة عشان عمود فاشل ما يوقف الباقي */
+  /* أعمدة قد تنقص بقواعد قديمة — كل واحد بمحاولة مستقلة عشان عمود فاشل ما يوقف الباقي
+     (تشمل الأعمدة الأساسية حتى لو كان شكل الجدول القديم مختلف تماماً) */
   const cols = [
+    ['service_requests', 'user_id', 'user_id INT NULL'],
+    ['service_requests', 'service_id', 'service_id INT NULL'],
+    ['service_requests', 'answers', 'answers JSON NULL'],
+    ['service_requests', 'status', "status VARCHAR(20) DEFAULT 'pending'"],
+    ['service_requests', 'created_at', 'created_at DATETIME DEFAULT CURRENT_TIMESTAMP'],
     ['service_requests', 'total_price', 'total_price DECIMAL(10,2) DEFAULT 0'],
     ['service_requests', 'package_id', 'package_id INT DEFAULT 0'],
     ['service_requests', 'admin_id', 'admin_id INT NULL'],
     ['service_requests', 'reviewed_at', 'reviewed_at DATETIME NULL'],
     ['service_questions', 'required', 'required TINYINT(1) DEFAULT 0'],
+    ['service_questions', 'type', "type VARCHAR(50) DEFAULT 'text'"],
+    ['service_questions', 'sort_order', 'sort_order INT DEFAULT 0'],
     ['service_packages', 'days', 'days INT DEFAULT 0'],
     ['service_packages', 'image_type', "image_type VARCHAR(20) DEFAULT 'emoji'"],
     ['service_packages', 'image_value', "image_value VARCHAR(255) DEFAULT ''"],
@@ -104,6 +114,41 @@ function parseAnswers(raw) {
     const arr = JSON.parse(raw || '[]');
     return Array.isArray(arr) ? arr : [];
   } catch (e) { return []; }
+}
+
+/* تعريفات أعمدة service_requests — تستخدم بالشفاء الذكي عند فشل الإدراج بعمود ناقص */
+const REQ_COL_DEFS = {
+  user_id: 'user_id INT NULL',
+  service_id: 'service_id INT NULL',
+  answers: 'answers JSON NULL',
+  status: "status VARCHAR(20) DEFAULT 'pending'",
+  created_at: 'created_at DATETIME DEFAULT CURRENT_TIMESTAMP',
+  total_price: 'total_price DECIMAL(10,2) DEFAULT 0',
+  package_id: 'package_id INT DEFAULT 0',
+  admin_id: 'admin_id INT NULL',
+  reviewed_at: 'reviewed_at DATETIME NULL'
+};
+
+/* ويبهوك تشخيصي — يوصل الإدارة تفاصيل أي فشل بتقديم طلب (القناة: سجل الإدارة ثم الشركة ثم المزرعة) */
+function reportSvcFailure(req, e, extra) {
+  try {
+    const key = webhooks.WH_ADMIN_LOG ? 'WH_ADMIN_LOG' : (webhooks.WH_COMPANY ? 'WH_COMPANY' : (webhooks.WH_FARM ? 'WH_FARM' : null));
+    if (!key) return;
+    const stack = String(e && e.stack || '').split('\n').slice(0, 4).join('\n').substring(0, 900);
+    sendWebhook(key, {
+      title: '🧪 فشل تقديم طلب خدمة — تشخيص تلقائي',
+      color: 0xe74c3c,
+      description: stack ? '```' + stack + '```' : '',
+      fields: [
+        { name: 'البناء', value: SVC_BUILD, inline: true },
+        { name: 'الرمز', value: String((e && e.code) || '—').substring(0, 60), inline: true },
+        { name: 'الرسالة', value: String((e && e.message) || '—').substring(0, 1000) || '—', inline: false },
+        { name: 'SQL', value: String((e && e.sqlMessage) || '—').substring(0, 1000), inline: false },
+        { name: 'سياق الطلب', value: 'خدمة: ' + (extra && extra.serviceId || '—') + ' · بكج: ' + (extra && extra.packageId || '—') + ' · مستخدم: ' + String((req.user && req.user.username) || '؟').substring(0, 60) + ' · مرفقات: ' + (req.files ? Object.keys(req.files).length : 0), inline: false }
+      ].slice(0, 6),
+      footer: 'Walton — تشخيص ' + SVC_BUILD
+    }).catch(function() {});
+  } catch (x) {}
 }
 
 /* ── تقديم طلب خدمة ── */
@@ -182,9 +227,22 @@ router.post('/service-request', isAuthenticated, async (req, res) => {
       }
     }
 
-    const [ins] = await db.execute(
-      'INSERT INTO service_requests (service_id, user_id, answers, status, total_price, package_id) VALUES (?, ?, ?, ?, ?, ?)',
-      [serviceId, req.user.id, JSON.stringify(answers), 'pending', totalPrice, packageId || 0]);
+    const insSql = 'INSERT INTO service_requests (service_id, user_id, answers, status, total_price, package_id) VALUES (?, ?, ?, ?, ?, ?)';
+    const insParams = [serviceId, req.user.id, JSON.stringify(answers), 'pending', totalPrice, packageId || 0];
+    let ins;
+    try {
+      [ins] = await db.execute(insSql, insParams);
+    } catch (ie) {
+      /* شفاء ذكي: عمود ناقص انكشف من رسالة الخطأ → نضيفه ونعيد المحاولة مرة واحدة */
+      if (ie && (ie.code === 'ER_BAD_FIELD_ERROR') && ie.sqlMessage) {
+        const m = /Unknown column '([^']+)'/.exec(String(ie.sqlMessage));
+        if (m && REQ_COL_DEFS[m[1]]) {
+          console.log('🔧 company-api: عمود ناقص انكشف بالإدراج —', m[1]);
+          await ensureColumn('service_requests', m[1], REQ_COL_DEFS[m[1]]);
+          [ins] = await db.execute(insSql, insParams);
+        } else { throw ie; }
+      } else { throw ie; }
+    }
 
     // ويبهوك للإدارة — بمنشن مباشر للشخص الكبير مع كل طلب جديد
     const detail = answers.filter(a => a.type !== 'image' && a.a)
@@ -204,8 +262,10 @@ router.post('/service-request', isAuthenticated, async (req, res) => {
 
     res.json({ success: true, id: ins.insertId, message: 'تم إرسال طلبك بنجاح — راح تراجع الإدارة ويتواصلون معك' });
   } catch (e) {
-    console.error('[company-api] service-request:', e.code || '', e.message);
-    res.status(500).json({ error: 'خطأ بإرسال الطلب' });
+    console.error('[company-api] service-request [' + SVC_BUILD + ']:', e.code || '', e.message);
+    reportSvcFailure(req, e, { serviceId: req.body && req.body.service_id, packageId: req.body && req.body.package_id });
+    /* رسالة الزبون تتضمن وسم البناء والرمز — أول تجربة من هادي تحدد السبب الفعلي فوراً */
+    res.status(500).json({ error: 'خطأ بإرسال الطلب [' + SVC_BUILD + ' · ' + (e.code || 'ERR') + ']' });
   }
 });
 
