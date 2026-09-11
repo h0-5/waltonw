@@ -16,8 +16,14 @@
 
     <div class="cy-co-main">
 
+        <!-- ═══ تنقل سريع بين جزئي الصفحة ═══ -->
+        <div class="cy-co-nav cy-co-reveal" id="cyCoNav">
+            <a href="#cy-info" class="cy-co-nav-btn active" data-target="cy-info"><i class="fas fa-info-circle"></i> معلومات الشركة</a>
+            <a href="#cy-services" class="cy-co-nav-btn" data-target="cy-services"><i class="fas fa-concierge-bell"></i> خدمات</a>
+        </div>
+
         <!-- ═══ القسم الأول: معلومات الشركة (ظاهر مباشرة) ═══ -->
-        <div class="cy-co-sec-head cy-co-reveal">
+        <div class="cy-co-sec-head cy-co-reveal" id="cy-info">
             <div class="cy-co-sec-ic"><i class="fas fa-info-circle"></i></div>
             <h2 class="cy-co-sec-title">معلومات الشركة</h2>
             <span class="cy-co-sec-line"></span>
@@ -53,10 +59,10 @@
             <% } %>
         </div>
 
-        <!-- ═══ القسم الثاني: خدمات الشركة (ظاهر مباشرة — بدون تابات) ═══ -->
-        <div class="cy-co-sec-head cy-co-reveal" style="margin-top:3rem">
+        <!-- ═══ القسم الثاني: خدمات (جزء لحاله — ظاهر مباشرة) ═══ -->
+        <div class="cy-co-sec-head cy-co-reveal" id="cy-services" style="margin-top:3rem">
             <div class="cy-co-sec-ic"><i class="fas fa-concierge-bell"></i></div>
-            <h2 class="cy-co-sec-title">خدمات الشركة</h2>
+            <h2 class="cy-co-sec-title">خدمات</h2>
             <span class="cy-co-sec-line"></span>
             <% if (user) { %>
             <button class="cy-co-sec-btn" onclick="svcOpenMy()"><i class="fas fa-list-check"></i> طلباتي</button>
@@ -127,14 +133,17 @@
             </div>
             <% } else { %>
             <% activityItems.forEach(function(item, i) {
-                var isSvc = !!item.service_status;
+                /* خدمة حقيقية = حالة صريحة (متوفر/قريباً/منتهي) — العناصر العادية تنعرض بدون أزرار طلب */
+                var isSvc = ['available','coming_soon','ended'].indexOf(item.service_status) !== -1;
                 var statusMap = {available:{bg:'rgba(52,211,153,0.12)',c:'#34d399',bd:'rgba(52,211,153,0.25)',l:'متوفر'},ended:{bg:'rgba(239,68,68,0.12)',c:'#ef4444',bd:'rgba(239,68,68,0.25)',l:'منتهي'},coming_soon:{bg:'rgba(234,179,8,0.12)',c:'#eab308',bd:'rgba(234,179,8,0.25)',l:'قريباً'}};
                 var st = statusMap[item.service_status] || {};
+                var svcIcon = (item.icon || '').trim();
+                var iconHtml = svcIcon ? (svcIcon.indexOf('fa') === 0 ? '<i class="fas ' + svcIcon + '"></i>' : '<span style="font-size:1.1rem;line-height:1">' + svcIcon + '</span>') : '<i class="fas fa-concierge-bell"></i>';
             %>
             <div class="cy-co-card cy-co-reveal" style="transition-delay:<%= i * 0.08 %>s<%= isSvc ? ';border-color:rgba(var(--accent-rgb),0.2)' : '' %>">
                 <div class="corner-tl"></div><div class="corner-br"></div>
                 <div class="cy-co-header">
-                    <div class="cy-co-icon"><i class="fas fa-concierge-bell"></i></div>
+                    <div class="cy-co-icon"><%- iconHtml %></div>
                     <h3 class="cy-co-title"><%= item.title %></h3>
                     <% if (isSvc && st.l) { %>
                     <span style="margin-right:auto;font-size:.7rem;padding:2px 10px;border-radius:6px;background:<%= st.bg %>;color:<%= st.c %>;border:1px solid <%= st.bd %>"><%= st.l %></span>
@@ -148,7 +157,7 @@
                         <div class="cy-co-img-hint"><i class="fas fa-search-plus"></i> تكبير</div>
                     </div>
                     <% } %>
-                    <% if (isSvc) { %>
+                    <% if (isSvc && item.service_status !== 'ended') { %>
                     <div style="margin-top:1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
                         <% if (item.service_status === 'coming_soon') { %>
                         <span style="background:rgba(234,179,8,0.12);border:1px solid rgba(234,179,8,0.35);color:#eab308;padding:.6rem 1.5rem;border-radius:10px;font-weight:700;font-size:.85rem"><i class="fas fa-clock"></i> قريباً</span>
@@ -642,5 +651,39 @@ async function svcOpenMy() {
 document.addEventListener('keydown', function(e) { if (e.key === 'Escape') svcCloseMy(); });
 </script>
 <% } %>
+
+<script>
+/* تنقل جزئي الصفحة — تمرير ناعم + تتبع الزر النشط */
+(function() {
+    var nav = document.getElementById('cyCoNav');
+    if (!nav) return;
+    nav.addEventListener('click', function(e) {
+        var a = e.target.closest('.cy-co-nav-btn');
+        if (!a) return;
+        e.preventDefault();
+        var t = document.getElementById(a.dataset.target);
+        if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        nav.querySelectorAll('.cy-co-nav-btn').forEach(function(b) { b.classList.remove('active'); });
+        a.classList.add('active');
+    });
+    var spy = null;
+    if ('IntersectionObserver' in window) {
+        spy = new IntersectionObserver(function(entries) {
+            entries.forEach(function(en) {
+                if (!en.isIntersecting) return;
+                var btn = nav.querySelector('[data-target="' + en.target.id + '"]');
+                if (btn) {
+                    nav.querySelectorAll('.cy-co-nav-btn').forEach(function(b) { b.classList.remove('active'); });
+                    btn.classList.add('active');
+                }
+            });
+        }, { rootMargin: '-30% 0px -60% 0px' });
+        ['cy-info', 'cy-services'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) spy.observe(el);
+        });
+    }
+})();
+</script>
 
 <%- include('../partials/footer') %>

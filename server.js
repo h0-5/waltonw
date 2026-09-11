@@ -118,13 +118,19 @@ async function seedCompanyServices() {
   await ensureCol('service_packages', 'days', 'days INT DEFAULT 0');
   await ensureCol('service_packages', 'image_type', "image_type VARCHAR(20) DEFAULT 'emoji'");
   await ensureCol('service_packages', 'image_value', "image_value VARCHAR(255) DEFAULT ''");
+  await ensureCol('company_items', 'icon', "icon VARCHAR(100) DEFAULT ''");
 
-  const seed = async (title, description, questions) => {
+  const seed = async (title, description, questions, opts) => {
+    opts = opts || {};
     const [ex] = await db.query('SELECT id FROM company_items WHERE title = ? LIMIT 1', [title]);
-    if (ex.length) return;
+    if (ex.length) {
+      // ترجيع الأيقونة للخدمات الموجودة مسبقاً (بدون المساس بأي تعديل يدوي)
+      if (opts.icon) await db.query("UPDATE company_items SET icon = ? WHERE title = ? AND (icon IS NULL OR icon = '')", [opts.icon, title]);
+      return;
+    }
     const [ins] = await db.query(
-      "INSERT INTO company_items (title, description, category, service_status, sort_order) VALUES (?, ?, 'activities', 'available', 0)",
-      [title, description]);
+      "INSERT INTO company_items (title, description, category, service_status, icon, sort_order) VALUES (?, ?, 'activities', ?, ?, 0)",
+      [title, description, opts.status || 'available', opts.icon || '']);
     let i = 0;
     for (const q of questions) {
       await db.query('INSERT INTO service_questions (service_id, question, type, required, sort_order) VALUES (?, ?, ?, ?, ?)',
@@ -139,7 +145,8 @@ async function seedCompanyServices() {
       ['وصف التصميم المطلوب (القطعة، الألوان، الشعار/الكتابة)', 'text', 1],
       ['صورة مرجعية للتصميم (إن وجدت)', 'image', 0],
       ['ملاحظات إضافية', 'text', 0]
-    ]);
+    ],
+    { icon: 'fa-shirt' });
   await seed('بيع سيارات',
     'بيع سيارتك عبر شركة والتون — سجل بيانات سيارتك والسعر المطلوب وأرفق صورة، والإدارة تراجع الطلب وتتواصل معك لإتمام البيع.',
     [
@@ -148,7 +155,18 @@ async function seedCompanyServices() {
       ['السعر المطلوب ($)', 'text', 1],
       ['صورة السيارة', 'image', 0],
       ['ملاحظات إضافية (الحالة، التعديلات، الكيلومترات)', 'text', 0]
-    ]);
+    ],
+    { icon: 'fa-car' });
+  await seed('تلت',
+    'خدمة تلت السيارات من شركة والتون — قدّم طلبك مع بيانات سيارتك ونوع التلت المطلوب، والإدارة تراجع الطلب وتتصل فيك للتنفيذ.',
+    [
+      ['اسم شخصيتك الكاملة بالسيرفر (مثال: Hadi_Walton)', 'character_name', 1],
+      ['نوع وموديل السيارة', 'text', 1],
+      ['نوع التلت المطلوب', 'text', 1],
+      ['صورة السيارة', 'image', 0],
+      ['ملاحظات إضافية', 'text', 0]
+    ],
+    { status: 'coming_soon', icon: 'fa-spray-can-sparkles' });
 }
 
 async function migrate() { console.log('🔄 Running migration...');

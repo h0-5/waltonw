@@ -1,9 +1,9 @@
 ﻿/* Tab sections - class-based toggle */
 #section-info, #section-activities { display: none; }
 #section-info.active, #section-activities.active { display: block; }
-/* كشف ثابت لكلا القسمين — بطاقات الخدمات كانت opacity:0 بدون أي JS يضيف .visible
-   (السبب الجذري لـ«فتحت صفحة الخدمات م شفتها») — الآن ظاهرة دائماً */
-#section-info .cy-co-reveal, #section-activities .cy-co-reveal, #section-services .cy-co-reveal {
+/* كشف ثابت لكل عناصر الصفحة — أي عنصر cy-co-reveal خارج الأقسام (عناوين الأقسام + التنقل)
+   كان يبقى opacity:0 للأبد لأن main.js يراقب .reveal فقط — الآن كل شيء ظاهر دائماً */
+.cy-co-reveal {
     opacity: 1 !important;
     transform: none !important;
     transition: none !important;
@@ -821,9 +821,8 @@
 
 /* â”€â”€ Scroll-Reveal â”€â”€ */
 .cy-co-reveal {
-    opacity: 0;
-    transform: translateY(25px);
-    transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1);
+    opacity: 1;
+    transform: none;
 }
 
 .cy-co-reveal.visible {
@@ -980,3 +979,15 @@
 .cy-co-sec-line { flex:1; height:1px; background:linear-gradient(to left, rgba(var(--accent-rgb),.45), transparent); min-width:60px; }
 .cy-co-sec-btn { border:1px solid rgba(var(--accent-rgb),.35); background:rgba(var(--accent-rgb),.1); color:var(--accent); font-weight:800; font-size:.8rem; padding:.5rem 1.1rem; border-radius:10px; cursor:pointer; transition:all .25s; display:inline-flex; align-items:center; gap:7px; }
 .cy-co-sec-btn:hover { background:rgba(var(--accent-rgb),.22); transform:translateY(-1px); }
+
+/* ═══ تنقل سريع — معلومات الشركة / خدمات ═══ */
+.cy-co-nav { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:2rem; padding:.45rem; background:rgba(var(--accent-rgb),.05); border:1px solid rgba(var(--accent-rgb),.16); border-radius:14px; width:max-content; max-width:100%; scroll-margin-top:96px; }
+.cy-co-nav-btn { display:inline-flex; align-items:center; gap:8px; padding:.6rem 1.35rem; border-radius:10px; font-weight:800; font-size:.85rem; color:rgba(255,255,255,.55); text-decoration:none; border:1px solid transparent; cursor:pointer; transition:all .25s ease; white-space:nowrap; }
+.cy-co-nav-btn i { font-size:.85rem; }
+.cy-co-nav-btn:hover { color:rgba(255,255,255,.9); background:rgba(var(--accent-rgb),.1); }
+.cy-co-nav-btn.active { color:var(--accent); background:rgba(var(--accent-rgb),.14); border-color:rgba(var(--accent-rgb),.35); box-shadow:0 0 18px rgba(var(--accent-rgb),.15); }
+#cy-info, #cy-services { scroll-margin-top:92px; }
+@media (max-width: 760px) {
+  .cy-co-nav { width:100%; }
+  .cy-co-nav-btn { flex:1; justify-content:center; padding:.55rem .8rem; font-size:.78rem; }
+}

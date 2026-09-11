@@ -661,7 +661,7 @@ router.delete('/properties/:id', checkPermission('properties_delete'), async (re
 // Company Items API
 router.post('/company/items', checkPermission('company_edit'), async (req, res) => {
   try {
-    const { title, description, category, video_url, service_status } = req.body;
+    const { title, description, category, video_url, service_status, icon } = req.body;
     let image = '';
     if (req.files && req.files.image_file && req.files.image_file.size > 0) {
       const file = req.files.image_file;
@@ -672,15 +672,15 @@ router.post('/company/items', checkPermission('company_edit'), async (req, res) 
       await file.mv(uploadDir + '/' + fname);
       image = '/uploads/company/' + fname;
     }
-    await db.execute('INSERT INTO company_items (title, description, image, video_url, category, service_status, sort_order) VALUES (?, ?, ?, ?, ?, ?, 0)',
-      [title, description || '', image, video_url || '', category || 'info', service_status || null]);
+    await db.execute('INSERT INTO company_items (title, description, image, video_url, category, service_status, icon, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, 0)',
+      [title, description || '', image, video_url || '', category || 'info', service_status || null, (icon || '').trim()]);
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 router.put('/company/items/:id', checkPermission('company_edit'), async (req, res) => {
   try {
-    const { title, description, category, video_url, service_status } = req.body;
+    const { title, description, category, video_url, service_status, icon } = req.body;
     const [existing] = await db.execute('SELECT image FROM company_items WHERE id = ?', [req.params.id]);
     let image = existing.length ? existing[0].image : '';
     const hasNewFile = req.files && req.files.image_file && req.files.image_file.size > 0;
@@ -697,8 +697,8 @@ router.put('/company/items/:id', checkPermission('company_edit'), async (req, re
       await file.mv(uploadDir + '/' + fname);
       image = '/uploads/company/' + fname;
     }
-    await db.execute('UPDATE company_items SET title=?, description=?, image=?, video_url=?, category=?, service_status=? WHERE id=?',
-      [title, description || '', image, video_url || '', category || 'info', service_status || null, req.params.id]);
+    await db.execute('UPDATE company_items SET title=?, description=?, image=?, video_url=?, category=?, service_status=?, icon=? WHERE id=?',
+      [title, description || '', image, video_url || '', category || 'info', service_status || null, (icon || '').trim(), req.params.id]);
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
