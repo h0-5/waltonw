@@ -16,7 +16,55 @@
 .bot-quick-msgs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .bot-quick-msg{padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-dim);cursor:pointer;font-size:11px;font-family:inherit;transition:all .2s}
 .bot-quick-msg:hover{background:rgba(var(--ac-rgb),.1);color:var(--ac);border-color:var(--ac)}
+/* روابط ويبهوك الإشعارات */
+.wh-help{margin-bottom:14px;padding:12px 14px;border-radius:10px;background:rgba(var(--ac-rgb),.06);border:1px solid rgba(var(--ac-rgb),.18);font-size:12.5px;line-height:2;color:var(--text-dim)}
+.wh-help b{color:var(--text)}
+.wh-help ol{margin:6px 18px 0 0;padding:0}
+.wh-row{padding:12px;border:1px solid var(--border);border-radius:10px;margin-bottom:10px;background:rgba(255,255,255,.02)}
+.wh-row-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.wh-label{font-size:13px;font-weight:700;color:var(--text)}
+.wh-key{font-family:monospace;font-size:10.5px;padding:2px 7px;border-radius:5px;background:rgba(var(--ac-rgb),.12);color:var(--ac);border:1px solid rgba(var(--ac-rgb),.25)}
+.wh-src{font-size:10.5px;padding:2px 8px;border-radius:5px;border:1px solid transparent}
+.wh-src.db{background:rgba(34,197,94,.12);color:#22c55e;border-color:rgba(34,197,94,.3)}
+.wh-src.env{background:rgba(59,130,246,.12);color:#60a5fa;border-color:rgba(59,130,246,.3)}
+.wh-src.none{background:rgba(239,68,68,.12);color:#f87171;border-color:rgba(239,68,68,.3)}
+.wh-row-body{display:flex;gap:8px}
+.wh-row-body input{flex:1;min-width:0;padding:9px 12px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:monospace;font-size:12px}
+.wh-row-body input:focus{outline:none;border-color:var(--ac)}
+.wh-test-btn{padding:9px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s}
+.wh-test-btn:hover{border-color:var(--ac);color:var(--ac)}
+.wh-test-btn:disabled{opacity:.5;cursor:not-allowed}
+.wh-test-result{margin-top:7px;font-size:11.5px;display:none;padding:6px 10px;border-radius:7px}
+.wh-test-result.ok{display:block;background:rgba(34,197,94,.1);color:#22c55e;border:1px solid rgba(34,197,94,.25)}
+.wh-test-result.err{display:block;background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.25)}
+.wh-more{margin-top:4px}
+.wh-more summary{cursor:pointer;font-size:12.5px;font-weight:700;color:var(--text-dim);padding:8px 0;user-select:none}
+.wh-more summary:hover{color:var(--ac)}
+.wh-more[open] summary{color:var(--ac)}
+.wh-save-result{margin-top:12px;padding:10px;border-radius:8px;font-size:12px;display:none}
+.wh-save-result.success{display:block;background:rgba(34,197,94,.1);color:#22c55e;border:1px solid rgba(34,197,94,.2)}
+.wh-save-result.error{display:block;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2)}
+@media(max-width:600px){.wh-row-body{flex-direction:column}.wh-test-btn{width:100%}}
 </style>
+
+<!-- روابط ويبهوك الإشعارات -->
+<div class="bot-notify-card" style="margin-bottom:20px">
+  <h3><i class="fas fa-link"></i> روابط ويبهوك الإشعارات — الصق الرابط واحفظ بدون Railway</h3>
+  <details class="wh-help" open>
+    <summary style="cursor:pointer;font-weight:700;color:var(--text);user-select:none">📌 كيف أسوي رابط ويبهوك من ديسكورد؟ (اضغط للفتح/الطي)</summary>
+    <ol>
+      <li>افتح <b>ديسكورد</b> وادخل سيرفرك</li>
+      <li>اضغط <b>اسم السيرفر</b> (فوق) ← <b>إعدادات السيرفر</b></li>
+      <li>من القائمة الجانبية: <b>التكاملات</b> ← <b>ويبهوكات الويب</b></li>
+      <li>اضغط <b>«ويبهوك جديد»</b> وسمّه (مثال: اشعارات والتون) واختر <b>القناة</b> اللي تبي الإشعارات تجي فيها</li>
+      <li>اضغط <b>«نسخ رابط الويبهوك»</b></li>
+      <li>ارجع هنا — الصق الرابط في خانته تحت واضغط <b>حفظ الروابط</b> — وجرب زر <b>تجربة</b> بتوصلك رسالة بالقناة فوراً</li>
+    </ol>
+  </details>
+  <div id="whList" style="margin-top:14px"><span style="font-size:12px;color:var(--text-dim)">جاري التحميل...</span></div>
+  <button class="bot-send-btn" onclick="whSave()" id="whSaveBtn"><i class="fas fa-floppy-disk"></i> حفظ الروابط</button>
+  <div class="wh-save-result" id="whSaveResult"></div>
+</div>
 
 <div class="bot-notify-grid">
   <!-- Send to Channel -->
@@ -120,6 +168,117 @@ async function sendDM() {
   }
   btn.disabled = false;
 }
+
+/* ===== روابط ويبهوك الإشعارات ===== */
+const WH_LABELS = {
+  WH_FARM: 'إشعارات المزارع (الحجوزات والعربون والنص الثاني)',
+  WH_COMPANY: 'إشعارات خدمات الشركة (الطلبات والتأكيدات)',
+  WH_ADMIN_LOG: 'سجل عمليات الإدارة',
+  WH_APPLICATIONS: 'طلبات الانضمام — جديدة',
+  WH_APP_NOTIFY: 'تنبيهات مراجعة الطلبات',
+  WH_FAMILY_STORE: 'متجر العائلة',
+  WH_PRODUCTS: 'المنتجات والطلبات',
+  WH_SUPPORT_LOG: 'سجل التذاكر',
+  WH_SUPPORT_NOTIFY: 'تنبيهات التذاكر الجديدة',
+  WH_CONTENT: 'تعديلات المحتوى والإخبار',
+  WH_NEW_ACCOUNT: 'تسجيلات الحسابات الجديدة',
+  WH_STAFF_CHAT: 'محادثة الطاقم',
+  WH_ROLE_CHANGE: 'تغييرات الرتب',
+  WH_STAFF_PERMS: 'صلاحيات الطاقم',
+  WH_COMMUNITY: 'نشاطات المجتمع',
+  WH_ABOUT: 'تعديلات صفحة من نحن',
+  WH_APP_SETTINGS: 'تغييرات إعدادات الطلبات',
+  WH_BROADCAST: 'الإذاعات',
+  WH_STAFF: 'إشعارات الطاقم',
+  WH_SHOP: 'المتجر'
+};
+const WH_PRIMARY = ['WH_FARM', 'WH_COMPANY', 'WH_ADMIN_LOG'];
+let whItems = [];
+
+function whEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function whSrcBadge(s) {
+  if (s === 'db') return '<span class="wh-src db">محفوظ بالموقع</span>';
+  if (s === 'env') return '<span class="wh-src env">من متغيرات Railway</span>';
+  return '<span class="wh-src none">غير مضبوط — ما راح توصل إشعارات</span>';
+}
+function whRow(w) {
+  return '<div class="wh-row" data-key="' + w.key + '">' +
+    '<div class="wh-row-head"><span class="wh-label">' + whEsc(WH_LABELS[w.key] || w.key) + '</span>' +
+    '<span class="wh-key">' + w.key + '</span>' + whSrcBadge(w.source) + '</div>' +
+    '<div class="wh-row-body"><input type="text" dir="ltr" data-key="' + w.key + '" placeholder="https://discord.com/api/webhooks/..." value="' + whEsc(w.url) + '" spellcheck="false">' +
+    '<button class="wh-test-btn" onclick="whTest(\'' + w.key + '\', this)"><i class="fas fa-vial"></i> تجربة</button></div>' +
+    '<div class="wh-test-result" id="whRes_' + w.key + '"></div></div>';
+}
+function whRender() {
+  const prim = whItems.filter(w => WH_PRIMARY.includes(w.key));
+  const rest = whItems.filter(w => !WH_PRIMARY.includes(w.key));
+  let html = prim.map(whRow).join('');
+  if (rest.length) {
+    html += '<details class="wh-more"><summary><i class="fas fa-sliders"></i> قنوات أخرى (' + rest.length + ') — للإشعارات الثانوية</summary>' + rest.map(whRow).join('') + '</details>';
+  }
+  document.getElementById('whList').innerHTML = html;
+}
+async function whLoad() {
+  try {
+    const res = await fetch('/api/admin/webhook-settings');
+    const data = await res.json();
+    if (!data.success) { document.getElementById('whList').innerHTML = '<span style="font-size:12px;color:#f87171">خطأ في التحميل: ' + whEsc(data.error || '') + '</span>'; return; }
+    whItems = data.webhooks || [];
+    whRender();
+  } catch(e) {
+    document.getElementById('whList').innerHTML = '<span style="font-size:12px;color:#f87171">خطأ في الاتصال</span>';
+  }
+}
+async function whSave() {
+  const btn = document.getElementById('whSaveBtn');
+  const box = document.getElementById('whSaveResult');
+  const urls = {};
+  document.querySelectorAll('#whList input[data-key]').forEach(i => { urls[i.dataset.key] = i.value.trim(); });
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/admin/webhook-settings', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ urls }) });
+    const data = await res.json();
+    if (data.success) {
+      const bad = (data.invalid || []);
+      if (bad.length) {
+        box.className = 'wh-save-result error';
+        box.textContent = '⚠️ حُفظ ' + (data.saved || []).length + ' رابط — لكن هذي المفاتيح فيها روابط غير صالحة (تأكد إن الرابط منسوخ كامل): ' + bad.join(', ');
+      } else {
+        box.className = 'wh-save-result success';
+        box.textContent = '✅ تم الحفظ — الإشعارات راح تروح على الروابط الجديدة خلال دقيقة كأقصى تقدير' + ((data.cleared || []).length ? ' (وتم مسح: ' + data.cleared.join(', ') + ')' : '');
+      }
+    } else {
+      box.className = 'wh-save-result error';
+      box.textContent = data.error || 'خطأ في الحفظ';
+    }
+  } catch(e) {
+    box.className = 'wh-save-result error';
+    box.textContent = 'خطأ في الاتصال';
+  }
+  btn.disabled = false;
+}
+async function whTest(key, btn) {
+  const input = document.querySelector('#whList input[data-key="' + key + '"]');
+  const box = document.getElementById('whRes_' + key);
+  btn.disabled = true;
+  box.className = 'wh-test-result';
+  try {
+    const res = await fetch('/api/admin/webhook-test', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ key, url: input ? input.value.trim() : '' }) });
+    const data = await res.json();
+    if (data.success) {
+      box.className = 'wh-test-result ok';
+      box.textContent = '✅ وصلت رسالة تجربة للقناة — الرابط شغال';
+    } else {
+      box.className = 'wh-test-result err';
+      box.textContent = '❌ ' + (data.error || 'فشل الإرسال');
+    }
+  } catch(e) {
+    box.className = 'wh-test-result err';
+    box.textContent = '❌ خطأ في الاتصال';
+  }
+  btn.disabled = false;
+}
+whLoad();
 
 loadChannels();
 </script>

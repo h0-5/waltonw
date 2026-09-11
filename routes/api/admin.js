@@ -2,7 +2,7 @@
 const router = express.Router();
 const db = require('../../config/database');
 const { isAdmin, checkPermission } = require('../../middleware/auth');
-const { sendWebhook } = require('../../utils/webhooks');
+const { sendWebhook, sendTestWebhook, refreshWebhookUrls, isDiscordWebhookUrl, logAdminAction } = require('../../utils/webhooks');
 const webhooks = require('../../config/webhooks');
 
 /* إشعار قناة الشركة بالويبهوك (طلب خدمات الشركة) */
@@ -367,6 +367,63 @@ router.post('/settings', checkPermission('site_settings_edit'), async (req, res)
     if (app.invalidateSettingsCache) app.invalidateSettingsCache();
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== Webhook Settings — روابط ويبهوك الإشعارات من لوحة الإدارة (بدون Railway) =====
+router.get('/webhook-settings', checkPermission('site_settings_edit'), async (req, res) => {
+  try {
+    await refreshWebhookUrls();
+    const list = Object.keys(webhooks)
+      .filter(k => /^WH_[A-Z_]+$/.test(k) && k !== 'WH_PROXY')
+      .map(k => ({ key: k, url: webhooks[k] || '', source: webhooks._sources[k] || (webhooks[k] ? 'env' : 'none') }));
+    // الأساسية أولاً (المزارع + الشركة + سجل الإدارة) ثم الباقي أبجدياً
+    const prio = ['WH_FARM', 'WH_COMPANY', 'WH_ADMIN_LOG'];
+    list.sort((a, b) => {
+      const ia = prio.indexOf(a.key), ib = prio.indexOf(b.key);
+      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib) || a.key.localeCompare(b.key);
+    });
+    res.json({ success: true, webhooks: list });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.post('/webhook-settings', checkPermission('site_settings_edit'), async (req, res) => {
+  try {
+    const urls = (req.body && req.body.urls) || {};
+    const saved = [], cleared = [], invalid = [];
+    for (const [key, raw] of Object.entries(urls)) {
+      if (!/^WH_[A-Z_]+$/.test(key) || key === 'WH_PROXY') continue;
+      const val = String(raw || '').trim();
+      if (!val) {
+        // حقل فاضي = مسح الرابط المحفوظ والرجوع لمتغير البيئة (إن وجد)
+        await db.execute('DELETE FROM site_settings WHERE setting_key = ?', ['wh_url_' + key]);
+        cleared.push(key);
+        continue;
+      }
+      if (!isDiscordWebhookUrl(val)) { invalid.push(key); continue; }
+      await db.execute(
+        'INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?',
+        ['wh_url_' + key, val, val]
+      );
+      saved.push(key);
+    }
+    await refreshWebhookUrls();
+    if (saved.length || cleared.length) {
+      logAdminAction(req.user.id, req.user.username, 'webhook_settings', '', null, '',
+        'حدّث روابط الويبهوك — حفظ: [' + saved.join(', ') + '] مسح: [' + cleared.join(', ') + ']' +
+        (invalid.length ? ' — مرفوض (رابط غير صالح): [' + invalid.join(', ') + ']' : ''), req.ip || '');
+    }
+    res.json({ success: true, saved, cleared, invalid });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.post('/webhook-test', checkPermission('site_settings_edit'), async (req, res) => {
+  try {
+    const key = String((req.body && req.body.key) || '');
+    if (!/^WH_[A-Z_]+$/.test(key) || key === 'WH_PROXY') return res.status(400).json({ success: false, error: 'مفتاح غير معروف' });
+    const url = String((req.body && req.body.url) || '').trim();
+    const result = await sendTestWebhook(key, url || null);
+    res.json(result.ok ? { success: true } : { success: false, error: result.error });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 // Notifications API

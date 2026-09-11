@@ -541,6 +541,15 @@ async function start() {
     await seedRuleStagesIfEmpty();
   } catch (e) { console.log('⚠️ rule_stages self-heal failed:', e.message); }
 
+  // روابط الويبهوك المحفوظة من لوحة الإدارة (site_settings) تتغلب على متغيرات Railway —
+  // تحميل عند الإقلاع + تحديث كل دقيقة عشان أي تعديل من اللوحة ينطبق بدون إعادة نشر
+  try {
+    const { refreshWebhookUrls } = require('./utils/webhooks');
+    await refreshWebhookUrls();
+    setInterval(() => { require('./utils/webhooks').refreshWebhookUrls().catch(() => {}); }, 60 * 1000);
+    console.log('✅ Webhook URLs loaded (DB overrides + Railway env)');
+  } catch (e) { console.log('⚠️ webhook URLs load failed:', e.message); }
+
   // نظام استئجار المزارع — إنشاء الجداول (شفاء ذاتي) + تشغيل المهام الدورية
   // (مهلة الدفع كل دقيقة / التنبيه الساعي لإضافة المستأجر للفاكشن)
   try {
