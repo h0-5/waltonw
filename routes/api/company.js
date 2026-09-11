@@ -16,7 +16,7 @@ const webhooks = require('../../config/webhooks');
 const REQ_STATUS_AR = { pending: 'بانتظار المراجعة', approved: 'مقبول', rejected: 'مرفوض' };
 const MAX_PENDING_PER_USER = 5;
 /* وسم البناء — يظهر برسالة الخطأ وويبهوك التشخيص حتى نعرف أن نسخة السايت محدّثة فعلاً */
-const SVC_BUILD = 'svc-b7';
+const SVC_BUILD = 'svc-b8';
 /* نفس نمط أسماء الشخصيات بنظام المزرعة — الاسم الكامل مطلوب بأسئلة الخدمات */
 const NAME_RE = /^[A-Za-z]{2,16}_[A-Za-z]{2,16}(_[A-Za-z]{2,16})?$/;
 
@@ -109,6 +109,11 @@ function toIso(s) {
   return isNaN(d.getTime()) ? null : d.toISOString();
 }
 
+/* توقيت القاعدة بصيغة +03 (نفس نمط المزارع) */
+function toDbDT(d) {
+  return new Date(d.getTime() + 3 * 3600e3).toISOString().slice(0, 19).replace('T', ' ');
+}
+
 function parseAnswers(raw) {
   try {
     const arr = JSON.parse(raw || '[]');
@@ -116,18 +121,30 @@ function parseAnswers(raw) {
   } catch (e) { return []; }
 }
 
-/* تعريفات أعمدة service_requests — تستخدم بالشفاء الذكي عند فشل الإدراج بعمود ناقص */
+/* تعريفات أعمدة service_requests — تستخدم بالشفاء الذكي عند فشل الإدراج بعمود ناقص أو بلا قيمة افتراضية */
 const REQ_COL_DEFS = {
   user_id: 'user_id INT NULL',
   service_id: 'service_id INT NULL',
   answers: 'answers JSON NULL',
   status: "status VARCHAR(20) DEFAULT 'pending'",
-  created_at: 'created_at DATETIME DEFAULT CURRENT_TIMESTAMP',
+  created_at: 'created_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP',
   total_price: 'total_price DECIMAL(10,2) DEFAULT 0',
   package_id: 'package_id INT DEFAULT 0',
   admin_id: 'admin_id INT NULL',
   reviewed_at: 'reviewed_at DATETIME NULL'
 };
+
+/* شفاء «Field 'X' doesn't have a default value» — الجداول القديمة تنشئ أعمدة NOT NULL بلا افتراضي
+   نقرأ نوع العمود الحالي ونعيد تعريفه NULL — وcreated_at نعطيه DEFAULT CURRENT_TIMESTAMP */
+async function healNoDefault(col) {
+  const [c] = await db.query('SHOW COLUMNS FROM `service_requests` LIKE ?', [col]);
+  if (!c.length) return false;
+  const type = c[0].Type || 'VARCHAR(255)';
+  const suffix = col === 'created_at' ? ' NULL DEFAULT CURRENT_TIMESTAMP' : ' NULL';
+  await db.query('ALTER TABLE `service_requests` MODIFY `' + col + '` ' + type + suffix);
+  console.log('🔧 company-schema: service_requests.' + col + ' صار يقبل NULL' + (col === 'created_at' ? ' + DEFAULT CURRENT_TIMESTAMP' : ''));
+  return true;
+}
 
 /* ويبهوك تشخيصي — يوصل الإدارة تفاصيل أي فشل بتقديم طلب (القناة: سجل الإدارة ثم الشركة ثم المزرعة) */
 function reportSvcFailure(req, e, extra) {
@@ -227,21 +244,35 @@ router.post('/service-request', isAuthenticated, async (req, res) => {
       }
     }
 
-    const insSql = 'INSERT INTO service_requests (service_id, user_id, answers, status, total_price, package_id) VALUES (?, ?, ?, ?, ?, ?)';
-    const insParams = [serviceId, req.user.id, JSON.stringify(answers), 'pending', totalPrice, packageId || 0];
+    const insSql = 'INSERT INTO service_requests (service_id, user_id, answers, status, total_price, package_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)';
+    const insParams = [serviceId, req.user.id, JSON.stringify(answers), 'pending', totalPrice, packageId || 0, toDbDT(new Date())];
     let ins;
     try {
       [ins] = await db.execute(insSql, insParams);
     } catch (ie) {
-      /* شفاء ذكي: عمود ناقص انكشف من رسالة الخطأ → نضيفه ونعيد المحاولة مرة واحدة */
-      if (ie && (ie.code === 'ER_BAD_FIELD_ERROR') && ie.sqlMessage) {
-        const m = /Unknown column '([^']+)'/.exec(String(ie.sqlMessage));
-        if (m && REQ_COL_DEFS[m[1]]) {
-          console.log('🔧 company-api: عمود ناقص انكشف بالإدراج —', m[1]);
-          await ensureColumn('service_requests', m[1], REQ_COL_DEFS[m[1]]);
-          [ins] = await db.execute(insSql, insParams);
-        } else { throw ie; }
-      } else { throw ie; }
+      /* شفاء ذكي — نستخرج سبب الفشل من رسالة SQL ونعالجه ونعيد المحاولة مرة واحدة:
+         ER_BAD_FIELD_ERROR (عمود ناقص) → نضيفه من REQ_COL_DEFS
+         ER_NO_DEFAULT_FOR_FIELD (عمود NOT NULL بلا افتراضي) → نخليه يقبل NULL ونعيد */
+      let healed = false;
+      if (ie && ie.sqlMessage) {
+        const sql = String(ie.sqlMessage);
+        if (ie.code === 'ER_BAD_FIELD_ERROR') {
+          const m = /Unknown column '([^']+)'/.exec(sql);
+          if (m && REQ_COL_DEFS[m[1]]) {
+            console.log('🔧 company-api: عمود ناقص انكشف بالإدراج —', m[1]);
+            await ensureColumn('service_requests', m[1], REQ_COL_DEFS[m[1]]);
+            healed = true;
+          }
+        } else if (ie.code === 'ER_NO_DEFAULT_FOR_FIELD') {
+          const m = /Field '([^']+)' doesn't have a default value/.exec(sql);
+          if (m) {
+            console.log('🔧 company-api: عمود بلا قيمة افتراضية انكشف بالإدراج —', m[1]);
+            healed = await healNoDefault(m[1]);
+          }
+        }
+      }
+      if (!healed) throw ie;
+      [ins] = await db.execute(insSql, insParams);
     }
 
     // ويبهوك للإدارة — بمنشن مباشر للشخص الكبير مع كل طلب جديد
