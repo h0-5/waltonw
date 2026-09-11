@@ -1,6 +1,47 @@
 const REQUIRED_GUILD_ID = process.env.DISCORD_GUILD_ID || '1476232552564916387';
 const JOIN_LINK = 'https://discord.gg/dkhSKu8hHF';
 
+/* ── كاشات الأدوار (تخفيف Railway) ──
+   كانت كل زيارة صفحة تبعث 2-3 استعلامات (roles + role_page_access + role_role_permissions).
+   الكاش مشترك لكل الرولات بتواقيع 60 ثانية — نفس سلوك كاش النافبار الموجود (rolePermCache)
+   — تعديل صلاحيات من اللوحة ينعكس خلال أقل من دقيقة بدون أي استعلام إضافي بالطلبات العادية */
+const ROLE_TTL = 60 * 1000;
+const roleInfoCache = new Map();       // name -> { id, is_admin_role, at }
+const rolePageAccessCache = new Map(); // role_id -> { map: Map(page_path -> 0/1), at }
+const roleKeyPermCache = new Map();    // role_id -> { set: Set(enabled keys), at }
+setInterval(() => {
+  const now = Date.now();
+  roleInfoCache.forEach((v, k) => { if (now - v.at > ROLE_TTL) roleInfoCache.delete(k); });
+  rolePageAccessCache.forEach((v, k) => { if (now - v.at > ROLE_TTL) rolePageAccessCache.delete(k); });
+  roleKeyPermCache.forEach((v, k) => { if (now - v.at > ROLE_TTL) roleKeyPermCache.delete(k); });
+}, 60 * 1000).unref();
+function roleInfoValid(e) { return e && (Date.now() - e.at) < ROLE_TTL; }
+async function getRoleInfo(db, name) {
+  const hit = roleInfoCache.get(name);
+  if (roleInfoValid(hit)) return hit;
+  const [rows] = await db.execute('SELECT id, is_admin_role FROM roles WHERE name = ?', [name]);
+  const info = rows.length ? { id: rows[0].id, is_admin_role: rows[0].is_admin_role, at: Date.now() } : { missing: true, at: Date.now() };
+  roleInfoCache.set(name, info);
+  return info;
+}
+async function getRolePageAccess(db, roleId) {
+  const hit = rolePageAccessCache.get(roleId);
+  if (hit && (Date.now() - hit.at) < ROLE_TTL) return hit.map;
+  const [rows] = await db.execute('SELECT page_path, can_access FROM role_page_access WHERE role_id = ?', [roleId]);
+  const map = new Map();
+  rows.forEach(r => map.set(r.page_path, r.can_access ? 1 : 0));
+  rolePageAccessCache.set(roleId, { map, at: Date.now() });
+  return map;
+}
+async function getRoleKeyPerms(db, roleId) {
+  const hit = roleKeyPermCache.get(roleId);
+  if (hit && (Date.now() - hit.at) < ROLE_TTL) return hit.set;
+  const [rows] = await db.execute('SELECT permission_key FROM role_role_permissions WHERE role_id = ? AND enabled = 1', [roleId]);
+  const set = new Set(rows.map(r => r.permission_key));
+  roleKeyPermCache.set(roleId, { set, at: Date.now() });
+  return set;
+}
+
 // Dead-token cooldown — when Discord replies 401/403 the bot token is invalid:
 // stop paying a doomed API roundtrip on EVERY authed page load. One retry per
 // 5 min keeps self-healing once a fresh token lands in Railway variables.
@@ -133,11 +174,9 @@ const isAdmin = (req, res, next) => {
   }
 
   const db = require('../config/database');
-  db.execute('SELECT * FROM roles WHERE name = ?', [req.user.role])
-    .then(([role]) => {
-      if (role.length > 0 && role[0].is_admin_role === 1) {
-        return next();
-      }
+  getRoleInfo(db, req.user.role)
+    .then((role) => {
+      if (!role.missing && role.is_admin_role === 1) return next();
       return res.status(403).render('pages/error', {
         title: 'غير مصرح',
         error: 'ليس لديك صلاحية للوصول لهذه الصفحة'
@@ -236,20 +275,16 @@ const checkPermission = (permissionKey) => {
     if (req.user.role === 'owner') return next();
 
     const db = require('../config/database');
-    db.execute('SELECT id, is_admin_role FROM roles WHERE name = ?', [req.user.role])
-      .then(([role]) => {
-        if (!role.length) {
+    getRoleInfo(db, req.user.role)
+      .then(async (role) => {
+        if (role.missing) {
           if (ADMIN_ROLES.includes(req.user.role)) return next();
           return checkSideRolePermission(db, req.user.id, permissionKey, next, res);
         }
-        if (role[0].is_admin_role) return next();
-        return db.execute(
-          'SELECT enabled FROM role_role_permissions WHERE role_id = ? AND permission_key = ?',
-          [role[0].id, permissionKey]
-        ).then(([perm]) => {
-          if (perm && perm.length && perm[0].enabled) return next();
-          return checkSideRolePermission(db, req.user.id, permissionKey, next, res);
-        });
+        if (role.is_admin_role) return next();
+        const perms = await getRoleKeyPerms(db, role.id);
+        if (perms.has(permissionKey)) return next();
+        return checkSideRolePermission(db, req.user.id, permissionKey, next, res);
       })
       .catch((err) => {
         console.error('checkPermission error:', err.message);
@@ -282,14 +317,11 @@ async function userHasPermission(userId, permissionKey) {
   const [user] = await db.execute('SELECT role FROM users WHERE id = ?', [userId]);
   if (!user.length) return false;
   if (user[0].role === 'owner') return true;
-  const [role] = await db.execute('SELECT id, is_admin_role FROM roles WHERE name = ?', [user[0].role]);
-  if (!role.length) return false;
-  if (role[0].is_admin_role) return true;
-  const [perm] = await db.execute(
-    'SELECT enabled FROM role_role_permissions WHERE role_id = ? AND permission_key = ?',
-    [role[0].id, permissionKey]
-  );
-  if (perm.length > 0 && perm[0].enabled === 1) return true;
+  const role = await getRoleInfo(db, user[0].role);
+  if (role.missing) return false;
+  if (role.is_admin_role) return true;
+  const perms = await getRoleKeyPerms(db, role.id);
+  if (perms.has(permissionKey)) return true;
   try {
     const [srPerm] = await db.execute(
       'SELECT srp.enabled FROM side_role_permissions srp JOIN user_side_roles usr ON srp.side_role_id = usr.side_role_id WHERE usr.user_id = ? AND srp.permission_key = ? AND srp.enabled = 1',
@@ -313,20 +345,16 @@ const checkPageAccess = (pagePath) => {
     if (req.user.role === 'owner') return next();
 
     const db = require('../config/database');
-    db.execute('SELECT id, is_admin_role FROM roles WHERE name = ?', [req.user.role])
-      .then(([role]) => {
-        if (!role.length) return checkSideRolePageAccess(db, req.user.id, pagePath, next, res);
-        if (role[0].is_admin_role) return next();
-        return db.execute(
-          'SELECT can_access FROM role_page_access WHERE role_id = ? AND page_path = ?',
-          [role[0].id, pagePath]
-        ).then(([rows]) => {
-          if (!rows || !rows.length) {
-            return checkSideRolePageAccess(db, req.user.id, pagePath, next, res);
-          }
-          if (rows[0].can_access) return next();
-          return denyAccess(res);
-        });
+    getRoleInfo(db, req.user.role)
+      .then(async (role) => {
+        if (role.missing) return checkSideRolePageAccess(db, req.user.id, pagePath, next, res);
+        if (role.is_admin_role) return next();
+        const accessMap = await getRolePageAccess(db, role.id);
+        if (!accessMap.has(pagePath)) {
+          return checkSideRolePageAccess(db, req.user.id, pagePath, next, res);
+        }
+        if (accessMap.get(pagePath)) return next();
+        return denyAccess(res);
       })
       .catch(() => next());
   };

@@ -16,6 +16,10 @@ const baseConfig = {
   charset: 'utf8mb4',
   waitForConnections: true,
   connectionLimit: 10,
+  /* تخفيف Railway: الاتصالات الخاملة تنسكر بعد دقيقة — ما تنحجز مقاعد/ذاكرة بلا داعي
+     (maxIdle أقل من connectionLimit يخلي الذروة ممكنة والراحة موفرة) */
+  maxIdle: 4,
+  idleTimeout: 60000,
   queueLimit: 0,
   enableKeepAlive: true,
   keepAliveInitialDelay: 0,

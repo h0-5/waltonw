@@ -78,6 +78,90 @@ function getCookie(header, name) {
   return null;
 }
 
+/* ── تحزئة الكتابة (تخفيف Railway) ──
+   كل زيارة كانت تبعث 1-2 INSERT للقاعدة على مسار الطلب. الحين: العدادات تتجمع بالذاكرة
+   وتنمسك دفعة واحدة كل 30 ثانية (upsert مجمّع لكل مسار + IGNORE مجمّع للزوار) —
+   نفس الأرقام بالضبط (فقد محتمل ≤30 ثانية عند إعادة نشر فقط) بدون أي حمل على الطلبات */
+const bufSiteViews = new Map();   // 'date|path' -> count
+const bufBotViews = new Map();    // 'date|path' -> count
+const bufUniques = new Set();     // 'date|vid'
+const BUF_LIMIT = 20000;          // حاجم RAM لو القاعدة طاحت فترة طويلة
+let flushing = false;
+
+function bufKey(prefix, path) { return prefix + '|' + path; }
+/* تاريخ اليوم بتوقيت +03 — نفس سلوك CURDATE() بالقاعدة (timezone +03:00) عشان الأيام تستمر بنفس الفواصل */
+function localDate() { return new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10); }
+
+async function flushAnalytics(force) {
+  if (flushing) return;
+  if (!bufSiteViews.size && !bufBotViews.size && !bufUniques.size) return;
+  flushing = true;
+  const siteRows = [];
+  bufSiteViews.forEach((n, k) => { const i = k.indexOf('|'); siteRows.push([k.slice(0, i), k.slice(i + 1), n]); });
+  const botRows = [];
+  bufBotViews.forEach((n, k) => { const i = k.indexOf('|'); botRows.push([k.slice(0, i), k.slice(i + 1), n]); });
+  const uniqRows = [];
+  bufUniques.forEach(k => { const i = k.indexOf('|'); uniqRows.push([k.slice(0, i), k.slice(i + 1)]); });
+  if (force) { bufSiteViews.clear(); bufBotViews.clear(); bufUniques.clear(); }
+
+  try {
+    await ensureTables();
+    const upsert = (table, rows) => {
+      if (!rows.length) return Promise.resolve();
+      const chunks = [];
+      for (let i = 0; i < rows.length; i += 100) chunks.push(rows.slice(i, i + 100));
+      return chunks.reduce((p, chunk) => p.then(() => db.execute(
+        `INSERT INTO ${table} (visit_date, path, views) VALUES ${chunk.map(() => '(?, ?, ?)').join(', ')}
+         ON DUPLICATE KEY UPDATE views = views + VALUES(views)`,
+        chunk.flat()
+      )), Promise.resolve());
+    };
+    await upsert('site_visits', siteRows);
+    await upsert('bot_visits', botRows);
+    if (uniqRows.length) {
+      for (let i = 0; i < uniqRows.length; i += 200) {
+        const chunk = uniqRows.slice(i, i + 200);
+        await db.execute(
+          `INSERT IGNORE INTO visit_uniques (visit_date, visitor_id) VALUES ${chunk.map(() => '(?, ?)').join(', ')}`,
+          chunk.flat()
+        );
+      }
+    }
+    if (!force) {
+      /* نحسم فقط ما كان في اللقطة — اللي تجمّع أثناء الكتابة يبقى للدورة الجاية (بدون فقد) */
+      const settle = (buf, rows) => rows.forEach(([d, p, n]) => {
+        const k = d + '|' + p;
+        const left = (buf.get(k) || 0) - n;
+        if (left > 0) buf.set(k, left); else buf.delete(k);
+      });
+      settle(bufSiteViews, siteRows);
+      settle(bufBotViews, botRows);
+      uniqRows.forEach(([d, v]) => bufUniques.delete(d + '|' + v));
+    }
+    writeFailStreak = 0;
+    // تنظيف دوري خفيف — نفس النسبة السابقة
+    if (Math.random() < 0.02) {
+      db.execute('DELETE FROM visit_uniques WHERE visit_date < DATE_SUB(CURDATE(), INTERVAL 120 DAY)').catch(() => {});
+    }
+  } catch (err) {
+    writeFailStreak++;
+    const now = Date.now();
+    if (now - lastFailLog > 30000) {
+      lastFailLog = now;
+      console.error('[analytics] flush failed (x' + writeFailStreak + '):', err.message);
+    }
+  } finally {
+    flushing = false;
+  }
+}
+
+const flushTimer = setInterval(() => { flushAnalytics(false).catch(() => {}); }, 30 * 1000);
+flushTimer.unref();
+// تفريغ أخير عند الإيقاف المهذب — أقل فقد ممكن عند إعادة النشر
+function flushOnExit() { try { flushAnalytics(true).catch(() => {}); } catch (e) {} }
+process.once('SIGTERM', flushOnExit);
+process.once('SIGINT', flushOnExit);
+
 function trackVisit(req, res, next) {
   let shouldTrack = false;
   let isBotVisit = false;
@@ -120,45 +204,16 @@ function trackVisit(req, res, next) {
     if (req.method !== 'GET') return;
     if (res.statusCode !== 200 && !trackAnyStatus) return;
 
-    const writes = isBotVisit
-      ? [db.execute(
-          'INSERT INTO bot_visits (visit_date, path, views) VALUES (CURDATE(), ?, 1) ON DUPLICATE KEY UPDATE views = views + 1',
-          [cleanPath]
-        )]
-      : [
-        db.execute(
-          'INSERT INTO site_visits (visit_date, path, views) VALUES (CURDATE(), ?, 1) ON DUPLICATE KEY UPDATE views = views + 1',
-          [cleanPath]
-        ),
-        db.execute(
-          'INSERT IGNORE INTO visit_uniques (visit_date, visitor_id) VALUES (CURDATE(), ?)',
-          [vid]
-        )
-      ];
-
-    ensureTables()
-      .then(() => Promise.all(writes))
-      .then(() => {
-        writeFailStreak = 0;
-        // Occasional housekeeping: purge unique-visitor rows older than 120 days
-        if (!isBotVisit && Math.random() < 0.02) {
-          db.execute('DELETE FROM visit_uniques WHERE visit_date < DATE_SUB(CURDATE(), INTERVAL 120 DAY)')
-            .catch(() => {});
-        }
-      })
-      .catch(err => {
-        // Analytics must never break the site — but make failures visible
-        // (throttled) in the logs so problems like missing tables get noticed.
-        writeFailStreak++;
-        const now = Date.now();
-        if (now - lastFailLog > 30000) {
-          lastFailLog = now;
-          console.error('[analytics] write failed (x' + writeFailStreak + '):', err.message);
-        }
-      });
+    // تجميع بالذاكرة فقط — الصفر استعلامات على مسار الطلب
+    if (bufSiteViews.size + bufBotViews.size < BUF_LIMIT) {
+      const target = isBotVisit ? bufBotViews : bufSiteViews;
+      const k = bufKey(localDate(), cleanPath);
+      target.set(k, (target.get(k) || 0) + 1);
+      if (!isBotVisit && vid && bufUniques.size < BUF_LIMIT) bufUniques.add(localDate() + '|' + vid);
+    }
   });
 
   next();
 }
 
-module.exports = { trackVisit, ensureTables };
+module.exports = { trackVisit, ensureTables, flushAnalytics };

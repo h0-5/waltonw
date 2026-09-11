@@ -18,6 +18,65 @@ const MAX_PENDING_PER_USER = 5;
 /* نفس نمط أسماء الشخصيات بنظام المزرعة — الاسم الكامل مطلوب بأسئلة الخدمات */
 const NAME_RE = /^[A-Za-z]{2,16}_[A-Za-z]{2,16}(_[A-Za-z]{2,16})?$/;
 
+/* ── شفاء ذاتي لجداول خدمات الشركة (نفس نمط المزارع) ──
+   سبب جذري لعلة «خطأ بإرسال الطلب»: migrate() يتخطى على قواعد رقمها محدَّث (schema_version)،
+   فأعمدة service_requests المضافة لاحقاً (total_price/package_id/admin_id/reviewed_at)
+   ما تنطبق على قاعدة الإنتاج — وكل INSERT يفشل بـ ER_BAD_FIELD_ERROR.
+   هذا الضمان ينفذ عند الإقلاع وأول طلب API — بدون مساس بأي بيانات */
+let schemaReady = false;
+async function ensureColumn(table, col, def) {
+  const [c] = await db.query(`SHOW COLUMNS FROM \`${table}\` LIKE '${col}'`);
+  if (!c.length) {
+    await db.query(`ALTER TABLE \`${table}\` ADD COLUMN ${def}`);
+    console.log(`✅ company-schema: ${table}.${col} added`);
+  }
+}
+async function ensureCompanySchema() {
+  if (schemaReady) return;
+  await db.query(`CREATE TABLE IF NOT EXISTS company_items (
+    id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255), description TEXT, image TEXT,
+    video_url TEXT, category VARCHAR(100), sort_order INT DEFAULT 0,
+    service_status VARCHAR(20) DEFAULT 'active', icon VARCHAR(100) DEFAULT ''
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+  await db.query(`CREATE TABLE IF NOT EXISTS service_questions (
+    id INT AUTO_INCREMENT PRIMARY KEY, service_id INT, question TEXT,
+    type VARCHAR(50) DEFAULT 'text', sort_order INT DEFAULT 0, required TINYINT(1) DEFAULT 0
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+  await db.query(`CREATE TABLE IF NOT EXISTS service_packages (
+    id INT AUTO_INCREMENT PRIMARY KEY, service_id INT, name VARCHAR(255), price DECIMAL(10,2),
+    description TEXT, sort_order INT DEFAULT 0, days INT DEFAULT 0,
+    image_type VARCHAR(20) DEFAULT 'emoji', image_value VARCHAR(255) DEFAULT ''
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+  await db.query(`CREATE TABLE IF NOT EXISTS service_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, service_id INT, answers JSON,
+    status VARCHAR(20) DEFAULT 'pending', created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    total_price DECIMAL(10,2) DEFAULT 0, package_id INT DEFAULT 0,
+    admin_id INT NULL, reviewed_at DATETIME NULL
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+  /* أعمدة قد تنقص بقواعد قديمة — كل واحد بمحاولة مستقلة عشان عمود فاشل ما يوقف الباقي */
+  const cols = [
+    ['service_requests', 'total_price', 'total_price DECIMAL(10,2) DEFAULT 0'],
+    ['service_requests', 'package_id', 'package_id INT DEFAULT 0'],
+    ['service_requests', 'admin_id', 'admin_id INT NULL'],
+    ['service_requests', 'reviewed_at', 'reviewed_at DATETIME NULL'],
+    ['service_questions', 'required', 'required TINYINT(1) DEFAULT 0'],
+    ['service_packages', 'days', 'days INT DEFAULT 0'],
+    ['service_packages', 'image_type', "image_type VARCHAR(20) DEFAULT 'emoji'"],
+    ['service_packages', 'image_value', "image_value VARCHAR(255) DEFAULT ''"],
+    ['company_items', 'service_status', "service_status VARCHAR(20) DEFAULT 'active'"],
+    ['company_items', 'icon', "icon VARCHAR(100) DEFAULT ''"]
+  ];
+  for (const [t, c, def] of cols) {
+    try { await ensureColumn(t, c, def); } catch (e) { console.error(`[company-schema] ${t}.${c}:`, e.message); }
+  }
+  schemaReady = true;
+}
+
+router.use(async (req, res, next) => {
+  try { await ensureCompanySchema(); } catch (e) { console.error('[company-schema]:', e.message); }
+  next();
+});
+
 function notifyCompany(payload) {
   const key = webhooks.WH_COMPANY ? 'WH_COMPANY' : (webhooks.WH_FARM ? 'WH_FARM' : null);
   if (!key) return;
@@ -77,6 +136,16 @@ router.post('/service-request', isAuthenticated, async (req, res) => {
     // أسئلة الخدمة → إجابات حقيقية (نصوص + صور)
     const [qs] = await db.execute('SELECT * FROM service_questions WHERE service_id = ? ORDER BY sort_order ASC, id ASC', [serviceId]);
     const answers = [];
+    /* خدمة بدون أسئلة معرّفة: النافذة تعرض 3 حقول افتراضية (d_name/d_phone/d_notes) —
+       نحفظها هنا أيضاً عشان الإدارة تشوف إجابات الزبون بدل طلب فاضي */
+    if (!qs.length) {
+      const dName = String(req.body.sq_d_name || '').trim().slice(0, 1000);
+      const dPhone = String(req.body.sq_d_phone || '').trim().slice(0, 1000);
+      const dNotes = String(req.body.sq_d_notes || '').trim().slice(0, 1000);
+      if (dName) answers.push({ q: 'الاسم الكامل', a: dName, type: 'text' });
+      if (dPhone) answers.push({ q: 'رقم الجوال', a: dPhone, type: 'text' });
+      if (dNotes) answers.push({ q: 'ملاحظات', a: dNotes, type: 'text' });
+    }
     const uploadDir = path.join(__dirname, '../../public/uploads/company');
     for (const q of qs) {
       if (q.type === 'image') {
@@ -135,7 +204,7 @@ router.post('/service-request', isAuthenticated, async (req, res) => {
 
     res.json({ success: true, id: ins.insertId, message: 'تم إرسال طلبك بنجاح — راح تراجع الإدارة ويتواصلون معك' });
   } catch (e) {
-    console.error('[company-api] service-request:', e.message);
+    console.error('[company-api] service-request:', e.code || '', e.message);
     res.status(500).json({ error: 'خطأ بإرسال الطلب' });
   }
 });
@@ -163,3 +232,4 @@ router.get('/my-requests', isAuthenticated, async (req, res) => {
 });
 
 module.exports = router;
+module.exports.ensureCompanySchema = ensureCompanySchema;

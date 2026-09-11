@@ -425,17 +425,24 @@ async function processBotAction(action) {
 }
 
 let dbPollerFailed = false;
+let pollIdleStreak = 0; // تخفيف Railway: عند السكون يستعطل كل 15ث بدل 5ث — ما يتأخر شي وقت في أفعال لأناقة
+/* دالة القرار — مفصولة عشان اختبار الدخان يتحقق منها مباشرة:
+   أول 4 دورات فحص كل 5ث (20 ثانية سريعة)، وبعدها فحص كل 3 دورات (15ث) */
+function pollDue(streak) { return !(streak >= 4 && (streak % 3) !== 0); }
 function startActionPoller() {
   if (!db) {
     console.log('⚠️ Bot action poller disabled (no database)');
     return;
   }
-  console.log('🔄 Bot action poller started (every 5s)');
+  console.log('🔄 Bot action poller started (5s busy / 15s idle)');
   setInterval(async () => {
     if (!db) return;
+    // باك-أوف عند السكون — وأول ما يظهر فعل يرجع الإيقاع السريع 5ث فوراً
+    if (!pollDue(pollIdleStreak)) { pollIdleStreak++; return; }
     try {
       const [actions] = await db.execute('SELECT * FROM bot_actions WHERE status = ? ORDER BY created_at ASC LIMIT 5', ['pending']);
       dbPollerFailed = false;
+      if (!actions.length) pollIdleStreak++; else pollIdleStreak = 0;
       for (const action of actions) {
         await db.execute('UPDATE bot_actions SET status = ? WHERE id = ?', ['processing', action.id]);
         await processBotAction(action);
@@ -495,3 +502,5 @@ client.login(TOKEN).catch(e => {
 
 process.on('SIGTERM', () => { client.destroy(); process.exit(0); });
 process.on('SIGINT', () => { client.destroy(); process.exit(0); });
+
+module.exports = { pollDue };

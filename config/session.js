@@ -3,7 +3,12 @@ const MySQLStore = require('express-mysql-session')(session);
 const mysql = require('mysql2');
 const pool = require('./database');
 
-const sessionPool = mysql.createPool(pool.dbConfig);
+const sessionPool = mysql.createPool({
+  ...pool.dbConfig,
+  connectionLimit: 3, // جلسات فقط — بُكرة صغيرة تكفي (تخفيف Railway: اتصالات وذاكرة أقل)
+  maxIdle: 2,
+  idleTimeout: 60000
+});
 
 const sessionStore = new MySQLStore({
   clearExpired: true,

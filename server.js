@@ -248,7 +248,7 @@ async function migrate() { console.log('🔄 Running migration...');
     `CREATE TABLE IF NOT EXISTS submitted_applications (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, application_type VARCHAR(100), answers JSON, status VARCHAR(20) DEFAULT 'pending', reviewed_by INT, review_note TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP)`,
     `CREATE TABLE IF NOT EXISTS service_questions (id INT AUTO_INCREMENT PRIMARY KEY, service_id INT, question TEXT, type VARCHAR(50) DEFAULT 'text', sort_order INT DEFAULT 0)`,
     `CREATE TABLE IF NOT EXISTS service_packages (id INT AUTO_INCREMENT PRIMARY KEY, service_id INT, name VARCHAR(255), price DECIMAL(10,2), description TEXT, sort_order INT DEFAULT 0)`,
-    `CREATE TABLE IF NOT EXISTS service_requests (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, service_id INT, answers JSON, status VARCHAR(20) DEFAULT 'pending', created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE TABLE IF NOT EXISTS service_requests (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, service_id INT, answers JSON, status VARCHAR(20) DEFAULT 'pending', created_at DATETIME DEFAULT CURRENT_TIMESTAMP, total_price DECIMAL(10,2) DEFAULT 0, package_id INT DEFAULT 0, admin_id INT NULL, reviewed_at DATETIME NULL)`,
     `CREATE TABLE IF NOT EXISTS sessions (session_id VARCHAR(128) PRIMARY KEY, expires INT UNSIGNED NOT NULL, data MEDIUMTEXT, INDEX sessions_expires(expires))`,
     `CREATE TABLE IF NOT EXISTS community_messages (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, username VARCHAR(100), avatar TEXT, message TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
     `CREATE TABLE IF NOT EXISTS bot_logs (id INT AUTO_INCREMENT PRIMARY KEY, action VARCHAR(255), details TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`,
@@ -367,6 +367,7 @@ async function migrate() { console.log('🔄 Running migration...');
     { table: 'service_requests', col: 'total_price', sql: "ALTER TABLE service_requests ADD COLUMN total_price DECIMAL(10,2) DEFAULT 0" },
     { table: 'service_requests', col: 'package_id', sql: "ALTER TABLE service_requests ADD COLUMN package_id INT" },
     { table: 'service_requests', col: 'admin_id', sql: "ALTER TABLE service_requests ADD COLUMN admin_id INT" },
+    { table: 'service_requests', col: 'reviewed_at', sql: "ALTER TABLE service_requests ADD COLUMN reviewed_at DATETIME" },
     { table: 'roles', col: 'description', sql: "ALTER TABLE roles ADD COLUMN description TEXT" },
     { table: 'roles', col: 'can_assign_roles', sql: "ALTER TABLE roles ADD COLUMN can_assign_roles TINYINT(1) DEFAULT 0" },
     { table: 'roles', col: 'is_protected', sql: "ALTER TABLE roles ADD COLUMN is_protected TINYINT(1) DEFAULT 0" },
@@ -559,6 +560,13 @@ async function start() {
   } catch (e) { console.log('⚠️ farm init failed:', e.message); }
 
   // خدمات الشركة الجاهزة (تصميم ملابس + بيع سيارات) — بذرة تلقائية بدون تدخل يدوي
+  // الشفاء الذاتي لجداول الخدمات أولاً — سبب جذري لعلة «خطأ بإرسال الطلب»: قاعدة رقمها
+  // محدّث (schema_version) تتخطى migrate فأعمدة service_requests المضافة لاحقاً ما تنطبق
+  try {
+    const companyApi = require('./routes/api/company');
+    await companyApi.ensureCompanySchema();
+    console.log('✅ company services schema ensured');
+  } catch (e) { console.log('⚠️ company schema ensure failed:', e.message); }
   try { await seedCompanyServices(); } catch (e) { console.log('⚠️ company services seed failed:', e.message); }
 
   server.listen(PORT, () => {

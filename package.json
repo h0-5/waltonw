@@ -4,7 +4,7 @@
   "description": "Walton Family - Full Stack Website",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node --max-old-space-size=384 server.js",
     "dev": "nodemon server.js",
     "migrate": "node scripts/migrate.js",
     "seed": "node scripts/seed.js",

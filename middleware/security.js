@@ -34,71 +34,60 @@ const sanitizeInput = (req, res, next) => {
   next();
 };
 
-const maintenanceMode = async (req, res, next) => {
-  try {
-    const [rows] = await db.execute(
-      "SELECT setting_value FROM site_settings WHERE setting_key = 'maintenance_mode'"
-    );
-    
-    if (rows.length > 0 && rows[0].setting_value === '1') {
-      if (req.user && ['owner', 'developer', 'founder'].includes(req.user.role)) {
-        return next();
-      }
-      return res.status(503).render('pages/maintenance', {
-        title: 'الصيانة'
-      });
+/* الصيانة والإغلاق يقرآن من كاش الإعدادات العام (req.settings — يُحمّل كل 5 دقائق ويتلغى فور
+   الحفظ من اللوحة) بدل استعلامين لكل طلب صفحة — تخفيف Railway بدون أي تغيير بالميزة */
+const maintenanceMode = (req, res, next) => {
+  const cached = req.settings ? req.settings['maintenance_mode'] : null;
+  if (cached !== null && cached !== undefined) {
+    if (cached === '1') {
+      if (req.user && ['owner', 'developer', 'founder'].includes(req.user.role)) return next();
+      return res.status(503).render('pages/maintenance', { title: 'الصيانة' });
     }
-  } catch (err) {
-    // If table doesn't exist, continue
+    return next();
   }
-  next();
+  db.execute("SELECT setting_value FROM site_settings WHERE setting_key = 'maintenance_mode'")
+    .then(([rows]) => {
+      if (rows.length > 0 && rows[0].setting_value === '1') {
+        if (req.user && ['owner', 'developer', 'founder'].includes(req.user.role)) return next();
+        return res.status(503).render('pages/maintenance', { title: 'الصيانة' });
+      }
+      next();
+    })
+    .catch(() => next());
 };
 
-const lockdownMode = async (req, res, next) => {
+/* الإغلاق يقرأ من كاش الإعدادات العام (req.settings — يُحمّل كل 5 دقائق ويتلغى فور الحفظ من
+   اللوحة) بدل 1-4 استعلامات site_settings مع كل طلب صفحة — تخفيف Railway بدون تغيير الميزة */
+const lockdownMode = (req, res, next) => {
   // Skip for API routes, auth routes, and static files
   if (req.path.startsWith('/api/') || req.path.startsWith('/auth/') || req.path.startsWith('/images/') || req.path.startsWith('/css/') || req.path.startsWith('/js/')) {
     return next();
   }
-  
-  try {
-    const [rows] = await db.execute(
-      "SELECT setting_value FROM site_settings WHERE setting_key = 'site_lockdown'"
-    );
-    
-    if (rows.length > 0 && rows[0].setting_value === '1') {
-      // Get allowed roles
-      const [roleRows] = await db.execute(
-        "SELECT setting_value FROM site_settings WHERE setting_key = 'site_lockdown_roles'"
-      );
-      
-      const allowedRoles = roleRows.length > 0 
-        ? roleRows[0].setting_value.split(',').map(r => r.trim())
-        : ['owner', 'developer', 'founder'];
-      
-      // Check if user has allowed role
-      if (req.user && allowedRoles.includes(req.user.role)) {
-        return next();
-      }
-      
-      // Get lockdown settings
-      const [msgRows] = await db.execute(
-        "SELECT setting_value FROM site_settings WHERE setting_key = 'lockdown_message'"
-      );
-      const [reasonRows] = await db.execute(
-        "SELECT setting_value FROM site_settings WHERE setting_key = 'lockdown_reason'"
-      );
-      
-      return res.status(503).render('pages/lockdown', {
-        title: 'الموقع مغلق',
-        message: msgRows.length > 0 ? msgRows[0].setting_value : 'الموقع مغلق حالياً. يرجى المحاولة لاحقاً.',
-        reason: reasonRows.length > 0 ? reasonRows[0].setting_value : '',
-        image: ''
-      });
-    }
-  } catch (err) {
-    // If table doesn't exist, continue
+
+  const applyLockdown = () => {
+    const allowedRoles = ((req.settings && req.settings['site_lockdown_roles']) || 'owner,developer,founder')
+      .split(',').map(r => r.trim());
+    if (req.user && allowedRoles.includes(req.user.role)) return next();
+    return res.status(503).render('pages/lockdown', {
+      title: 'الموقع مغلق',
+      message: (req.settings && req.settings['lockdown_message']) || 'الموقع مغلق حالياً. يرجى المحاولة لاحقاً.',
+      reason: (req.settings && req.settings['lockdown_reason']) || '',
+      image: ''
+    });
+  };
+
+  const cached = req.settings ? req.settings['site_lockdown'] : null;
+  if (cached !== null && cached !== undefined) {
+    if (cached === '1') return applyLockdown();
+    return next();
   }
-  next();
+
+  db.execute("SELECT setting_value FROM site_settings WHERE setting_key = 'site_lockdown'")
+    .then(([rows]) => {
+      if (rows.length > 0 && rows[0].setting_value === '1') return applyLockdown();
+      next();
+    })
+    .catch(() => next());
 };
 
 module.exports = { securityHeaders, preventBot, sanitizeInput, maintenanceMode, lockdownMode };

@@ -6,12 +6,34 @@ passport.serializeUser((user, done) => {
   done(null, user.id);
 });
 
+/* ── كاش مستخدم الجلسة (تخفيف Railway) ──
+   deserializeUser كان يبعث SELECT * FROM users مع كل طلب مسجّل — صفحات + APIs.
+   الكاش يوفر استعلاماً كاملاً بكل طلب (45 ثانية TTL) — تغييرات الحظر/الرتبة
+   تصلح خلال أقل من دقيقة، واستدعاء clearUserCache يجعلها فورية في مسارات الإدارة */
+const USER_CACHE_TTL = 45 * 1000;
+const userCache = new Map(); // id -> { row, at }
+function clearUserCache(userId) {
+  if (userId == null) userCache.clear();
+  else userCache.delete(Number(userId));
+}
+setInterval(() => {
+  const now = Date.now();
+  userCache.forEach((v, k) => { if (now - v.at > USER_CACHE_TTL) userCache.delete(k); });
+}, 30 * 1000).unref();
+
 passport.deserializeUser(async (id, done) => {
   try {
+    const hit = userCache.get(Number(id));
+    if (hit && (Date.now() - hit.at) < USER_CACHE_TTL) return done(null, hit.row);
     const [rows] = await db.execute('SELECT * FROM users WHERE id = ?', [id]);
     if (rows.length > 0) {
+      userCache.set(Number(id), { row: rows[0], at: Date.now() });
+      if (userCache.size > 800) { // حاجم RAM — أقدم إدخال أولاً
+        userCache.delete(userCache.keys().next().value);
+      }
       done(null, rows[0]);
     } else {
+      userCache.delete(Number(id));
       done(null, null);
     }
   } catch (err) {
@@ -84,3 +106,4 @@ if (discordClientId && discordClientSecret && discordRedirectUri) {
 }
 
 module.exports = passport;
+module.exports.clearUserCache = clearUserCache;

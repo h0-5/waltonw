@@ -2,6 +2,7 @@
 const router = express.Router();
 const db = require('../../config/database');
 const { isAdmin, checkPermission } = require('../../middleware/auth');
+const { clearUserCache } = require('../../config/auth'); // إبطال كاش مستخدم الجلسة فور تعديل إداري (حظر/رتبة)
 const { sendWebhook, sendTestWebhook, refreshWebhookUrls, isDiscordWebhookUrl, logAdminAction } = require('../../utils/webhooks');
 const webhooks = require('../../config/webhooks');
 
@@ -17,6 +18,7 @@ router.post('/users/update', checkPermission('users_edit'), async (req, res) => 
   const { user_id, username, email } = req.body;
   try {
     await db.execute('UPDATE users SET username = ?, email = ? WHERE id = ?', [username, email, user_id]);
+    clearUserCache(user_id);
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -29,6 +31,7 @@ router.post('/users/ban', checkPermission('users_ban'), async (req, res) => {
   const { user_id } = req.body;
   try {
     await db.execute('UPDATE users SET is_banned = 1 WHERE id = ?', [user_id]);
+    clearUserCache(user_id);
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -37,6 +40,7 @@ router.post('/users/unban', checkPermission('users_ban'), async (req, res) => {
   const { user_id } = req.body;
   try {
     await db.execute('UPDATE users SET is_banned = 0 WHERE id = ?', [user_id]);
+    clearUserCache(user_id);
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -98,6 +102,7 @@ router.patch('/users/:id', checkPermission('users_edit'), async (req, res) => {
     if (updates.length) {
       params.push(req.params.id);
       await db.execute(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, params);
+      clearUserCache(targetId);
     }
     if (points !== undefined) {
       const [users] = await db.execute('SELECT discord_id FROM users WHERE id = ?', [req.params.id]);
@@ -127,6 +132,7 @@ router.post('/users/:id/ban', checkPermission('users_ban'), async (req, res) => 
     }
     params.push(req.params.id);
     await db.execute(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, params);
+    clearUserCache(req.params.id);
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -135,6 +141,7 @@ router.post('/users/:id/ban', checkPermission('users_ban'), async (req, res) => 
 router.post('/users/:id/unban', checkPermission('users_ban'), async (req, res) => {
   try {
     await db.execute('UPDATE users SET is_banned = 0, ban_reason = NULL, banned_at = NULL, banned_until = NULL, banned_by = NULL WHERE id = ?', [req.params.id]);
+    clearUserCache(req.params.id);
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -143,6 +150,7 @@ router.post('/users/:id/unban', checkPermission('users_ban'), async (req, res) =
 router.post('/users/unban-all', checkPermission('users_ban'), async (req, res) => {
   try {
     await db.execute('UPDATE users SET is_banned = 0, ban_reason = NULL, banned_at = NULL, banned_until = NULL, banned_by = NULL WHERE is_banned = 1');
+    clearUserCache(null);
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
