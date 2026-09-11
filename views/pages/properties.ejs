@@ -4,7 +4,7 @@
 <%- include('../partials/navbar') %>
 
 <%
-/* ثلاثة أقسام: «الكل» (كل ممتلكات مهما كان نوعها) + أصول (القصور) + المركبات
+/* ثلاثة أقسام: «الكل» (كل ممتلكات مهما كان نوعها) + الأصول (القصور) + المركبات
    الحلقات متشابهة لكنها مقصودة منفصلة — لكل قسم أيقونته وكلمة نوعه (قصر/مركبة) */
 %>
 
@@ -45,7 +45,7 @@
                 <span class="cy-tab-count"><%= allAssets.length %></span>
             </button>
             <button onclick="showTab('palaces')" id="tab-palaces" class="cy-props-tab">
-                <i class="fas fa-landmark"></i>أصول
+                <i class="fas fa-landmark"></i>الأصول
                 <span class="cy-tab-count"><%= palaces.length %></span>
             </button>
             <button onclick="showTab('vehicles')" id="tab-vehicles" class="cy-props-tab">
@@ -67,6 +67,8 @@
                 <article class="cy-prop-card" style="animation-delay:<%= i * 0.06 %>s"
                          data-img="<%= it.p.image %>" data-title="<%= it.p.title %>"
                          onclick="openLightbox(<%= i %>, 'section-all')">
+                    <div class="cy-prop-shine"></div>
+                    <div class="cy-prop-glare"></div>
                     <span class="cy-prop-idx">القطعة <%= String(i + 1).padStart(2, '0') %></span>
                     <span class="cy-prop-kind-chip"><i class="fas <%= it.palace ? 'fa-landmark' : 'fa-car' %>"></i><%= it.palace ? 'قصر' : 'مركبة' %></span>
                     <div class="cy-prop-media">
@@ -99,6 +101,8 @@
                 <article class="cy-prop-card" style="animation-delay:<%= i * 0.06 %>s"
                          data-img="<%= p.image %>" data-title="<%= p.title %>"
                          onclick="openLightbox(<%= i %>, 'section-palaces')">
+                    <div class="cy-prop-shine"></div>
+                    <div class="cy-prop-glare"></div>
                     <span class="cy-prop-idx">القطعة <%= String(i + 1).padStart(2, '0') %></span>
                     <span class="cy-prop-kind-chip"><i class="fas fa-landmark"></i>قصر</span>
                     <div class="cy-prop-media">
@@ -131,6 +135,8 @@
                 <article class="cy-prop-card" style="animation-delay:<%= i * 0.06 %>s"
                          data-img="<%= p.image %>" data-title="<%= p.title %>"
                          onclick="openLightbox(<%= i %>, 'section-vehicles')">
+                    <div class="cy-prop-shine"></div>
+                    <div class="cy-prop-glare"></div>
                     <span class="cy-prop-idx">القطعة <%= String(i + 1).padStart(2, '0') %></span>
                     <span class="cy-prop-kind-chip"><i class="fas fa-car"></i>مركبة</span>
                     <div class="cy-prop-media">
@@ -212,6 +218,63 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'ArrowRight') lbNav(null, -1);
     if (e.key === 'ArrowLeft') lbNav(null, 1);
 });
+
+/* ── Holo 3D Tilt — نفس محرك بطاقات التقديمات حرفياً: تتبّع المؤشر لإطار البطاقة
+   + ارتداد نابض عند المغادرة + بوابة لمس تمنع أحداث الماوس المزيفة ── */
+(function(){
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var MAX = 8, LIFT = 7, CHASE = 0.5, RELEASE = 0.72, MIN = 0.6;
+    var live = null, touchGate = 0;
+    document.addEventListener('touchstart', function(){ touchGate = Date.now(); }, { passive: true, capture: true });
+    document.querySelectorAll('.cy-prop-grid .cy-prop-card').forEach(function(card){
+        if (card.dataset.tilt) return;
+        card.dataset.tilt = '1';
+        var raf = null, active = false;
+        var ax = 0, ay = 0, az = 0, tx = 0, ty = 0, tl = 0, rect = null;
+        function frame(){
+            var k = active ? CHASE : (1 - RELEASE);
+            ax += (tx - ax) * k;
+            ay += (ty - ay) * k;
+            az += (tl - az) * k;
+            card.style.transform = 'perspective(900px) translateY(' + az.toFixed(2) + 'px) rotateX(' + ax.toFixed(2) + 'deg) rotateY(' + ay.toFixed(2) + 'deg)';
+            if (active || Math.abs(ax) > MIN || Math.abs(ay) > MIN || Math.abs(az) > 0.3) {
+                raf = requestAnimationFrame(frame);
+            } else {
+                raf = null;
+                card.style.transform = '';
+                card.style.transition = '';
+                card.classList.remove('tilting');
+                if (live === card) live = null;
+            }
+        }
+        card.addEventListener('mouseenter', function(e){
+            if (Date.now() - touchGate < 900) return;
+            rect = card.getBoundingClientRect();
+            active = true; tx = 0; ty = 0; tl = -LIFT;
+            card.style.transition = 'box-shadow .4s ease, border-color .4s ease';
+            card.classList.add('tilting');
+            live = card;
+            if (!raf) raf = requestAnimationFrame(frame);
+        });
+        card.addEventListener('mousemove', function(e){
+            if (Date.now() - touchGate < 900) return;
+            if (!rect) rect = card.getBoundingClientRect();
+            var px = (e.clientX - rect.left) / rect.width - 0.5;
+            var py = (e.clientY - rect.top) / rect.height - 0.5;
+            ty = px * MAX * 2;
+            tx = -py * MAX * 2;
+            card.style.setProperty('--mx', (e.clientX - rect.left).toFixed(1) + 'px');
+            card.style.setProperty('--my', (e.clientY - rect.top).toFixed(1) + 'px');
+        });
+        card.addEventListener('mouseleave', function(){
+            active = false; tx = 0; ty = 0; tl = 0; rect = null;
+        });
+        card.__invalidate = function(){ rect = null; };
+    });
+    window.addEventListener('scroll', function(){
+        if (live && live.__invalidate) live.__invalidate();
+    }, { passive: true });
+})();
 </script>
 
 <%- include('../partials/footer') %>

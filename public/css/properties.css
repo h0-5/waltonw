@@ -239,18 +239,23 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(465px, 100%), 1fr));
     gap: 1.75rem;
+    /* مسرح الإسقاط الثلاثي — نفس هندسة deck التقديمات */
+    perspective: 1200px;
 }
 
-/* ── Property Card — صورة 16:10 + شريط معلومات تحت الصورة (مقاسات مكبرة لبطاقة 465px) ── */
+/* ── Property Card — صورة 16:10 + شريط معلومات تحت الصورة (مقاسات مكبرة لبطاقة 465px) ──
+   شكل 3D هولوغرامي مثل بطاقات التقديمات: حدود أسمك + ظل أعمق + لمعان يمسح + وهج يتبع المؤشر،
+   والتمايل الفعلي (rotateX/rotateY) يقوده محرك JS بنفس فيزياء التقديمات */
 .cy-prop-card {
     position: relative;
     background: linear-gradient(160deg, var(--bg-card-solid, #1a1b2e), var(--bg-body, #0b0c18));
-    border: 1px solid rgba(var(--accent-rgb), 0.15);
+    border: 1.5px solid rgba(var(--accent-rgb), 0.3);
     border-radius: 16px;
     overflow: hidden;
     cursor: pointer;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    box-shadow: 0 16px 44px rgba(0,0,0,0.45);
     transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+    isolation: isolate;
     /* دخول متدرّج يُعاد تشغيله مع كل تبديل تبويب */
     animation: propIn 0.5s cubic-bezier(0.22, 0.9, 0.3, 1) backwards;
 }
@@ -261,10 +266,49 @@
 }
 
 .cy-prop-card:hover {
-    transform: translateY(-5px);
-    border-color: var(--border-hover);
-    box-shadow: 0 14px 34px rgba(0,0,0,0.45), 0 0 22px -6px rgba(var(--accent-rgb),0.3);
+    border-color: rgba(var(--accent-rgb), 0.55);
+    box-shadow: 0 30px 70px rgba(0,0,0,0.55), 0 0 60px -18px rgba(var(--accent-rgb),0.35);
 }
+
+.cy-prop-card.tilting { will-change: transform; }
+
+/* ── طبقات الهولوغرام ── */
+/* اللمعان الماسح: شريط ضوئي يعبر البطاقة دورياً — transform فقط (تركيب GPU رخيص) */
+.cy-prop-shine {
+    position: absolute;
+    top: -20%;
+    bottom: -20%;
+    left: 0;
+    width: 55%;
+    pointer-events: none;
+    z-index: 1;
+    background: linear-gradient(115deg, transparent 0%, rgba(var(--accent-rgb), 0.1) 32%, rgba(255, 255, 255, 0.12) 50%, rgba(var(--accent-rgb), 0.1) 68%, transparent 100%);
+    transform: translateX(230%);
+    animation: propHoloSweep 5.2s ease-in-out infinite;
+}
+
+@keyframes propHoloSweep {
+    0%, 100% { transform: translateX(230%); }
+    50% { transform: translateX(-200%); }
+}
+
+.cy-prop-card:nth-child(2) .cy-prop-shine { animation-delay: -1.3s; }
+.cy-prop-card:nth-child(3) .cy-prop-shine { animation-delay: -2.6s; }
+.cy-prop-card:nth-child(4) .cy-prop-shine { animation-delay: -3.9s; }
+
+/* وهج المؤشر: توهج قطري يتبع الماوس عبر ‏--mx/--my يقودها محرك الميلان */
+.cy-prop-glare {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 2;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.1), rgba(var(--accent-rgb), 0.06) 40%, transparent 62%);
+}
+
+.cy-prop-card.tilting .cy-prop-glare { opacity: 1; }
 
 /* ── ترقيم القطعة — شريحة قُطرية أعلى الصورة ── */
 .cy-prop-idx {
