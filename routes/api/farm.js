@@ -1057,6 +1057,34 @@ adminRouter.post('/workers/:id/reject', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ' }); }
 });
 
+// تعديل سعر إضافة عامل — عام من الإعدادات للعمال الجدد، وهنا للعامل المحدد (حتى المؤكد)
+adminRouter.patch('/workers/:id/price', async (req, res) => {
+  try {
+    const amount = Math.round(Number(req.body && req.body.amount));
+    if (!Number.isFinite(amount) || amount < 0) return res.status(400).json({ error: 'اكتب سعر صحيح أكبر أو يساوي صفر' });
+    const [rows] = await db.execute('SELECT w.*, b.ref, b.username AS renter FROM farm_workers w JOIN farm_bookings b ON w.booking_id = b.id WHERE w.id = ?', [req.params.id]);
+    if (!rows.length) return res.status(404).json({ error: 'غير موجود' });
+    const w = rows[0];
+    if (Number(w.amount) === amount) return res.json({ success: true, unchanged: true });
+    await db.execute('UPDATE farm_workers SET amount = ? WHERE id = ?', [amount, w.id]);
+    await logEvent(w.booking_id, req.user.username, 'admin', 'worker_price',
+      `تعديل سعر العامل ${w.character_name}: ${money(w.amount)}$ ← ${money(amount)}$`);
+    farmNotify({
+      title: '✏️ تعديل سعر إضافة عامل',
+      color: 0xf59e0b,
+      fields: [
+        { name: 'المرجع', value: w.ref, inline: true },
+        { name: 'اسم العامل', value: w.character_name, inline: true },
+        { name: 'السعر القديم', value: money(w.amount) + '$', inline: true },
+        { name: 'السعر الجديد', value: money(amount) + '$', inline: true },
+        { name: 'المستأجر', value: w.renter, inline: true },
+        { name: 'بواسطة', value: req.user.username, inline: true }
+      ]
+    });
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: 'خطأ' }); }
+});
+
 router.use('/admin', adminRouter);
 
 /* ═══════════ المهام الدورية ═══════════ */

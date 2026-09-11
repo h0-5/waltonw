@@ -66,7 +66,7 @@
       <div class="form-group" style="margin:0"><label>سعر 7 أيام</label><input type="number" id="f_price_7d" min="0" style="direction:ltr"></div>
       <div class="form-group" style="margin:0"><label>سعر 10 أيام</label><input type="number" id="f_price_10d" min="0" style="direction:ltr"></div>
       <div class="form-group" style="margin:0"><label>سعر 14 يوم</label><input type="number" id="f_price_14d" min="0" style="direction:ltr"></div>
-      <div class="form-group" style="margin:0"><label>سعر العامل</label><input type="number" id="f_worker_price" min="0" style="direction:ltr"></div>
+      <div class="form-group" style="margin:0"><label>سعر اضافة العامل (يدفعه الزبون لكل عامل يضيفه)</label><input type="number" id="f_worker_price" min="0" style="direction:ltr"></div>
       <div class="form-group" style="margin:0"><label>أقصى عدد عمال</label><input type="number" id="f_max_workers" min="0" max="20" style="direction:ltr"></div>
       <div class="form-group" style="margin:0"><label>نسبة العربون %</label><input type="number" id="f_deposit_pct" min="0" max="100" style="direction:ltr"></div>
       <div class="form-group" style="margin:0"><label>مهلة الدفع (ساعات)</label><input type="number" id="f_payment_window_hours" min="1" max="72" style="direction:ltr"></div>
@@ -481,7 +481,7 @@ function farmRenderBookings() {
     <td>${b.farm_name || '#' + (b.farm_id || b.farm_no)}</td>
     <td>${b.duration_days} يوم${b.extend_days && b.extend_status === 'confirmed' ? ` <span style="color:#34d399">+${b.extend_days}</span>` : ''}</td>
     <td style="direction:ltr">${farmMoney(b.rent_amount)}$ / <b style="color:var(--accent)">${farmMoney(b.deposit_amount)}$</b>${b.status === 'confirmed' ? `<br><span style="font-size:.72rem;color:#38bdf8">نص ثاني ${farmMoney(b.remainder_amount || (b.rent_amount - b.deposit_amount))}$</span>` : ''}</td>
-    <td>${farmBadge(FARM_ST_BADGE, b.status)}${b.status === 'confirmed' ? '<br><span style="font-size:.7rem;color:var(--text-dim)">النص الثاني: </span>' + farmBadge(FARM_R_BADGE, b.remainder_status || 'pending_payment') : ''}${b.extend_status === 'pending_payment' || b.extend_status === 'pending_confirm' ? '<br><span style="font-size:.7rem;color:var(--text-dim)">تمديد ' + b.extend_days + ' يوم</span> ' + farmBadge(FARM_ST_BADGE, b.extend_status) : ''}</td>
+    <td><div style="display:flex;flex-direction:column;align-items:flex-start;gap:5px">${farmBadge(FARM_ST_BADGE, b.status)}${b.status === 'confirmed' ? `<span style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:var(--text-dim);white-space:nowrap">النص الثاني: ${farmBadge(FARM_R_BADGE, b.remainder_status || 'pending_payment')}</span>` : ''}${b.extend_status === 'pending_payment' || b.extend_status === 'pending_confirm' ? `<span style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:var(--text-dim);white-space:nowrap">تمديد ${b.extend_days} يوم ${farmBadge(FARM_ST_BADGE, b.extend_status)}</span>` : ''}</div></td>
     <td>${b.status === 'active' || b.status === 'ended' ? (Number(b.faction_added) === 1 ? '<span style="color:#34d399">مضاف</span>' : '<span style="color:#eab308">بانتظار الإضافة</span>') + (b.status === 'ended' ? '<br>' + (Number(b.faction_removed) === 1 ? '<span style="color:#34d399">منزال</span>' : '<span style="color:#eab308">بانتظار الإزالة</span>') : '') : '—'}</td>
     <td style="font-size:.78rem">${farmDT(b.start_at)}<br>${farmDT(b.end_at)}</td>
     <td style="display:flex;gap:4px;flex-wrap:wrap">${farmBkActions(b)}</td>
@@ -499,7 +499,8 @@ function farmRenderWorkers() {
     <td style="direction:ltr;font-weight:700">${w.character_name}</td>
     <td style="direction:ltr">${farmMoney(w.amount)}$</td>
     <td>${farmBadge(FARM_W_BADGE, w.status)}</td>
-    <td style="display:flex;gap:4px">
+    <td style="display:flex;gap:4px;flex-wrap:wrap">
+      <button class="admin-btn small" title="تعديل سعر العامل" onclick="farmWorkerEditPrice(${w.id})"><i class="fas fa-pen"></i></button>
       ${w.status === 'pending_confirm' ? `<button class="admin-btn success small" onclick="farmWorkerAct(${w.id},'confirm')"><i class="fas fa-check"></i></button>` : ''}
       ${['pending_payment','pending_confirm'].includes(w.status) ? `<button class="admin-btn danger small" onclick="farmWorkerAct(${w.id},'reject')"><i class="fas fa-times"></i></button>` : ''}
     </td>
@@ -526,6 +527,17 @@ async function farmWorkerAct(id, act) {
   if (act === 'confirm' && !confirm('تأكد أن مبلغ العامل وصل بنك الشركة — تأكيد؟')) return;
   if (act === 'reject' && !confirm('رفض طلب العامل؟ (المبلغ يرجع للمستأجر)')) return;
   const res = await fetch(`/api/farm/admin/workers/${id}/${act}`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+  const d = await res.json();
+  if (d.success) farmLoad(); else alert(d.error || 'خطأ');
+}
+async function farmWorkerEditPrice(id) {
+  const w = (farmData.workers || []).find(x => x.id === id);
+  if (!w) return;
+  const input = prompt('السعر الجديد لإضافة العامل ' + w.character_name + ' (رقم كامل بالدولار):', Number(w.amount) || 0);
+  if (input === null) return;
+  const amount = Math.round(Number(input));
+  if (!Number.isFinite(amount) || amount < 0) { alert('اكتب رقم صحيح أكبر أو يساوي صفر'); return; }
+  const res = await fetch(`/api/farm/admin/workers/${id}/price`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount }) });
   const d = await res.json();
   if (d.success) farmLoad(); else alert(d.error || 'خطأ');
 }
