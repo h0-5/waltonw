@@ -36,6 +36,12 @@
   %>
   <title><%= _tabTitle %></title>
 
+  <!-- أيقونة التبويب: لوغو العيلة (W بالتاج) — بدل كرة الأرض الافتراضية -->
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="64x64" href="/images/favicon-64.png">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+
   <!-- Preload الصور الحرجة (اللوغو والخلفية المحلية فقط) — أول ما تفتح الصفحة تبدأ بالتحميل فوراً مع الكاش 7 أيام فما تعيد التحميل مع كل تنقل -->
   <% var _logoUrl = (typeof settings !== 'undefined' && settings && settings.site_logo_url) ? settings.site_logo_url : '/images/logo.png'; %>
   <% if (_logoUrl.indexOf('/') === 0) { %><link rel="preload" as="image" href="<%= _logoUrl %>"><% } %>
