@@ -65,7 +65,7 @@
       <div style="position:relative">
         <button class="ds-iconbtn" id="notifToggle" onclick="toggleNotifications()" aria-label="الإشعارات">
           <i class="fas fa-bell" aria-hidden="true"></i>
-          <span id="notificationBadge" class="ds-notif-badge<%= (typeof unreadCount !== 'undefined' && unreadCount > 0) ? '' : ' hidden' %>"><%= typeof unreadCount !== 'undefined' ? unreadCount : '' %></span>
+          <span id="notificationBadge" class="ds-notif-badge hidden"></span>
         </button>
         <div id="notificationDropdown" class="hidden">
           <div class="ds-drop-head">
@@ -152,14 +152,80 @@ function toggleMobileMenu() {
   nav.classList.toggle('open');
   if (btn) btn.setAttribute('aria-expanded', nav.classList.contains('open') ? 'true' : 'false');
 }
-function toggleNotifications() {
-  const dd = document.getElementById('notificationDropdown');
-  dd.classList.toggle('hidden');
-}
+/* ═══ جرس الإشعارات — حي بالكامل: بادج من السيرفر + قائمة عند الفتح + قراءة الكل + حذف الكل ═══ */
 function toggleUserMenu() {
   const dd = document.getElementById('userMenuDropdown');
   dd.classList.toggle('hidden');
 }
-function markAllRead() {}
-function deleteAllNotifications() {}
+var _notifItems = [];
+function _nfEsc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function _nfRel(s) {
+  if (!s) return '';
+  var d = new Date(String(s).replace(' ', 'T') + '+03:00');
+  if (isNaN(d.getTime())) return '';
+  var m = Math.max(0, Math.round((Date.now() - d.getTime()) / 60000));
+  if (m < 1) return 'الآن';
+  if (m < 60) return 'منذ ' + m + ' دقيقة';
+  var h = Math.floor(m / 60);
+  if (h < 24) return 'منذ ' + h + ' ساعة';
+  return 'منذ ' + Math.floor(h / 24) + ' يوم';
+}
+function _nfBadge(n) {
+  var b = document.getElementById('notificationBadge');
+  if (!b) return;
+  if (n > 0) { b.textContent = n > 99 ? '99+' : String(n); b.classList.remove('hidden'); }
+  else { b.textContent = ''; b.classList.add('hidden'); }
+}
+function _nfRender(items) {
+  var list = document.getElementById('notificationList');
+  if (!list) return;
+  if (!items.length) { list.innerHTML = '<div class="ds-drop-empty">لا توجد إشعارات</div>'; return; }
+  var ico = { success: 'fa-circle-check', warning: 'fa-triangle-exclamation', info: 'fa-circle-info' };
+  list.innerHTML = items.map(function (n) {
+    return '<a href="' + _nfEsc(n.link || '#') + '" class="ds-drop-item ds-notif-item' + (Number(n.is_read) ? '' : ' unread') + '">' +
+      '<i class="fas ' + (ico[n.type] || 'fa-bell') + '"></i>' +
+      '<span class="ds-notif-body"><b>' + _nfEsc(n.title) + '</b>' +
+      (n.message ? '<small>' + _nfEsc(n.message) + '</small>' : '') +
+      '<em>' + _nfRel(n.created_at) + '</em></span></a>';
+  }).join('');
+}
+async function notifFetch() {
+  try {
+    var r = await fetch('/api/notifications', { credentials: 'same-origin' });
+    var d = await r.json();
+    _notifItems = d.notifications || [];
+    _nfBadge(_notifItems.filter(function (n) { return !Number(n.is_read); }).length);
+    return _notifItems;
+  } catch (e) { return []; }
+}
+async function toggleNotifications() {
+  var dd = document.getElementById('notificationDropdown');
+  var opening = dd.classList.contains('hidden');
+  dd.classList.toggle('hidden');
+  if (opening) _nfRender(await notifFetch());
+}
+async function markAllRead() {
+  try { await fetch('/api/notifications/read', { method: 'POST', credentials: 'same-origin' }); } catch (e) {}
+  _notifItems = _notifItems.map(function (n) { n.is_read = 1; return n; });
+  _nfRender(_notifItems);
+  _nfBadge(0);
+}
+async function deleteAllNotifications() {
+  try { await fetch('/api/notifications/delete-all', { method: 'POST', credentials: 'same-origin' }); } catch (e) {}
+  _notifItems = [];
+  _nfRender([]);
+  _nfBadge(0);
+}
+/* البادج أول ما تتحمل الصفحة — استعلام خفيف بعدد غير المقروء فقط */
+(function () {
+  if (!document.getElementById('notifToggle')) return;
+  fetch('/api/notifications?badge=1', { credentials: 'same-origin' })
+    .then(function (r) { return r.json(); })
+    .then(function (d) { if (d && typeof d.unread === 'number') _nfBadge(d.unread); })
+    .catch(function () {});
+})();
 </script>

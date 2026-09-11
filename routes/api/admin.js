@@ -434,25 +434,9 @@ router.post('/webhook-test', checkPermission('site_settings_edit'), async (req, 
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// Notifications API
-router.get('/notifications', require('../../middleware/auth').isAuthenticated, async (req, res) => {
-  if (!req.user) return res.json({ notifications: [] });
-  try {
-    const [notifications] = await db.execute(
-      'SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 20',
-      [req.user.id]
-    );
-    res.json({ notifications });
-  } catch(e) { res.json({ notifications: [] }); }
-});
-
-router.post('/notifications/read', require('../../middleware/auth').isAuthenticated, async (req, res) => {
-  if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
-  try {
-    await db.execute('UPDATE notifications SET is_read = 1 WHERE user_id = ?', [req.user.id]);
-    res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
+// Notifications API — انتقلت لراوتر مستقل routes/api/notifications.js
+// (كانت هنا ومنصوبة على /api/notifications فيتضاعف المسار ويصير /api/notifications/notifications)
+// إشعارات القبول/الرفض بطلبات الشركة تبقى أدناه داخل مسارات المراجعة
 
 // Orders API
 router.post('/orders/create', require('../../middleware/auth').isAuthenticated, async (req, res) => {
@@ -783,8 +767,8 @@ router.post('/company/requests/:id/approve', checkPermission('company_edit'), as
     const [rows] = await db.execute('SELECT sr.*, ci.title AS service_title FROM service_requests sr LEFT JOIN company_items ci ON sr.service_id = ci.id WHERE sr.id = ?', [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'الطلب غير موجود' });
     await db.execute("UPDATE service_requests SET status = 'approved', admin_id = ?, reviewed_at = NOW() WHERE id = ?", [req.user.id, req.params.id]);
-    await db.execute('INSERT INTO notifications (user_id, title, message, type, link, sender_id) VALUES (?, ?, ?, ?, ?, ?)',
-      [rows[0].user_id, 'تم قبول طلب خدمتك', 'طلبك على خدمة «' + (rows[0].service_title || '') + '» تم قبوله — الإدارة راح تتواصل معك للتنفيذ', 'success', '/company', req.user.id]);
+    await db.execute('INSERT INTO notifications (user_id, title, message, type, link, is_read, created_at) VALUES (?, ?, ?, ?, ?, 0, NOW())',
+      [rows[0].user_id, 'تم قبول طلب خدمتك', 'طلبك على خدمة «' + (rows[0].service_title || '') + '» تم قبوله — الإدارة راح تتواصل معك للتنفيذ', 'success', '/company']);
     notifyCompany({ title: '✅ قبول طلب خدمة — ' + (rows[0].service_title || ''), color: 0x34d399, fields: [
       { name: 'رقم الطلب', value: '#' + rows[0].id, inline: true }, { name: 'بواسطة', value: req.user.username, inline: true }
     ] });
@@ -798,8 +782,8 @@ router.post('/company/requests/:id/reject', checkPermission('company_edit'), asy
     if (!rows.length) return res.status(404).json({ error: 'الطلب غير موجود' });
     const notes = typeof req.body.notes === 'string' ? req.body.notes.substring(0, 500) : '';
     await db.execute("UPDATE service_requests SET status = 'rejected', admin_id = ?, reviewed_at = NOW() WHERE id = ?", [req.user.id, req.params.id]);
-    await db.execute('INSERT INTO notifications (user_id, title, message, type, link, sender_id) VALUES (?, ?, ?, ?, ?, ?)',
-      [rows[0].user_id, 'تم رفض طلب خدمتك', 'طلبك على خدمة «' + (rows[0].service_title || '') + '» ما تم قبوله' + (notes ? ' — السبب: ' + notes : ''), 'warning', '/company', req.user.id]);
+    await db.execute('INSERT INTO notifications (user_id, title, message, type, link, is_read, created_at) VALUES (?, ?, ?, ?, ?, 0, NOW())',
+      [rows[0].user_id, 'تم رفض طلب خدمتك', 'طلبك على خدمة «' + (rows[0].service_title || '') + '» ما تم قبوله' + (notes ? ' — السبب: ' + notes : ''), 'warning', '/company']);
     notifyCompany({ title: '❌ رفض طلب خدمة — ' + (rows[0].service_title || ''), color: 0xef4444, fields: [
       { name: 'رقم الطلب', value: '#' + rows[0].id, inline: true }, { name: 'بواسطة', value: req.user.username, inline: true }
     ].concat(notes ? [{ name: 'السبب', value: notes, inline: false }] : []) });

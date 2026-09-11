@@ -590,6 +590,16 @@ a.ds-card:hover, .ds-card-hover:hover {
 .ds-drop-item-logout, .ds-drop-item-logout i { color: var(--danger); }
 .ds-drop-sep { height: 1px; background: var(--border); margin: 4px 0; }
 
+/* عناصر إشعارات الجرس — نص متعدد الأسطر + حالة غير مقروء */
+.ds-notif-item { align-items: flex-start; padding: 10px 14px; }
+.ds-notif-item i { margin-top: 2px; }
+.ds-notif-item.unread { background: rgba(var(--ac-rgb, 188, 19, 254), 0.06); }
+.ds-notif-item.unread i { color: var(--accent); }
+.ds-notif-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-weight: 700; }
+.ds-notif-body b { font-size: 13px; color: var(--text); line-height: 1.4; }
+.ds-notif-body small { font-size: 12px; font-weight: 400; color: var(--muted); line-height: 1.5; }
+.ds-notif-body em { font-style: normal; font-size: 11px; color: var(--muted); opacity: .8; }
+
 /* زر القائمة للجوال — شريحة زجاجية مربعة الزوايا (مثل أيقونة الشبكة بالصورة المرجعية) */
 .ds-menubtn {
   width: 38px; height: 38px;

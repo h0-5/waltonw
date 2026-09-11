@@ -242,7 +242,8 @@ app.use('/api/applications', applicationsApi);
 app.use('/api/admin', adminApi);
 app.use('/api/orders', adminApi);
 app.use('/api/bot', botApi);
-app.use('/api/notifications', adminApi);
+/* جرس الإشعارات — راوتر مستقل (كان ينصب على adminApi فيتضاعف المسار: /api/notifications/notifications) */
+app.use('/api/notifications', require('./routes/api/notifications'));
 app.use('/api/farm', require('./routes/api/farm').router);
 app.use('/api/company', require('./routes/api/company'));
 

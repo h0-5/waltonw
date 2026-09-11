@@ -275,6 +275,25 @@ router.post('/service-request', isAuthenticated, async (req, res) => {
       [ins] = await db.execute(insSql, insParams);
     }
 
+    // إشعار موقع للزبون — تأكيد الإرسال بانتظار رد الإدارة (جرس الإشعارات بالنافبار)
+    // فشل الإشعار ما يوقف الطلب أبداً — ولو جدول قديم ناقص الأعمدة نرجع للحد الأدنى المضمون
+    try {
+      await db.execute(
+        'INSERT INTO notifications (user_id, title, message, type, link, is_read, created_at) VALUES (?, ?, ?, ?, ?, 0, NOW())',
+        [req.user.id, '✅ تم إرسال طلبك بنجاح',
+         'طلبك على خدمة «' + svc[0].title + '» وصل للإدارة — بانتظار رد الإدارة، وراح توصلك النتيجة هنا فور مراجعتها',
+         'success', '/company']);
+    } catch (ne) {
+      if (ne && ne.code === 'ER_BAD_FIELD_ERROR') {
+        try {
+          await db.execute('INSERT INTO notifications (user_id, title, message, is_read, created_at) VALUES (?, ?, ?, 0, NOW())',
+            [req.user.id, '✅ تم إرسال طلبك بنجاح', 'وصل طلبك للإدارة — بانتظار رد الإدارة']);
+        } catch (ne2) { console.error('[company-api] notify(min):', ne2.code || '', ne2.message); }
+      } else {
+        console.error('[company-api] notify:', ne.code || '', ne.message);
+      }
+    }
+
     // ويبهوك للإدارة — بمنشن مباشر للشخص الكبير مع كل طلب جديد
     const detail = answers.filter(a => a.type !== 'image' && a.a)
       .map(a => `${a.q}: ${a.a}`).join('\n') || '—';
