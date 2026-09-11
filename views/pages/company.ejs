@@ -229,8 +229,10 @@
     </div>
 </div>
 
-<div id="farmToast" class="cy-f-toast"></div>
 <% } %>
+
+<% /* توست خارج كل الشروط — الإشعارات تشتغل حتى لو قسم المزارع مقفل */ %>
+<div id="farmToast" class="cy-f-toast"></div>
 
 <div id="svcModal" class="cy-co-lightbox" style="display:none;z-index:200" onclick="closeSvcModal()">
     <div style="background:var(--bg-card-solid, #0d0a14);border:1px solid rgba(var(--accent-rgb),0.25);border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;margin:2rem auto;position:relative" onclick="event.stopPropagation()">
@@ -248,6 +250,17 @@
                 <button type="button" onclick="closeSvcModal()" style="flex:1;padding:.7rem 1.5rem;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:rgba(255,255,255,0.6);font-weight:700;cursor:pointer;font-size:.9rem">إلغاء</button>
             </div>
         </form>
+        <% /* شاشة النجاح — تظهر مكان الفورم أول ما يُرسل الطلب (طلب هادي: اشعار على الشاشة مثل رسالة الخطأ) */ %>
+        <div id="svcSuccess" style="display:none;padding:2.6rem 1.5rem 2.2rem;text-align:center">
+            <div style="width:78px;height:78px;margin:0 auto 1.1rem;border-radius:50%;background:rgba(52,211,153,0.1);border:2px solid rgba(52,211,153,0.45);display:flex;align-items:center;justify-content:center;animation:svcPop .35s ease">
+                <i class="fas fa-check" style="font-size:2.1rem;color:#34d399"></i>
+            </div>
+            <div style="color:#34d399;font-weight:800;font-size:1.2rem;margin-bottom:.45rem">تم ارسال طلب بنجاح</div>
+            <div style="color:rgba(255,255,255,0.78);font-size:.92rem;margin-bottom:.35rem">بانتظار رد الإدارة</div>
+            <div style="color:rgba(255,255,255,0.45);font-size:.78rem;margin-bottom:1.5rem">راح يوصلك إشعار بالنتيجة على جرس الإشعارات فوق</div>
+            <button type="button" onclick="svcSuccessDone()" style="padding:.65rem 2.4rem;border-radius:10px;border:none;background:linear-gradient(135deg,#34d399,rgba(52,211,153,0.75));color:#04241a;font-weight:800;cursor:pointer;font-size:.9rem">تم</button>
+        </div>
+        <style>@keyframes svcPop { 0% { transform:scale(.5);opacity:0 } 70% { transform:scale(1.08) } 100% { transform:scale(1);opacity:1 } }</style>
     </div>
 </div>
 
@@ -264,15 +277,15 @@ function showTab(tab) { /* الأقسام صارت ظاهرة كلها بدون 
 /* تهريب HTML — أي نص من المستخدم ما يدخل كـ HTML (حماية من إدخال أكواد) */
 function cyEsc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 /* توست موحد — يستخدم توست المزرعة إذا موجود، وإلا يسوي عنصر خاص */
-function cyToast(msg, err) {
+function cyToast(msg, err, ok) {
     var t = document.getElementById('farmToast');
     if (!t) {
         t = document.createElement('div');
         t.id = 'farmToast'; t.className = 'cy-f-toast';
         document.body.appendChild(t);
     }
-    t.innerHTML = msg; t.className = 'cy-f-toast show' + (err ? ' err' : '');
-    clearTimeout(t._h); t._h = setTimeout(function() { t.className = 'cy-f-toast' + (err ? ' err' : ''); }, 5200);
+    t.innerHTML = msg; t.className = 'cy-f-toast show' + (err ? ' err' : (ok ? ' ok' : ''));
+    clearTimeout(t._h); t._h = setTimeout(function() { t.className = 'cy-f-toast' + (err ? ' err' : (ok ? ' ok' : '')); }, ok ? 7000 : 5200);
 }
 function openLightbox(src) { document.getElementById('lightboxImg').src = src; document.getElementById('lightbox').classList.add('open'); if (event) event.stopPropagation(); }
 function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); document.getElementById('lightboxImg').src = ''; }
@@ -326,6 +339,20 @@ function showSvcQuestions(sid) {
 }
 function closeSvcModal() { document.getElementById('svcModal').style.display = 'none'; }
 
+var svcSuccessTimer = null;
+/* شاشة النجاح داخل النافذة — أول ما ينرسل الطلب يشوف التأكيد فوراً بمكانه + توست أخضر */
+function showSvcSuccess() {
+    document.getElementById('svcForm').style.display = 'none';
+    document.getElementById('svcPkgStep').style.display = 'none';
+    document.getElementById('svcSuccess').style.display = '';
+    clearTimeout(svcSuccessTimer);
+    svcSuccessTimer = setTimeout(svcSuccessDone, 4200);
+}
+function svcSuccessDone() {
+    clearTimeout(svcSuccessTimer);
+    document.getElementById('svcSuccess').style.display = 'none';
+    closeSvcModal();
+}
 async function submitServiceRequest(e) {
     e.preventDefault();
     var btn = e.target.querySelector('button[type="submit"]');
@@ -334,8 +361,12 @@ async function submitServiceRequest(e) {
         var fd = new FormData(e.target);
         var res = await fetch('/api/company/service-request', { method: 'POST', body: fd });
         var data = await res.json();
-        cyToast(data.success ? '✅ تم إرسال طلبك بنجاح — راح تراجع الإدارة ويتواصلون معك!' : cyEsc(data.error || 'خطأ'), !data.success);
-        if (data.success) closeSvcModal();
+        if (data.success) {
+            showSvcSuccess();
+            cyToast('✅ تم ارسال طلب بنجاح — بانتظار رد الإدارة', false, true);
+        } else {
+            cyToast(cyEsc(data.error || 'خطأ'), true);
+        }
     } catch (err) { cyToast('خطأ بالاتصال', true); }
     if (btn) btn.disabled = false;
 }

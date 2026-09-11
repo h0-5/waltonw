@@ -968,6 +968,7 @@
 .cy-f-toast { position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(90px); z-index:300; background:#151020; color:#fff; border:1px solid rgba(var(--accent-rgb),.4); border-radius:12px; padding:.85rem 1.4rem; font-size:.85rem; font-weight:700; max-width:92vw; text-align:center; transition:transform .35s ease; box-shadow:0 12px 34px rgba(0,0,0,.5); }
 .cy-f-toast.show { transform:translateX(-50%) translateY(0); }
 .cy-f-toast.err { border-color:rgba(239,68,68,.5); color:#fca5a5; }
+.cy-f-toast.ok { border-color:rgba(52,211,153,.55); color:#86efac; box-shadow:0 12px 34px rgba(16,185,129,.18), 0 12px 34px rgba(0,0,0,.5); }
 
 @media (max-width: 760px) {
   .cy-farm-price-grid { grid-template-columns:repeat(3,1fr); }
