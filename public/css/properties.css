@@ -154,9 +154,9 @@
     color: var(--text-dim);
 }
 
-/* ── Main Container ── */
+/* ── Main Container — نفس عرض صفحة التقديمات (1500px) لتتطابق البطاقات حرفياً ── */
 .cy-props-main {
-    max-width: 1200px;
+    max-width: 1500px;
     margin: 0 auto;
     padding: 0 1.5rem 3rem;
     position: relative;
@@ -229,23 +229,24 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
-   Property Grid — بطاقات صغيرة ثابتة الحجم
+   Property Grid — بطاقات كبيرة بحجم بطاقة التقديم (465px على شاشة 1920)
+   نفس هندسة صفحة التقديمات: حاوية 1500px + فراغ 1.75rem
    auto-fill (وليس auto-fit): المسارات الفارغة تبقى موجودة
    فلا تتمدد البطاقة مهما قلّ عدد الممتلكات — الحجم ثابت
-   لا علاقة له بعددها، مثل فكرة صفحة القوانين والتقديمات
+   لا علاقة له بعددها (فكرة صفحة القوانين والتقديمات)
    ═══════════════════════════════════════════════════════════ */
 .cy-prop-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(252px, 100%), 1fr));
-    gap: 1.1rem;
+    grid-template-columns: repeat(auto-fill, minmax(min(465px, 100%), 1fr));
+    gap: 1.75rem;
 }
 
-/* ── Property Card — صورة 16:10 + شريط معلومات تحت الصورة ── */
+/* ── Property Card — صورة 16:10 + شريط معلومات تحت الصورة (مقاسات مكبرة لبطاقة 465px) ── */
 .cy-prop-card {
     position: relative;
     background: linear-gradient(160deg, var(--bg-card-solid, #1a1b2e), var(--bg-body, #0b0c18));
     border: 1px solid rgba(var(--accent-rgb), 0.15);
-    border-radius: 14px;
+    border-radius: 16px;
     overflow: hidden;
     cursor: pointer;
     box-shadow: 0 4px 20px rgba(0,0,0,0.3);
@@ -268,14 +269,14 @@
 /* ── ترقيم القطعة — شريحة قُطرية أعلى الصورة ── */
 .cy-prop-idx {
     position: absolute;
-    top: 10px;
-    inset-inline-start: 10px;
+    top: 12px;
+    inset-inline-start: 12px;
     z-index: 5;
-    font-size: 0.66rem;
+    font-size: 0.72rem;
     font-weight: 800;
     letter-spacing: 0.3px;
     color: #fff;
-    padding: 4px 9px;
+    padding: 5px 11px;
     background: rgba(10, 9, 16, 0.72);
     border: 1px solid rgba(var(--accent-rgb), 0.35);
     clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
@@ -287,16 +288,16 @@
 /* ── شارة النوع (قصر / مركبة) أعلى الصورة بطرفها الآخر ── */
 .cy-prop-kind-chip {
     position: absolute;
-    top: 10px;
-    inset-inline-end: 10px;
+    top: 12px;
+    inset-inline-end: 12px;
     z-index: 5;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    font-size: 0.64rem;
+    gap: 6px;
+    font-size: 0.72rem;
     font-weight: 700;
     color: #fff;
-    padding: 4px 10px;
+    padding: 5px 12px;
     border-radius: 999px;
     background: rgba(var(--accent-rgb), 0.18);
     border: 1px solid rgba(var(--accent-rgb), 0.4);
@@ -304,7 +305,7 @@
     -webkit-backdrop-filter: blur(6px);
 }
 
-.cy-prop-kind-chip i { font-size: 0.6rem; }
+.cy-prop-kind-chip i { font-size: 0.68rem; }
 
 /* ── الصورة ── */
 .cy-prop-media {
@@ -354,7 +355,7 @@
 
 /* ── شريط المعلومات — تحت الصورة: الاسم + زر تكبير + النوع ── */
 .cy-prop-body {
-    padding: 11px 13px 13px;
+    padding: 14px 16px 16px;
     background: transparent;
     position: relative;
     z-index: 2;
@@ -364,13 +365,13 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
-    margin-bottom: 3px;
+    gap: 10px;
+    margin-bottom: 4px;
 }
 
 .cy-prop-title {
     font-weight: 800;
-    font-size: 0.95rem;
+    font-size: 1.08rem;
     color: var(--text, #f0eef6);
     margin: 0;
     overflow: hidden;
@@ -382,13 +383,13 @@
 /* زر التكبير — أيقونة تظهر عند الـ hover فقط */
 .cy-prop-zoom {
     flex-shrink: 0;
-    width: 26px;
-    height: 26px;
-    border-radius: 8px;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.66rem;
+    font-size: 0.76rem;
     color: var(--accent);
     background: rgba(var(--accent-rgb), 0.12);
     border: 1px solid rgba(var(--accent-rgb), 0.3);
@@ -404,7 +405,7 @@
 
 .cy-prop-kind {
     display: block;
-    font-size: 0.7rem;
+    font-size: 0.78rem;
     font-weight: 500;
     color: var(--text-dim);
 }
@@ -569,6 +570,16 @@
     .cy-prop-card:hover { transform: none; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
     .cy-prop-card:hover .cy-prop-media img { transform: none; }
     .cy-prop-zoom { display: none; } /* اللمس ما عنده hover — الضغط يفتح المعرض مباشرة */
+}
+
+/* ── تابلت: عمودان — نفس نقطة صفحة التقديمات ── */
+@media (min-width: 769px) and (max-width: 1023px) {
+    .cy-prop-grid { grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+}
+
+/* ── هاتف: عمود واحد ── */
+@media (max-width: 768px) {
+    .cy-prop-grid { grid-template-columns: 1fr; gap: 1rem; }
 }
 
 /* ── Mobile ── */

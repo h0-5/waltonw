@@ -4,7 +4,8 @@
 <%- include('../partials/navbar') %>
 
 <%
-/* حلقتا القسمين متشابهتان لكنهما مقصودتان منفصلتين — لكل قسم أيقونته وكلمة نوعه (قصر/مركبة) */
+/* ثلاثة أقسام: «الكل» (كل ممتلكات مهما كان نوعها) + أصول (القصور) + المركبات
+   الحلقات متشابهة لكنها مقصودة منفصلة — لكل قسم أيقونته وكلمة نوعه (قصر/مركبة) */
 %>
 
 <div class="cy-props-page" dir="rtl">
@@ -32,9 +33,19 @@
     </div>
 
     <div class="cy-props-main">
+        <%
+        /* قسم «الكل» = القصور + المركبات معاً بنفس ترتيبهما */
+        var allAssets = [];
+        palaces.forEach(function(p) { allAssets.push({ p: p, palace: true }); });
+        vehicles.forEach(function(v) { allAssets.push({ p: v, palace: false }); });
+        %>
         <div class="cy-props-tabs">
-            <button onclick="showTab('palaces')" id="tab-palaces" class="cy-props-tab cy-props-tab-active">
-                <i class="fas fa-landmark"></i>القصور
+            <button onclick="showTab('all')" id="tab-all" class="cy-props-tab cy-props-tab-active">
+                <i class="fas fa-layer-group"></i>الكل
+                <span class="cy-tab-count"><%= allAssets.length %></span>
+            </button>
+            <button onclick="showTab('palaces')" id="tab-palaces" class="cy-props-tab">
+                <i class="fas fa-landmark"></i>أصول
                 <span class="cy-tab-count"><%= palaces.length %></span>
             </button>
             <button onclick="showTab('vehicles')" id="tab-vehicles" class="cy-props-tab">
@@ -43,11 +54,43 @@
             </button>
         </div>
 
-        <div id="section-palaces" class="active">
+        <div id="section-all" class="active">
+            <% if (allAssets.length === 0) { %>
+            <div class="cy-empty">
+                <div class="cy-empty-icon"><i class="fas fa-layer-group"></i></div>
+                <h3>لا توجد ممتلكات مضافة حالياً</h3>
+                <p>سيتم إضافة الممتلكات قريباً</p>
+            </div>
+            <% } else { %>
+            <div class="cy-prop-grid">
+                <% allAssets.forEach(function(it, i) { %>
+                <article class="cy-prop-card" style="animation-delay:<%= i * 0.06 %>s"
+                         data-img="<%= it.p.image %>" data-title="<%= it.p.title %>"
+                         onclick="openLightbox(<%= i %>, 'section-all')">
+                    <span class="cy-prop-idx">القطعة <%= String(i + 1).padStart(2, '0') %></span>
+                    <span class="cy-prop-kind-chip"><i class="fas <%= it.palace ? 'fa-landmark' : 'fa-car' %>"></i><%= it.palace ? 'قصر' : 'مركبة' %></span>
+                    <div class="cy-prop-media">
+                        <img src="<%= it.p.image %>" alt="<%= it.p.title %>" loading="<%= i <= 3 ? 'eager' : 'lazy' %>" decoding="async"
+                             onerror="this.closest('.cy-prop-card').classList.add('img-fail')">
+                    </div>
+                    <div class="cy-prop-body">
+                        <div class="cy-prop-row">
+                            <h3 class="cy-prop-title"><%= it.p.title %></h3>
+                            <span class="cy-prop-zoom"><i class="fas fa-search-plus"></i></span>
+                        </div>
+                        <span class="cy-prop-kind"><%= it.palace ? 'قصر من ممتلكات العائلة' : 'مركبة من أسطول العائلة' %></span>
+                    </div>
+                </article>
+                <% }); %>
+            </div>
+            <% } %>
+        </div>
+
+        <div id="section-palaces">
             <% if (palaces.length === 0) { %>
             <div class="cy-empty">
                 <div class="cy-empty-icon"><i class="fas fa-landmark"></i></div>
-                <h3>لا توجد قصور مضافة حالياً</h3>
+                <h3>لا توجد أصول مضافة حالياً</h3>
                 <p>سيتم إضافة الممتلكات قريباً</p>
             </div>
             <% } else { %>
@@ -124,17 +167,11 @@
 
 <script>
 function showTab(tab) {
-    var palaces = document.getElementById('section-palaces');
-    var vehicles = document.getElementById('section-vehicles');
-    var tabP = document.getElementById('tab-palaces');
-    var tabV = document.getElementById('tab-vehicles');
-    if (tab === 'palaces') {
-        palaces.classList.add('active'); vehicles.classList.remove('active');
-        tabP.classList.add('cy-props-tab-active'); tabV.classList.remove('cy-props-tab-active');
-    } else {
-        vehicles.classList.add('active'); palaces.classList.remove('active');
-        tabV.classList.add('cy-props-tab-active'); tabP.classList.remove('cy-props-tab-active');
-    }
+    /* تبديل عام لأي عدد من التبويبات — الكل / أصول / المركبات */
+    ['all', 'palaces', 'vehicles'].forEach(function(n) {
+        document.getElementById('section-' + n).classList.toggle('active', n === tab);
+        document.getElementById('tab-' + n).classList.toggle('cy-props-tab-active', n === tab);
+    });
 }
 
 /* ── Lightbox كمعرض: تجميع بطاقات القسم الحالي + تنقّل سابق/تالي + عدّاد ── */
