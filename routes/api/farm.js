@@ -36,6 +36,10 @@ const WSTATUS_AR = {
 
 /* ── مخطط الجداول (شفاء ذاتي عند أول طلب كل إقلاع) ── */
 let schemaReady = false;
+async function ensureColumn(table, colName, colDef) {
+  const [cols] = await db.query(`SHOW COLUMNS FROM ${table} LIKE '${colName}'`);
+  if (!cols.length) await db.query(`ALTER TABLE ${table} ADD COLUMN ${colDef}`);
+}
 async function ensureFarmSchema() {
   if (schemaReady) return;
   await db.query(`CREATE TABLE IF NOT EXISTS farm_config (
@@ -57,6 +61,14 @@ async function ensureFarmSchema() {
     extend_window_hours INT DEFAULT 24,
     ping_mention VARCHAR(32) DEFAULT '@here',
     updated_at DATETIME NULL
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+  /* مزارع ديناميكية غير محددة — الإدارة تضيف/تحذف بحرية */
+  await db.query(`CREATE TABLE IF NOT EXISTS farm_farms (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    enabled TINYINT(1) DEFAULT 1,
+    sort_order INT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
   await db.query(`CREATE TABLE IF NOT EXISTS farm_bookings (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -111,6 +123,21 @@ async function ensureFarmSchema() {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
   await db.query('INSERT IGNORE INTO farm_config (id) VALUES (1)');
+  /* ترحيل من المزارع الثابتة (1/2) إلى الجدول الديناميكي — مرة واحدة */
+  try {
+    await ensureColumn('farm_bookings', 'farm_id', 'farm_id INT NULL');
+    await db.query('UPDATE farm_bookings SET farm_id = farm_no WHERE farm_id IS NULL');
+    const [cnt] = await db.query('SELECT COUNT(*) AS n FROM farm_farms');
+    if (!Number(cnt[0].n)) {
+      const [cfgRows] = await db.query('SELECT farm1_enabled, farm2_enabled FROM farm_config WHERE id = 1');
+      const c = cfgRows[0] || {};
+      await db.query('INSERT INTO farm_farms (name, enabled, sort_order) VALUES (?, ?, 1), (?, ?, 2)', [
+        'المزرعة 1', Number(c.farm1_enabled) === 0 ? 0 : 1,
+        'المزرعة 2', Number(c.farm2_enabled) === 0 ? 0 : 1
+      ]);
+      console.log('🌾 farm_farms seeded from legacy farm1/farm2 config');
+    }
+  } catch (e) { console.error('[farm] migrate farms:', e.message); }
   schemaReady = true;
 }
 
@@ -167,18 +194,26 @@ const BUSY_WHERE = `(status = 'pending_confirm'
   OR (status = 'active' AND end_at > NOW()))`;
 
 async function farmsBusy() {
-  const [rows] = await db.execute(`SELECT farm_no FROM farm_bookings WHERE ${BUSY_WHERE}`);
-  return { 1: rows.some(r => Number(r.farm_no) === 1), 2: rows.some(r => Number(r.farm_no) === 2) };
+  const [rows] = await db.execute(`SELECT farm_id FROM farm_bookings WHERE ${BUSY_WHERE} AND farm_id IS NOT NULL`);
+  const m = {};
+  rows.forEach(r => { m[Number(r.farm_id)] = true; });
+  return m;
+}
+
+async function getFarms() {
+  const [rows] = await db.execute('SELECT * FROM farm_farms ORDER BY sort_order ASC, id ASC');
+  return rows;
 }
 
 /* ── حالة الخدمة (تُستخدم في API وصفحة الشركة) ── */
 async function getPublicState(userId) {
   const cfg = await getConfig();
-  const busy = await farmsBusy();
-  const farms = [1, 2].map(no => ({
-    no,
-    enabled: Number(no === 1 ? cfg.farm1_enabled : cfg.farm2_enabled) === 1,
-    free: !busy[no]
+  const [farmsRaw, busy] = await Promise.all([getFarms(), farmsBusy()]);
+  const farms = farmsRaw.map(f => ({
+    id: f.id,
+    name: f.name,
+    enabled: Number(f.enabled) === 1,
+    free: !busy[f.id]
   }));
   const state = {
     serviceOpen: farms.some(f => f.enabled),
@@ -207,7 +242,8 @@ function deadlineLeft(deadlineStr) {
 }
 
 async function serializeUserBookings(userId, cfg) {
-  const [rows] = await db.execute('SELECT * FROM farm_bookings WHERE user_id = ? ORDER BY id DESC LIMIT 12', [userId]);
+  const [rows] = await db.execute(
+    'SELECT b.*, f.name AS farm_name FROM farm_bookings b LEFT JOIN farm_farms f ON b.farm_id = f.id WHERE b.user_id = ? ORDER BY b.id DESC LIMIT 12', [userId]);
   if (!rows.length) return [];
   const ids = rows.map(r => r.id);
   const [wrows] = await db.execute(`SELECT * FROM farm_workers WHERE booking_id IN (${ids.map(() => '?').join(',')})`, ids);
@@ -225,7 +261,8 @@ async function serializeUserBookings(userId, cfg) {
     const startMs = toIso(b.start_at) ? new Date(toIso(b.start_at)).getTime() : 0;
     const cancelBeforeStart = startMs > 0 && now <= startMs - Number(cfg.cancel_cutoff_hours) * 3600e3;
     return {
-      id: b.id, ref: b.ref, farm_no: Number(b.farm_no), duration_days: Number(b.duration_days),
+      id: b.id, ref: b.ref, farm_no: Number(b.farm_no), farm_id: Number(b.farm_id) || 0,
+      farm_name: b.farm_name || ('مزرعة #' + b.farm_no), duration_days: Number(b.duration_days),
       rent_amount: Number(b.rent_amount), deposit_amount: Number(b.deposit_amount),
       status: b.status, statusLabel: STATUS_AR[b.status] || b.status,
       created_iso: toIso(b.created_at), start_iso: toIso(b.start_at), end_iso: toIso(b.end_at),
@@ -267,8 +304,8 @@ router.post('/book', isAuthenticated, async (req, res) => {
   try {
     const days = parseInt(req.body.duration_days);
     if (!DURATIONS.includes(days)) return res.status(400).json({ error: 'المدة غير متاحة — المدد الثابتة فقط (1/3/5/7/10/14 يوم)' });
-    const cfg = await getConfig();
-    if (!Number(cfg.farm1_enabled) && !Number(cfg.farm2_enabled)) {
+    const farms = await getFarms();
+    if (!farms.some(f => Number(f.enabled) === 1)) {
       return res.status(400).json({ error: 'الخدمة مقفلة حالياً' });
     }
     // حجز قائم واحد لكل مستأجر
@@ -277,15 +314,17 @@ router.post('/book', isAuthenticated, async (req, res) => {
     if (mine.length) return res.status(400).json({ error: `عندك حجز قائم بالفعل (${mine[0].ref})` });
 
     const busy = await farmsBusy();
-    const farmNo = (Number(cfg.farm1_enabled) && !busy[1]) ? 1 : ((Number(cfg.farm2_enabled) && !busy[2]) ? 2 : 0);
-    if (!farmNo) return res.status(400).json({ error: 'غير متوفر' }); // بدون اقتراح مواعيد مستقبلية
+    const farmRow = farms.find(f => Number(f.enabled) === 1 && !busy[f.id]);
+    if (!farmRow) return res.status(400).json({ error: 'غير متوفر' }); // بدون اقتراح مواعيد مستقبلية
+    const farmNo = farmRow.id;
+    const cfg = await getConfig();
 
     const rent = priceOf(cfg, days);
     const deposit = Math.round(rent * Number(cfg.deposit_pct) / 100);
     const [ins] = await db.execute(
-      `INSERT INTO farm_bookings (ref, user_id, username, discord_id, farm_no, duration_days, rent_amount, deposit_amount, status, payment_deadline)
-       VALUES ('', ?, ?, ?, ?, ?, ?, ?, 'pending_payment', DATE_ADD(NOW(), INTERVAL ? HOUR))`,
-      [req.user.id, req.user.username || '', req.user.discord_id || '', farmNo, days, rent, deposit, Number(cfg.payment_window_hours)]);
+      `INSERT INTO farm_bookings (ref, user_id, username, discord_id, farm_no, farm_id, duration_days, rent_amount, deposit_amount, status, payment_deadline)
+       VALUES ('', ?, ?, ?, ?, ?, ?, ?, ?, 'pending_payment', DATE_ADD(NOW(), INTERVAL ? HOUR))`,
+      [req.user.id, req.user.username || '', req.user.discord_id || '', farmRow.id, farmRow.id, days, rent, deposit, Number(cfg.payment_window_hours)]);
     const ref = 'WT-F-' + (1000 + ins.insertId);
     await db.execute('UPDATE farm_bookings SET ref = ? WHERE id = ?', [ref, ins.insertId]);
     await logEvent(ins.insertId, req.user.username, 'user', 'book', `حجز ${days} يوم — إيجار ${money(rent)}$ — عربون ${money(deposit)}$ — مهلة ${cfg.payment_window_hours} ساعات`);
@@ -296,7 +335,7 @@ router.post('/book', isAuthenticated, async (req, res) => {
       fields: [
         { name: 'المرجع', value: ref, inline: true },
         { name: 'المستأجر', value: String(req.user.username), inline: true },
-        { name: 'المزرعة', value: String(farmNo), inline: true },
+        { name: 'المزرعة', value: farmRow.name, inline: true },
         { name: 'المدة', value: days + ' يوم', inline: true },
         { name: 'الإيجار', value: money(rent) + '$', inline: true },
         { name: 'العربون المطلوب', value: money(deposit) + '$', inline: true },
@@ -304,7 +343,7 @@ router.post('/book', isAuthenticated, async (req, res) => {
         { name: 'مهلة الدفع', value: Number(cfg.payment_window_hours) + ' ساعات من الآن', inline: false }
       ]
     });
-    res.json({ success: true, ref, deposit, rent, farm_no: farmNo, message: `تم إنشاء الحجز ${ref} — حوّل العربون ${money(deposit)}$ على بنك الشركة ثم اضغط «دفعت العربون»` });
+    res.json({ success: true, ref, deposit, rent, farm_no: farmRow.id, farm_name: farmRow.name, message: `تم إنشاء الحجز ${ref} على ${farmRow.name} — حوّل العربون ${money(deposit)}$ على بنك الشركة ثم اضغط «دفعت العربون»` });
   } catch (e) {
     console.error('[farm] book:', e.message);
     res.status(500).json({ error: 'خطأ بإنشاء الحجز' });
@@ -401,8 +440,8 @@ router.post('/bookings/:id/extend', isAuthenticated, async (req, res) => {
     if (Date.now() >= endMs) return res.status(400).json({ error: 'الحجز انتهى — ما ينعكس التمديد' });
     // المزرعة لازم تكون فاضية بعد النهاية (احتياط — ما تنحجز مستقبلاً)
     const [clash] = await db.execute(
-      `SELECT id FROM farm_bookings WHERE farm_no = ? AND id != ? AND (status = 'pending_confirm' OR (status = 'pending_payment' AND payment_deadline > NOW())) LIMIT 1`,
-      [b.farm_no, b.id]);
+      `SELECT id FROM farm_bookings WHERE farm_id = ? AND id != ? AND (status = 'pending_confirm' OR (status = 'pending_payment' AND payment_deadline > NOW())) LIMIT 1`,
+      [b.farm_id, b.id]);
     if (clash.length) return res.status(400).json({ error: 'المزرعة محجوزة بعد انتهاء حجزك — غير متوفر التمديد' });
 
     const rent = priceOf(cfg, days);
@@ -541,15 +580,21 @@ adminRouter.use(checkPermission('company_edit'));
 adminRouter.get('/data', async (req, res) => {
   try {
     const cfg = await getConfig();
-    const [bookings] = await db.execute('SELECT * FROM farm_bookings ORDER BY id DESC LIMIT 150');
+    const [bookings] = await db.execute(
+      'SELECT b.*, f.name AS farm_name FROM farm_bookings b LEFT JOIN farm_farms f ON b.farm_id = f.id ORDER BY b.id DESC LIMIT 150');
     const [workers] = await db.execute('SELECT * FROM farm_workers ORDER BY id DESC LIMIT 300');
     const [events] = await db.execute('SELECT * FROM farm_events ORDER BY id DESC LIMIT 100');
-    const busy = await farmsBusy();
+    const [farmsRaw, busy] = await Promise.all([getFarms(), farmsBusy()]);
     res.json({
       config: cfg,
       busy,
+      farms: farmsRaw.map(f => ({
+        id: f.id, name: f.name, enabled: Number(f.enabled) === 1,
+        busy: !!busy[f.id], sort_order: Number(f.sort_order) || 0
+      })),
       bookings: bookings.map(b => ({
         ...b,
+        farm_name: b.farm_name || ('#' + (b.farm_id || b.farm_no)),
         statusLabel: STATUS_AR[b.status] || b.status,
         created_iso: toIso(b.created_at), start_iso: toIso(b.start_at), end_iso: toIso(b.end_at),
         deadline_iso: toIso(b.payment_deadline), deadline_left: deadlineLeft(b.payment_deadline),
@@ -565,7 +610,7 @@ adminRouter.get('/data', async (req, res) => {
   }
 });
 
-// حفظ إعدادات الخدمة (الأسعار نص قابل للتعديل + تفعيل المزارع)
+// حفظ إعدادات الخدمة (الأسعار نص قابل للتعديل — المزارع تُدار من مدير المزارع)
 adminRouter.post('/config', async (req, res) => {
   try {
     const b = req.body;
@@ -576,8 +621,6 @@ adminRouter.post('/config', async (req, res) => {
     const cfg = await getConfig();
     const vals = [
       String(b.bank_account || cfg.bank_account).slice(0, 64),
-      b.farm1_enabled ? 1 : 0,
-      b.farm2_enabled ? 1 : 0,
       num(b.price_1d, priceOf(cfg, 1)), num(b.price_3d, priceOf(cfg, 3)), num(b.price_5d, priceOf(cfg, 5)),
       num(b.price_7d, priceOf(cfg, 7)), num(b.price_10d, priceOf(cfg, 10)), num(b.price_14d, priceOf(cfg, 14)),
       num(b.worker_price, Number(cfg.worker_price)),
@@ -589,7 +632,7 @@ adminRouter.post('/config', async (req, res) => {
       String(b.ping_mention || cfg.ping_mention).slice(0, 32)
     ];
     await db.execute(
-      `UPDATE farm_config SET bank_account=?, farm1_enabled=?, farm2_enabled=?,
+      `UPDATE farm_config SET bank_account=?,
        price_1d=?, price_3d=?, price_5d=?, price_7d=?, price_10d=?, price_14d=?,
        worker_price=?, max_workers=?, deposit_pct=?, payment_window_hours=?,
        cancel_cutoff_hours=?, extend_window_hours=?, ping_mention=?, updated_at=NOW() WHERE id=1`, vals);
@@ -601,8 +644,54 @@ adminRouter.post('/config', async (req, res) => {
   }
 });
 
+/* ── إدارة المزارع (إضافة/تعديل/حذف غير محددة) ── */
+adminRouter.post('/farms', async (req, res) => {
+  try {
+    const name = String(req.body.name || '').trim().slice(0, 100);
+    if (!name) return res.status(400).json({ error: 'اكتب اسم المزرعة' });
+    const [mx] = await db.execute('SELECT COALESCE(MAX(sort_order), 0) + 1 AS nxt FROM farm_farms');
+    const [ins] = await db.execute('INSERT INTO farm_farms (name, enabled, sort_order) VALUES (?, 1, ?)', [name, Number(mx[0].nxt)]);
+    await logEvent(null, req.user.username, 'admin', 'farm_add', `إضافة مزرعة: ${name}`);
+    farmNotify({ title: '🏡 إضافة مزرعة جديدة', color: 0x34d399, fields: [
+      { name: 'الاسم', value: name, inline: true }, { name: 'بواسطة', value: req.user.username, inline: true }
+    ] });
+    res.json({ success: true, id: ins.insertId });
+  } catch (e) { console.error('[farm] farm add:', e.message); res.status(500).json({ error: 'خطأ بالإضافة' }); }
+});
+
+adminRouter.put('/farms/:id', async (req, res) => {
+  try {
+    const [rows] = await db.execute('SELECT * FROM farm_farms WHERE id = ?', [req.params.id]);
+    if (!rows.length) return res.status(404).json({ error: 'المزرعة غير موجودة' });
+    const f = rows[0];
+    const name = req.body.name !== undefined ? String(req.body.name).trim().slice(0, 100) : f.name;
+    if (!name) return res.status(400).json({ error: 'الاسم ما ينعكس فاضي' });
+    const enabled = req.body.enabled !== undefined ? (req.body.enabled ? 1 : 0) : Number(f.enabled);
+    await db.execute('UPDATE farm_farms SET name = ?, enabled = ? WHERE id = ?', [name, enabled, f.id]);
+    await logEvent(f.id, req.user.username, 'admin', 'farm_update',
+      `تعديل مزرعة: ${name} — ${enabled ? 'مفعلة' : 'موقوفة'}`);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: 'خطأ بالتعديل' }); }
+});
+
+adminRouter.delete('/farms/:id', async (req, res) => {
+  try {
+    const [rows] = await db.execute('SELECT * FROM farm_farms WHERE id = ?', [req.params.id]);
+    if (!rows.length) return res.status(404).json({ error: 'المزرعة غير موجودة' });
+    const [busy] = await db.execute(`SELECT id FROM farm_bookings WHERE farm_id = ? AND ${BUSY_WHERE} LIMIT 1`, [rows[0].id]);
+    if (busy.length) return res.status(400).json({ error: 'لا تنحذف — عليها حجز قائم حالياً' });
+    await db.execute('DELETE FROM farm_farms WHERE id = ?', [rows[0].id]);
+    await logEvent(null, req.user.username, 'admin', 'farm_delete', `حذف مزرعة: ${rows[0].name}`);
+    farmNotify({ title: '🗑️ حذف مزرعة', color: 0xef4444, fields: [
+      { name: 'الاسم', value: rows[0].name, inline: true }, { name: 'بواسطة', value: req.user.username, inline: true }
+    ] });
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: 'خطأ بالحذف' }); }
+});
+
 async function getBooking(id) {
-  const [rows] = await db.execute('SELECT * FROM farm_bookings WHERE id = ?', [id]);
+  const [rows] = await db.execute(
+    'SELECT b.*, f.name AS farm_name FROM farm_bookings b LEFT JOIN farm_farms f ON b.farm_id = f.id WHERE b.id = ?', [id]);
   return rows[0] || null;
 }
 
@@ -625,7 +714,7 @@ adminRouter.post('/bookings/:id/confirm-payment', async (req, res) => {
       fields: [
         { name: 'المرجع', value: b.ref, inline: true },
         { name: 'المستأجر', value: b.username, inline: true },
-        { name: 'المزرعة', value: String(b.farm_no), inline: true },
+        { name: 'المزرعة', value: b.farm_name || String(b.farm_no), inline: true },
         { name: 'المدة', value: b.duration_days + ' يوم', inline: true },
         { name: 'ينتهي', value: endStr, inline: true }
       ]
@@ -799,7 +888,8 @@ async function processTick() {
     }
   }
   // 3) حجوزات وصلت نهايتها
-  const [ended] = await db.execute("SELECT * FROM farm_bookings WHERE status = 'active' AND end_at <= NOW()");
+  const [ended] = await db.execute(
+    "SELECT b.*, f.name AS farm_name FROM farm_bookings b LEFT JOIN farm_farms f ON b.farm_id = f.id WHERE b.status = 'active' AND b.end_at <= NOW()");
   if (ended.length) {
     await db.execute("UPDATE farm_bookings SET status = 'ended' WHERE status = 'active' AND end_at <= NOW()");
     for (const b of ended) {
@@ -811,7 +901,7 @@ async function processTick() {
         fields: [
           { name: 'المرجع', value: b.ref, inline: true },
           { name: 'المستأجر', value: b.username, inline: true },
-          { name: 'المزرعة', value: String(b.farm_no), inline: true },
+          { name: 'المزرعة', value: b.farm_name || String(b.farm_no), inline: true },
           { name: 'أُضيف للفاكشن؟', value: Number(b.faction_added) === 1 ? 'نعم' : 'لا', inline: true }
         ]
       });

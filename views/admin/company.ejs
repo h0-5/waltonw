@@ -1,6 +1,6 @@
 <%- include('layout') %>
 
-<% /* صفحة إدارة الشركة — قسمين: معلومات الشركة / إدارة الخدمات (استئجار المزارع) */ %>
+<% /* صفحة إدارة الشركة — قسمين: معلومات الشركة / إدارة الخدمات (مزارع + خدمات + طلبات) */ %>
 <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
   <button id="admCoTabBtn-info" class="admin-btn primary" onclick="admCoTab('info')" style="padding:.6rem 1.4rem"><i class="fas fa-briefcase"></i> معلومات الشركة</button>
   <button id="admCoTabBtn-services" class="admin-btn" onclick="admCoTab('services')" style="padding:.6rem 1.4rem"><i class="fas fa-concierge-bell"></i> إدارة الخدمات</button>
@@ -10,20 +10,20 @@
 <div id="admCo-info">
 <div class="admin-card" style="margin-bottom:20px">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-    <h3 style="margin:0;border:none;padding:0"><i class="fas fa-briefcase"></i> عناصر الشركة</h3>
-    <button onclick="showAddItem()" class="admin-btn primary"><i class="fas fa-plus"></i> إضافة عنصر</button>
+    <h3 style="margin:0;border:none;padding:0"><i class="fas fa-briefcase"></i> عناصر معلومات الشركة</h3>
+    <button onclick="showAddItem('info')" class="admin-btn primary"><i class="fas fa-plus"></i> إضافة عنصر معلومات</button>
   </div>
   <table class="admin-table">
-    <thead><tr><th>#</th><th>العنوان</th><th>الصورة</th><th>التصنيف</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+    <thead><tr><th>#</th><th>العنوان</th><th>الصورة</th><th>الحالة</th><th>إجراءات</th></tr></thead>
     <tbody>
-      <% if (items.length > 0) { %>
-        <% items.forEach(function(item, i) { %>
+      <% var infoItems = items.filter(function(i){ return i.category === 'info'; }); %>
+      <% if (infoItems.length > 0) { %>
+        <% infoItems.forEach(function(item, i) { %>
         <tr>
           <td><%= i + 1 %></td>
           <td><%= item.title %></td>
           <td><% if (item.image) { %><img src="<%= item.image %>" style="width:40px;height:40px;object-fit:cover;border-radius:8px"><% } else { %><span style="color:var(--text-dim)">—</span><% } %></td>
-          <td><span class="badge"><%= item.category === 'info' ? 'معلومات' : 'خدمات' %></span></td>
-          <td><span class="badge"><%= item.service_status || '—' %></span></td>
+          <td><span class="badge">معلومات</span></td>
           <td style="display:flex;gap:6px">
             <button onclick="showEditItem(<%= item.id %>)" class="admin-btn small"><i class="fas fa-edit"></i></button>
             <button onclick="deleteItem(<%= item.id %>)" class="admin-btn danger small"><i class="fas fa-trash"></i></button>
@@ -31,34 +31,7 @@
         </tr>
         <% }); %>
       <% } else { %>
-        <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-dim)">لا توجد عناصر</td></tr>
-      <% } %>
-    </tbody>
-  </table>
-</div>
-
-<div class="admin-card">
-  <h3 style="margin-bottom:20px"><i class="fas fa-clipboard-list"></i> طلبات الخدمة</h3>
-  <table class="admin-table">
-    <thead><tr><th>#</th><th>المستخدم</th><th>الخدمة</th><th>الحالة</th><th>إجراءات</th></tr></thead>
-    <tbody>
-      <% if (requests.length > 0) { %>
-        <% requests.forEach(function(r, i) { %>
-        <tr>
-          <td><%= i + 1 %></td>
-          <td><%= r.username %></td>
-          <td><%= r.service_title %></td>
-          <td><span class="badge"><%= r.status %></span></td>
-          <td style="display:flex;gap:4px">
-            <% if (r.status === 'pending') { %>
-              <button onclick="approveReq(<%= r.id %>)" class="admin-btn success small"><i class="fas fa-check"></i></button>
-              <button onclick="rejectReq(<%= r.id %>)" class="admin-btn danger small"><i class="fas fa-times"></i></button>
-            <% } %>
-          </td>
-        </tr>
-        <% }); %>
-      <% } else { %>
-        <tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-dim)">لا توجد طلبات</td></tr>
+        <tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-dim)">لا توجد عناصر معلومات</td></tr>
       <% } %>
     </tbody>
   </table>
@@ -68,9 +41,22 @@
 <!-- ═══════════ القسم الثاني: إدارة الخدمات ═══════════ -->
 <div id="admCo-services" style="display:none">
 
+<!-- مدير المزارع — إضافة/حذف غير محددة -->
+<div class="admin-card" style="margin-bottom:20px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:10px">
+    <h3 style="margin:0;border:none;padding:0"><i class="fas fa-warehouse"></i> مزارع الشركة — إضافة وحذف بلا حدود</h3>
+  </div>
+  <p style="color:var(--text-dim);font-size:.85rem;margin:0 0 14px">أضف أي عدد من المزارع أو احذف — إيقاف التفعيل يمنع الحجز الجديد عليها فقط ولا يمس الحجوزات القائمة. الحذف يُرفض إذا كانت عليها حجز قائم.</p>
+  <div id="farmFarmsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px"></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <input type="text" id="farmNewName" placeholder="اسم المزرعة الجديدة (مثال: المزرعة الشرقية)" style="flex:1;min-width:220px;padding:.6rem .9rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:10px;color:var(--text)">
+    <button class="admin-btn primary" onclick="farmAddFarm()"><i class="fas fa-plus"></i> إضافة مزرعة</button>
+  </div>
+</div>
+
 <div class="admin-card" style="margin-bottom:20px">
   <h3 style="margin-bottom:6px"><i class="fas fa-seedling"></i> خدمة استئجار المزارع — الإعدادات والأسعار</h3>
-  <p style="color:var(--text-dim);font-size:.85rem;margin:0 0 16px">الأسعار نص قابل للتعديل من هنا — المدد ثابتة (1/3/5/7/10/14 يوم). إيقاف تفعيل المزرعة يمنع حجزها فقط ولا تمس الحجوزات القائمة.</p>
+  <p style="color:var(--text-dim);font-size:.85rem;margin:0 0 16px">الأسعار نص قابل للتعديل من هنا — المدد ثابتة (1/3/5/7/10/14 يوم).</p>
   <div id="farmCfgLoading" style="color:var(--text-dim)">جاري التحميل...</div>
   <form id="farmCfgForm" style="display:none" onsubmit="farmSaveCfg(event)">
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px">
@@ -89,10 +75,6 @@
     </div>
     <div class="form-group"><label>حساب بنك الشركة</label><input type="text" id="f_bank_account" style="direction:ltr;text-align:left"></div>
     <div class="form-group"><label>منشن التنبيهات (يُرسل بالويبهوك)</label><input type="text" id="f_ping_mention" placeholder="@here" style="direction:ltr;text-align:left"></div>
-    <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="f_farm1_enabled"> <span>المزرعة 1 مفعلة</span></label>
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="f_farm2_enabled"> <span>المزرعة 2 مفعلة</span></label>
-    </div>
     <button type="submit" class="admin-btn primary"><i class="fas fa-save"></i> حفظ الإعدادات</button>
   </form>
 </div>
@@ -120,6 +102,119 @@
   </div>
 </div>
 
+<!-- خدمات الشركة (عناصر services) -->
+<div class="admin-card" style="margin-bottom:20px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+    <h3 style="margin:0;border:none;padding:0"><i class="fas fa-concierge-bell"></i> خدمات الشركة (بطاقات الصفحة)</h3>
+    <button onclick="showAddItem('activities')" class="admin-btn primary"><i class="fas fa-plus"></i> إضافة خدمة جديدة</button>
+  </div>
+  <table class="admin-table">
+    <thead><tr><th>#</th><th>الخدمة</th><th>الحالة</th><th>الأسئلة</th><th>البكجات</th><th>إجراءات</th></tr></thead>
+    <tbody>
+      <% var svcItems = items.filter(function(i){ return i.category === 'activities'; }); %>
+      <% var qCount = {}; questions.forEach(function(q){ qCount[q.service_id] = (qCount[q.service_id]||0)+1; }); %>
+      <% var pCount = {}; packages.forEach(function(p){ pCount[p.service_id] = (pCount[p.service_id]||0)+1; }); %>
+      <% if (svcItems.length > 0) { %>
+        <% svcItems.forEach(function(item, i) { %>
+        <tr>
+          <td><%= i + 1 %></td>
+          <td><%= item.title %></td>
+          <td>
+            <select onchange="quickStatus(<%= item.id %>, this.value)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:var(--text);border-radius:8px;padding:4px 8px;font-size:.78rem">
+              <option value="available" <%= item.service_status === 'available' ? 'selected' : '' %>>متوفر</option>
+              <option value="coming_soon" <%= item.service_status === 'coming_soon' ? 'selected' : '' %>>قريباً</option>
+              <option value="ended" <%= item.service_status === 'ended' ? 'selected' : '' %>>منتهي</option>
+              <option value="" <%= !item.service_status ? 'selected' : '' %>>عنصر عادي (بدون طلبات)</option>
+            </select>
+          </td>
+          <td><span class="badge"><%= qCount[item.id] || 0 %></span></td>
+          <td><span class="badge"><%= pCount[item.id] || 0 %></span></td>
+          <td style="display:flex;gap:6px">
+            <button onclick="showEditItem(<%= item.id %>)" class="admin-btn small"><i class="fas fa-edit"></i></button>
+            <button onclick="deleteItem(<%= item.id %>)" class="admin-btn danger small"><i class="fas fa-trash"></i></button>
+          </td>
+        </tr>
+        <% }); %>
+      <% } else { %>
+        <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-dim)">لا توجد خدمات</td></tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+
+<!-- أسئلة وبكجات الخدمات -->
+<div class="admin-card" style="margin-bottom:20px">
+  <h3 style="margin-bottom:14px"><i class="fas fa-circle-question"></i> أسئلة وبكجات الخدمات</h3>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px">
+    <div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+        <select id="qSvcSel" onchange="renderQs()" style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:var(--text);border-radius:8px;padding:.5rem">
+          <% svcItems.forEach(function(item){ %><option value="<%= item.id %>"><%= item.title %></option><% }) %>
+        </select>
+      </div>
+      <div id="qList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <input type="text" id="qText" placeholder="نص السؤال الجديد" style="flex:1;min-width:140px;padding:.5rem .8rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:var(--text)">
+        <select id="qType" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:var(--text);border-radius:8px;padding:.5rem">
+          <option value="text">نص</option>
+          <option value="character_name">اسم شخصية</option>
+          <option value="image">صورة</option>
+        </select>
+        <label style="display:flex;align-items:center;gap:5px;font-size:.78rem;color:var(--text-dim);cursor:pointer"><input type="checkbox" id="qRequired"> إلزامي</label>
+        <button class="admin-btn primary small" onclick="addQuestion()"><i class="fas fa-plus"></i></button>
+      </div>
+    </div>
+    <div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+        <select id="pSvcSel" onchange="renderPs()" style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:var(--text);border-radius:8px;padding:.5rem">
+          <% svcItems.forEach(function(item){ %><option value="<%= item.id %>"><%= item.title %></option><% }) %>
+        </select>
+      </div>
+      <div id="pList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <input type="text" id="pName" placeholder="اسم البكج" style="flex:1;min-width:110px;padding:.5rem .8rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:var(--text)">
+        <input type="number" id="pPrice" placeholder="السعر $" min="0" style="width:90px;padding:.5rem .8rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:var(--text);direction:ltr">
+        <input type="number" id="pDays" placeholder="أيام" min="0" style="width:70px;padding:.5rem .8rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:var(--text);direction:ltr">
+        <button class="admin-btn primary small" onclick="addPackage()"><i class="fas fa-plus"></i></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- طلبات الخدمة -->
+<div class="admin-card" style="margin-bottom:20px">
+  <h3 style="margin-bottom:14px"><i class="fas fa-clipboard-list"></i> طلبات الخدمة</h3>
+  <table class="admin-table">
+    <thead><tr><th>#</th><th>المستخدم</th><th>الخدمة</th><th>الإجابات</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+    <tbody>
+      <% if (requests.length > 0) { %>
+        <% requests.forEach(function(r, i) { %>
+        <tr>
+          <td><%= r.id %></td>
+          <td><%= r.username || ('#' + r.user_id) %></td>
+          <td><%= r.service_title || '—' %></td>
+          <td style="max-width:340px">
+            <details>
+              <summary style="cursor:pointer;color:var(--accent);font-size:.8rem">عرض الإجابات</summary>
+              <div style="font-size:.78rem;color:var(--text-dim);padding:.5rem 0;white-space:pre-wrap"><%= (function(){ try { var a = JSON.parse(r.answers || '[]'); return (Array.isArray(a) ? a : []).map(function(x){ return '• ' + x.q + ': ' + (x.type === 'image' && x.a ? '[صورة] ' + x.a : (x.a || '—')); }).join('\n') || 'بدون إجابات'; } catch(e) { return '—'; } })() %></div>
+            </details>
+          </td>
+          <td><span class="badge"><%= r.status === 'pending' ? 'بانتظار المراجعة' : r.status === 'approved' ? 'مقبول' : r.status === 'rejected' ? 'مرفوض' : r.status %></span></td>
+          <td style="display:flex;gap:4px">
+            <% if (r.status === 'pending') { %>
+              <button onclick="approveReq(<%= r.id %>)" class="admin-btn success small"><i class="fas fa-check"></i></button>
+              <button onclick="rejectReq(<%= r.id %>)" class="admin-btn danger small"><i class="fas fa-times"></i></button>
+            <% } %>
+          </td>
+        </tr>
+        <% }); %>
+      <% } else { %>
+        <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-dim)">لا توجد طلبات</td></tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+
 <div class="admin-card">
   <h3 style="margin-bottom:14px"><i class="fas fa-clock-rotate-left"></i> سجل الأحداث</h3>
   <table class="admin-table" id="farmEvTable">
@@ -135,8 +230,8 @@
     <form id="addForm" enctype="multipart/form-data">
       <div class="form-group"><label>العنوان</label><input type="text" name="title" required></div>
       <div class="form-group"><label>الوصف</label><textarea name="description" rows="3"></textarea></div>
-      <div class="form-group"><label>التصنيف</label><select name="category"><option value="info">معلومات</option><option value="activities">خدمات</option></select></div>
-      <div class="form-group"><label>حالة الخدمة</label><select name="service_status"><option value="">بدون</option><option value="available">متوفر</option><option value="ended">منتهي</option><option value="coming_soon">قريباً</option></select></div>
+      <div class="form-group"><label>التصنيف</label><select name="category" id="add_co_category"><option value="info">معلومات</option><option value="activities">خدمة</option></select></div>
+      <div class="form-group"><label>حالة الخدمة (للخدمات فقط)</label><select name="service_status"><option value="available">متوفر</option><option value="coming_soon">قريباً</option><option value="ended">منتهي</option><option value="">بدون (عنصر عادي)</option></select></div>
       <div class="form-group"><label>رابط الفيديو (اختياري)</label><input type="text" name="video_url"></div>
       <div class="form-group"><label>الصورة</label><input type="file" name="image_file" accept="image/*"></div>
       <div class="modal-actions">
@@ -154,8 +249,8 @@
       <input type="hidden" name="id" id="edit_co_id">
       <div class="form-group"><label>العنوان</label><input type="text" name="title" id="edit_co_title" required></div>
       <div class="form-group"><label>الوصف</label><textarea name="description" id="edit_co_desc" rows="3"></textarea></div>
-      <div class="form-group"><label>التصنيف</label><select name="category" id="edit_co_category"><option value="info">معلومات</option><option value="activities">خدمات</option></select></div>
-      <div class="form-group"><label>حالة الخدمة</label><select name="service_status" id="edit_co_status"><option value="">بدون</option><option value="available">متوفر</option><option value="ended">منتهي</option><option value="coming_soon">قريباً</option></select></div>
+      <div class="form-group"><label>التصنيف</label><select name="category" id="edit_co_category"><option value="info">معلومات</option><option value="activities">خدمة</option></select></div>
+      <div class="form-group"><label>حالة الخدمة</label><select name="service_status" id="edit_co_status"><option value="available">متوفر</option><option value="coming_soon">قريباً</option><option value="ended">منتهي</option><option value="">بدون (عنصر عادي)</option></select></div>
       <div class="form-group"><label>رابط الفيديو</label><input type="text" name="video_url" id="edit_co_video"></div>
       <div class="form-group"><label>الصورة الحالية</label><div id="edit_co_image_preview" style="margin-bottom:8px"></div></div>
       <div class="form-group"><label>صورة جديدة</label><input type="file" name="image_file" accept="image/*"></div>
@@ -169,7 +264,14 @@
 
 <script>
 var allItems = <%- JSON.stringify(items) %>;
-function showAddItem() { document.getElementById('addModal').style.display = 'flex'; }
+var allQuestions = <%- JSON.stringify(questions) %>;
+var allPackages = <%- JSON.stringify(packages) %>;
+var svcItemIds = allItems.filter(i => i.category === 'activities').map(i => i.id);
+
+function showAddItem(cat) {
+  if (cat) document.getElementById('add_co_category').value = cat;
+  document.getElementById('addModal').style.display = 'flex';
+}
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 function showEditItem(id) {
   var item = allItems.find(i => i.id === id);
@@ -200,20 +302,31 @@ document.getElementById('editForm').addEventListener('submit', async (e) => {
   if (data.success) location.reload(); else alert(data.error || 'خطأ');
 });
 async function deleteItem(id) {
-  if (!confirm('هل أنت متأكد؟')) return;
+  if (!confirm('حذف هذا العنصر؟ راح تنحذف معه أسئلته وبكجاته.')) return;
   const res = await fetch('/api/admin/company/items/' + id, { method: 'DELETE' });
   const data = await res.json();
   if (data.success) location.reload();
 }
+async function quickStatus(id, status) {
+  const fd = new FormData();
+  const item = allItems.find(i => i.id === id);
+  fd.append('title', item.title); fd.append('description', item.description || '');
+  fd.append('category', item.category); fd.append('service_status', status);
+  fd.append('video_url', item.video_url || '');
+  const res = await fetch('/api/admin/company/items/' + id, { method: 'PUT', body: fd });
+  const data = await res.json();
+  if (!data.success) alert(data.error || 'خطأ'); else location.reload();
+}
 async function approveReq(id) {
   const res = await fetch('/api/admin/company/requests/' + id + '/approve', { method: 'POST' });
   const data = await res.json();
-  if (data.success) location.reload();
+  if (data.success) location.reload(); else alert(data.error || 'خطأ');
 }
 async function rejectReq(id) {
-  const res = await fetch('/api/admin/company/requests/' + id + '/reject', { method: 'POST' });
+  const notes = prompt('سبب الرفض (اختياري — يوصل للمستخدم بإشعاره):') || '';
+  const res = await fetch('/api/admin/company/requests/' + id + '/reject', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ notes }) });
   const data = await res.json();
-  if (data.success) location.reload();
+  if (data.success) location.reload(); else alert(data.error || 'خطأ');
 }
 
 /* ═══ تبويبات الصفحة ═══ */
@@ -225,7 +338,54 @@ function admCoTab(t) {
   bs.className = 'admin-btn' + (t === 'services' ? ' primary' : '');
 }
 
-/* ═══ إدارة الخدمات — استئجار المزارع ═══ */
+/* ═══ مدير المزارع ═══ */
+async function farmLoad() {
+  try {
+    const res = await fetch('/api/farm/admin/data', { cache: 'no-store' });
+    farmData = await res.json();
+    if (farmData.error) { alert(farmData.error); return; }
+    farmRenderFarms(); farmRenderCfg(); farmRenderBookings(); farmRenderWorkers(); farmRenderEvents();
+  } catch (e) { alert('خطأ بتحميل بيانات الخدمات'); }
+}
+function farmRenderFarms() {
+  const box = document.getElementById('farmFarmsList');
+  const list = farmData.farms || [];
+  if (!list.length) { box.innerHTML = '<div style="color:var(--text-dim);font-size:.85rem">ما في مزارع — أضف أول مزرعة فوق</div>'; return; }
+  box.innerHTML = list.map(f => `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:.65rem .9rem">
+    <input type="text" value="${(f.name || '').replace(/"/g, '&quot;')}" id="farmName_${f.id}" style="flex:1;min-width:160px;padding:.45rem .7rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:var(--text)">
+    ${f.busy ? '<span style="font-size:.7rem;font-weight:800;color:#ef4444;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);padding:3px 9px;border-radius:7px">محجوزة الآن</span>' : ''}
+    <label style="display:flex;align-items:center;gap:6px;font-size:.78rem;cursor:pointer;white-space:nowrap"><input type="checkbox" ${f.enabled ? 'checked' : ''} onchange="farmToggle(${f.id}, this.checked)"> مفعلة</label>
+    <button class="admin-btn small" onclick="farmRename(${f.id})"><i class="fas fa-save"></i> حفظ الاسم</button>
+    <button class="admin-btn danger small" onclick="farmDel(${f.id})"><i class="fas fa-trash"></i></button>
+  </div>`).join('');
+}
+async function farmAddFarm() {
+  const name = document.getElementById('farmNewName').value.trim();
+  if (!name) return alert('اكتب اسم المزرعة');
+  const res = await fetch('/api/farm/admin/farms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) });
+  const d = await res.json();
+  if (d.success) { document.getElementById('farmNewName').value = ''; farmLoad(); } else alert(d.error || 'خطأ');
+}
+async function farmRename(id) {
+  const name = document.getElementById('farmName_' + id).value.trim();
+  if (!name) return alert('الاسم ما ينعكس فاضي');
+  const res = await fetch('/api/farm/admin/farms/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) });
+  const d = await res.json();
+  if (d.success) farmLoad(); else alert(d.error || 'خطأ');
+}
+async function farmToggle(id, enabled) {
+  const res = await fetch('/api/farm/admin/farms/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled }) });
+  const d = await res.json();
+  if (d.success) farmLoad(); else alert(d.error || 'خطأ');
+}
+async function farmDel(id) {
+  if (!confirm('حذف هذه المزرعة نهائياً؟')) return;
+  const res = await fetch('/api/farm/admin/farms/' + id, { method: 'DELETE' });
+  const d = await res.json();
+  if (d.success) farmLoad(); else alert(d.error || 'خطأ');
+}
+
+/* ═══ إعدادات وأسعار استئجار المزارع ═══ */
 var farmData = null;
 const FARM_ST_BADGE = {
   pending_payment: ['بانتظار الدفع', '#eab308'],
@@ -247,14 +407,6 @@ function farmBadge(map, st) {
   const m = map[st] || [st, '#94a3b8'];
   return `<span style="font-size:.72rem;font-weight:800;color:${m[1]};background:${m[1]}1f;border:1px solid ${m[1]}55;padding:3px 10px;border-radius:7px;white-space:nowrap">${m[0]}</span>`;
 }
-async function farmLoad() {
-  try {
-    const res = await fetch('/api/farm/admin/data', { cache: 'no-store' });
-    farmData = await res.json();
-    if (farmData.error) { alert(farmData.error); return; }
-    farmRenderCfg(); farmRenderBookings(); farmRenderWorkers(); farmRenderEvents();
-  } catch (e) { alert('خطأ بتحميل بيانات الخدمات'); }
-}
 function farmRenderCfg() {
   const c = farmData.config;
   document.getElementById('farmCfgLoading').style.display = 'none';
@@ -273,8 +425,6 @@ function farmRenderCfg() {
   document.getElementById('f_extend_window_hours').value = c.extend_window_hours;
   document.getElementById('f_bank_account').value = c.bank_account || '';
   document.getElementById('f_ping_mention').value = c.ping_mention || '';
-  document.getElementById('f_farm1_enabled').checked = Number(c.farm1_enabled) === 1;
-  document.getElementById('f_farm2_enabled').checked = Number(c.farm2_enabled) === 1;
 }
 async function farmSaveCfg(e) {
   e.preventDefault();
@@ -285,9 +435,7 @@ async function farmSaveCfg(e) {
     worker_price: g('f_worker_price'), max_workers: g('f_max_workers'), deposit_pct: g('f_deposit_pct'),
     payment_window_hours: g('f_payment_window_hours'), cancel_cutoff_hours: g('f_cancel_cutoff_hours'),
     extend_window_hours: g('f_extend_window_hours'), bank_account: g('f_bank_account'),
-    ping_mention: g('f_ping_mention'),
-    farm1_enabled: document.getElementById('f_farm1_enabled').checked,
-    farm2_enabled: document.getElementById('f_farm2_enabled').checked
+    ping_mention: g('f_ping_mention')
   };
   const res = await fetch('/api/farm/admin/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   const d = await res.json();
@@ -313,7 +461,7 @@ function farmRenderBookings() {
   tb.innerHTML = list.map(b => `<tr>
     <td style="direction:ltr;font-family:ui-monospace,Menlo,monospace;color:var(--accent);font-weight:800">${b.ref}</td>
     <td>${b.username || '—'}</td>
-    <td>${b.farm_no}</td>
+    <td>${b.farm_name || '#' + (b.farm_id || b.farm_no)}</td>
     <td>${b.duration_days} يوم${b.extend_days && b.extend_status === 'confirmed' ? ` <span style="color:#34d399">+${b.extend_days}</span>` : ''}</td>
     <td style="direction:ltr">${farmMoney(b.rent_amount)}$ / <b style="color:var(--accent)">${farmMoney(b.deposit_amount)}$</b></td>
     <td>${farmBadge(FARM_ST_BADGE, b.status)}${b.extend_status === 'pending_payment' || b.extend_status === 'pending_confirm' ? '<br><span style="font-size:.7rem;color:var(--text-dim)">تمديد ' + b.extend_days + ' يوم</span> ' + farmBadge(FARM_ST_BADGE, b.extend_status) : ''}</td>
@@ -364,6 +512,63 @@ async function farmWorkerAct(id, act) {
   const d = await res.json();
   if (d.success) farmLoad(); else alert(d.error || 'خطأ');
 }
+
+/* ═══ أسئلة وبكجات الخدمات ═══ */
+function renderQs() {
+  const sid = parseInt(document.getElementById('qSvcSel').value);
+  const box = document.getElementById('qList');
+  const list = allQuestions.filter(q => Number(q.service_id) === sid);
+  if (!svcItemIds.length) { box.innerHTML = '<div style="color:var(--text-dim);font-size:.8rem">أضف خدمة أولاً</div>'; return; }
+  if (!list.length) { box.innerHTML = '<div style="color:var(--text-dim);font-size:.8rem">لا توجد أسئلة لهذه الخدمة</div>'; return; }
+  box.innerHTML = list.map(q => `<div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:9px;padding:.5rem .8rem;font-size:.8rem">
+    <span style="flex:1">${q.question} ${Number(q.required) === 1 ? '<span style="color:#ef4444">*</span>' : ''}</span>
+    <span class="badge">${q.type === 'image' ? 'صورة' : q.type === 'character_name' ? 'اسم شخصية' : 'نص'}</span>
+    <button class="admin-btn danger small" onclick="delQuestion(${q.id})"><i class="fas fa-trash"></i></button>
+  </div>`).join('');
+}
+async function addQuestion() {
+  const sid = parseInt(document.getElementById('qSvcSel').value);
+  const question = document.getElementById('qText').value.trim();
+  if (!sid || !question) return alert('اكتب السؤال واختر الخدمة');
+  const res = await fetch('/api/admin/company/questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ service_id: sid, question, type: document.getElementById('qType').value, required: document.getElementById('qRequired').checked }) });
+  const d = await res.json();
+  if (d.success) location.reload(); else alert(d.error || 'خطأ');
+}
+async function delQuestion(id) {
+  if (!confirm('حذف هذا السؤال؟')) return;
+  const res = await fetch('/api/admin/company/questions/' + id, { method: 'DELETE' });
+  const d = await res.json();
+  if (d.success) location.reload();
+}
+function renderPs() {
+  const sid = parseInt(document.getElementById('pSvcSel').value);
+  const box = document.getElementById('pList');
+  const list = allPackages.filter(p => Number(p.service_id) === sid);
+  if (!svcItemIds.length) { box.innerHTML = '<div style="color:var(--text-dim);font-size:.8rem">أضف خدمة أولاً</div>'; return; }
+  if (!list.length) { box.innerHTML = '<div style="color:var(--text-dim);font-size:.8rem">لا توجد بكجات — الطلب بدون بكج يشتغل عادي</div>'; return; }
+  box.innerHTML = list.map(p => `<div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:9px;padding:.5rem .8rem;font-size:.8rem">
+    <span style="flex:1;font-weight:700">${p.name}</span>
+    <span style="direction:ltr;color:var(--accent);font-weight:800">$${Number(p.price).toFixed(2)}</span>
+    ${Number(p.days) > 0 ? `<span class="badge">${p.days} يوم</span>` : ''}
+    <button class="admin-btn danger small" onclick="delPackage(${p.id})"><i class="fas fa-trash"></i></button>
+  </div>`).join('');
+}
+async function addPackage() {
+  const sid = parseInt(document.getElementById('pSvcSel').value);
+  const name = document.getElementById('pName').value.trim();
+  if (!sid || !name) return alert('اكتب اسم البكج واختر الخدمة');
+  const res = await fetch('/api/admin/company/packages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ service_id: sid, name, price: document.getElementById('pPrice').value, days: document.getElementById('pDays').value }) });
+  const d = await res.json();
+  if (d.success) location.reload(); else alert(d.error || 'خطأ');
+}
+async function delPackage(id) {
+  if (!confirm('حذف هذا البكج؟')) return;
+  const res = await fetch('/api/admin/company/packages/' + id, { method: 'DELETE' });
+  const d = await res.json();
+  if (d.success) location.reload();
+}
+
+if (svcItemIds.length) { renderQs(); renderPs(); }
 farmLoad();
 </script>
 <%- include('admin_footer') %>

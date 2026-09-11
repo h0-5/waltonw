@@ -105,8 +105,53 @@ async function seedRuleStagesIfEmpty() {
   } catch (e) { console.log('⚠️ rule_stages seed skipped:', e.message); }
 }
 
-async function migrate() {
-  console.log('🔄 Running migration...');
+/* خدمات الشركة الجاهزة — بذرة تلقائية (تصميم ملابس + بيع سيارات) + أعمدة قد تنقص */
+async function seedCompanyServices() {
+  const ensureCol = async (table, col, def) => {
+    const [c] = await db.query(`SHOW COLUMNS FROM ${table} LIKE '${col}'`);
+    if (!c.length) {
+      await db.query(`ALTER TABLE ${table} ADD COLUMN ${def}`);
+      console.log(`✅ ${table}.${col} added`);
+    }
+  };
+  await ensureCol('service_questions', 'required', 'required TINYINT(1) DEFAULT 0');
+  await ensureCol('service_packages', 'days', 'days INT DEFAULT 0');
+  await ensureCol('service_packages', 'image_type', "image_type VARCHAR(20) DEFAULT 'emoji'");
+  await ensureCol('service_packages', 'image_value', "image_value VARCHAR(255) DEFAULT ''");
+
+  const seed = async (title, description, questions) => {
+    const [ex] = await db.query('SELECT id FROM company_items WHERE title = ? LIMIT 1', [title]);
+    if (ex.length) return;
+    const [ins] = await db.query(
+      "INSERT INTO company_items (title, description, category, service_status, sort_order) VALUES (?, ?, 'activities', 'available', 0)",
+      [title, description]);
+    let i = 0;
+    for (const q of questions) {
+      await db.query('INSERT INTO service_questions (service_id, question, type, required, sort_order) VALUES (?, ?, ?, ?, ?)',
+        [ins.insertId, q[0], q[1], q[2], ++i]);
+    }
+    console.log('✅ company service seeded:', title);
+  };
+  await seed('تصميم ملابس',
+    'شركة والتون تصمم لك ملابس خاصة على السيرفر — قدّم طلبك مع وصف التصميم وصورة مرجعية، والإدارة تراجع الطلب وتتصل فيك للتسعير والتنفيذ.',
+    [
+      ['اسم شخصيتك الكاملة بالسيرفر (مثال: Hadi_Walton)', 'character_name', 1],
+      ['وصف التصميم المطلوب (القطعة، الألوان، الشعار/الكتابة)', 'text', 1],
+      ['صورة مرجعية للتصميم (إن وجدت)', 'image', 0],
+      ['ملاحظات إضافية', 'text', 0]
+    ]);
+  await seed('بيع سيارات',
+    'بيع سيارتك عبر شركة والتون — سجل بيانات سيارتك والسعر المطلوب وأرفق صورة، والإدارة تراجع الطلب وتتواصل معك لإتمام البيع.',
+    [
+      ['اسم شخصيتك الكاملة بالسيرفر (مثال: Hadi_Walton)', 'character_name', 1],
+      ['نوع وموديل السيارة', 'text', 1],
+      ['السعر المطلوب ($)', 'text', 1],
+      ['صورة السيارة', 'image', 0],
+      ['ملاحظات إضافية (الحالة، التعديلات، الكيلومترات)', 'text', 0]
+    ]);
+}
+
+async function migrate() { console.log('🔄 Running migration...');
   const tables = [
     `CREATE TABLE IF NOT EXISTS users (id INT AUTO_INCREMENT PRIMARY KEY, discord_id VARCHAR(50) UNIQUE, username VARCHAR(100), email VARCHAR(255), avatar TEXT, profile_picture TEXT, cover_photo TEXT, role VARCHAR(50) DEFAULT 'user', is_banned TINYINT(1) DEFAULT 0, ban_reason TEXT, is_muted TINYINT(1) DEFAULT 0, total_game_points INT DEFAULT 0, warn_count INT DEFAULT 0, in_guild TINYINT(1) DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP)`,
     `CREATE TABLE IF NOT EXISTS user_sessions (id VARCHAR(128) PRIMARY KEY, expires INT UNSIGNED NOT NULL, data MEDIUMTEXT, INDEX sessions_expires(expires))`,
@@ -443,6 +488,9 @@ async function start() {
     await farmApi.ensureFarmSchema();
     farmApi.startFarmCron();
   } catch (e) { console.log('⚠️ farm init failed:', e.message); }
+
+  // خدمات الشركة الجاهزة (تصميم ملابس + بيع سيارات) — بذرة تلقائية بدون تدخل يدوي
+  try { await seedCompanyServices(); } catch (e) { console.log('⚠️ company services seed failed:', e.message); }
 
   server.listen(PORT, () => {
     console.log(`\n  Walton Family Server running on http://localhost:${PORT}\n`);

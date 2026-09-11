@@ -391,16 +391,21 @@ router.get('/properties', isAuthenticated, isInGuild, checkPageAccess('/properti
 
 // Company
 router.get('/company', isAuthenticated, isInGuild, checkPageAccess('/company'), async (req, res) => {
-  const infoItems = await safeQuery("SELECT * FROM company_items WHERE category = 'info' ORDER BY sort_order ASC");
-  const activityItems = await safeQuery("SELECT * FROM company_items WHERE category = 'activities' ORDER BY sort_order ASC");
-  
+  // ضمان جداول المزرعة قبل قراءة الحالة (صفحة الشركة أول من ينادي getPublicState)
+  try { await require('./api/farm').ensureFarmSchema(); } catch (e) {}
+  const infoItems = await safeQuery("SELECT * FROM company_items WHERE category = 'info' ORDER BY sort_order ASC, id ASC");
+  const activityItems = await safeQuery("SELECT * FROM company_items WHERE category = 'activities' ORDER BY sort_order ASC, id ASC");
+
+  // أسئلة وبكجات كل الخدمات باستعلامين فقط (بدل N+1)
   const servicesQuestions = {};
   const servicesPackages = {};
-  for (const item of activityItems) {
-    if (item.service_status) {
-      servicesQuestions[item.id] = await safeQuery("SELECT * FROM service_questions WHERE service_id = ? ORDER BY sort_order ASC", [item.id]);
-      servicesPackages[item.id] = await safeQuery("SELECT * FROM service_packages WHERE service_id = ? ORDER BY sort_order ASC", [item.id]);
-    }
+  const svcIds = activityItems.filter(i => i.service_status).map(i => i.id);
+  if (svcIds.length) {
+    const inCl = svcIds.map(() => '?').join(',');
+    const qs = await safeQuery(`SELECT * FROM service_questions WHERE service_id IN (${inCl}) ORDER BY sort_order ASC, id ASC`, svcIds);
+    const pks = await safeQuery(`SELECT * FROM service_packages WHERE service_id IN (${inCl}) ORDER BY sort_order ASC, id ASC`, svcIds);
+    qs.forEach(q => { (servicesQuestions[q.service_id] = servicesQuestions[q.service_id] || []).push(q); });
+    pks.forEach(p => { (servicesPackages[p.service_id] = servicesPackages[p.service_id] || []).push(p); });
   }
   // حالة خدمة استئجار المزارع (أسعار/توفر/حجوزات المستخدم)
   let farmState = null;

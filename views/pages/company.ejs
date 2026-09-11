@@ -15,13 +15,12 @@
     </div>
 
     <div class="cy-co-main">
-        <div class="cy-co-tabs">
-            <button onclick="showTab('info')" id="tab-info" class="cy-co-tab cy-co-tab-active">
-                <i class="fas fa-info-circle"></i>معلومات الشركة
-            </button>
-            <button onclick="showTab('services')" id="tab-services" class="cy-co-tab">
-                <i class="fas fa-concierge-bell"></i>الخدمات
-            </button>
+
+        <!-- ═══ القسم الأول: معلومات الشركة (ظاهر مباشرة) ═══ -->
+        <div class="cy-co-sec-head cy-co-reveal">
+            <div class="cy-co-sec-ic"><i class="fas fa-info-circle"></i></div>
+            <h2 class="cy-co-sec-title">معلومات الشركة</h2>
+            <span class="cy-co-sec-line"></span>
         </div>
 
         <!-- Info Section -->
@@ -54,8 +53,18 @@
             <% } %>
         </div>
 
+        <!-- ═══ القسم الثاني: خدمات الشركة (ظاهر مباشرة — بدون تابات) ═══ -->
+        <div class="cy-co-sec-head cy-co-reveal" style="margin-top:3rem">
+            <div class="cy-co-sec-ic"><i class="fas fa-concierge-bell"></i></div>
+            <h2 class="cy-co-sec-title">خدمات الشركة</h2>
+            <span class="cy-co-sec-line"></span>
+            <% if (user) { %>
+            <button class="cy-co-sec-btn" onclick="svcOpenMy()"><i class="fas fa-list-check"></i> طلباتي</button>
+            <% } %>
+        </div>
+
         <!-- Services Section -->
-        <div id="section-services">
+        <div id="section-services" class="active">
             <% if (farmState) { %>
             <!-- خدمة استئجار المزارع -->
             <div class="cy-co-card cy-co-reveal" style="border-color:rgba(var(--accent-rgb),.25)">
@@ -66,7 +75,7 @@
                     <span id="farmBadge" class="cy-farm-badge off"><i class="fas fa-circle-notch fa-spin"></i> جاري التحديث</span>
                 </div>
                 <div class="cy-co-body">
-                    <p class="cy-co-desc">احجز مزرعتك من شركة والتون — عندنا مزرعتين والخدمة تحسب التوفر على الاثنتين: أول ما تأكد الإدارة وصول العربون تسلم مزرعة فاضية على طول.</p>
+                    <p class="cy-co-desc">احجز مزرعتك من شركة والتون — الخدمة وحدة تحسب التوفر على كل مزارع الشركة (<%= (farmState.farms || []).length %> مزارع): أول ما تأكد الإدارة وصول العربون تسلم مزرعة فاضية على طول.</p>
 
                     <div class="cy-farm-price-grid">
                         <% farmState.config.prices.forEach(function(p) { %>
@@ -246,19 +255,7 @@
 var svcQData = <%- JSON.stringify(servicesQuestions) %>;
 var svcPkgData = <%- JSON.stringify(servicesPackages) %>;
 
-function showTab(tab) {
-    var info = document.getElementById('section-info');
-    var svc = document.getElementById('section-services');
-    var tabI = document.getElementById('tab-info');
-    var tabS = document.getElementById('tab-services');
-    if (tab === 'info') {
-        info.classList.add('active'); svc.classList.remove('active');
-        tabI.classList.add('cy-co-tab-active'); tabS.classList.remove('cy-co-tab-active');
-    } else {
-        svc.classList.add('active'); info.classList.remove('active');
-        tabS.classList.add('cy-co-tab-active'); tabI.classList.remove('cy-co-tab-active');
-    }
-}
+function showTab(tab) { /* الأقسام صارت ظاهرة كلها بدون تابات */ }
 function openLightbox(src) { document.getElementById('lightboxImg').src = src; document.getElementById('lightbox').classList.add('open'); if (event) event.stopPropagation(); }
 function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); document.getElementById('lightboxImg').src = ''; }
 document.addEventListener('keydown', function(e) { if (e.key === 'Escape') { closeLightbox(); closeSvcModal(); } });
@@ -313,11 +310,16 @@ function closeSvcModal() { document.getElementById('svcModal').style.display = '
 
 async function submitServiceRequest(e) {
     e.preventDefault();
-    var fd = new FormData(e.target);
-    var res = await fetch('/api/company/service-request', { method: 'POST', body: fd });
-    var data = await res.json();
-    alert(data.success ? 'تم إرسال طلب الخدمة بنجاح!' : (data.error || 'خطأ'));
-    if (data.success) closeSvcModal();
+    var btn = e.target.querySelector('button[type="submit"]');
+    if (btn) btn.disabled = true;
+    try {
+        var fd = new FormData(e.target);
+        var res = await fetch('/api/company/service-request', { method: 'POST', body: fd });
+        var data = await res.json();
+        alert(data.success ? 'تم إرسال طلبك بنجاح — راح تراجع الإدارة ويتواصلون معك!' : (data.error || 'خطأ'));
+        if (data.success) closeSvcModal();
+    } catch (err) { alert('خطأ بالاتصال'); }
+    if (btn) btn.disabled = false;
 }
 </script>
 
@@ -374,9 +376,9 @@ function farmRenderCard() {
     if (avail) {
         avail.innerHTML = farmState.farms.map(function(f) {
             var cls, ic, txt;
-            if (!f.enabled) { cls = 'disabled'; ic = 'fa-pause'; txt = 'موقوفة'; }
-            else if (f.free) { cls = 'free'; ic = 'fa-check'; txt = 'المزرعة ' + f.no + ' — متاحة'; }
-            else { cls = 'busy'; ic = 'fa-lock'; txt = 'المزرعة ' + f.no + ' — محجوزة'; }
+            if (!f.enabled) { cls = 'disabled'; ic = 'fa-pause'; txt = f.name + ' — موقوفة'; }
+            else if (f.free) { cls = 'free'; ic = 'fa-check'; txt = f.name + ' — متاحة'; }
+            else { cls = 'busy'; ic = 'fa-lock'; txt = f.name + ' — محجوزة'; }
             return '<span class="' + cls + '"><i class="fas ' + ic + '"></i> ' + txt + '</span>';
         }).join('');
     }
@@ -458,7 +460,7 @@ function farmRenderMy() {
     box.innerHTML = list.map(function(b) {
         var h = '<div class="cy-f-bk">';
         h += '<div class="cy-f-bk-head"><span class="ref">' + b.ref + '</span>' + farmStBadge(b) +
-             '<span style="font-size:.72rem;color:rgba(255,255,255,.55)">مزرعة ' + b.farm_no + '</span></div>';
+             '<span style="font-size:.72rem;color:rgba(255,255,255,.55)">' + (b.farm_name || ('مزرعة ' + b.farm_no)) + '</span></div>';
         h += '<div class="cy-f-meta">' +
              '<span>المدة: <b>' + b.duration_days + ' يوم</b></span>' +
              '<span>الإيجار: <b>' + farmMoney(b.rent_amount) + '$</b></span>' +
@@ -597,6 +599,47 @@ document.addEventListener('keydown', function(e) { if (e.key === 'Escape') { far
 farmRenderCard(); farmRenderMy();
 setTimeout(farmRefresh, 800);
 setInterval(farmRefresh, 60000);
+</script>
+<% } %>
+
+<% if (user) { %>
+<!-- نافذة طلباتي من خدمات الشركة -->
+<div id="svcMyModal" class="cy-f-modal" onclick="if(event.target===this)svcCloseMy()">
+    <div class="cy-f-box" style="max-width:640px">
+        <div class="cy-f-box-head">
+            <h3><i class="fas fa-list-check" style="color:var(--accent)"></i> طلباتي من خدمات الشركة</h3>
+            <button class="cy-f-x" onclick="svcCloseMy()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="cy-f-box-body" id="svcMyList"></div>
+    </div>
+</div>
+<script>
+var SVC_ST = { pending: ['بانتظار المراجعة', '#eab308'], approved: ['مقبول', '#34d399'], rejected: ['مرفوض', '#ef4444'] };
+function svcCloseMy() { document.getElementById('svcMyModal').classList.remove('open'); }
+async function svcOpenMy() {
+    document.getElementById('svcMyModal').classList.add('open');
+    var box = document.getElementById('svcMyList');
+    box.innerHTML = '<div style="text-align:center;padding:1.5rem;color:rgba(255,255,255,.5)"><i class="fas fa-circle-notch fa-spin"></i> جاري التحميل...</div>';
+    try {
+        var r = await fetch('/api/company/my-requests', { cache: 'no-store' });
+        var list = await r.json();
+        if (!list.length) { box.innerHTML = '<div style="text-align:center;padding:2rem;color:rgba(255,255,255,.5)"><i class="fas fa-inbox" style="font-size:2rem;display:block;margin-bottom:.7rem;color:rgba(var(--accent-rgb),.5)"></i>ما عندك طلبات — قدّم طلبك من بطاقة الخدمة</div>'; return; }
+        box.innerHTML = list.map(function(q) {
+            var st = SVC_ST[q.status] || [q.status, '#94a3b8'];
+            var h = '<div class="cy-f-bk">';
+            h += '<div class="cy-f-bk-head"><span class="ref">#' + q.id + '</span><span class="cy-f-st ' + q.status + '">' + st[0] + '</span></div>';
+            h += '<div style="font-weight:700;color:var(--text,#fff);margin:.3rem 0 .5rem"><i class="fas fa-concierge-bell" style="color:var(--accent)"></i> ' + (q.service_title || 'خدمة') + '</div>';
+            (q.answers || []).forEach(function(a) {
+                if (a.type === 'image' && a.a) h += '<div style="font-size:.78rem;color:rgba(255,255,255,.65);margin-bottom:.3rem"><i class="fas fa-image"></i> ' + a.q + ': <a href="' + a.a + '" target="_blank" style="color:var(--accent)">عرض الصورة</a></div>';
+                else h += '<div style="font-size:.78rem;color:rgba(255,255,255,.65);margin-bottom:.3rem">' + a.q + ': <b style="color:rgba(255,255,255,.85)">' + String(a.a || '—') + '</b></div>';
+            });
+            h += '<div style="font-size:.7rem;color:rgba(255,255,255,.4)">' + (q.created_iso || '') + '</div>';
+            h += '</div>';
+            return h;
+        }).join('');
+    } catch (e) { box.innerHTML = '<div style="text-align:center;padding:1.5rem;color:#ef4444">خطأ بالتحميل</div>'; }
+}
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') svcCloseMy(); });
 </script>
 <% } %>
 

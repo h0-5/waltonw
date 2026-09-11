@@ -244,6 +244,7 @@ app.use('/api/orders', adminApi);
 app.use('/api/bot', botApi);
 app.use('/api/notifications', adminApi);
 app.use('/api/farm', require('./routes/api/farm').router);
+app.use('/api/company', require('./routes/api/company'));
 
 // Maintenance mode (after routes, before static)
 app.use(maintenanceMode);

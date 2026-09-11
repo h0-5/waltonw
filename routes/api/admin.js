@@ -2,6 +2,15 @@
 const router = express.Router();
 const db = require('../../config/database');
 const { isAdmin, checkPermission } = require('../../middleware/auth');
+const { sendWebhook } = require('../../utils/webhooks');
+const webhooks = require('../../config/webhooks');
+
+/* إشعار قناة الشركة بالويبهوك (طلب خدمات الشركة) */
+function notifyCompany(payload) {
+  const key = webhooks.WH_COMPANY ? 'WH_COMPANY' : (webhooks.WH_FARM ? 'WH_FARM' : null);
+  if (!key) return;
+  sendWebhook(key, Object.assign({ footer: 'Walton Family — Company Services' }, payload)).catch(() => {});
+}
 
 // Admin Users API
 router.post('/users/update', checkPermission('users_edit'), async (req, res) => {
@@ -706,14 +715,73 @@ router.delete('/company/items/:id', checkPermission('company_delete'), async (re
 // Company Service Request Actions
 router.post('/company/requests/:id/approve', checkPermission('company_edit'), async (req, res) => {
   try {
-    await db.execute("UPDATE service_requests SET status = 'approved', reviewed_at = NOW() WHERE id = ?", [req.params.id]);
+    const [rows] = await db.execute('SELECT sr.*, ci.title AS service_title FROM service_requests sr LEFT JOIN company_items ci ON sr.service_id = ci.id WHERE sr.id = ?', [req.params.id]);
+    if (!rows.length) return res.status(404).json({ error: 'الطلب غير موجود' });
+    await db.execute("UPDATE service_requests SET status = 'approved', admin_id = ?, reviewed_at = NOW() WHERE id = ?", [req.user.id, req.params.id]);
+    await db.execute('INSERT INTO notifications (user_id, title, message, type, link, sender_id) VALUES (?, ?, ?, ?, ?, ?)',
+      [rows[0].user_id, 'تم قبول طلب خدمتك', 'طلبك على خدمة «' + (rows[0].service_title || '') + '» تم قبوله — الإدارة راح تتواصل معك للتنفيذ', 'success', '/company', req.user.id]);
+    notifyCompany({ title: '✅ قبول طلب خدمة — ' + (rows[0].service_title || ''), color: 0x34d399, fields: [
+      { name: 'رقم الطلب', value: '#' + rows[0].id, inline: true }, { name: 'بواسطة', value: req.user.username, inline: true }
+    ] });
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 router.post('/company/requests/:id/reject', checkPermission('company_edit'), async (req, res) => {
   try {
-    await db.execute("UPDATE service_requests SET status = 'rejected', reviewed_at = NOW() WHERE id = ?", [req.params.id]);
+    const [rows] = await db.execute('SELECT sr.*, ci.title AS service_title FROM service_requests sr LEFT JOIN company_items ci ON sr.service_id = ci.id WHERE sr.id = ?', [req.params.id]);
+    if (!rows.length) return res.status(404).json({ error: 'الطلب غير موجود' });
+    const notes = typeof req.body.notes === 'string' ? req.body.notes.substring(0, 500) : '';
+    await db.execute("UPDATE service_requests SET status = 'rejected', admin_id = ?, reviewed_at = NOW() WHERE id = ?", [req.user.id, req.params.id]);
+    await db.execute('INSERT INTO notifications (user_id, title, message, type, link, sender_id) VALUES (?, ?, ?, ?, ?, ?)',
+      [rows[0].user_id, 'تم رفض طلب خدمتك', 'طلبك على خدمة «' + (rows[0].service_title || '') + '» ما تم قبوله' + (notes ? ' — السبب: ' + notes : ''), 'warning', '/company', req.user.id]);
+    notifyCompany({ title: '❌ رفض طلب خدمة — ' + (rows[0].service_title || ''), color: 0xef4444, fields: [
+      { name: 'رقم الطلب', value: '#' + rows[0].id, inline: true }, { name: 'بواسطة', value: req.user.username, inline: true }
+    ].concat(notes ? [{ name: 'السبب', value: notes, inline: false }] : []) });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// أسئلة خدمات الشركة (إدارة كاملة — إضافة/حذف)
+router.post('/company/questions', checkPermission('company_edit'), async (req, res) => {
+  try {
+    const serviceId = parseInt(req.body.service_id);
+    const question = String(req.body.question || '').trim().slice(0, 500);
+    const type = ['text', 'image', 'character_name'].includes(req.body.type) ? req.body.type : 'text';
+    const required = req.body.required ? 1 : 0;
+    if (!serviceId || !question) return res.status(400).json({ error: 'أكمل السؤال والخدمة' });
+    const [mx] = await db.execute('SELECT COALESCE(MAX(sort_order), 0) + 1 AS nxt FROM service_questions WHERE service_id = ?', [serviceId]);
+    await db.execute('INSERT INTO service_questions (service_id, question, type, required, sort_order) VALUES (?, ?, ?, ?, ?)',
+      [serviceId, question, type, required, Number(mx[0].nxt)]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.delete('/company/questions/:id', checkPermission('company_edit'), async (req, res) => {
+  try {
+    await db.execute('DELETE FROM service_questions WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// بكجات خدمات الشركة (اختيارية — باقات بأسعار)
+router.post('/company/packages', checkPermission('company_edit'), async (req, res) => {
+  try {
+    const serviceId = parseInt(req.body.service_id);
+    const name = String(req.body.name || '').trim().slice(0, 255);
+    const price = Math.max(0, Math.round(Number(req.body.price) || 0));
+    const days = Math.max(0, Math.round(Number(req.body.days) || 0));
+    if (!serviceId || !name) return res.status(400).json({ error: 'أكمل اسم البكج والخدمة' });
+    const [mx] = await db.execute('SELECT COALESCE(MAX(sort_order), 0) + 1 AS nxt FROM service_packages WHERE service_id = ?', [serviceId]);
+    await db.execute('INSERT INTO service_packages (service_id, name, price, days, sort_order) VALUES (?, ?, ?, ?, ?)',
+      [serviceId, name, price, days, Number(mx[0].nxt)]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+router.delete('/company/packages/:id', checkPermission('company_edit'), async (req, res) => {
+  try {
+    await db.execute('DELETE FROM service_packages WHERE id = ?', [req.params.id]);
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
