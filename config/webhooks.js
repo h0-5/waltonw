@@ -20,5 +20,6 @@ module.exports = {
   WH_BROADCAST: process.env.WH_BROADCAST || '',
   WH_COMPANY: process.env.WH_COMPANY || '',
   WH_STAFF: process.env.WH_STAFF || '',
-  WH_SHOP: process.env.WH_SHOP || ''
+  WH_SHOP: process.env.WH_SHOP || '',
+  WH_FARM: process.env.WH_FARM || ''
 };

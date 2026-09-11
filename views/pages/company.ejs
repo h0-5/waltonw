@@ -10,7 +10,7 @@
             <i class="fas fa-briefcase"></i>
         </div>
         <h1 class="page-heading">الشركة</h1>
-        <p class="cy-co-hero-sub">معلومات و أنشطة شركة والتون</p>
+        <p class="cy-co-hero-sub">معلومات و خدمات شركة والتون</p>
         <div class="cy-co-hero-line"></div>
     </div>
 
@@ -19,8 +19,8 @@
             <button onclick="showTab('info')" id="tab-info" class="cy-co-tab cy-co-tab-active">
                 <i class="fas fa-info-circle"></i>معلومات الشركة
             </button>
-            <button onclick="showTab('activities')" id="tab-activities" class="cy-co-tab">
-                <i class="fas fa-star"></i>الأنشطة
+            <button onclick="showTab('services')" id="tab-services" class="cy-co-tab">
+                <i class="fas fa-concierge-bell"></i>الخدمات
             </button>
         </div>
 
@@ -54,13 +54,67 @@
             <% } %>
         </div>
 
-        <!-- Activities Section -->
-        <div id="section-activities">
-            <% if (activityItems.length === 0) { %>
+        <!-- Services Section -->
+        <div id="section-services">
+            <% if (farmState) { %>
+            <!-- خدمة استئجار المزارع -->
+            <div class="cy-co-card cy-co-reveal" style="border-color:rgba(var(--accent-rgb),.25)">
+                <div class="corner-tl"></div><div class="corner-br"></div>
+                <div class="cy-co-header">
+                    <div class="cy-co-icon"><i class="fas fa-seedling"></i></div>
+                    <h3 class="cy-co-title">استئجار المزرعة</h3>
+                    <span id="farmBadge" class="cy-farm-badge off"><i class="fas fa-circle-notch fa-spin"></i> جاري التحديث</span>
+                </div>
+                <div class="cy-co-body">
+                    <p class="cy-co-desc">احجز مزرعتك من شركة والتون — عندنا مزرعتين والخدمة تحسب التوفر على الاثنتين: أول ما تأكد الإدارة وصول العربون تسلم مزرعة فاضية على طول.</p>
+
+                    <div class="cy-farm-price-grid">
+                        <% farmState.config.prices.forEach(function(p) { %>
+                        <div class="cy-farm-price-chip">
+                            <b><%= p.days %> يوم</b>
+                            <span><%= Number(p.price).toLocaleString('en-US') %>$</span>
+                        </div>
+                        <% }) %>
+                    </div>
+
+                    <ul class="cy-farm-rules">
+                        <li><i class="fas fa-coins"></i><span><b>العربون:</b> <%= farmState.config.deposit_pct %>% من قيمة الإيجار يحوّل على بنك الشركة لتثبيت الحجز، وباقي المبلغ يتأكد مع الإدارة.</span></li>
+                        <li><i class="fas fa-hourglass-half"></i><span><b>مهلة الدفع:</b> <%= farmState.config.payment_window_hours %> ساعات من تقديم الحجز — إذا انتهت المهلة بدون دفع ينلغى الحجز تلقائياً.</span></li>
+                        <li><i class="fas fa-ban"></i><span><b>الإلغاء:</b> يخسر <%= Math.round(farmState.config.deposit_pct / 2) %>% من العربون — آخر موعد للإلغاء قبل بداية الحجز بـ <%= farmState.config.cancel_cutoff_hours %> ساعات.</span></li>
+                        <li><i class="fas fa-clock-rotate-left"></i><span><b>التمديد:</b> متاح فقط خلال آخر <%= farmState.config.extend_window_hours %> ساعة قبل انتهاء الحجز، وبنفس نظام العربون.</span></li>
+                        <li><i class="fas fa-users"></i><span><b>اضافة عمال:</b> حتى <%= farmState.config.max_workers %> عمال بـ <%= Number(farmState.config.worker_price).toLocaleString('en-US') %>$ للعامل — لازم اسم شخصية لاعب بالسيرفر كاملة وصحيحة.</span></li>
+                    </ul>
+
+                    <div class="cy-farm-warn">
+                        <i class="fas fa-triangle-exclamation"></i>
+                        <span>مسؤولية الاسم على صاحبها: أي خطأ بكتابة اسم الشخصية (المستأجر أو العامل) يتحمل صاحبه مسؤوليته، والشركة ستتخذ مسؤوليتها تجاه من يخطئ بالاسم عمداً.</span>
+                    </div>
+
+                    <div class="cy-farm-bank">
+                        <i class="fas fa-building-columns" style="color:var(--accent)"></i>
+                        <code id="farmBank"><%= farmState.config.bank_account %></code>
+                        <button onclick="farmCopyBank()"><i class="fas fa-copy"></i> نسخ</button>
+                    </div>
+
+                    <div class="cy-farm-avail" id="farmAvail"></div>
+
+                    <div class="cy-farm-actions">
+                        <% if (user) { %>
+                        <button id="farmBookBtn" class="cy-farm-btn primary" onclick="openFarmBook()"><i class="fas fa-seedling"></i> حجز المزرعة</button>
+                        <button class="cy-farm-btn ghost" onclick="openFarmMy()"><i class="fas fa-list-check"></i> حجوزاتي <span id="farmMyCount" style="color:var(--accent)"></span></button>
+                        <% } else { %>
+                        <a href="/auth/discord" class="cy-farm-btn ghost"><i class="fas fa-sign-in-alt"></i> سجل دخول للحجز</a>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+            <% } %>
+
+            <% if (activityItems.length === 0 && !farmState) { %>
             <div class="cy-co-empty cy-co-reveal">
-                <div class="cy-co-empty-icon"><i class="fas fa-star"></i></div>
-                <h3>لا توجد أنشطة مضافة حالياً</h3>
-                <p>سيتم إضافة أنشطة الشركة قريباً</p>
+                <div class="cy-co-empty-icon"><i class="fas fa-concierge-bell"></i></div>
+                <h3>لا توجد خدمات مضافة حالياً</h3>
+                <p>سيتم إضافة خدمات الشركة قريباً</p>
             </div>
             <% } else { %>
             <% activityItems.forEach(function(item, i) {
@@ -71,7 +125,7 @@
             <div class="cy-co-card cy-co-reveal" style="transition-delay:<%= i * 0.08 %>s<%= isSvc ? ';border-color:rgba(var(--accent-rgb),0.2)' : '' %>">
                 <div class="corner-tl"></div><div class="corner-br"></div>
                 <div class="cy-co-header">
-                    <div class="cy-co-icon"><i class="fas fa-star"></i></div>
+                    <div class="cy-co-icon"><i class="fas fa-concierge-bell"></i></div>
                     <h3 class="cy-co-title"><%= item.title %></h3>
                     <% if (isSvc && st.l) { %>
                     <span style="margin-right:auto;font-size:.7rem;padding:2px 10px;border-radius:6px;background:<%= st.bg %>;color:<%= st.c %>;border:1px solid <%= st.bd %>"><%= st.l %></span>
@@ -104,6 +158,66 @@
     </div>
 </div>
 
+<% if (farmState && user) { %>
+<!-- نافذة الحجز -->
+<div id="farmBookModal" class="cy-f-modal" onclick="if(event.target===this)farmClose('farmBookModal')">
+    <div class="cy-f-box">
+        <div class="cy-f-box-head">
+            <h3><i class="fas fa-seedling" style="color:var(--accent)"></i> حجز مزرعة</h3>
+            <button class="cy-f-x" onclick="farmClose('farmBookModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="cy-f-box-body">
+            <div style="font-size:.8rem;color:rgba(255,255,255,.6);margin-bottom:.8rem">اختر المدة — المدد ثابتة والأسعار من إدارة الشركة:</div>
+            <div class="cy-f-dur-grid" id="farmDurGrid"></div>
+            <div class="cy-f-summary" id="farmBookSummary" style="display:none">
+                <div class="row"><span>قيمة الإيجار</span><b id="farmSumRent">—</b></div>
+                <div class="row"><span>العربون المطلوب الآن (<%= farmState.config.deposit_pct %>%)</span><b id="farmSumDep" style="color:var(--accent)">—</b></div>
+                <div class="row" style="font-size:.76rem;color:rgba(255,255,255,.55)"><span>مهلة الدفع</span><span><%= farmState.config.payment_window_hours %> ساعات — بعدها ينلغى تلقائياً</span></div>
+            </div>
+            <div class="cy-farm-actions" style="margin-top:1.1rem">
+                <button class="cy-farm-btn primary" id="farmBookSubmit" onclick="farmSubmitBook()" disabled><i class="fas fa-check"></i> إنشاء الحجز</button>
+                <button class="cy-farm-btn ghost" onclick="farmClose('farmBookModal')">إلغاء</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- نافذة حجوزاتي -->
+<div id="farmMyModal" class="cy-f-modal" onclick="if(event.target===this)farmClose('farmMyModal')">
+    <div class="cy-f-box" style="max-width:640px">
+        <div class="cy-f-box-head">
+            <h3><i class="fas fa-list-check" style="color:var(--accent)"></i> حجوزاتي</h3>
+            <button class="cy-f-x" onclick="farmClose('farmMyModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="cy-f-box-body" id="farmMyList"></div>
+    </div>
+</div>
+
+<!-- نافذة التمديد -->
+<div id="farmExtModal" class="cy-f-modal" onclick="if(event.target===this)farmClose('farmExtModal')">
+    <div class="cy-f-box">
+        <div class="cy-f-box-head">
+            <h3><i class="fas fa-clock-rotate-left" style="color:var(--accent)"></i> تمديد الحجز <span id="farmExtRef" style="color:var(--accent);font-family:ui-monospace,Menlo,monospace;direction:ltr;display:inline-block"></span></h3>
+            <button class="cy-f-x" onclick="farmClose('farmExtModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="cy-f-box-body">
+            <div style="font-size:.8rem;color:rgba(255,255,255,.6);margin-bottom:.8rem">اختر مدة التمديد — تنضاف على نهاية حجزك الحالي:</div>
+            <div class="cy-f-dur-grid" id="farmExtDurGrid"></div>
+            <div class="cy-f-summary" id="farmExtSummary" style="display:none">
+                <div class="row"><span>قيمة إيجار التمديد</span><b id="farmExtRent">—</b></div>
+                <div class="row"><span>عربون التمديد (<%= farmState.config.deposit_pct %>%)</span><b id="farmExtDep" style="color:var(--accent)">—</b></div>
+            </div>
+            <div class="cy-farm-actions" style="margin-top:1.1rem">
+                <button class="cy-farm-btn primary" id="farmExtSubmit" onclick="farmSubmitExtend()" disabled><i class="fas fa-check"></i> طلب التمديد</button>
+                <button class="cy-farm-btn ghost" onclick="farmClose('farmExtModal')">إلغاء</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="farmToast" class="cy-f-toast"></div>
+<% } %>
+
 <div id="svcModal" class="cy-co-lightbox" style="display:none;z-index:200" onclick="closeSvcModal()">
     <div style="background:var(--bg-card-solid, #0d0a14);border:1px solid rgba(var(--accent-rgb),0.25);border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;margin:2rem auto;position:relative" onclick="event.stopPropagation()">
         <div style="padding:1.25rem 1.5rem;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;gap:.5rem">
@@ -134,15 +248,15 @@ var svcPkgData = <%- JSON.stringify(servicesPackages) %>;
 
 function showTab(tab) {
     var info = document.getElementById('section-info');
-    var activities = document.getElementById('section-activities');
+    var svc = document.getElementById('section-services');
     var tabI = document.getElementById('tab-info');
-    var tabA = document.getElementById('tab-activities');
+    var tabS = document.getElementById('tab-services');
     if (tab === 'info') {
-        info.classList.add('active'); activities.classList.remove('active');
-        tabI.classList.add('cy-co-tab-active'); tabA.classList.remove('cy-co-tab-active');
+        info.classList.add('active'); svc.classList.remove('active');
+        tabI.classList.add('cy-co-tab-active'); tabS.classList.remove('cy-co-tab-active');
     } else {
-        activities.classList.add('active'); info.classList.remove('active');
-        tabA.classList.add('cy-co-tab-active'); tabI.classList.remove('cy-co-tab-active');
+        svc.classList.add('active'); info.classList.remove('active');
+        tabS.classList.add('cy-co-tab-active'); tabI.classList.remove('cy-co-tab-active');
     }
 }
 function openLightbox(src) { document.getElementById('lightboxImg').src = src; document.getElementById('lightbox').classList.add('open'); if (event) event.stopPropagation(); }
@@ -206,5 +320,284 @@ async function submitServiceRequest(e) {
     if (data.success) closeSvcModal();
 }
 </script>
+
+<% if (farmState && user) { %>
+<script>
+/* ═══ نظام استئجار المزارع ═══ */
+var farmState = <%- JSON.stringify(farmState) %>;
+var farmSelDur = null, farmExtBid = null, farmExtDur = null;
+
+function farmMoney(n) { return Number(n || 0).toLocaleString('en-US'); }
+function farmFmtDT(iso) {
+    if (!iso) return '—';
+    var d = new Date(iso), p = function(x) { return (x < 10 ? '0' : '') + x; };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+function farmToast(msg, err) {
+    var t = document.getElementById('farmToast');
+    t.innerHTML = msg; t.className = 'cy-f-toast show' + (err ? ' err' : '');
+    clearTimeout(t._h); t._h = setTimeout(function() { t.className = 'cy-f-toast' + (err ? ' err' : ''); }, 5200);
+}
+function farmClose(id) { document.getElementById(id).classList.remove('open'); }
+function farmCopyBank() {
+    var txt = document.getElementById('farmBank').textContent.trim();
+    if (navigator.clipboard) navigator.clipboard.writeText(txt);
+    farmToast('تم نسخ رقم بنك الشركة: ' + txt);
+}
+
+async function farmRefresh() {
+    try {
+        var r = await fetch('/api/farm/state', { cache: 'no-store' });
+        farmState = await r.json();
+        farmRenderCard(); farmRenderMy();
+    } catch (e) {}
+}
+
+function farmRenderCard() {
+    var badge = document.getElementById('farmBadge');
+    var avail = document.getElementById('farmAvail');
+    var btn = document.getElementById('farmBookBtn');
+    if (!badge || !farmState) return;
+    var myLive = (farmState.myBookings || []).filter(function(b) {
+        return ['pending_payment','pending_confirm'].indexOf(b.status) !== -1 ||
+               (b.status === 'active' && !b.faction_removed);
+    }).length;
+    var cnt = document.getElementById('farmMyCount');
+    if (cnt) cnt.textContent = myLive ? '(' + myLive + ' قائم)' : '';
+    if (!farmState.serviceOpen) {
+        badge.className = 'cy-farm-badge off'; badge.innerHTML = '<i class="fas fa-lock"></i> الخدمة مقفلة حالياً';
+    } else if (farmState.anyFree) {
+        badge.className = 'cy-farm-badge ok'; badge.innerHTML = '<i class="fas fa-check-circle"></i> متوفر — احجز الآن';
+    } else {
+        badge.className = 'cy-farm-badge no'; badge.innerHTML = '<i class="fas fa-times-circle"></i> غير متوفر';
+    }
+    if (avail) {
+        avail.innerHTML = farmState.farms.map(function(f) {
+            var cls, ic, txt;
+            if (!f.enabled) { cls = 'disabled'; ic = 'fa-pause'; txt = 'موقوفة'; }
+            else if (f.free) { cls = 'free'; ic = 'fa-check'; txt = 'المزرعة ' + f.no + ' — متاحة'; }
+            else { cls = 'busy'; ic = 'fa-lock'; txt = 'المزرعة ' + f.no + ' — محجوزة'; }
+            return '<span class="' + cls + '"><i class="fas ' + ic + '"></i> ' + txt + '</span>';
+        }).join('');
+    }
+    if (btn) {
+        if (!farmState.serviceOpen) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-lock"></i> الخدمة مقفلة'; }
+        else if (!farmState.anyFree) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-times-circle"></i> غير متوفر'; }
+        else { btn.disabled = false; btn.innerHTML = '<i class="fas fa-seedling"></i> حجز المزرعة'; }
+    }
+}
+
+/* ── نافذة الحجز ── */
+function openFarmBook() {
+    farmSelDur = null;
+    var g = document.getElementById('farmDurGrid');
+    g.innerHTML = farmState.config.prices.map(function(p) {
+        return '<div class="cy-f-dur-chip" data-d="' + p.days + '" onclick="farmPickDur(' + p.days + ')"><b>' + p.days + ' يوم</b><span>' + farmMoney(p.price) + '$</span></div>';
+    }).join('');
+    document.getElementById('farmBookSummary').style.display = 'none';
+    document.getElementById('farmBookSubmit').disabled = true;
+    document.getElementById('farmBookModal').classList.add('open');
+}
+function farmPickDur(d) {
+    farmSelDur = d;
+    var chips = document.querySelectorAll('#farmDurGrid .cy-f-dur-chip');
+    for (var i = 0; i < chips.length; i++) chips[i].classList.toggle('sel', +chips[i].dataset.d === d);
+    var price = 0;
+    farmState.config.prices.forEach(function(p) { if (p.days === d) price = p.price; });
+    var dep = Math.round(price * farmState.config.deposit_pct / 100);
+    document.getElementById('farmSumRent').textContent = farmMoney(price) + '$';
+    document.getElementById('farmSumDep').textContent = farmMoney(dep) + '$';
+    document.getElementById('farmBookSummary').style.display = '';
+    document.getElementById('farmBookSubmit').disabled = false;
+}
+async function farmSubmitBook() {
+    if (!farmSelDur) return;
+    var btn = document.getElementById('farmBookSubmit');
+    btn.disabled = true;
+    try {
+        var r = await fetch('/api/farm/book', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ duration_days: farmSelDur })
+        });
+        var data = await r.json();
+        if (data.success) {
+            farmClose('farmBookModal');
+            farmToast('🌾 ' + data.message);
+            await farmRefresh();
+            openFarmMy();
+        } else { farmToast(data.error || 'خطأ', true); btn.disabled = false; }
+    } catch (e) { farmToast('خطأ بالاتصال', true); btn.disabled = false; }
+}
+
+/* ── نافذة حجوزاتي ── */
+function farmStBadge(b) { return '<span class="cy-f-st ' + b.status + '">' + b.statusLabel + '</span>'; }
+function farmWorkerRow(w) {
+    var del = w.status === 'pending_payment' ? ' <button class="del" onclick="farmWorkerDel(' + w.id + ')"><i class="fas fa-trash"></i> حذف</button>' : '';
+    var pay = w.status === 'pending_payment' ? ' <button class="cy-farm-btn warn small" style="margin-right:4px" onclick="farmWorkerPaid(' + w.id + ')"><i class="fas fa-money-bill"></i> دفعت</button>' : '';
+    return '<div class="cy-f-worker-row"><i class="fas fa-user"></i> <span style="direction:ltr;font-weight:700">' + w.name + '</span>' +
+           '<span class="cy-f-st ' + w.status + '">' + w.statusLabel + '</span>' + farmMoney(w.amount) + '$' + pay + del + '</div>';
+}
+function farmBkActions(b) {
+    var h = '';
+    if (b.can.pay) h += '<button class="cy-farm-btn warn small" onclick="farmPaid(' + b.id + ')"><i class="fas fa-money-bill"></i> دفعت العربون</button>';
+    if (b.can.extend) h += '<button class="cy-farm-btn primary small" onclick="openFarmExt(' + b.id + ')"><i class="fas fa-clock-rotate-left"></i> تمديد</button>';
+    if (b.can.cancel) {
+        var warn = b.can.cancelPenalty > 0 ? 'الإلغاء راح يخسرك ' + farmMoney(b.can.cancelPenalty) + '$ (50% من العربون). متأكد؟' : 'متأكد من إلغاء الحجز؟';
+        h += '<button class="cy-farm-btn danger small" onclick="if(confirm(\'' + warn.replace(/'/g, '') + '\'))farmCancel(' + b.id + ')"><i class="fas fa-ban"></i> إلغاء الحجز</button>';
+    }
+    return h;
+}
+function farmRenderMy() {
+    var box = document.getElementById('farmMyList');
+    if (!box) return;
+    var list = farmState.myBookings || [];
+    if (!list.length) {
+        box.innerHTML = '<div style="text-align:center;padding:2rem;color:rgba(255,255,255,.5)"><i class="fas fa-inbox" style="font-size:2rem;display:block;margin-bottom:.7rem;color:rgba(var(--accent-rgb),.5)"></i>ما عندك حجوزات — أول ما تحجز يظهر هنا</div>';
+        return;
+    }
+    box.innerHTML = list.map(function(b) {
+        var h = '<div class="cy-f-bk">';
+        h += '<div class="cy-f-bk-head"><span class="ref">' + b.ref + '</span>' + farmStBadge(b) +
+             '<span style="font-size:.72rem;color:rgba(255,255,255,.55)">مزرعة ' + b.farm_no + '</span></div>';
+        h += '<div class="cy-f-meta">' +
+             '<span>المدة: <b>' + b.duration_days + ' يوم</b></span>' +
+             '<span>الإيجار: <b>' + farmMoney(b.rent_amount) + '$</b></span>' +
+             '<span>العربون: <b style="color:var(--accent)">' + farmMoney(b.deposit_amount) + '$</b></span>' +
+             '<span>الإنشاء: <b>' + farmFmtDT(b.created_iso) + '</b></span>' +
+             (b.start_iso ? '<span>البداية: <b>' + farmFmtDT(b.start_iso) + '</b></span>' : '') +
+             (b.end_iso ? '<span>النهاية: <b>' + farmFmtDT(b.end_iso) + '</b></span>' : '') +
+             '</div>';
+        if (b.status === 'pending_payment' && b.deadline_iso) {
+            h += '<div style="margin-top:.6rem;font-size:.8rem;color:rgba(255,255,255,.7)">مهلة الدفع تنتهي خلال <span class="cy-f-count" data-dl="' + b.deadline_iso + '">—</span> — حوّل ' + farmMoney(b.deposit_amount) + '$ على <b style="direction:ltr;display:inline-block">' + farmState.config.bank_account + '</b> واضغط «دفعت العربون»</div>';
+        }
+        if (b.status === 'pending_confirm') {
+            h += '<div style="margin-top:.6rem;font-size:.8rem;color:#c084fc"><i class="fas fa-hourglass-half"></i> أعلنت الدفع — بانتظار تأكيد الإدارة لوصول المبلغ</div>';
+        }
+        if (b.status === 'active' && !b.faction_added) {
+            h += '<div style="margin-top:.6rem;font-size:.8rem;color:#34d399"><i class="fas fa-users"></i> بانتظار إضافتك لفاكشن العائلة — الإدارة تتولاه</div>';
+        }
+        if (b.status === 'cancelled' && b.cancel_penalty > 0) {
+            h += '<div style="margin-top:.6rem;font-size:.8rem;color:#ef4444"><i class="fas fa-ban"></i> أُلغي الحجز وخسرت ' + farmMoney(b.cancel_penalty) + '$ من العربون — الباقي ' + farmMoney(b.deposit_amount - b.cancel_penalty) + '$ راجع لك</div>';
+        }
+        if (b.extend && ['pending_payment','pending_confirm'].indexOf(b.extend.status) !== -1) {
+            h += '<div style="margin-top:.7rem;padding:.6rem .8rem;border-radius:9px;background:rgba(var(--accent-rgb),.08);border:1px solid rgba(var(--accent-rgb),.25);font-size:.8rem">';
+            h += '<b style="color:var(--accent)">طلب تمديد ' + b.extend.days + ' يوم</b> — ' + (b.extend.status === 'pending_payment'
+                ? 'حوّل ' + farmMoney(b.extend.deposit) + '$ واضغط «دفعت» — المهلة <span class="cy-f-count" data-dl="' + b.extend.deadline_iso + '">—</span> <button class="cy-farm-btn warn small" style="margin-right:6px" onclick="farmExtPaid(' + b.id + ')"><i class="fas fa-money-bill"></i> دفعت عربون التمديد</button>'
+                : 'بانتظار تأكيد الإدارة');
+            h += '</div>';
+        }
+        if (b.workers && b.workers.length) {
+            h += '<div class="cy-f-workers"><div class="cy-f-workers-title"><i class="fas fa-users" style="color:var(--accent)"></i> العمال (' + b.workers.length + '/' + farmState.config.max_workers + ')</div>';
+            b.workers.forEach(function(w) { h += farmWorkerRow(w); });
+            h += '</div>';
+        }
+        if (b.can.addWorker) {
+            h += '<div class="cy-f-workers" style="border-top:none;padding-top:.2rem"><div style="display:flex;gap:8px">' +
+                 '<input type="text" id="farmWName_' + b.id + '" placeholder="اسم شخصية العامل كما بالسيرفر (مثال: Hadi_Walton)" style="flex:1;box-sizing:border-box;padding:.55rem .8rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--text, #fff);font-size:.8rem;direction:ltr;text-align:left">' +
+                 '<button class="cy-farm-btn ok small" onclick="farmAddWorker(' + b.id + ')"><i class="fas fa-plus"></i> اضافة عامل (' + farmMoney(farmState.config.worker_price) + '$)</button></div></div>';
+        }
+        var acts = farmBkActions(b);
+        if (acts) h += '<div class="cy-f-bk-actions">' + acts + '</div>';
+        h += '</div>';
+        return h;
+    }).join('');
+    farmTick();
+}
+
+/* ── إجراءات ── */
+async function farmPost(url, body) {
+    var r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+    return await r.json();
+}
+async function farmPaid(id) {
+    var d = await farmPost('/api/farm/bookings/' + id + '/mark-paid');
+    farmToast(d.success ? '💰 ' + d.message : (d.error || 'خطأ'), !d.success);
+    if (d.success) farmRefresh();
+}
+async function farmCancel(id) {
+    var d = await farmPost('/api/farm/bookings/' + id + '/cancel');
+    farmToast(d.success ? '🚫 ' + d.message : (d.error || 'خطأ'), !d.success);
+    if (d.success) farmRefresh();
+}
+async function farmExtPaid(id) {
+    var d = await farmPost('/api/farm/bookings/' + id + '/extend-mark-paid');
+    farmToast(d.success ? '💰 ' + d.message : (d.error || 'خطأ'), !d.success);
+    if (d.success) farmRefresh();
+}
+async function farmAddWorker(bid) {
+    var el = document.getElementById('farmWName_' + bid);
+    if (!el || !el.value.trim()) return;
+    var d = await farmPost('/api/farm/bookings/' + bid + '/workers', { character_name: el.value.trim() });
+    farmToast(d.success ? '👷 ' + d.message : (d.error || 'خطأ'), !d.success);
+    if (d.success) farmRefresh();
+}
+async function farmWorkerPaid(wid) {
+    var d = await farmPost('/api/farm/workers/' + wid + '/mark-paid');
+    farmToast(d.success ? '💰 ' + d.message : (d.error || 'خطأ'), !d.success);
+    if (d.success) farmRefresh();
+}
+async function farmWorkerDel(wid) {
+    if (!confirm('حذف هذا العامل؟')) return;
+    var r = await fetch('/api/farm/workers/' + wid, { method: 'DELETE' });
+    var d = await r.json();
+    if (d.success) farmRefresh(); else farmToast(d.error || 'خطأ', true);
+}
+
+/* ── التمديد ── */
+function openFarmExt(bid) {
+    farmExtBid = bid; farmExtDur = null;
+    var b = (farmState.myBookings || []).find(function(x) { return x.id === bid; });
+    document.getElementById('farmExtRef').textContent = b ? b.ref : '';
+    var g = document.getElementById('farmExtDurGrid');
+    g.innerHTML = farmState.config.prices.map(function(p) {
+        return '<div class="cy-f-dur-chip" data-d="' + p.days + '" onclick="farmPickExtDur(' + p.days + ')"><b>' + p.days + ' يوم</b><span>' + farmMoney(p.price) + '$</span></div>';
+    }).join('');
+    document.getElementById('farmExtSummary').style.display = 'none';
+    document.getElementById('farmExtSubmit').disabled = true;
+    document.getElementById('farmExtModal').classList.add('open');
+}
+function farmPickExtDur(d) {
+    farmExtDur = d;
+    var chips = document.querySelectorAll('#farmExtDurGrid .cy-f-dur-chip');
+    for (var i = 0; i < chips.length; i++) chips[i].classList.toggle('sel', +chips[i].dataset.d === d);
+    var price = 0;
+    farmState.config.prices.forEach(function(p) { if (p.days === d) price = p.price; });
+    var dep = Math.round(price * farmState.config.deposit_pct / 100);
+    document.getElementById('farmExtRent').textContent = farmMoney(price) + '$';
+    document.getElementById('farmExtDep').textContent = farmMoney(dep) + '$';
+    document.getElementById('farmExtSummary').style.display = '';
+    document.getElementById('farmExtSubmit').disabled = false;
+}
+async function farmSubmitExtend() {
+    if (!farmExtDur || !farmExtBid) return;
+    var btn = document.getElementById('farmExtSubmit');
+    btn.disabled = true;
+    var d = await farmPost('/api/farm/bookings/' + farmExtBid + '/extend', { duration_days: farmExtDur });
+    if (d.success) {
+        farmClose('farmExtModal');
+        farmToast('⏳ ' + d.message);
+        farmRefresh();
+    } else { farmToast(d.error || 'خطأ', true); btn.disabled = false; }
+}
+
+/* ── العدّادات ── */
+function farmTick() {
+    var els = document.querySelectorAll('[data-dl]');
+    els.forEach(function(el) {
+        var ms = new Date(el.dataset.dl).getTime() - Date.now();
+        if (ms <= 0) { el.textContent = 'انتهت'; return; }
+        var s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
+        var p = function(x) { return (x < 10 ? '0' : '') + x; };
+        el.textContent = p(h) + ':' + p(m) + ':' + p(ss);
+    });
+}
+setInterval(farmTick, 1000);
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') { farmClose('farmBookModal'); farmClose('farmMyModal'); farmClose('farmExtModal'); } });
+
+farmRenderCard(); farmRenderMy();
+setTimeout(farmRefresh, 800);
+setInterval(farmRefresh, 60000);
+</script>
+<% } %>
 
 <%- include('../partials/footer') %>

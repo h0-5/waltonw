@@ -402,7 +402,12 @@ router.get('/company', isAuthenticated, isInGuild, checkPageAccess('/company'), 
       servicesPackages[item.id] = await safeQuery("SELECT * FROM service_packages WHERE service_id = ? ORDER BY sort_order ASC", [item.id]);
     }
   }
-  res.render('pages/company', { title: 'الشركة', infoItems, activityItems, servicesQuestions, servicesPackages });
+  // حالة خدمة استئجار المزارع (أسعار/توفر/حجوزات المستخدم)
+  let farmState = null;
+  try {
+    farmState = await require('./api/farm').getPublicState(req.user ? req.user.id : null);
+  } catch (e) { console.error('[company] farm state:', e.message); }
+  res.render('pages/company', { title: 'الشركة', infoItems, activityItems, servicesQuestions, servicesPackages, farmState });
 });
 
 // Test page - no auth required

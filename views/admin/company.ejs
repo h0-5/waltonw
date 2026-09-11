@@ -1,7 +1,16 @@
 <%- include('layout') %>
+
+<% /* صفحة إدارة الشركة — قسمين: معلومات الشركة / إدارة الخدمات (استئجار المزارع) */ %>
+<div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+  <button id="admCoTabBtn-info" class="admin-btn primary" onclick="admCoTab('info')" style="padding:.6rem 1.4rem"><i class="fas fa-briefcase"></i> معلومات الشركة</button>
+  <button id="admCoTabBtn-services" class="admin-btn" onclick="admCoTab('services')" style="padding:.6rem 1.4rem"><i class="fas fa-concierge-bell"></i> إدارة الخدمات</button>
+</div>
+
+<!-- ═══════════ القسم الأول: معلومات الشركة ═══════════ -->
+<div id="admCo-info">
 <div class="admin-card" style="margin-bottom:20px">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-    <h3 style="margin:0;border:none;padding:0"><i class="fas fa-briefcase"></i> إدارة الشركة</h3>
+    <h3 style="margin:0;border:none;padding:0"><i class="fas fa-briefcase"></i> عناصر الشركة</h3>
     <button onclick="showAddItem()" class="admin-btn primary"><i class="fas fa-plus"></i> إضافة عنصر</button>
   </div>
   <table class="admin-table">
@@ -13,7 +22,7 @@
           <td><%= i + 1 %></td>
           <td><%= item.title %></td>
           <td><% if (item.image) { %><img src="<%= item.image %>" style="width:40px;height:40px;object-fit:cover;border-radius:8px"><% } else { %><span style="color:var(--text-dim)">—</span><% } %></td>
-          <td><span class="badge"><%= item.category === 'info' ? 'معلومات' : 'أنشطة' %></span></td>
+          <td><span class="badge"><%= item.category === 'info' ? 'معلومات' : 'خدمات' %></span></td>
           <td><span class="badge"><%= item.service_status || '—' %></span></td>
           <td style="display:flex;gap:6px">
             <button onclick="showEditItem(<%= item.id %>)" class="admin-btn small"><i class="fas fa-edit"></i></button>
@@ -54,6 +63,71 @@
     </tbody>
   </table>
 </div>
+</div>
+
+<!-- ═══════════ القسم الثاني: إدارة الخدمات ═══════════ -->
+<div id="admCo-services" style="display:none">
+
+<div class="admin-card" style="margin-bottom:20px">
+  <h3 style="margin-bottom:6px"><i class="fas fa-seedling"></i> خدمة استئجار المزارع — الإعدادات والأسعار</h3>
+  <p style="color:var(--text-dim);font-size:.85rem;margin:0 0 16px">الأسعار نص قابل للتعديل من هنا — المدد ثابتة (1/3/5/7/10/14 يوم). إيقاف تفعيل المزرعة يمنع حجزها فقط ولا تمس الحجوزات القائمة.</p>
+  <div id="farmCfgLoading" style="color:var(--text-dim)">جاري التحميل...</div>
+  <form id="farmCfgForm" style="display:none" onsubmit="farmSaveCfg(event)">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px">
+      <div class="form-group" style="margin:0"><label>سعر 1 يوم</label><input type="number" id="f_price_1d" min="0" style="direction:ltr"></div>
+      <div class="form-group" style="margin:0"><label>سعر 3 أيام</label><input type="number" id="f_price_3d" min="0" style="direction:ltr"></div>
+      <div class="form-group" style="margin:0"><label>سعر 5 أيام</label><input type="number" id="f_price_5d" min="0" style="direction:ltr"></div>
+      <div class="form-group" style="margin:0"><label>سعر 7 أيام</label><input type="number" id="f_price_7d" min="0" style="direction:ltr"></div>
+      <div class="form-group" style="margin:0"><label>سعر 10 أيام</label><input type="number" id="f_price_10d" min="0" style="direction:ltr"></div>
+      <div class="form-group" style="margin:0"><label>سعر 14 يوم</label><input type="number" id="f_price_14d" min="0" style="direction:ltr"></div>
+      <div class="form-group" style="margin:0"><label>سعر العامل</label><input type="number" id="f_worker_price" min="0" style="direction:ltr"></div>
+      <div class="form-group" style="margin:0"><label>أقصى عدد عمال</label><input type="number" id="f_max_workers" min="0" max="20" style="direction:ltr"></div>
+      <div class="form-group" style="margin:0"><label>نسبة العربون %</label><input type="number" id="f_deposit_pct" min="0" max="100" style="direction:ltr"></div>
+      <div class="form-group" style="margin:0"><label>مهلة الدفع (ساعات)</label><input type="number" id="f_payment_window_hours" min="1" max="72" style="direction:ltr"></div>
+      <div class="form-group" style="margin:0"><label>حد الإلغاء (ساعات قبل البداية)</label><input type="number" id="f_cancel_cutoff_hours" min="0" max="72" style="direction:ltr"></div>
+      <div class="form-group" style="margin:0"><label>نافذة التمديد (ساعات قبل النهاية)</label><input type="number" id="f_extend_window_hours" min="1" max="72" style="direction:ltr"></div>
+    </div>
+    <div class="form-group"><label>حساب بنك الشركة</label><input type="text" id="f_bank_account" style="direction:ltr;text-align:left"></div>
+    <div class="form-group"><label>منشن التنبيهات (يُرسل بالويبهوك)</label><input type="text" id="f_ping_mention" placeholder="@here" style="direction:ltr;text-align:left"></div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="f_farm1_enabled"> <span>المزرعة 1 مفعلة</span></label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="f_farm2_enabled"> <span>المزرعة 2 مفعلة</span></label>
+    </div>
+    <button type="submit" class="admin-btn primary"><i class="fas fa-save"></i> حفظ الإعدادات</button>
+  </form>
+</div>
+
+<div class="admin-card" style="margin-bottom:20px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <h3 style="margin:0;border:none;padding:0"><i class="fas fa-calendar-check"></i> حجوزات المزارع</h3>
+    <button class="admin-btn small" onclick="farmLoad()"><i class="fas fa-rotate"></i> تحديث</button>
+  </div>
+  <div style="overflow-x:auto">
+  <table class="admin-table" id="farmBkTable">
+    <thead><tr><th>المرجع</th><th>المستأجر</th><th>المزرعة</th><th>المدة</th><th>الإيجار / العربون</th><th>الحالة</th><th>الفاكشن</th><th>البداية / النهاية</th><th>إجراءات</th></tr></thead>
+    <tbody><tr><td colspan="9" style="text-align:center;padding:1.5rem;color:var(--text-dim)">جاري التحميل...</td></tr></tbody>
+  </table>
+  </div>
+</div>
+
+<div class="admin-card" style="margin-bottom:20px">
+  <h3 style="margin-bottom:14px"><i class="fas fa-users"></i> عمال الحجوزات</h3>
+  <div style="overflow-x:auto">
+  <table class="admin-table" id="farmWkTable">
+    <thead><tr><th>#</th><th>الحجز</th><th>اسم الشخصية</th><th>المبلغ</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+    <tbody><tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--text-dim)">جاري التحميل...</td></tr></tbody>
+  </table>
+  </div>
+</div>
+
+<div class="admin-card">
+  <h3 style="margin-bottom:14px"><i class="fas fa-clock-rotate-left"></i> سجل الأحداث</h3>
+  <table class="admin-table" id="farmEvTable">
+    <thead><tr><th>الوقت</th><th>الجهة</th><th>الحدث</th><th>التفاصيل</th></tr></thead>
+    <tbody><tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--text-dim)">جاري التحميل...</td></tr></tbody>
+  </table>
+</div>
+</div>
 
 <div id="addModal" class="admin-modal" style="display:none">
   <div class="modal-content">
@@ -61,7 +135,7 @@
     <form id="addForm" enctype="multipart/form-data">
       <div class="form-group"><label>العنوان</label><input type="text" name="title" required></div>
       <div class="form-group"><label>الوصف</label><textarea name="description" rows="3"></textarea></div>
-      <div class="form-group"><label>التصنيف</label><select name="category"><option value="info">معلومات</option><option value="activities">أنشطة</option></select></div>
+      <div class="form-group"><label>التصنيف</label><select name="category"><option value="info">معلومات</option><option value="activities">خدمات</option></select></div>
       <div class="form-group"><label>حالة الخدمة</label><select name="service_status"><option value="">بدون</option><option value="available">متوفر</option><option value="ended">منتهي</option><option value="coming_soon">قريباً</option></select></div>
       <div class="form-group"><label>رابط الفيديو (اختياري)</label><input type="text" name="video_url"></div>
       <div class="form-group"><label>الصورة</label><input type="file" name="image_file" accept="image/*"></div>
@@ -80,7 +154,7 @@
       <input type="hidden" name="id" id="edit_co_id">
       <div class="form-group"><label>العنوان</label><input type="text" name="title" id="edit_co_title" required></div>
       <div class="form-group"><label>الوصف</label><textarea name="description" id="edit_co_desc" rows="3"></textarea></div>
-      <div class="form-group"><label>التصنيف</label><select name="category" id="edit_co_category"><option value="info">معلومات</option><option value="activities">أنشطة</option></select></div>
+      <div class="form-group"><label>التصنيف</label><select name="category" id="edit_co_category"><option value="info">معلومات</option><option value="activities">خدمات</option></select></div>
       <div class="form-group"><label>حالة الخدمة</label><select name="service_status" id="edit_co_status"><option value="">بدون</option><option value="available">متوفر</option><option value="ended">منتهي</option><option value="coming_soon">قريباً</option></select></div>
       <div class="form-group"><label>رابط الفيديو</label><input type="text" name="video_url" id="edit_co_video"></div>
       <div class="form-group"><label>الصورة الحالية</label><div id="edit_co_image_preview" style="margin-bottom:8px"></div></div>
@@ -141,5 +215,155 @@ async function rejectReq(id) {
   const data = await res.json();
   if (data.success) location.reload();
 }
+
+/* ═══ تبويبات الصفحة ═══ */
+function admCoTab(t) {
+  document.getElementById('admCo-info').style.display = t === 'info' ? '' : 'none';
+  document.getElementById('admCo-services').style.display = t === 'services' ? '' : 'none';
+  var bi = document.getElementById('admCoTabBtn-info'), bs = document.getElementById('admCoTabBtn-services');
+  bi.className = 'admin-btn' + (t === 'info' ? ' primary' : '');
+  bs.className = 'admin-btn' + (t === 'services' ? ' primary' : '');
+}
+
+/* ═══ إدارة الخدمات — استئجار المزارع ═══ */
+var farmData = null;
+const FARM_ST_BADGE = {
+  pending_payment: ['بانتظار الدفع', '#eab308'],
+  pending_confirm: ['بانتظار التأكيد', '#c084fc'],
+  active: ['فعال', '#34d399'],
+  ended: ['منتهي', '#94a3b8'],
+  cancelled: ['ملغي', '#ef4444'],
+  expired: ['انتهت المهلة', '#ef4444']
+};
+const FARM_W_BADGE = {
+  pending_payment: ['بانتظار الدفع', '#eab308'],
+  pending_confirm: ['بانتظار التأكيد', '#c084fc'],
+  confirmed: ['مؤكد', '#34d399'],
+  rejected: ['مرفوض', '#ef4444']
+};
+function farmMoney(n) { return Number(n || 0).toLocaleString('en-US'); }
+function farmDT(s) { return s ? String(s).slice(0, 16) : '—'; }
+function farmBadge(map, st) {
+  const m = map[st] || [st, '#94a3b8'];
+  return `<span style="font-size:.72rem;font-weight:800;color:${m[1]};background:${m[1]}1f;border:1px solid ${m[1]}55;padding:3px 10px;border-radius:7px;white-space:nowrap">${m[0]}</span>`;
+}
+async function farmLoad() {
+  try {
+    const res = await fetch('/api/farm/admin/data', { cache: 'no-store' });
+    farmData = await res.json();
+    if (farmData.error) { alert(farmData.error); return; }
+    farmRenderCfg(); farmRenderBookings(); farmRenderWorkers(); farmRenderEvents();
+  } catch (e) { alert('خطأ بتحميل بيانات الخدمات'); }
+}
+function farmRenderCfg() {
+  const c = farmData.config;
+  document.getElementById('farmCfgLoading').style.display = 'none';
+  document.getElementById('farmCfgForm').style.display = '';
+  document.getElementById('f_price_1d').value = c.price_1d;
+  document.getElementById('f_price_3d').value = c.price_3d;
+  document.getElementById('f_price_5d').value = c.price_5d;
+  document.getElementById('f_price_7d').value = c.price_7d;
+  document.getElementById('f_price_10d').value = c.price_10d;
+  document.getElementById('f_price_14d').value = c.price_14d;
+  document.getElementById('f_worker_price').value = c.worker_price;
+  document.getElementById('f_max_workers').value = c.max_workers;
+  document.getElementById('f_deposit_pct').value = c.deposit_pct;
+  document.getElementById('f_payment_window_hours').value = c.payment_window_hours;
+  document.getElementById('f_cancel_cutoff_hours').value = c.cancel_cutoff_hours;
+  document.getElementById('f_extend_window_hours').value = c.extend_window_hours;
+  document.getElementById('f_bank_account').value = c.bank_account || '';
+  document.getElementById('f_ping_mention').value = c.ping_mention || '';
+  document.getElementById('f_farm1_enabled').checked = Number(c.farm1_enabled) === 1;
+  document.getElementById('f_farm2_enabled').checked = Number(c.farm2_enabled) === 1;
+}
+async function farmSaveCfg(e) {
+  e.preventDefault();
+  const g = id => document.getElementById(id).value;
+  const body = {
+    price_1d: g('f_price_1d'), price_3d: g('f_price_3d'), price_5d: g('f_price_5d'),
+    price_7d: g('f_price_7d'), price_10d: g('f_price_10d'), price_14d: g('f_price_14d'),
+    worker_price: g('f_worker_price'), max_workers: g('f_max_workers'), deposit_pct: g('f_deposit_pct'),
+    payment_window_hours: g('f_payment_window_hours'), cancel_cutoff_hours: g('f_cancel_cutoff_hours'),
+    extend_window_hours: g('f_extend_window_hours'), bank_account: g('f_bank_account'),
+    ping_mention: g('f_ping_mention'),
+    farm1_enabled: document.getElementById('f_farm1_enabled').checked,
+    farm2_enabled: document.getElementById('f_farm2_enabled').checked
+  };
+  const res = await fetch('/api/farm/admin/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const d = await res.json();
+  if (d.success) { alert('تم حفظ الإعدادات'); farmLoad(); } else alert(d.error || 'خطأ');
+}
+function farmBkActions(b) {
+  const btn = (url, label, cls, confirmMsg) =>
+    `<button class="admin-btn ${cls} small" onclick="farmAct('${url}','${confirmMsg || ''}')">${label}</button>`;
+  let h = '';
+  if (b.status === 'pending_confirm') h += btn(`/api/farm/admin/bookings/${b.id}/confirm-payment`, '<i class="fas fa-check"></i> تأكيد استلام العربون', 'success', 'تأكد أن العربون وصل بنك الشركة فعلاً — تأكيد الاستلام؟');
+  if (b.status === 'active' && !b.faction_added) h += btn(`/api/farm/admin/bookings/${b.id}/faction-add`, '<i class="fas fa-users"></i> تمت إضافته للفاكشن', 'success', 'تأكيد أن المستأجر انضاف للفاكشن؟ (يوقف التنبيه الساعي)');
+  if (b.extend_status === 'pending_confirm') h += btn(`/api/farm/admin/bookings/${b.id}/confirm-extension`, '<i class="fas fa-clock"></i> تأكيد عربون التمديد', 'success', 'تأكد وصول عربون التمديد — تأكيد التمديد؟');
+  if (b.status === 'ended' && !b.faction_removed && !b.remove_confirm1_by) h += btn(`/api/farm/admin/bookings/${b.id}/remove-confirm-1`, '<i class="fas fa-user-minus"></i> تأكيد إزالة ١/٢', 'success', 'التأكيد الأول: تأكد أن المستأجر المنتهي راح ينزال من الفاكشن؟');
+  if (b.status === 'ended' && !b.faction_removed && b.remove_confirm1_by) h += btn(`/api/farm/admin/bookings/${b.id}/remove-confirm-2`, '<i class="fas fa-user-minus"></i> تأكيد إزالة ٢/٢', 'danger', 'التأكيد الثاني النهائي: تمت إزالة المستأجر من الفاكشن فعلاً؟');
+  if (['pending_payment','pending_confirm'].includes(b.status)) h += btn(`/api/farm/admin/bookings/${b.id}/release`, '<i class="fas fa-eject"></i> إبطال', 'danger', 'إبطال هذا الحجز المعلق؟');
+  if (b.status === 'active') h += btn(`/api/farm/admin/bookings/${b.id}/force-end`, '<i class="fas fa-stop"></i> إنهاء يدوي', 'danger', 'إنهاء هذا الحجز يدوياً الآن؟');
+  return h || '<span style="color:var(--text-dim)">—</span>';
+}
+function farmRenderBookings() {
+  const tb = document.querySelector('#farmBkTable tbody');
+  const list = farmData.bookings || [];
+  if (!list.length) { tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:1.5rem;color:var(--text-dim)">لا توجد حجوزات بعد</td></tr>'; return; }
+  tb.innerHTML = list.map(b => `<tr>
+    <td style="direction:ltr;font-family:ui-monospace,Menlo,monospace;color:var(--accent);font-weight:800">${b.ref}</td>
+    <td>${b.username || '—'}</td>
+    <td>${b.farm_no}</td>
+    <td>${b.duration_days} يوم${b.extend_days && b.extend_status === 'confirmed' ? ` <span style="color:#34d399">+${b.extend_days}</span>` : ''}</td>
+    <td style="direction:ltr">${farmMoney(b.rent_amount)}$ / <b style="color:var(--accent)">${farmMoney(b.deposit_amount)}$</b></td>
+    <td>${farmBadge(FARM_ST_BADGE, b.status)}${b.extend_status === 'pending_payment' || b.extend_status === 'pending_confirm' ? '<br><span style="font-size:.7rem;color:var(--text-dim)">تمديد ' + b.extend_days + ' يوم</span> ' + farmBadge(FARM_ST_BADGE, b.extend_status) : ''}</td>
+    <td>${b.status === 'active' || b.status === 'ended' ? (Number(b.faction_added) === 1 ? '<span style="color:#34d399">مضاف</span>' : '<span style="color:#eab308">بانتظار الإضافة</span>') + (b.status === 'ended' ? '<br>' + (Number(b.faction_removed) === 1 ? '<span style="color:#34d399">منزال</span>' : '<span style="color:#eab308">بانتظار الإزالة</span>') : '') : '—'}</td>
+    <td style="font-size:.78rem">${farmDT(b.start_at)}<br>${farmDT(b.end_at)}</td>
+    <td style="display:flex;gap:4px;flex-wrap:wrap">${farmBkActions(b)}</td>
+  </tr>`).join('');
+}
+function farmRenderWorkers() {
+  const tb = document.querySelector('#farmWkTable tbody');
+  const list = farmData.workers || [];
+  const refOf = {};
+  (farmData.bookings || []).forEach(b => { refOf[b.id] = b.ref; });
+  if (!list.length) { tb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--text-dim)">لا يوجد عمال بعد</td></tr>'; return; }
+  tb.innerHTML = list.map((w, i) => `<tr>
+    <td>${i + 1}</td>
+    <td style="direction:ltr;font-family:ui-monospace,Menlo,monospace">${refOf[w.booking_id] || ('#' + w.booking_id)}</td>
+    <td style="direction:ltr;font-weight:700">${w.character_name}</td>
+    <td style="direction:ltr">${farmMoney(w.amount)}$</td>
+    <td>${farmBadge(FARM_W_BADGE, w.status)}</td>
+    <td style="display:flex;gap:4px">
+      ${w.status === 'pending_confirm' ? `<button class="admin-btn success small" onclick="farmWorkerAct(${w.id},'confirm')"><i class="fas fa-check"></i></button>` : ''}
+      ${['pending_payment','pending_confirm'].includes(w.status) ? `<button class="admin-btn danger small" onclick="farmWorkerAct(${w.id},'reject')"><i class="fas fa-times"></i></button>` : ''}
+    </td>
+  </tr>`).join('');
+}
+function farmRenderEvents() {
+  const tb = document.querySelector('#farmEvTable tbody');
+  const list = farmData.events || [];
+  if (!list.length) { tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--text-dim)">لا يوجد سجل بعد</td></tr>'; return; }
+  tb.innerHTML = list.map(ev => `<tr>
+    <td style="font-size:.75rem;white-space:nowrap">${farmDT(ev.created_at)}</td>
+    <td><span class="badge">${ev.actor_type === 'admin' ? 'إدارة: ' + ev.actor : ev.actor_type === 'user' ? 'مستخدم: ' + ev.actor : 'النظام'}</span></td>
+    <td style="white-space:nowrap">${ev.action}</td>
+    <td style="font-size:.8rem">${ev.details || ''}</td>
+  </tr>`).join('');
+}
+async function farmAct(url, confirmMsg) {
+  if (confirmMsg && !confirm(confirmMsg)) return;
+  const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+  const d = await res.json();
+  if (d.success) farmLoad(); else alert(d.error || 'خطأ');
+}
+async function farmWorkerAct(id, act) {
+  if (act === 'confirm' && !confirm('تأكد أن مبلغ العامل وصل بنك الشركة — تأكيد؟')) return;
+  if (act === 'reject' && !confirm('رفض طلب العامل؟ (المبلغ يرجع للمستأجر)')) return;
+  const res = await fetch(`/api/farm/admin/workers/${id}/${act}`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+  const d = await res.json();
+  if (d.success) farmLoad(); else alert(d.error || 'خطأ');
+}
+farmLoad();
 </script>
 <%- include('admin_footer') %>

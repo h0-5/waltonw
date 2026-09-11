@@ -17,7 +17,7 @@ async function sendWebhook(webhookKey, data) {
         footer: { text: data.footer || 'Walton Family Admin' },
         timestamp: new Date().toISOString()
       }],
-      content: data.embeds ? undefined : undefined
+      content: data.content || undefined
     }, { timeout: 5000 });
   } catch(e) {
     console.error(`Webhook ${webhookKey} failed:`, e.message);

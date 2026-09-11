@@ -436,6 +436,14 @@ async function start() {
     await seedRuleStagesIfEmpty();
   } catch (e) { console.log('⚠️ rule_stages self-heal failed:', e.message); }
 
+  // نظام استئجار المزارع — إنشاء الجداول (شفاء ذاتي) + تشغيل المهام الدورية
+  // (مهلة الدفع كل دقيقة / التنبيه الساعي لإضافة المستأجر للفاكشن)
+  try {
+    const farmApi = require('./routes/api/farm');
+    await farmApi.ensureFarmSchema();
+    farmApi.startFarmCron();
+  } catch (e) { console.log('⚠️ farm init failed:', e.message); }
+
   server.listen(PORT, () => {
     console.log(`\n  Walton Family Server running on http://localhost:${PORT}\n`);
     // Auto-connect Discord bot if enabled
