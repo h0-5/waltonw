@@ -236,9 +236,9 @@ router.get('/', checkPermission('users_view'), async (req, res) => {
       recentUsers = users;
     } catch(e) {}
 
-    res.render('admin/dashboard', { title: 'لوحة التحكم', stats, visits, recentActivity, recentUsers, currentPath: req.path });
+    res.render('admin/dashboard', { title: 'لوحة التحكم', stats, visits, recentActivity, recentUsers, currentPath: req.originalUrl });
   } catch(err) {
-    res.render('admin/dashboard', { title: 'لوحة التحكم', stats: {}, visits: { today: 0, yesterday: 0, week: 0, total: 0, uniqueToday: 0, botToday: 0, daily: [], topPages: [] }, recentActivity: [], recentUsers: [], currentPath: req.path });
+    res.render('admin/dashboard', { title: 'لوحة التحكم', stats: {}, visits: { today: 0, yesterday: 0, week: 0, total: 0, uniqueToday: 0, botToday: 0, daily: [], topPages: [] }, recentActivity: [], recentUsers: [], currentPath: req.originalUrl });
   }
 });
 
@@ -258,7 +258,7 @@ router.get('/security', checkPermission('logs_view'), async (req, res) => {
     } catch(e) {}
   } catch(e) {}
   sec.topBots = Array.from(guardModule.botUAStats.entries()).sort((a, b) => b[1] - a[1]).slice(0, 10);
-  res.render('admin/security', { title: 'مركز الحماية', sec, currentPath: req.path });
+  res.render('admin/security', { title: 'مركز الحماية', sec, currentPath: req.originalUrl });
 });
 
 router.post('/security/block', checkPermission('logs_view'), async (req, res) => {
@@ -289,9 +289,9 @@ router.get('/users', checkPermission('users_view'), async (req, res) => {
     const [users] = await db.execute("SELECT u.*, bp.points, bp.total_earned FROM users u LEFT JOIN bot_points bp ON u.discord_id = bp.discord_id ORDER BY FIELD(u.role, 'owner','developer','founder','vice_founder','chairman','present_member','vice_president','leadership','family_member','admin','moderator','support','member','trial','user') ASC, u.id DESC");
     const [sideRoles] = await db.execute('SELECT * FROM side_roles WHERE is_active = 1');
     const [roles] = await db.execute('SELECT name, display_name, color, icon FROM roles WHERE is_virtual = 0 ORDER BY is_admin_role DESC, sort_order ASC, id ASC');
-    res.render('admin/users', { title: 'إدارة المستخدمين', users, sideRoles, roles, currentUser: req.user, currentPath: req.path });
+    res.render('admin/users', { title: 'إدارة المستخدمين', users, sideRoles, roles, currentUser: req.user, currentPath: req.originalUrl });
   } catch(err) {
-    res.render('admin/users', { title: 'إدارة المستخدمين', users: [], sideRoles: [], roles: [], currentPath: req.path });
+    res.render('admin/users', { title: 'إدارة المستخدمين', users: [], sideRoles: [], roles: [], currentPath: req.originalUrl });
   }
 });
 
@@ -299,9 +299,9 @@ router.get('/users', checkPermission('users_view'), async (req, res) => {
 router.get('/products', checkPermission('products_view'), async (req, res) => {
   try {
     const [products] = await db.execute('SELECT * FROM fs_products ORDER BY id DESC');
-    res.render('admin/products', { title: 'إدارة المنتجات', products, currentPath: req.path });
+    res.render('admin/products', { title: 'إدارة المنتجات', products, currentPath: req.originalUrl });
   } catch(err) {
-    res.render('admin/products', { title: 'إدارة المنتجات', products: [], currentPath: req.path });
+    res.render('admin/products', { title: 'إدارة المنتجات', products: [], currentPath: req.originalUrl });
   }
 });
 
@@ -316,9 +316,9 @@ router.get('/orders', checkPermission('store_orders_view'), async (req, res) => 
       LEFT JOIN fs_products p ON o.product_id = p.id
       ORDER BY o.id DESC
     `);
-    res.render('admin/orders', { title: 'إدارة الطلبات', orders, currentPath: req.path });
+    res.render('admin/orders', { title: 'إدارة الطلبات', orders, currentPath: req.originalUrl });
   } catch(err) {
-    res.render('admin/orders', { title: 'إدارة الطلبات', orders: [], currentPath: req.path });
+    res.render('admin/orders', { title: 'إدارة الطلبات', orders: [], currentPath: req.originalUrl });
   }
 });
 
@@ -327,9 +327,9 @@ router.get('/news', checkPermission('news_add'), async (req, res) => {
   try {
     const [news] = await db.execute('SELECT n.*, u.username as author_name FROM news n LEFT JOIN users u ON n.author_id = u.id ORDER BY n.id DESC');
     const [giveaways] = await db.execute('SELECT id, title FROM giveaways ORDER BY id DESC');
-    res.render('admin/news', { title: 'إدارة الأخبار', news, giveaways, currentPath: req.path });
+    res.render('admin/news', { title: 'إدارة الأخبار', news, giveaways, currentPath: req.originalUrl });
   } catch(err) {
-    res.render('admin/news', { title: 'إدارة الأخبار', news: [], giveaways: [], currentPath: req.path });
+    res.render('admin/news', { title: 'إدارة الأخبار', news: [], giveaways: [], currentPath: req.originalUrl });
   }
 });
 
@@ -337,9 +337,9 @@ router.get('/news', checkPermission('news_add'), async (req, res) => {
 router.get('/tickets', checkPermission('tickets_view'), async (req, res) => {
   try {
     const [tickets] = await db.execute('SELECT t.*, u.username, u.profile_picture as user_avatar FROM support_tickets t LEFT JOIN users u ON t.user_id = u.id ORDER BY t.id DESC');
-    res.render('admin/tickets', { title: 'إدارة التذاكر', tickets, currentPath: req.path });
+    res.render('admin/tickets', { title: 'إدارة التذاكر', tickets, currentPath: req.originalUrl });
   } catch(err) {
-    res.render('admin/tickets', { title: 'إدارة التذاكر', tickets: [], currentPath: req.path });
+    res.render('admin/tickets', { title: 'إدارة التذاكر', tickets: [], currentPath: req.originalUrl });
   }
 });
 
@@ -358,10 +358,10 @@ router.get('/applications', checkPermission('apps_view'), async (req, res) => {
       const [qs] = await db.query('SELECT id, question, type, options FROM application_questions WHERE application_type = ?', [t.application_type]);
       questionsMap[t.application_type] = qs;
     }
-    res.render('admin/applications', { title: 'الطلبات المقدمة', applications, types, questionsMap, currentPath: req.path });
+    res.render('admin/applications', { title: 'الطلبات المقدمة', applications, types, questionsMap, currentPath: req.originalUrl });
   } catch(err) {
     console.error('Admin applications error:', err.message);
-    res.render('admin/applications', { title: 'الطلبات المقدمة', applications: [], types: [], questionsMap: {}, currentPath: req.path });
+    res.render('admin/applications', { title: 'الطلبات المقدمة', applications: [], types: [], questionsMap: {}, currentPath: req.originalUrl });
   }
 });
 
@@ -369,10 +369,10 @@ router.get('/applications', checkPermission('apps_view'), async (req, res) => {
 router.get('/manage-apps', checkPermission('app_types_view'), async (req, res) => {
   try {
     const [types] = await db.query('SELECT * FROM application_settings ORDER BY id ASC');
-    res.render('admin/manage-apps', { title: 'إدارة نظام التقديمات', types, currentPath: req.path });
+    res.render('admin/manage-apps', { title: 'إدارة نظام التقديمات', types, currentPath: req.originalUrl });
   } catch(err) {
     console.error('Manage apps error:', err.message);
-    res.render('admin/manage-apps', { title: 'إدارة نظام التقديمات', types: [], currentPath: req.path });
+    res.render('admin/manage-apps', { title: 'إدارة نظام التقديمات', types: [], currentPath: req.originalUrl });
   }
 });
 
@@ -385,10 +385,10 @@ router.get('/settings', checkPermission('site_settings_view'), async (req, res) 
     const [roles] = await db.execute('SELECT name, display_name, icon FROM roles ORDER BY sort_order ASC, id ASC');
     const [aboutRows] = await db.execute('SELECT * FROM about_page LIMIT 1');
     const about = aboutRows[0] || {};
-    res.render('admin/settings', { title: 'الإعدادات', settings, roles, about, currentPath: req.path });
+    res.render('admin/settings', { title: 'الإعدادات', settings, roles, about, currentPath: req.originalUrl });
   } catch(err) {
     console.error('[Admin/Settings]', err);
-    res.render('admin/settings', { title: 'الإعدادات', settings: {}, roles: [], about: {}, currentPath: req.path });
+    res.render('admin/settings', { title: 'الإعدادات', settings: {}, roles: [], about: {}, currentPath: req.originalUrl });
   }
 });
 
@@ -502,7 +502,7 @@ router.get('/profile', isAuthenticated, async (req, res) => {
         avgRating: '—'
       },
       chartData, warnings, excuses, allLogs, tickets, applications, orders, staff,
-      canWarn, canExcuse, currentPath: req.path
+      canWarn, canExcuse, currentPath: req.originalUrl
     });
   } catch(err) {
     console.error('[Admin/Profile]', err);
@@ -621,7 +621,7 @@ router.get('/profile/:userId', isAuthenticated, async (req, res) => {
         weekActions: weekCount[0]?.c || 0, avgRating: '—'
       },
       chartData, warnings, excuses, allLogs, tickets, applications, orders, staff,
-      canWarn, canExcuse, currentPath: req.path
+      canWarn, canExcuse, currentPath: req.originalUrl
     });
   } catch(err) {
     console.error('[Admin/Profile/:userId]', err);
@@ -743,7 +743,7 @@ router.get('/roles', checkPermission('roles_config_view'), async (req, res) => {
       unifiedPerms, sideRoles, userSideRoles,
       PERMISSION_GROUPS, pageAccess, sideRolePerms, sideRolePageAccess,
       roleMemberCounts,
-      currentPath: req.path
+      currentPath: req.originalUrl
     });
   } catch(err) {
     res.render('admin/roles', {
@@ -752,7 +752,7 @@ router.get('/roles', checkPermission('roles_config_view'), async (req, res) => {
       unifiedPerms: {}, sideRoles: [], userSideRoles: {},
       PERMISSION_GROUPS: {}, pageAccess: {}, sideRolePerms: {}, sideRolePageAccess: {},
       roleMemberCounts: {},
-      currentPath: req.path
+      currentPath: req.originalUrl
     });
   }
 });
@@ -767,16 +767,16 @@ router.get('/rules', checkPermission('rules_view'), async (req, res) => {
   const rules = await safeAll('SELECT * FROM rules ORDER BY sort_order ASC, id ASC');
   const categories = await safeAll('SELECT * FROM rule_categories ORDER BY sort_order ASC, id ASC');
   const stages = await safeAll('SELECT * FROM rule_stages ORDER BY sort_order ASC, id ASC');
-  res.render('admin/rules', { title: 'إدارة القوانين', rules, categories, stages, currentPath: req.path });
+  res.render('admin/rules', { title: 'إدارة القوانين', rules, categories, stages, currentPath: req.originalUrl });
 });
 
 // Discounts Management
 router.get('/discounts', checkPermission('discounts_manage'), async (req, res) => {
   try {
     const [discounts] = await db.execute('SELECT * FROM discount_codes ORDER BY id DESC');
-    res.render('admin/discounts', { title: 'أكواد الخصم', discounts, currentPath: req.path });
+    res.render('admin/discounts', { title: 'أكواد الخصم', discounts, currentPath: req.originalUrl });
   } catch(err) {
-    res.render('admin/discounts', { title: 'أكواد الخصم', discounts: [], currentPath: req.path });
+    res.render('admin/discounts', { title: 'أكواد الخصم', discounts: [], currentPath: req.originalUrl });
   }
 });
 
@@ -792,24 +792,24 @@ router.get('/banned', checkPermission('users_ban'), async (req, res) => {
       WHERE u.is_banned = 1 
       ORDER BY u.banned_at DESC
     `);
-    res.render('admin/banned', { title: 'المحظورين', banned, currentPath: req.path });
+    res.render('admin/banned', { title: 'المحظورين', banned, currentPath: req.originalUrl });
   } catch(err) {
-    res.render('admin/banned', { title: 'المحظورين', banned: [], currentPath: req.path });
+    res.render('admin/banned', { title: 'المحظورين', banned: [], currentPath: req.originalUrl });
   }
 });
 
 // Broadcast
 router.get('/broadcast', checkPermission('broadcast_send'), async (req, res) => {
-  res.render('admin/broadcast', { title: 'البث', currentPath: req.path });
+  res.render('admin/broadcast', { title: 'البث', currentPath: req.originalUrl });
 });
 
 // Properties Management
 router.get('/properties', checkPermission('properties_view'), async (req, res) => {
   try {
     const [properties] = await db.execute('SELECT * FROM properties ORDER BY sort_order ASC, id ASC');
-    res.render('admin/properties', { title: 'إدارة الممتلكات', properties, currentPath: req.path });
+    res.render('admin/properties', { title: 'إدارة الممتلكات', properties, currentPath: req.originalUrl });
   } catch(err) {
-    res.render('admin/properties', { title: 'إدارة الممتلكات', properties: [], currentPath: req.path });
+    res.render('admin/properties', { title: 'إدارة الممتلكات', properties: [], currentPath: req.originalUrl });
   }
 });
 
@@ -820,9 +820,9 @@ router.get('/company', checkPermission('company_view'), async (req, res) => {
     const [questions] = await db.execute('SELECT * FROM service_questions ORDER BY sort_order ASC');
     const [packages] = await db.execute('SELECT * FROM service_packages ORDER BY sort_order ASC');
     const [requests] = await db.execute('SELECT sr.*, u.username, ci.title as service_title FROM service_requests sr LEFT JOIN users u ON sr.user_id = u.id LEFT JOIN company_items ci ON sr.service_id = ci.id ORDER BY sr.id DESC');
-    res.render('admin/company', { title: 'إدارة الشركة', items, questions, packages, requests, currentPath: req.path });
+    res.render('admin/company', { title: 'إدارة الشركة', items, questions, packages, requests, currentPath: req.originalUrl });
   } catch(err) {
-    res.render('admin/company', { title: 'إدارة الشركة', items: [], questions: [], packages: [], requests: [], currentPath: req.path });
+    res.render('admin/company', { title: 'إدارة الشركة', items: [], questions: [], packages: [], requests: [], currentPath: req.originalUrl });
   }
 });
 
@@ -895,7 +895,7 @@ router.get('/logs', checkPermission('logs_view'), async (req, res) => {
       total: total || 0,
       page: page,
       totalPages: totalPages,
-      currentPath: req.path
+      currentPath: req.originalUrl
     }, function(err, html) {
       if (err) {
         console.error('[LOGS] Render error:', err.message);
@@ -912,16 +912,16 @@ router.get('/logs', checkPermission('logs_view'), async (req, res) => {
 
 // ===== Bot Pages =====
 router.get('/bot', checkPermission('bot_manage'), (req, res) => {
-  res.render('admin/bot-config', { title: 'إعدادات البوت', currentPath: req.path });
+  res.render('admin/bot-config', { title: 'إعدادات البوت', currentPath: req.originalUrl });
 });
 router.get('/bot/members', checkPermission('bot_manage'), (req, res) => {
-  res.render('admin/bot-members', { title: 'أعضاء السيرفر', currentPath: req.path });
+  res.render('admin/bot-members', { title: 'أعضاء السيرفر', currentPath: req.originalUrl });
 });
 router.get('/bot/notify', checkPermission('bot_manage'), (req, res) => {
-  res.render('admin/bot-notify', { title: 'إشعارات الديسكورد', currentPath: req.path });
+  res.render('admin/bot-notify', { title: 'إشعارات الديسكورد', currentPath: req.originalUrl });
 });
 router.get('/bot/logs', checkPermission('bot_manage'), (req, res) => {
-  res.render('admin/bot-logs', { title: 'سجل البوت', currentPath: req.path });
+  res.render('admin/bot-logs', { title: 'سجل البوت', currentPath: req.originalUrl });
 });
 
 module.exports = router;
