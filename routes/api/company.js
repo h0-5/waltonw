@@ -15,6 +15,8 @@ const webhooks = require('../../config/webhooks');
 
 const REQ_STATUS_AR = { pending: 'بانتظار المراجعة', approved: 'مقبول', rejected: 'مرفوض' };
 const MAX_PENDING_PER_USER = 5;
+/* نفس نمط أسماء الشخصيات بنظام المزرعة — الاسم الكامل مطلوب بأسئلة الخدمات */
+const NAME_RE = /^[A-Za-z]{2,16}_[A-Za-z]{2,16}(_[A-Za-z]{2,16})?$/;
 
 function notifyCompany(payload) {
   const key = webhooks.WH_COMPANY ? 'WH_COMPANY' : (webhooks.WH_FARM ? 'WH_FARM' : null);
@@ -70,7 +72,11 @@ router.post('/service-request', isAuthenticated, async (req, res) => {
     for (const q of qs) {
       if (q.type === 'image') {
         const file = req.files && req.files['sq_' + q.id];
-        if (file && file.size > 0) {
+        const hasFile = file && file.size > 0;
+        if (Number(q.required) === 1 && !hasFile) {
+          return res.status(400).json({ error: 'أرفق الصورة المطلوبة: ' + q.question });
+        }
+        if (hasFile) {
           const ext = String(file.name || 'img.png').split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
           const fname = 'req_' + Date.now() + '_' + Math.floor(Math.random() * 1e4) + '.' + ext;
           fs.mkdirSync(uploadDir, { recursive: true });
@@ -83,6 +89,10 @@ router.post('/service-request', isAuthenticated, async (req, res) => {
         const v = String(req.body['sq_' + q.id] || '').trim().slice(0, 1000);
         if (Number(q.required) === 1 && !v) {
           return res.status(400).json({ error: 'أكمل الإجابة على: ' + q.question });
+        }
+        /* اسم الشخصية لازم يكون كامل وصحيح مثل نظام المزرعة — أي خطأ بالاسم مسؤولية صاحبه */
+        if (q.type === 'character_name' && v && !NAME_RE.test(v)) {
+          return res.status(400).json({ error: 'اكتب اسم الشخصية كاملة وصحيحة كما هو بالسيرفر (مثال: Hadi_Walton) — ' + q.question });
         }
         if (v) answers.push({ q: q.question, a: v, type: q.type === 'character_name' ? 'character_name' : 'text' });
       }

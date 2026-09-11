@@ -22,15 +22,13 @@
             <a href="#cy-services" class="cy-co-nav-btn" data-target="cy-services"><i class="fas fa-concierge-bell"></i> خدمات</a>
         </div>
 
-        <!-- ═══ القسم الأول: معلومات الشركة (ظاهر مباشرة) ═══ -->
+        <!-- Info Section -->
+        <div id="section-info" class="active">
         <div class="cy-co-sec-head cy-co-reveal" id="cy-info">
             <div class="cy-co-sec-ic"><i class="fas fa-info-circle"></i></div>
             <h2 class="cy-co-sec-title">معلومات الشركة</h2>
             <span class="cy-co-sec-line"></span>
         </div>
-
-        <!-- Info Section -->
-        <div id="section-info" class="active">
             <% if (infoItems.length === 0) { %>
             <div class="cy-co-empty cy-co-reveal">
                 <div class="cy-co-empty-icon"><i class="fas fa-info-circle"></i></div>
@@ -59,8 +57,9 @@
             <% } %>
         </div>
 
-        <!-- ═══ القسم الثاني: خدمات (جزء لحاله — ظاهر مباشرة) ═══ -->
-        <div class="cy-co-sec-head cy-co-reveal" id="cy-services" style="margin-top:3rem">
+        <!-- Services Section (يظهر بس من زر «خدمات» فوق) -->
+        <div id="section-services">
+        <div class="cy-co-sec-head cy-co-reveal" id="cy-services" style="margin-top:.5rem">
             <div class="cy-co-sec-ic"><i class="fas fa-concierge-bell"></i></div>
             <h2 class="cy-co-sec-title">خدمات</h2>
             <span class="cy-co-sec-line"></span>
@@ -68,9 +67,6 @@
             <button class="cy-co-sec-btn" onclick="svcOpenMy()"><i class="fas fa-list-check"></i> طلباتي</button>
             <% } %>
         </div>
-
-        <!-- Services Section -->
-        <div id="section-services" class="active">
             <% if (farmState) { %>
             <!-- خدمة استئجار المزارع -->
             <div class="cy-co-card cy-co-reveal" style="border-color:rgba(var(--accent-rgb),.25)">
@@ -81,37 +77,7 @@
                     <span id="farmBadge" class="cy-farm-badge off"><i class="fas fa-circle-notch fa-spin"></i> جاري التحديث</span>
                 </div>
                 <div class="cy-co-body">
-                    <p class="cy-co-desc">احجز مزرعتك من شركة والتون — الخدمة وحدة تحسب التوفر على كل مزارع الشركة (<%= (farmState.farms || []).length %> مزارع): أول ما تأكد الإدارة وصول العربون تسلم مزرعة فاضية على طول.</p>
-
-                    <div class="cy-farm-price-grid">
-                        <% farmState.config.prices.forEach(function(p) { %>
-                        <div class="cy-farm-price-chip">
-                            <b><%= p.days %> يوم</b>
-                            <span><%= Number(p.price).toLocaleString('en-US') %>$</span>
-                        </div>
-                        <% }) %>
-                    </div>
-
-                    <ul class="cy-farm-rules">
-                        <li><i class="fas fa-coins"></i><span><b>العربون:</b> <%= farmState.config.deposit_pct %>% من قيمة الإيجار يحوّل على بنك الشركة لتثبيت الحجز، وباقي المبلغ يتأكد مع الإدارة.</span></li>
-                        <li><i class="fas fa-hourglass-half"></i><span><b>مهلة الدفع:</b> <%= farmState.config.payment_window_hours %> ساعات من تقديم الحجز — إذا انتهت المهلة بدون دفع ينلغى الحجز تلقائياً.</span></li>
-                        <li><i class="fas fa-ban"></i><span><b>الإلغاء:</b> يخسر <%= Math.round(farmState.config.deposit_pct / 2) %>% من العربون — آخر موعد للإلغاء قبل بداية الحجز بـ <%= farmState.config.cancel_cutoff_hours %> ساعات.</span></li>
-                        <li><i class="fas fa-clock-rotate-left"></i><span><b>التمديد:</b> متاح فقط خلال آخر <%= farmState.config.extend_window_hours %> ساعة قبل انتهاء الحجز، وبنفس نظام العربون.</span></li>
-                        <li><i class="fas fa-users"></i><span><b>اضافة عمال:</b> حتى <%= farmState.config.max_workers %> عمال بـ <%= Number(farmState.config.worker_price).toLocaleString('en-US') %>$ للعامل — لازم اسم شخصية لاعب بالسيرفر كاملة وصحيحة.</span></li>
-                    </ul>
-
-                    <div class="cy-farm-warn">
-                        <i class="fas fa-triangle-exclamation"></i>
-                        <span>مسؤولية الاسم على صاحبها: أي خطأ بكتابة اسم الشخصية (المستأجر أو العامل) يتحمل صاحبه مسؤوليته، والشركة ستتخذ مسؤوليتها تجاه من يخطئ بالاسم عمداً.</span>
-                    </div>
-
-                    <div class="cy-farm-bank">
-                        <i class="fas fa-building-columns" style="color:var(--accent)"></i>
-                        <code id="farmBank"><%= farmState.config.bank_account %></code>
-                        <button onclick="farmCopyBank()"><i class="fas fa-copy"></i> نسخ</button>
-                    </div>
-
-                    <div class="cy-farm-avail" id="farmAvail"></div>
+                    <p class="cy-co-desc">احجز مزرعتك من شركة والتون — الخدمة وحدة تحسب التوفر على كل مزارع الشركة (<%= (farmState.farms || []).length %> مزارع): أول ما تأكد الإدارة وصول العربون تسلم مزرعة فاضية على طول. الأسعار والشروط تظهر لك خطوة الحجز.</p>
 
                     <div class="cy-farm-actions">
                         <% if (user) { %>
@@ -185,6 +151,22 @@
             <button class="cy-f-x" onclick="farmClose('farmBookModal')"><i class="fas fa-times"></i></button>
         </div>
         <div class="cy-f-box-body">
+            <ul class="cy-farm-rules cy-f-rules-mini">
+                <li><i class="fas fa-coins"></i><span><b>العربون:</b> <%= farmState.config.deposit_pct %>% من الإيجار على بنك الشركة — وباقي المبلغ يتأكد مع الإدارة.</span></li>
+                <li><i class="fas fa-hourglass-half"></i><span><b>مهلة الدفع:</b> <%= farmState.config.payment_window_hours %> ساعات — بعدها ينلغى تلقائياً.</span></li>
+                <li><i class="fas fa-ban"></i><span><b>الإلغاء:</b> يخسر <%= Math.round(farmState.config.deposit_pct / 2) %>% من العربون — آخر موعد قبل البداية بـ <%= farmState.config.cancel_cutoff_hours %> ساعات.</span></li>
+                <li><i class="fas fa-clock-rotate-left"></i><span><b>التمديد:</b> فقط خلال آخر <%= farmState.config.extend_window_hours %> ساعة قبل الانتهاء.</span></li>
+                <li><i class="fas fa-users"></i><span><b>اضافة عمال:</b> حتى <%= farmState.config.max_workers %> بـ <%= Number(farmState.config.worker_price).toLocaleString('en-US') %>$ للعامل — اسم شخصية كاملة وصحيحة.</span></li>
+            </ul>
+
+            <div class="cy-farm-warn cy-f-warn-mini">
+                <i class="fas fa-triangle-exclamation"></i>
+                <span>مسؤولية الاسم على صاحبها — أي خطأ بكتابة اسم الشخصية (المستأجر أو العامل) يتحمل صاحبه نتيجته.</span>
+            </div>
+
+            <div style="font-size:.8rem;color:rgba(255,255,255,.6);margin:.9rem 0 .5rem">حالة المزارع:</div>
+            <div class="cy-farm-avail" id="farmAvail" style="margin-bottom:.9rem"></div>
+
             <div style="font-size:.8rem;color:rgba(255,255,255,.6);margin-bottom:.8rem">اختر المدة — المدد ثابتة والأسعار من إدارة الشركة:</div>
             <div class="cy-f-dur-grid" id="farmDurGrid"></div>
             <div class="cy-f-summary" id="farmBookSummary" style="display:none">
@@ -192,6 +174,13 @@
                 <div class="row"><span>العربون المطلوب الآن (<%= farmState.config.deposit_pct %>%)</span><b id="farmSumDep" style="color:var(--accent)">—</b></div>
                 <div class="row" style="font-size:.76rem;color:rgba(255,255,255,.55)"><span>مهلة الدفع</span><span><%= farmState.config.payment_window_hours %> ساعات — بعدها ينلغى تلقائياً</span></div>
             </div>
+
+            <div class="cy-farm-bank" style="margin-top:1rem">
+                <i class="fas fa-building-columns" style="color:var(--accent)"></i>
+                <code id="farmBank"><%= farmState.config.bank_account %></code>
+                <button onclick="farmCopyBank()"><i class="fas fa-copy"></i> نسخ</button>
+            </div>
+
             <div class="cy-farm-actions" style="margin-top:1.1rem">
                 <button class="cy-farm-btn primary" id="farmBookSubmit" onclick="farmSubmitBook()" disabled><i class="fas fa-check"></i> إنشاء الحجز</button>
                 <button class="cy-farm-btn ghost" onclick="farmClose('farmBookModal')">إلغاء</button>
@@ -306,7 +295,7 @@ function showSvcQuestions(sid) {
         var r = q.required == 1;
         h += '<div style="margin-bottom:1.2rem"><label style="color:var(--text, #fff);font-weight:600;font-size:.9rem;display:block;margin-bottom:.5rem">' + q.question + (r?' <span style="color:#ef4444">*</span>':'') + '</label>';
         if (q.type === 'text' || q.type === 'datetime' || q.type === 'character_name')
-            h += '<input type="text" name="sq_' + q.id + '" ' + (r?'required':'') + ' placeholder="أدخل الإجابة..." style="width:100%;padding:.7rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:var(--text, #fff);font-size:.85rem;box-sizing:border-box">';
+            h += '<input type="text" name="sq_' + q.id + '" ' + (r?'required':'') + (q.type === 'character_name' ? ' pattern="[A-Za-z]{2,16}_[A-Za-z]{2,16}(_[A-Za-z]{2,16})?" title="مثال: Hadi_Walton — اسم الشخصية كاملة كما هو بالسيرفر" placeholder="Hadi_Walton"' : ' placeholder="أدخل الإجابة..."') + ' style="width:100%;padding:.7rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:var(--text, #fff);font-size:.85rem;box-sizing:border-box">';
         else if (q.type === 'image')
             h += '<input type="file" name="sq_' + q.id + '" accept="image/*" ' + (r?'required':'') + ' style="width:100%;padding:.6rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-size:.85rem;box-sizing:border-box">';
         else if (q.type === 'price')
@@ -452,11 +441,30 @@ function farmBkActions(b) {
     var h = '';
     if (b.can.pay) h += '<button class="cy-farm-btn warn small" onclick="farmPaid(' + b.id + ')"><i class="fas fa-money-bill"></i> دفعت العربون</button>';
     if (b.can.extend) h += '<button class="cy-farm-btn primary small" onclick="openFarmExt(' + b.id + ')"><i class="fas fa-clock-rotate-left"></i> تمديد</button>';
+    if (b.can.addWorker) h += '<button class="cy-farm-btn ghost small" onclick="farmWorkerAdd(' + b.id + ')"><i class="fas fa-user-plus"></i> اضافة عامل</button>';
     if (b.can.cancel) {
         var warn = b.can.cancelPenalty > 0 ? 'الإلغاء راح يخسرك ' + farmMoney(b.can.cancelPenalty) + '$ (50% من العربون). متأكد؟' : 'متأكد من إلغاء الحجز؟';
         h += '<button class="cy-farm-btn danger small" onclick="if(confirm(\'' + warn.replace(/'/g, '') + '\'))farmCancel(' + b.id + ')"><i class="fas fa-ban"></i> إلغاء الحجز</button>';
     }
     return h;
+}
+async function farmWorkerAdd(bid) {
+    var name = prompt('اسم الشخصية الكاملة للعامل كما هو بالسيرفر (مثال: Hadi_Walton):\nأي خطأ بالاسم مسؤولية صاحبه.');
+    if (name === null) return;
+    name = name.trim();
+    if (!name) return;
+    try {
+        var r = await fetch('/api/farm/bookings/' + bid + '/workers', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ character_name: name })
+        });
+        var data = await r.json();
+        if (data.success) {
+            farmToast('👤 ' + data.message);
+            await farmRefresh();
+            openFarmMy();
+        } else farmToast(data.error || 'خطأ', true);
+    } catch (e) { farmToast('خطأ بالاتصال', true); }
 }
 function farmRenderMy() {
     var box = document.getElementById('farmMyList');
@@ -653,36 +661,29 @@ document.addEventListener('keydown', function(e) { if (e.key === 'Escape') svcCl
 <% } %>
 
 <script>
-/* تنقل جزئي الصفحة — تمرير ناعم + تتبع الزر النشط */
+/* نظام التابات — معلومات الشركة لحالها، والخدمات تظهر من زر «خدمات» فوق */
 (function() {
     var nav = document.getElementById('cyCoNav');
     if (!nav) return;
+    function cyCoShow(id, push) {
+        var info = document.getElementById('section-info');
+        var svc = document.getElementById('section-services');
+        if (!info || !svc) return;
+        var isSvc = id === 'cy-services';
+        info.classList.toggle('active', !isSvc);
+        svc.classList.toggle('active', isSvc);
+        var btns = nav.querySelectorAll('.cy-co-nav-btn');
+        for (var i = 0; i < btns.length; i++) btns[i].classList.toggle('active', btns[i].dataset.target === id);
+        if (push && history.replaceState) history.replaceState(null, '', isSvc ? '#services' : '#info');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
     nav.addEventListener('click', function(e) {
         var a = e.target.closest('.cy-co-nav-btn');
         if (!a) return;
         e.preventDefault();
-        var t = document.getElementById(a.dataset.target);
-        if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        nav.querySelectorAll('.cy-co-nav-btn').forEach(function(b) { b.classList.remove('active'); });
-        a.classList.add('active');
+        cyCoShow(a.dataset.target, true);
     });
-    var spy = null;
-    if ('IntersectionObserver' in window) {
-        spy = new IntersectionObserver(function(entries) {
-            entries.forEach(function(en) {
-                if (!en.isIntersecting) return;
-                var btn = nav.querySelector('[data-target="' + en.target.id + '"]');
-                if (btn) {
-                    nav.querySelectorAll('.cy-co-nav-btn').forEach(function(b) { b.classList.remove('active'); });
-                    btn.classList.add('active');
-                }
-            });
-        }, { rootMargin: '-30% 0px -60% 0px' });
-        ['cy-info', 'cy-services'].forEach(function(id) {
-            var el = document.getElementById(id);
-            if (el) spy.observe(el);
-        });
-    }
+    cyCoShow(location.hash === '#services' ? 'cy-services' : 'cy-info', false);
 })();
 </script>
 

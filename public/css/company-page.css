@@ -1,6 +1,6 @@
 ﻿/* Tab sections - class-based toggle */
-#section-info, #section-activities { display: none; }
-#section-info.active, #section-activities.active { display: block; }
+#section-info, #section-activities, #section-services { display: none; }
+#section-info.active, #section-activities.active, #section-services.active { display: block; }
 /* كشف ثابت لكل عناصر الصفحة — أي عنصر cy-co-reveal خارج الأقسام (عناوين الأقسام + التنقل)
    كان يبقى opacity:0 للأبد لأن main.js يراقب .reveal فقط — الآن كل شيء ظاهر دائماً */
 .cy-co-reveal {
@@ -991,3 +991,11 @@
   .cy-co-nav { width:100%; }
   .cy-co-nav-btn { flex:1; justify-content:center; padding:.55rem .8rem; font-size:.78rem; }
 }
+
+/* ═══ شروط مختصرة داخل نافذة الحجز (البطاقة صارت موحدة خفيفة) ═══ */
+.cy-f-rules-mini { margin: 0 0 .8rem; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.cy-f-rules-mini li { display: flex; align-items: flex-start; gap: 8px; font-size: .74rem; line-height: 1.55; color: rgba(255,255,255,.72); }
+.cy-f-rules-mini li i { color: var(--accent); width: 15px; text-align: center; margin-top: 2px; font-size: .72rem; flex-shrink: 0; }
+.cy-f-rules-mini li b { color: rgba(255,255,255,.9); }
+.cy-f-warn-mini { padding: .55rem .8rem; font-size: .72rem; }
+.cy-f-warn-mini span { line-height: 1.5; }

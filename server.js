@@ -138,6 +138,30 @@ async function seedCompanyServices() {
     }
     console.log('✅ company service seeded:', title);
   };
+  // ترحيل: خدمة «بيع سيارات» القديمة كان اتجاهها غلط (الزبون يبيع لنا) — الصح: الشركة تبيع المركبة للزبون
+  try {
+    const [oldCars] = await db.query("SELECT id FROM company_items WHERE title = 'بيع سيارات' LIMIT 1");
+    if (oldCars.length) {
+      const cid = oldCars[0].id;
+      await db.query("UPDATE company_items SET title = 'بيع المركبات', description = ? WHERE id = ?", [
+        'شركة والتون تبيع مركبات للزبائن على السيرفر — قدّم طلبك بنوع المركبة اللي تبيها وميزانيتك، والإدارة تراجع الطلب وتتواصل معك لتجهيز المركبة والتسعير.',
+        cid]);
+      await db.query('DELETE FROM service_questions WHERE service_id = ?', [cid]);
+      const vq = [
+        ['اسم شخصيتك الكاملة بالسيرفر (مثال: Hadi_Walton)', 'character_name', 1],
+        ['نوع المركبة المطلوبة (موديل/فئة)', 'text', 1],
+        ['ميزانيتك التقريبية ($)', 'text', 1],
+        ['ملاحظات إضافية (لون، تعديلات مطلوبة...)', 'text', 0]
+      ];
+      let vi = 0;
+      for (const q of vq) {
+        await db.query('INSERT INTO service_questions (service_id, question, type, required, sort_order) VALUES (?, ?, ?, ?, ?)',
+          [cid, q[0], q[1], q[2], ++vi]);
+      }
+      console.log('✅ خدمة «بيع سيارات» انراحلت إلى «بيع المركبات» — الشركة تبيع للزبون');
+    }
+  } catch (e) { console.log('⚠️ بيع المركبات migration:', e.message); }
+
   await seed('تصميم ملابس',
     'شركة والتون تصمم لك ملابس خاصة على السيرفر — قدّم طلبك مع وصف التصميم وصورة مرجعية، والإدارة تراجع الطلب وتتصل فيك للتسعير والتنفيذ.',
     [
@@ -147,14 +171,13 @@ async function seedCompanyServices() {
       ['ملاحظات إضافية', 'text', 0]
     ],
     { icon: 'fa-shirt' });
-  await seed('بيع سيارات',
-    'بيع سيارتك عبر شركة والتون — سجل بيانات سيارتك والسعر المطلوب وأرفق صورة، والإدارة تراجع الطلب وتتواصل معك لإتمام البيع.',
+  await seed('بيع المركبات',
+    'شركة والتون تبيع مركبات للزبائن على السيرفر — قدّم طلبك بنوع المركبة اللي تبيها وميزانيتك، والإدارة تراجع الطلب وتتواصل معك لتجهيز المركبة والتسعير.',
     [
       ['اسم شخصيتك الكاملة بالسيرفر (مثال: Hadi_Walton)', 'character_name', 1],
-      ['نوع وموديل السيارة', 'text', 1],
-      ['السعر المطلوب ($)', 'text', 1],
-      ['صورة السيارة', 'image', 0],
-      ['ملاحظات إضافية (الحالة، التعديلات، الكيلومترات)', 'text', 0]
+      ['نوع المركبة المطلوبة (موديل/فئة)', 'text', 1],
+      ['ميزانيتك التقريبية ($)', 'text', 1],
+      ['ملاحظات إضافية (لون، تعديلات مطلوبة...)', 'text', 0]
     ],
     { icon: 'fa-car' });
   await seed('تلت',
