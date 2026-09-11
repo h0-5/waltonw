@@ -424,18 +424,27 @@ async function processBotAction(action) {
   }
 }
 
+let dbPollerFailed = false;
 function startActionPoller() {
+  if (!db) {
+    console.log('⚠️ Bot action poller disabled (no database)');
+    return;
+  }
   console.log('🔄 Bot action poller started (every 5s)');
   setInterval(async () => {
     if (!db) return;
     try {
       const [actions] = await db.execute('SELECT * FROM bot_actions WHERE status = ? ORDER BY created_at ASC LIMIT 5', ['pending']);
+      dbPollerFailed = false;
       for (const action of actions) {
         await db.execute('UPDATE bot_actions SET status = ? WHERE id = ?', ['processing', action.id]);
         await processBotAction(action);
       }
     } catch (e) {
-      console.error('Action poller error:', e.message);
+      if (!dbPollerFailed) {
+        console.error('Action poller error:', e.message);
+        dbPollerFailed = true;
+      }
     }
   }, 5000);
 }
