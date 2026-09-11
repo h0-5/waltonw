@@ -40,11 +40,12 @@
 }
 
 /* â”€â”€ Cyberpunk Background Grid â”€â”€ */
-/* ‌الخلفية الدفينة الثابتة أُزيلت (شفافة) — الصفحة ترث خلفية الموقع من الإعدادات
-   (صورة/لون body) مثل باقي الصفحات، وتبقى شبكة السيبربانك فوقها */
+/* ‌الخلفية معتمة بـ --bg-deep مثل باقي الصفحات (بلاغ: «صورة الخلفية هنا باينة عكس باقي الصفحات»)
+   — لا تُظهر صورة الخلفية المخصصة، و--bg-deep يتبع لون الخلفية عند تخصيصه من الإعدادات.
+   شبكة السيبربانك والتوهجات فوقها */
 .cy-co-page {
     min-height: 100vh;
-    background-color: transparent;
+    background-color: var(--bg-deep, #0f101d);
     background-image:
         repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(var(--purple-rgb),0.03) 59px, rgba(var(--purple-rgb),0.03) 60px),
         repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(var(--purple-rgb),0.03) 59px, rgba(var(--purple-rgb),0.03) 60px);
