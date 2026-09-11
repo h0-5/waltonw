@@ -4,9 +4,11 @@
  * التدفق (دفع على دفعتين):
  *   حجز → عربون (50% من الإيجار) خلال مهلة الدفع → المستأجر يعلن الدفع → الإدارة تأكد
  *        → الحجز «مؤكد» والبداية متجددة بعد (مهلة النص الثاني = 6 ساعات افتراضياً)
- *        → المستأجر يوصله تنبيه فوراً (قبل بداية الحجز بـ 6 ساعات) يحوّل النص الثاني
+ *        → المستأجر يوصله تنبيه فوراً (قبل بداية الحجز بـ 6 ساعات) يحوّل النص الثاني،
+ *          ويقدر يسجل عماله (اسم شخصية كامل + رسوم كل عامل) قبل سداد النص الثاني
  *        → الإدارة تأكد وصول النص الثاني → الحجز «فعال» ويبدأ → وبس عندها يطلع اشعار
- *          «أضيفوه للفاكشن» بالمنشن + تنبيه ساعي حتى التأكيد
+ *          «أضيفوه للفاكشن» بالمنشن — باسم المستأجر وبأسماء عماله المؤكدين لدخلهم
+ *          دفعة واحدة + تنبيه ساعي يذكر بالأسماء حتى التأكيد
  *        → إذا وصل قبل بداية الحجز بساعة والنص الثاني ما انحول → ينلغي تلقائياً
  *          ويخسر العربون (فلوس أول تحويل)
  *   عند النهاية: إشعار + إزالة المستأجر من الفاكشن بتأكدين
@@ -333,7 +335,7 @@ async function serializeUserBookings(userId, cfg) {
         cancelPenalty: b.status === 'pending_confirm' || b.status === 'confirmed' || (b.status === 'active' && cancelBeforeStart)
           ? Math.round(Number(b.deposit_amount) / 2) : 0,
         extend: extendWindow && !extPending,
-        addWorker: b.status === 'active' && liveWorkers < Number(cfg.max_workers)
+        addWorker: (b.status === 'confirmed' || b.status === 'active') && liveWorkers < Number(cfg.max_workers)
       }
     };
   });
@@ -606,7 +608,7 @@ router.post('/bookings/:id/workers', isAuthenticated, async (req, res) => {
     const [rows] = await db.execute('SELECT * FROM farm_bookings WHERE id = ? AND user_id = ?', [req.params.id, req.user.id]);
     if (!rows.length) return res.status(404).json({ error: 'الحجز غير موجود' });
     const b = rows[0];
-    if (b.status !== 'active') return res.status(400).json({ error: 'إضافة العمال متاحة بعد تفعيل الحجز' });
+    if (!['confirmed', 'active'].includes(b.status)) return res.status(400).json({ error: 'إضافة العمال متاحة بعد تأكيد استلام العربون — سجل عمالك قبل سداد النص الثاني ليجي أسماءهم بإشعار الإضافة' });
     const cfg = await getConfig();
     const [wrows] = await db.execute("SELECT COUNT(*) n FROM farm_workers WHERE booking_id = ? AND status IN ('pending_payment','pending_confirm','confirmed')", [b.id]);
     if (Number(wrows[0].n) >= Number(cfg.max_workers)) return res.status(400).json({ error: `الحد الأقصى ${cfg.max_workers} عمال` });
@@ -858,17 +860,30 @@ adminRouter.post('/bookings/:id/confirm-remainder', async (req, res) => {
     await logEvent(b.id, req.user.username, 'admin', 'confirm_remainder', `تأكيد استلام النص الثاني — انسدد كامل الإيجار وبدأ الحجز ${b.duration_days} يوم`);
     const cfg = await getConfig();
     const endStr = new Date(Date.now() + Number(b.duration_days) * 864e5 + 3 * 3600e3).toISOString().slice(0, 16).replace('T', ' ');
+    /* أسماء العمال — المؤكدين يضافون مع المستأجر دفعة واحدة، والباقي يجي إشعارهم بعد دفعهم */
+    let wAdd = [], wWait = [];
+    try {
+      const [wrows] = await db.execute(
+        "SELECT character_name, status FROM farm_workers WHERE booking_id = ? AND status IN ('confirmed','pending_payment','pending_confirm') ORDER BY id ASC", [b.id]);
+      wrows.forEach(w => {
+        if (w.status === 'confirmed') wAdd.push(w.character_name);
+        else wWait.push(w.character_name);
+      });
+    } catch (e) { console.error('[farm] workers for add:', e.message); }
+    const addFields = [
+      { name: 'المرجع', value: b.ref, inline: true },
+      { name: 'المستأجر', value: b.username, inline: true },
+      { name: 'المزرعة', value: b.farm_name || String(b.farm_no), inline: true },
+      { name: 'المدة', value: b.duration_days + ' يوم', inline: true },
+      { name: 'ينتهي', value: endStr, inline: true },
+      { name: '👷 عمال يضافون معه (' + wAdd.length + ')', value: wAdd.length ? wAdd.join(' ، ') : 'لا يوجد', inline: false }
+    ];
+    if (wWait.length) addFields.push({ name: '⏳ عمال بانتظار تأكيد دفعهم (' + wWait.length + ')', value: wWait.join(' ، ') + ' — راح يجي إشعار خاص فيهم بعد تأكيد دفعهم', inline: false });
     farmNotify({
       title: '✅ انسدد كامل الإيجار — الحجز فعال',
       color: 0x34d399,
-      content: cfg.ping_mention + ' لازم تضيفون المستأجر للفاكشن — تنبيه ساعي راح يذكر حتى التأكيد',
-      fields: [
-        { name: 'المرجع', value: b.ref, inline: true },
-        { name: 'المستأجر', value: b.username, inline: true },
-        { name: 'المزرعة', value: b.farm_name || String(b.farm_no), inline: true },
-        { name: 'المدة', value: b.duration_days + ' يوم', inline: true },
-        { name: 'ينتهي', value: endStr, inline: true }
-      ]
+      content: cfg.ping_mention + ' لازم تضيفون المستأجر' + (wAdd.length ? ' وعماله' : '') + ' للفاكشن — تنبيه ساعي راح يذكر حتى التأكيد',
+      fields: addFields
     });
     renterNotify(b.user_id, '🌾 بدأ حجز مزرعتك',
       `تم تأكيد استلام النص الثاني — حجزك ${b.ref} فعال الآن. بانتظار إضافتك لفاكشن العائلة من إدارة الشركة.`);
@@ -1129,9 +1144,18 @@ async function pingFactionAdds() {
   const [rows] = await db.execute("SELECT * FROM farm_bookings WHERE status = 'active' AND faction_added = 0");
   if (!rows.length) return;
   const cfg = await getConfig();
+  /* أسماء العمال المؤكدين لكل حجز — تذكر الإدارة يدخلهم مع المستأجر */
+  const wmap = {};
+  try {
+    const ids = rows.map(b => b.id);
+    const [wrows] = await db.execute(
+      `SELECT booking_id, character_name FROM farm_workers WHERE booking_id IN (${ids.map(() => '?').join(',')}) AND status = 'confirmed'`, ids);
+    wrows.forEach(w => { const k = Number(w.booking_id); (wmap[k] = wmap[k] || []).push(w.character_name); });
+  } catch (e) {}
   for (const b of rows) {
     const startMs = toIso(b.start_at) ? new Date(toIso(b.start_at)).getTime() : 0;
     const hours = startMs ? Math.max(0, Math.floor((Date.now() - startMs) / 3600e3)) : 0;
+    const wNames = wmap[Number(b.id)] || [];
     farmNotify({
       title: '📣 تنبيه ساعي — مستأجر بانتظار إضافته للفاكشن',
       color: 0xbc13fe,
@@ -1139,7 +1163,8 @@ async function pingFactionAdds() {
       fields: [
         { name: 'المرجع', value: b.ref, inline: true },
         { name: 'المستأجر', value: b.username, inline: true },
-        { name: 'من بداية الحجز', value: hours + ' ساعة', inline: true }
+        { name: 'من بداية الحجز', value: hours + ' ساعة', inline: true },
+        { name: '👷 العمال', value: wNames.length ? wNames.join(' ، ') : '—', inline: true }
       ]
     });
   }
