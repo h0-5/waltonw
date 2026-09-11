@@ -335,11 +335,11 @@ a.ds-card:hover, .ds-card-hover:hover {
   z-index: 5;
 }
 .ds-brand img { width: 40px; height: 40px; object-fit: contain; }
-/* الكمبيوتر فقط: الختم أكبر ومتوسّط رأسياً مع كتلة الاسم (Walton Family + Community) —
-   (طلب المستخدم: «كبر اللوغو» ثم «ارفعه نتفة لفوق» ثم «نزل نتفة صغيرة بحيث يصير بنص الكلمة
-   لانه غير مريح للعين») — 40→52px بلا أي إزاحة؛ align-items:center يوسّطه مع كتلة النص نفسها */
+/* الكمبيوتر فقط: الختم أكبر ومرفوع نتفة خفيفة (~1مم = 4px) فوق مركز كتلة الاسم —
+   (سلسلة طلبات المستخدم: «كبر اللوغو» ثم «ارفعه لفوق» (-12px) ثم «نزله بنص الكلمة» (0)
+   ثم «نزلته كثير، كبره وارفع شي 1 ملي» — 52→58px + رفع 4px: حل وسط مريح للعين) */
 @media (min-width: 1024px) {
-  .ds-brand img { width: 52px; height: 52px; }
+  .ds-brand img { width: 58px; height: 58px; transform: translateY(-4px); }
 }
 .ds-brand-name { font-family: var(--font-head); font-weight: 800; font-size: 15px; color: var(--text); line-height: 1.2; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8); }
 .ds-brand-sub { font-size: 11px; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8); }
