@@ -5,21 +5,13 @@
    + Lightbox كمعرض بتنقّل سابق/تالي — كل الحركات transform/opacity فقط
    ═══════════════════════════════════════════════════════════════ */
 :root {
-    --bg-deep: #0f101d;
-    /* --bg = خلفية الجسم الأساسية #0b0c18 مثل باقي الصفحات */
-    --bg: #0b0c18;
-    --bg-card: rgba(26, 27, 46, 0.7);
-    --bg-card-solid: #1a1b2e;
-    --accent: var(--ac, #d24dff);
+    /* ── الثيم يُورَّث من إعدادات الموقع (لوحة الإدارة → الإعدادات → المظهر) مثل باقي الصفحات ──
+       header.ejs يحقن --ac/--ac-rgb/--bg-body/--bg-card/--bg-card-solid/--text/--text-dim/--border
+       بعد كل الأنماط العامة وهذه الصفحة ترثها كما هي — ممنوع إعادة تعريفها هنا بقيم ثابتة
+       (الوكلاء أدناه مرآة لمتغيرات الثيم فقط، وfallbacks مطابقة للثيم الرسمي لو المتغير مفقود) */
+    --accent: var(--ac, #bc13fe);
     --accent-rgb: var(--ac-rgb, 188, 19, 254);
-    --accent-dim: rgba(var(--accent-rgb), 0.12);
-    --purple: #bc13fe;
-    --purple-rgb: 188, 19, 254;
-    --border: rgba(167, 139, 250, 0.14);
-    --border-hover: rgba(188, 19, 254, 0.5);
-    --text: #f0eef6;
-    --text-dim: rgba(240, 238, 246, 0.5);
-    --gold: #f5c453;
+    --border-hover: rgba(var(--accent-rgb), 0.55);
 }
 
 * {
@@ -27,13 +19,13 @@
     box-sizing: border-box;
 }
 
-/* ── خلفية الصفحة: شبكة خفيفة + توهجات — نفس لغة باقي الصفحات ── */
+/* ── خلفية الصفحة: شفافة ليرث لون/صورة الخلفية من إعدادات الموقع عبر body مثل باقي الصفحات + شبكة خفيفة وتوهجات ── */
 .cy-props-page {
     min-height: 100vh;
-    background-color: var(--bg-deep);
+    background-color: transparent;
     background-image:
-        repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(var(--purple-rgb),0.03) 59px, rgba(var(--purple-rgb),0.03) 60px),
-        repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(var(--purple-rgb),0.03) 59px, rgba(var(--purple-rgb),0.03) 60px);
+        repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(var(--accent-rgb),0.03) 59px, rgba(var(--accent-rgb),0.03) 60px),
+        repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(var(--accent-rgb),0.03) 59px, rgba(var(--accent-rgb),0.03) 60px);
     position: relative;
     padding-bottom: 3rem;
 }
@@ -46,7 +38,7 @@
     transform: translateX(-50%);
     width: 60%;
     height: 50%;
-    background: radial-gradient(ellipse, rgba(var(--purple-rgb),0.06) 0%, transparent 70%);
+    background: radial-gradient(ellipse, rgba(var(--accent-rgb),0.06) 0%, transparent 70%);
     pointer-events: none;
     z-index: 0;
 }
@@ -69,7 +61,7 @@
     padding: calc(var(--nav-h, 70px) + 2.5rem) 1.5rem 2.2rem;
     text-align: center;
     position: relative;
-    background: linear-gradient(180deg, rgba(var(--purple-rgb),0.10) 0%, rgba(var(--purple-rgb),0.03) 45%, transparent 100%);
+    background: linear-gradient(180deg, rgba(var(--accent-rgb),0.10) 0%, rgba(var(--accent-rgb),0.03) 45%, transparent 100%);
     overflow: hidden;
     z-index: 1;
 }
@@ -86,7 +78,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 0 30px rgba(var(--purple-rgb), 0.15);
+    box-shadow: 0 0 30px rgba(var(--accent-rgb), 0.15);
     position: relative;
     z-index: 2;
 }
@@ -188,7 +180,7 @@
     font-size: 0.85rem;
     cursor: pointer;
     transition: all 0.18s ease;
-    border: 1px solid var(--border);
+    border: 1px solid rgba(var(--accent-rgb), 0.15);
     background: var(--bg-card);
     color: var(--text-dim);
     display: inline-flex;
@@ -251,8 +243,8 @@
 /* ── Property Card — صورة 16:10 + شريط معلومات تحت الصورة ── */
 .cy-prop-card {
     position: relative;
-    background: linear-gradient(160deg, rgba(26, 27, 46, 0.98), rgba(10, 9, 16, 0.95));
-    border: 1px solid var(--border);
+    background: linear-gradient(160deg, var(--bg-card-solid, #1a1b2e), var(--bg-body, #0b0c18));
+    border: 1px solid rgba(var(--accent-rgb), 0.15);
     border-radius: 14px;
     overflow: hidden;
     cursor: pointer;
@@ -270,7 +262,7 @@
 .cy-prop-card:hover {
     transform: translateY(-5px);
     border-color: var(--border-hover);
-    box-shadow: 0 14px 34px rgba(0,0,0,0.45), 0 0 22px -6px rgba(var(--purple-rgb),0.3);
+    box-shadow: 0 14px 34px rgba(0,0,0,0.45), 0 0 22px -6px rgba(var(--accent-rgb),0.3);
 }
 
 /* ── ترقيم القطعة — شريحة قُطرية أعلى الصورة ── */
@@ -320,7 +312,7 @@
     width: 100%;
     aspect-ratio: 16 / 10;
     overflow: hidden;
-    background: linear-gradient(135deg, rgba(var(--purple-rgb),0.08), rgba(var(--accent-rgb),0.03));
+    background: linear-gradient(135deg, rgba(var(--accent-rgb),0.08), rgba(var(--accent-rgb),0.03));
 }
 
 .cy-prop-media::after {
@@ -379,7 +371,7 @@
 .cy-prop-title {
     font-weight: 800;
     font-size: 0.95rem;
-    color: #fff;
+    color: var(--text, #f0eef6);
     margin: 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -422,7 +414,7 @@
     text-align: center;
     padding: 3.5rem 2rem;
     background: var(--bg-card);
-    border: 1px solid var(--border);
+    border: 1px solid rgba(var(--accent-rgb), 0.15);
     border-radius: 18px;
 }
 
@@ -440,7 +432,7 @@
 }
 
 .cy-empty h3 {
-    color: rgba(255,255,255,0.6);
+    color: var(--text-dim, rgba(240, 238, 246, 0.5));
     font-size: 1.05rem;
     font-weight: 700;
     margin-bottom: 0.3rem;
@@ -473,7 +465,7 @@
     max-height: 82vh;
     object-fit: contain;
     border-radius: 12px;
-    box-shadow: 0 0 60px rgba(var(--purple-rgb),0.15), 0 20px 60px rgba(0,0,0,0.5);
+    box-shadow: 0 0 60px rgba(var(--accent-rgb),0.15), 0 20px 60px rgba(0,0,0,0.5);
     border: 1px solid rgba(var(--accent-rgb),0.1);
 }
 
@@ -503,7 +495,7 @@
 }
 
 .cy-lb-title {
-    color: #fff;
+    color: var(--text, #f0eef6);
     font-weight: 700;
     font-size: 0.9rem;
     overflow: hidden;
