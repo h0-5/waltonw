@@ -358,7 +358,10 @@ function cyToast(msg, err, ok) {
         document.body.appendChild(t);
     }
     t.innerHTML = msg; t.className = 'cy-f-toast show' + (err ? ' err' : (ok ? ' ok' : ''));
-    clearTimeout(t._h); t._h = setTimeout(function() { t.className = 'cy-f-toast' + (err ? ' err' : (ok ? ' ok' : '')); }, ok ? 7000 : 5200);
+    t.scrollTop = 0;
+    /* مدة العرض تتلائم مع طول الرسالة — الرسائل الطويلة (تعليمات الدفع) تلبق وقت أطول */
+    var dur = Math.min(14000, (ok ? 7000 : 5200) + String(msg == null ? '' : msg).length * 40);
+    clearTimeout(t._h); t._h = setTimeout(function() { t.className = 'cy-f-toast' + (err ? ' err' : (ok ? ' ok' : '')); }, dur);
 }
 function openLightbox(src) { document.getElementById('lightboxImg').src = src; document.getElementById('lightbox').classList.add('open'); if (event) event.stopPropagation(); }
 function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); document.getElementById('lightboxImg').src = ''; }
@@ -461,7 +464,9 @@ function farmFmtDT(iso) {
 function farmToast(msg, err) {
     var t = document.getElementById('farmToast');
     t.innerHTML = msg; t.className = 'cy-f-toast show' + (err ? ' err' : '');
-    clearTimeout(t._h); t._h = setTimeout(function() { t.className = 'cy-f-toast' + (err ? ' err' : ''); }, 5200);
+    t.scrollTop = 0;
+    var dur = Math.min(14000, 5200 + String(msg == null ? '' : msg).length * 40);
+    clearTimeout(t._h); t._h = setTimeout(function() { t.className = 'cy-f-toast' + (err ? ' err' : ''); }, dur);
 }
 function farmClose(id) { document.getElementById(id).classList.remove('open'); }
 function farmCopyBank() {

@@ -1463,7 +1463,10 @@
 /* ═══════════════ التوست ═══════════════ */
 .cy-f-toast {
     position: fixed;
-    bottom: 22px;
+    /* مرفوعة فوق منطقة إيماءات أندرويد/الحد الآمن — آخر سطر ما يختفي تحت حافة الشاشة
+       (كانت الرسالة الطويلة تنقطع بالأسفل — طلب هادي) + ارتفاع محدود بسل داخلي كضمان
+       — أي رسالة مهما طالت تبقى كاملة داخل الشاشة */
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 30px);
     left: 50%;
     transform: translateX(-50%) translateY(90px);
     z-index: 300;
@@ -1474,10 +1477,16 @@
     padding: .85rem 1.4rem;
     font-size: .85rem;
     font-weight: 700;
-    max-width: 92vw;
+    max-width: min(92vw, 560px);
     text-align: center;
     transition: transform .35s ease;
     box-shadow: 0 12px 34px rgba(0,0,0,.5);
+    line-height: 1.8;
+    max-height: 62vh;
+    max-height: 62dvh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
 }
 
 .cy-f-toast.show { transform: translateX(-50%) translateY(0); }
@@ -1744,6 +1753,8 @@
     .cy-f-box-head h3 { font-size: .9rem; gap: 8px; }
     .cy-f-x { width: 30px; height: 30px; border-radius: 9px; }
     .cy-f-box-body { padding: 12px 12px 14px; }
+    /* التوست بالجوال: أعلى (فوق شريط الإيماءات بوضوح) + مدمجة عشان الرسالة الطويلة تنقرص سطور أقل */
+    .cy-f-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 38px); padding: .7rem .95rem; font-size: .78rem; max-width: 94vw; }
     .cy-f-bk { padding: .7rem .75rem; border-radius: 12px; margin-bottom: .65rem; }
     .cy-f-bk-head { gap: 6px; }
     .cy-f-bk-head .ref { font-size: .78rem; }
