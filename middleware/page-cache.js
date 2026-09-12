@@ -116,7 +116,7 @@ function pageCacheMiddleware(req, res, next) {
           const html = bodyPieces.join('');
           if (html && html.length > 500) {
             pageCache.set(cacheKey(req, uid), { at: Date.now(), html });
-            if (isSafeBrowserPublic(p) && !res.get('Set-Cookie')) {
+            if (isSafeBrowserPublic(p)) {
               res.setHeader('Cache-Control', 'private, max-age=15');
             }
           }
