@@ -2,24 +2,68 @@
 <link rel="stylesheet" href="/css/company-page.css">
 <%- include('../partials/navbar') %>
 
+<%
+    /* ═══ حسابات عرض من بيانات الصفحة الحقيقية فقط (لا إضافات خارجية) ═══ */
+    var realAvailable = activityItems.filter(function(i) { return i.service_status === 'available'; }).length;
+    var myLiveBk = 0;
+    if (farmState && farmState.myBookings) {
+        farmState.myBookings.forEach(function(b) {
+            if (['pending_payment','pending_confirm'].indexOf(b.status) !== -1 || (b.status === 'active' && !b.faction_removed)) myLiveBk++;
+        });
+    }
+%>
+
 <div class="cy-co-page" dir="rtl">
-    <div class="cy-co-hero">
+    <!-- ═══ HERO ═══ -->
+    <header class="cy-co-hero">
+        <% if (farmState && farmState.serviceOpen) { %>
+        <div class="cy-co-hero-badge"><span class="pulse-dot"></span> خدمات الشركة تستقبل الطلبات الآن</div>
+        <% } %>
         <div class="cy-co-hero-icon">
             <div class="hex-ring"></div>
-            <div class="hex-ring-inner"></div>
-            <i class="fas fa-briefcase"></i>
+            <div class="hex-ring2"></div>
+            <div class="hex-core"><i class="fas fa-briefcase"></i></div>
         </div>
         <h1 class="page-heading">الشركة</h1>
         <p class="cy-co-hero-sub">معلومات و خدمات شركة والتون</p>
         <div class="cy-co-hero-line"></div>
-    </div>
+    </header>
 
     <div class="cy-co-main">
 
-        <!-- ═══ تنقل سريع بين جزئي الصفحة ═══ -->
+        <!-- ═══ شريط الإحصائيات — أرقام حقيقية من بيانات الصفحة ═══ -->
+        <section class="cy-co-stats cy-co-reveal">
+            <div class="cy-co-stat">
+                <div class="stat-ic"><i class="fas fa-concierge-bell"></i></div>
+                <div><div class="stat-num"><%= realAvailable %></div><div class="stat-lbl">خدمات متاحة</div></div>
+            </div>
+            <% if (farmState) {
+                var fsTxt = !farmState.serviceOpen ? 'مقفلة' : (farmState.anyFree ? 'متاحة' : (farmState.anyQueueable ? 'مشغولة' : 'غير متاحة'));
+                var fsSt = !farmState.serviceOpen ? 'off' : (farmState.anyFree ? 'ok' : (farmState.anyQueueable ? 'future' : 'no'));
+            %>
+            <div class="cy-co-stat pu">
+                <div class="stat-ic"><i class="fas fa-seedling"></i></div>
+                <div><div class="stat-num stat-txt" id="cyStatFarm" data-st="<%= fsSt %>"><%= fsTxt %></div><div class="stat-lbl">حالة المزرعة</div></div>
+            </div>
+            <% } %>
+            <% if (user && farmState) { %>
+            <div class="cy-co-stat">
+                <div class="stat-ic"><i class="fas fa-clock"></i></div>
+                <div><div class="stat-num" id="cyStatFarms"><%= myLiveBk %></div><div class="stat-lbl">حجوزاتك القائمة</div></div>
+            </div>
+            <% } %>
+            <% if (user) { %>
+            <div class="cy-co-stat pu">
+                <div class="stat-ic"><i class="fas fa-list-check"></i></div>
+                <div><div class="stat-num" id="cyStatReqs">—</div><div class="stat-lbl">طلباتك المفتوحة</div></div>
+            </div>
+            <% } %>
+        </section>
+
+        <!-- ═══ تنقل سريع بين جزئي الصفحة — معلومات منفصلة عن الخدمات مثل الحال الحالي ═══ -->
         <div class="cy-co-nav cy-co-reveal" id="cyCoNav">
             <a href="#cy-info" class="cy-co-nav-btn active" data-target="cy-info"><i class="fas fa-info-circle"></i> معلومات الشركة</a>
-            <a href="#cy-services" class="cy-co-nav-btn" data-target="cy-services"><i class="fas fa-concierge-bell"></i> خدمات</a>
+            <a href="#cy-services" class="cy-co-nav-btn" data-target="cy-services"><i class="fas fa-concierge-bell"></i> الخدمات</a>
         </div>
 
         <!-- Info Section -->
@@ -36,11 +80,11 @@
                 <p>سيتم إضافة معلومات الشركة قريباً</p>
             </div>
             <% } else { %>
+            <div class="cy-co-grid">
             <% infoItems.forEach(function(item, i) { %>
             <div class="cy-co-card cy-co-reveal" style="transition-delay:<%= i * 0.08 %>s">
-                <div class="corner-tl"></div><div class="corner-br"></div>
                 <div class="cy-co-header">
-                    <div class="cy-co-icon"><i class="fas fa-building"></i></div>
+                    <div class="cy-co-icon<%= i % 2 === 1 ? ' pu' : '' %>"><i class="fas fa-building"></i></div>
                     <h3 class="cy-co-title"><%= item.title %></h3>
                 </div>
                 <div class="cy-co-body">
@@ -54,31 +98,39 @@
                 </div>
             </div>
             <% }); %>
+            </div>
             <% } %>
         </div>
 
-        <!-- Services Section (يظهر بس من زر «خدمات» فوق) -->
+        <!-- Services Section (يظهر بس من زر «الخدمات» فوق) -->
         <div id="section-services">
         <div class="cy-co-sec-head cy-co-reveal" id="cy-services" style="margin-top:.5rem">
             <div class="cy-co-sec-ic"><i class="fas fa-concierge-bell"></i></div>
-            <h2 class="cy-co-sec-title">خدمات</h2>
+            <h2 class="cy-co-sec-title">خدمات الشركة</h2>
             <span class="cy-co-sec-line"></span>
             <% if (user) { %>
-            <button class="cy-co-sec-btn" onclick="svcOpenMy()"><i class="fas fa-list-check"></i> طلباتي</button>
+            <button class="cy-co-sec-btn" onclick="svcOpenMy()"><i class="fas fa-list-check"></i> طلباتي <span class="sec-btn-cnt" id="svcMyCount"></span></button>
             <% } %>
         </div>
             <% if (farmState) { %>
-            <!-- خدمة استئجار المزارع -->
-            <div class="cy-co-card cy-co-reveal" style="border-color:rgba(var(--accent-rgb),.25)">
-                <div class="corner-tl"></div><div class="corner-br"></div>
+            <!-- خدمة استئجار المزارع — البطاقة المميزة -->
+            <% /* بادج أولي من السيرفر — للمستخدم يعيد حسابه JS فوراً، وللزائر يبقى صحيحاً بدل «جاري التحديث» */ %>
+            <% var fbTxt = !farmState.serviceOpen ? '<i class="fas fa-lock"></i> الخدمة مقفلة حالياً' : (farmState.anyFree ? '<i class="fas fa-check-circle"></i> متوفر — احجز الآن' : (farmState.anyQueueable ? '<i class="fas fa-clock"></i> مشغولة — تقدر تحجز للفترة الجاية' : '<i class="fas fa-times-circle"></i> غير متوفر'));
+               var fbCls = !farmState.serviceOpen ? 'off' : (farmState.anyFree ? 'ok' : (farmState.anyQueueable ? 'future' : 'no')); %>
+            <div class="cy-co-card farm cy-co-reveal">
                 <div class="cy-co-header">
                     <div class="cy-co-icon"><i class="fas fa-seedling"></i></div>
                     <h3 class="cy-co-title">استئجار المزرعة</h3>
-                    <span id="farmBadge" class="cy-farm-badge off"><i class="fas fa-circle-notch fa-spin"></i> جاري التحديث</span>
+                    <span id="farmBadge" class="cy-farm-badge <%= fbCls %>"><%- fbTxt %></span>
                 </div>
                 <div class="cy-co-body">
                     <p class="cy-co-desc">احجز مزرعتك من شركة والتون — الأسعار والشروط وبيانات التحويل كلها داخل نافذة الحجز.</p>
-
+                    <div class="cy-farm-chips">
+                        <span class="f-chip"><i class="fas fa-coins"></i> العربون <b><%= farmState.config.deposit_pct %>%</b> من الإيجار</span>
+                        <span class="f-chip"><i class="fas fa-hourglass-half"></i> مهلة الدفع <b><%= farmState.config.payment_window_hours %></b> ساعة</span>
+                        <span class="f-chip"><i class="fas fa-users"></i> حتى <b><%= farmState.config.max_workers %></b> عمال — <b><%= Number(farmState.config.worker_price).toLocaleString('en-US') %>$</b> للعامل</span>
+                        <span class="f-chip"><i class="fas fa-clock-rotate-left"></i> التمديد بآخر <b><%= farmState.config.extend_window_hours %></b> ساعة</span>
+                    </div>
                     <div class="cy-farm-actions">
                         <% if (user) { %>
                         <button id="farmBookBtn" class="cy-farm-btn primary" onclick="openFarmBook()"><i class="fas fa-seedling"></i> حجز المزرعة</button>
@@ -97,23 +149,23 @@
                 <h3>لا توجد خدمات مضافة حالياً</h3>
                 <p>سيتم إضافة خدمات الشركة قريباً</p>
             </div>
-            <% } else { %>
+            <% } else if (activityItems.length > 0) { %>
+            <div class="cy-co-grid svc">
             <% activityItems.forEach(function(item, i) {
                 /* خدمة حقيقية = حالة صريحة (متوفر/قريباً/منتهي) — العناصر العادية تنعرض بدون أزرار طلب */
                 var isSvc = ['available','coming_soon','ended'].indexOf(item.service_status) !== -1;
-                var statusMap = {available:{bg:'rgba(52,211,153,0.12)',c:'#34d399',bd:'rgba(52,211,153,0.25)',l:'متوفر'},ended:{bg:'rgba(239,68,68,0.12)',c:'#ef4444',bd:'rgba(239,68,68,0.25)',l:'منتهي'},coming_soon:{bg:'rgba(234,179,8,0.12)',c:'#eab308',bd:'rgba(234,179,8,0.25)',l:'قريباً'}};
-                var st = statusMap[item.service_status] || {};
+                var chipCls = item.service_status === 'available' ? 'ok' : (item.service_status === 'coming_soon' ? 'soon' : (item.service_status === 'ended' ? 'end' : ''));
+                var chipLbl = {available:'متوفر', coming_soon:'قريباً', ended:'منتهي'}[item.service_status] || '';
                 var svcIcon = (item.icon || '').trim();
                 var iconHtml = svcIcon ? (svcIcon.indexOf('fa') === 0 ? '<i class="fas ' + svcIcon + '"></i>' : '<span style="font-size:1.1rem;line-height:1">' + svcIcon + '</span>') : '<i class="fas fa-concierge-bell"></i>';
             %>
-            <div class="cy-co-card cy-co-reveal" style="transition-delay:<%= i * 0.08 %>s<%= isSvc ? ';border-color:rgba(var(--accent-rgb),0.2)' : '' %>">
-                <div class="corner-tl"></div><div class="corner-br"></div>
+            <div class="cy-co-card cy-co-reveal<%= isSvc ? ' svc-card' : '' %><%= item.service_status === 'ended' ? ' ended' : '' %>" style="transition-delay:<%= i * 0.08 %>s">
+                <% if (isSvc && chipLbl) { %>
+                <span class="cy-co-chip <%= chipCls %>"><i class="dot"></i> <%= chipLbl %></span>
+                <% } %>
                 <div class="cy-co-header">
-                    <div class="cy-co-icon"><%- iconHtml %></div>
+                    <div class="cy-co-icon<%= i % 2 === 1 ? ' pu' : '' %>"><%- iconHtml %></div>
                     <h3 class="cy-co-title"><%= item.title %></h3>
-                    <% if (isSvc && st.l) { %>
-                    <span style="margin-right:auto;font-size:.7rem;padding:2px 10px;border-radius:6px;background:<%= st.bg %>;color:<%= st.c %>;border:1px solid <%= st.bd %>"><%= st.l %></span>
-                    <% } %>
                 </div>
                 <div class="cy-co-body">
                     <% if (item.description) { %><p class="cy-co-desc"><%= item.description %></p><% } %>
@@ -124,26 +176,27 @@
                     </div>
                     <% } %>
                     <% if (isSvc && item.service_status !== 'ended') { %>
-                    <div style="margin-top:1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+                    <div class="cy-co-card-actions">
                         <% if (item.service_status === 'coming_soon') { %>
-                        <span style="background:rgba(234,179,8,0.12);border:1px solid rgba(234,179,8,0.35);color:#eab308;padding:.6rem 1.5rem;border-radius:10px;font-weight:700;font-size:.85rem"><i class="fas fa-clock"></i> قريباً</span>
+                        <span class="cy-svc-btn soon"><i class="fas fa-clock"></i> قريباً</span>
                         <% } else if (user) { %>
-                        <button onclick="openSvcForm(<%= item.id %>)" style="background:linear-gradient(135deg,rgba(var(--purple-rgb),0.3),rgba(var(--purple-rgb),0.5));border:1px solid rgba(var(--purple-rgb),0.4);color:#c084fc;padding:.6rem 1.5rem;border-radius:10px;font-weight:700;cursor:pointer;font-size:.85rem;transition:all .3s"><i class="fas fa-hand-paper"></i> استفادة من الخدمة</button>
+                        <button class="cy-svc-btn" onclick="openSvcForm(<%= item.id %>)"><i class="fas fa-hand-paper"></i> استفادة من الخدمة</button>
                         <% } else { %>
-                        <a href="/auth/discord" style="display:inline-block;padding:.6rem 1.5rem;border-radius:10px;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.5);font-size:.85rem;text-decoration:none"><i class="fas fa-sign-in-alt"></i> سجل دخول للاستفادة</a>
+                        <a href="/auth/discord" class="cy-svc-btn login"><i class="fas fa-sign-in-alt"></i> سجل دخول للاستفادة</a>
                         <% } %>
                     </div>
                     <% } %>
                 </div>
             </div>
             <% }); %>
+            </div>
             <% } %>
         </div>
     </div>
 </div>
 
 <% if (farmState && user) { %>
-<!-- نافذة الحجز -->
+<!-- نافذة الحجز — بنفسجية زجاجية مع خطوات -->
 <div id="farmBookModal" class="cy-f-modal" onclick="if(event.target===this)farmClose('farmBookModal')">
     <div class="cy-f-box">
         <div class="cy-f-box-head">
@@ -151,6 +204,12 @@
             <button class="cy-f-x" onclick="farmClose('farmBookModal')"><i class="fas fa-times"></i></button>
         </div>
         <div class="cy-f-box-body">
+            <div class="cy-f-steps" id="farmSteps">
+                <div class="cy-f-step now" data-s="1"><div class="step-dot">1</div><div class="step-lbl">اختر المدة</div></div>
+                <div class="cy-f-step" data-s="2"><div class="step-dot">2</div><div class="step-lbl">أنشئ الحجز</div></div>
+                <div class="cy-f-step" data-s="3"><div class="step-dot">3</div><div class="step-lbl">حوّل العربون</div></div>
+            </div>
+
             <ul class="cy-farm-rules cy-f-rules-mini">
                 <li><i class="fas fa-coins"></i><span><b>العربون:</b> <%= farmState.config.deposit_pct %>% من الإيجار على بنك الشركة — وبعد تأكيده تحوّل <b>النص الثاني</b> (باقي الإيجار) وإلا ما ينعكس الحجز.</span></li>
                 <li><i class="fas fa-hourglass-half"></i><span><b>مهلة الدفع:</b> <%= farmState.config.payment_window_hours %> ساعات للعربون — بعدها ينلغى تلقائياً.</span></li>
@@ -173,17 +232,17 @@
             <div class="cy-f-dur-grid" id="farmDurGrid"></div>
             <div class="cy-f-summary" id="farmBookSummary" style="display:none">
                 <div class="row"><span>قيمة الإيجار</span><b id="farmSumRent">—</b></div>
-                <div class="row"><span>العربون المطلوب الآن (<%= farmState.config.deposit_pct %>%)</span><b id="farmSumDep" style="color:var(--accent)">—</b></div>
-                <div class="row" style="font-size:.76rem;color:rgba(255,255,255,.55)"><span>مهلة الدفع</span><span><%= farmState.config.payment_window_hours %> ساعات — بعدها ينلغى تلقائياً</span></div>
+                <div class="row dep"><span>العربون المطلوب الآن (<%= farmState.config.deposit_pct %>%)</span><b id="farmSumDep">—</b></div>
+                <div class="row muted"><span>مهلة الدفع</span><span><%= farmState.config.payment_window_hours %> ساعات — بعدها ينلغى تلقائياً</span></div>
             </div>
 
-            <label style="display:flex;align-items:flex-start;gap:.55rem;margin:.9rem 0 0;padding:.7rem .9rem;border:1px solid rgba(var(--accent-rgb),.3);background:rgba(var(--accent-rgb),.07);border-radius:10px;cursor:pointer;font-size:.8rem;color:rgba(255,255,255,.85);line-height:1.6">
-                <input type="checkbox" id="farmPledge" onchange="farmPledgeTick()" style="margin-top:3px;accent-color:var(--purple);width:15px;height:15px;flex-shrink:0">
-                <span><b style="color:var(--accent)">أتعهد أحوّل العربون</b> (<%= farmState.config.deposit_pct %>% من الإيجار) على بنك الشركة خلال <%= farmState.config.payment_window_hours %> ساعات من إنشاء الحجز — وإلا ينلغى الحجز تلقائياً.</span>
+            <label class="cy-f-pledge" style="margin-top:.9rem">
+                <input type="checkbox" id="farmPledge" onchange="farmPledgeTick()">
+                <span><b>أتعهد أحوّل العربون</b> (<%= farmState.config.deposit_pct %>% من الإيجار) على بنك الشركة خلال <%= farmState.config.payment_window_hours %> ساعات من إنشاء الحجز — وإلا ينلغى الحجز تلقائياً.</span>
             </label>
 
             <div class="cy-farm-bank" style="margin-top:1rem">
-                <i class="fas fa-building-columns" style="color:var(--accent)"></i>
+                <i class="fas fa-building-columns"></i>
                 <code id="farmBank"><%= farmState.config.bank_account %></code>
                 <button onclick="farmCopyBank()"><i class="fas fa-copy"></i> نسخ</button>
             </div>
@@ -219,7 +278,7 @@
             <div class="cy-f-dur-grid" id="farmExtDurGrid"></div>
             <div class="cy-f-summary" id="farmExtSummary" style="display:none">
                 <div class="row"><span>قيمة إيجار التمديد</span><b id="farmExtRent">—</b></div>
-                <div class="row"><span>عربون التمديد (<%= farmState.config.deposit_pct %>%)</span><b id="farmExtDep" style="color:var(--accent)">—</b></div>
+                <div class="row dep"><span>عربون التمديد (<%= farmState.config.deposit_pct %>%)</span><b id="farmExtDep">—</b></div>
             </div>
             <div class="cy-farm-actions" style="margin-top:1.1rem">
                 <button class="cy-farm-btn primary" id="farmExtSubmit" onclick="farmSubmitExtend()" disabled><i class="fas fa-check"></i> طلب التمديد</button>
@@ -234,33 +293,31 @@
 <% /* توست خارج كل الشروط — الإشعارات تشتغل حتى لو قسم المزارع مقفل */ %>
 <div id="farmToast" class="cy-f-toast"></div>
 
+<!-- نافذة طلب خدمة -->
 <div id="svcModal" class="cy-co-lightbox" style="display:none;z-index:200" onclick="closeSvcModal()">
-    <div style="background:var(--bg-card-solid, #0d0a14);border:1px solid rgba(var(--accent-rgb),0.25);border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;margin:2rem auto;position:relative" onclick="event.stopPropagation()">
-        <div style="padding:1.25rem 1.5rem;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;gap:.5rem">
-            <h3 id="svcModalTitle" style="color:var(--text, #fff);font-weight:800;font-size:1.1rem;margin:0"><i class="fas fa-concierge-bell" style="color:var(--accent)"></i> طلب خدمة</h3>
-            <span id="svcPkgBadge" style="margin-right:auto;font-size:.7rem;padding:2px 10px;border-radius:6px;background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.25);display:none"></span>
+    <div class="cy-svc-box" onclick="event.stopPropagation()">
+        <div class="cy-svc-head">
+            <h3 id="svcModalTitle"><i class="fas fa-concierge-bell" style="color:var(--accent)"></i> طلب خدمة</h3>
+            <span id="svcPkgBadge" class="cy-svc-pkg-badge" style="display:none"></span>
         </div>
-        <div id="svcPkgStep" style="padding:1.25rem 1.5rem"></div>
-        <form id="svcForm" style="padding:1.25rem 1.5rem;display:none" onsubmit="submitServiceRequest(event)">
+        <div id="svcPkgStep" class="cy-svc-pkg-step"></div>
+        <form id="svcForm" class="cy-svc-form" style="display:none" onsubmit="submitServiceRequest(event)">
             <input type="hidden" name="service_id" id="svcFormSid">
             <input type="hidden" name="package_id" id="svcFormPkgId" value="0">
             <div id="svcFormQuestions"></div>
-            <div style="display:flex;gap:.6rem;margin-top:1.5rem">
-                <button type="submit" style="flex:1;padding:.7rem 1.5rem;border-radius:10px;border:none;background:linear-gradient(135deg,var(--purple),rgba(var(--purple-rgb),0.7));color:#fff;font-weight:700;cursor:pointer;font-size:.9rem">إرسال الطلب</button>
-                <button type="button" onclick="closeSvcModal()" style="flex:1;padding:.7rem 1.5rem;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:rgba(255,255,255,0.6);font-weight:700;cursor:pointer;font-size:.9rem">إلغاء</button>
+            <div class="cy-svc-form-actions">
+                <button type="submit">إرسال الطلب</button>
+                <button type="button" onclick="closeSvcModal()">إلغاء</button>
             </div>
         </form>
-        <% /* شاشة النجاح — تظهر مكان الفورم أول ما يُرسل الطلب (طلب هادي: اشعار على الشاشة مثل رسالة الخطأ) */ %>
-        <div id="svcSuccess" style="display:none;padding:2.6rem 1.5rem 2.2rem;text-align:center">
-            <div style="width:78px;height:78px;margin:0 auto 1.1rem;border-radius:50%;background:rgba(52,211,153,0.1);border:2px solid rgba(52,211,153,0.45);display:flex;align-items:center;justify-content:center;animation:svcPop .35s ease">
-                <i class="fas fa-check" style="font-size:2.1rem;color:#34d399"></i>
-            </div>
-            <div style="color:#34d399;font-weight:800;font-size:1.2rem;margin-bottom:.45rem">تم ارسال طلب بنجاح</div>
-            <div style="color:rgba(255,255,255,0.78);font-size:.92rem;margin-bottom:.35rem">بانتظار رد الإدارة</div>
-            <div style="color:rgba(255,255,255,0.45);font-size:.78rem;margin-bottom:1.5rem">راح يوصلك إشعار بالنتيجة على جرس الإشعارات فوق</div>
-            <button type="button" onclick="svcSuccessDone()" style="padding:.65rem 2.4rem;border-radius:10px;border:none;background:linear-gradient(135deg,#34d399,rgba(52,211,153,0.75));color:#04241a;font-weight:800;cursor:pointer;font-size:.9rem">تم</button>
+        <% /* شاشة النجاح — تظهر مكان الفورم أول ما يُرسل الطلب */ %>
+        <div id="svcSuccess" class="cy-svc-success" style="display:none">
+            <div class="ok-ic"><i class="fas fa-check"></i></div>
+            <div class="ok-t">تم ارسال طلب بنجاح</div>
+            <div class="ok-s">بانتظار رد الإدارة</div>
+            <div class="ok-n">راح يوصلك إشعار بالنتيجة على جرس الإشعارات فوق</div>
+            <button type="button" onclick="svcSuccessDone()">تم</button>
         </div>
-        <style>@keyframes svcPop { 0% { transform:scale(.5);opacity:0 } 70% { transform:scale(1.08) } 100% { transform:scale(1);opacity:1 } }</style>
     </div>
 </div>
 
@@ -409,6 +466,16 @@ function openFarmMy() {
     farmRenderMy();
 }
 
+/* مؤشر الخطوات داخل نافذة الحجز — عنصر بصري فقط ما يغيّر أي منطق */
+function farmSetStep(n) {
+    var steps = document.querySelectorAll('#farmSteps .cy-f-step');
+    steps.forEach(function(s) {
+        var v = +s.dataset.s;
+        s.classList.toggle('done', v < n);
+        s.classList.toggle('now', v === n);
+    });
+}
+
 function farmRenderCard() {
     var badge = document.getElementById('farmBadge');
     var avail = document.getElementById('farmAvail');
@@ -420,6 +487,16 @@ function farmRenderCard() {
     }).length;
     var cnt = document.getElementById('farmMyCount');
     if (cnt) cnt.textContent = myLive ? '(' + myLive + ' قائم)' : '';
+    /* تحديث إحصائيات الصفحة — نفس البيانات الحقيقية */
+    var stFarms = document.getElementById('cyStatFarms');
+    if (stFarms) stFarms.textContent = myLive;
+    var stFarm = document.getElementById('cyStatFarm');
+    if (stFarm) {
+        if (!farmState.serviceOpen) { stFarm.textContent = 'مقفلة'; stFarm.dataset.st = 'off'; }
+        else if (farmState.anyFree) { stFarm.textContent = 'متاحة'; stFarm.dataset.st = 'ok'; }
+        else if (farmState.anyQueueable) { stFarm.textContent = 'مشغولة'; stFarm.dataset.st = 'future'; }
+        else { stFarm.textContent = 'غير متاحة'; stFarm.dataset.st = 'no'; }
+    }
     if (!farmState.serviceOpen) {
         badge.className = 'cy-farm-badge off'; badge.innerHTML = '<i class="fas fa-lock"></i> الخدمة مقفلة حالياً';
     } else if (farmState.anyFree) {
@@ -450,6 +527,7 @@ function farmRenderCard() {
 /* ── نافذة الحجز ── */
 function openFarmBook() {
     farmSelDur = null;
+    farmSetStep(1);
     var g = document.getElementById('farmDurGrid');
     g.innerHTML = farmState.config.prices.map(function(p) {
         return '<div class="cy-f-dur-chip" data-d="' + p.days + '" onclick="farmPickDur(' + p.days + ')"><b>' + p.days + ' يوم</b><span>' + farmMoney(p.price) + '$</span></div>';
@@ -477,6 +555,7 @@ function openFarmBook() {
 function farmPledgeTick() {
     var cb = document.getElementById('farmPledge');
     document.getElementById('farmBookSubmit').disabled = !(farmSelDur && cb && cb.checked);
+    if (farmSelDur && cb && cb.checked) farmSetStep(3); else if (farmSelDur) farmSetStep(2);
 }
 function farmPickDur(d) {
     farmSelDur = d;
@@ -488,6 +567,7 @@ function farmPickDur(d) {
     document.getElementById('farmSumRent').textContent = farmMoney(price) + '$';
     document.getElementById('farmSumDep').textContent = farmMoney(dep) + '$';
     document.getElementById('farmBookSummary').style.display = '';
+    farmSetStep(2);
     farmPledgeTick();
 }
 async function farmSubmitBook() {
@@ -760,11 +840,25 @@ async function svcOpenMy() {
     } catch (e) { box.innerHTML = '<div style="text-align:center;padding:1.5rem;color:#ef4444">خطأ بالتحميل</div>'; }
 }
 document.addEventListener('keydown', function(e) { if (e.key === 'Escape') svcCloseMy(); });
+
+/* ═══ إحصائية «طلباتك المفتوحة» — جلب واحد عند فتح الصفحة فقط (بدون أي تكرار حفاظاً على الاستهلاك) ═══ */
+(async function() {
+    var el = document.getElementById('cyStatReqs');
+    var cnt = document.getElementById('svcMyCount');
+    if (!el && !cnt) return;
+    try {
+        var r = await fetch('/api/company/my-requests', { cache: 'no-store' });
+        var list = await r.json();
+        var open = Array.isArray(list) ? list.filter(function(q) { return q.status === 'pending'; }).length : 0;
+        if (el) el.textContent = open;
+        if (cnt) cnt.textContent = open ? '(' + open + ')' : '';
+    } catch (e) { if (el) el.textContent = '—'; }
+})();
 </script>
 <% } %>
 
 <script>
-/* نظام التابات — معلومات الشركة لحالها، والخدمات تظهر من زر «خدمات» فوق */
+/* نظام التابات — معلومات الشركة لحالها، والخدمات تظهر من زر «الخدمات» فوق */
 (function() {
     var nav = document.getElementById('cyCoNav');
     if (!nav) return;
