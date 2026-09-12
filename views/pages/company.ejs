@@ -615,7 +615,7 @@ function renderFarmStarts(d) {
         '<div class="cy-f-start-grid">' + opts.slice(0, 10).map(function(o, i) {
             var isNow = new Date(o.w.start_iso).getTime() <= Date.now() + 60e3;
             return '<div class="cy-f-start-chip' + (i === 0 ? ' sel' : '') + '" data-farm="' + o.farm.id + '" data-start="' + (isNow ? '' : o.w.start_iso) + '" onclick="farmPickStart(this)">' +
-                '<b>' + (isNow ? 'الآن — فوري' : farmFmtDT(o.w.start_iso)) + '</b><span>' + o.farm.name + ' — فجوة ' + (Math.round(o.w.days * 10) / 10) + ' يوم فاضية</span></div>';
+                '<b>' + (isNow ? 'الآن — فوري' : farmFmtDT(o.w.start_iso)) + '</b><span>' + o.farm.name + ' — متوفر ' + (Math.round(o.w.days * 10) / 10) + ' يوم</span></div>';
         }).join('') + '</div>';
     var first = opts[0];
     var firstNow = new Date(first.w.start_iso).getTime() <= Date.now() + 60e3;
