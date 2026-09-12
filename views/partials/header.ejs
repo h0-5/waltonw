@@ -47,10 +47,12 @@
   <title><%= _tabTitle %></title>
 
   <!-- أيقونة التبويب: لوغو العيلة (W بالتاج) — بدل كرة الأرض الافتراضية -->
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png">
-  <link rel="icon" type="image/png" sizes="64x64" href="/images/favicon-64.png">
-  <link rel="shortcut icon" href="/favicon.ico">
-  <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+  <% /* ?v=2 يكسر كاش الأيقونات بالهاتف — أيقونات جديدة بخلفية بنفسجية واضحة بدل الداكنة */ %>
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png?v=2">
+  <link rel="icon" type="image/png" sizes="64x64" href="/images/favicon-64.png?v=2">
+  <link rel="icon" type="image/png" sizes="256x256" href="/images/favicon-256.png?v=2">
+  <link rel="shortcut icon" href="/favicon.ico?v=2">
+  <link rel="apple-touch-icon" href="/images/apple-touch-icon.png?v=2">
 
   <!-- Preload الصور الحرجة (اللوغو والخلفية المحلية فقط) — أول ما تفتح الصفحة تبدأ بالتحميل فوراً مع الكاش 7 أيام فما تعيد التحميل مع كل تنقل -->
   <% var _logoUrl = (typeof settings !== 'undefined' && settings && settings.site_logo_url) ? settings.site_logo_url : '/images/logo.png'; %>
@@ -245,7 +247,11 @@
       transform:translate(-50%,-50%);direction:ltr;opacity:1;
       will-change:transform,opacity,filter}
     /* اللوغو كبير — والهامش السالب يمتص البادجة الشفافة جوة ملف اللوغو (~12% من عرضه يمين)
-       عشان حرف a ولقطة الكلمة يلصقون بالـ W مثل حرف عادي بكلمة Walton مو كلمة منفصلة */
+       عشان حرف a ولقطة الكلمة يلصقون بالـ W مثل حرف عادي بكلمة Walton مو كلمة منفصلة.
+       المحاذاة الرأسية: بدل رفع اللوغو (يكسر توسيط المرحلة 1 والوهج اللي اعتمد عليه)
+       ننزل الكلمة تحت بمقدار --wfiLift (يقيسه JS = قد أسفل الـ W المرئي تحت خط الأساس)
+       فيجلس قاع الـ W على خط أساس الحروف — نفس مستوى باقي الحروف — والمرحلة 1
+       (اللوغو لوحده وسط الشاشة) تبقى كما هي حرفياً بلا أي إزاحة */
     .wfi-logo{width:var(--wfilw);height:auto;flex-shrink:0;margin-right:calc(var(--wfilw)*-0.075);
       filter:drop-shadow(0 0 18px rgba(<%= _wfiC %>,.85)) drop-shadow(0 4px 22px rgba(0,0,0,.55));opacity:0}
     .wfi-wfb{font-family:'Cinzel Decorative',serif;font-weight:700;font-size:clamp(6rem,13.1vw,10.9rem);
@@ -254,7 +260,7 @@
     .wfi-flare{position:absolute;width:30vmax;height:30vmax;left:calc(var(--wfilw)/2 - 15vmax);top:calc(50% - 15vmax);z-index:-1;
       background:radial-gradient(circle,rgba(<%= _wfiLC %>,.34),rgba(<%= _wfiC %>,.18) 42%,rgba(<%= _wfiC %>,.06) 58%,transparent 72%);
       pointer-events:none;opacity:0;border-radius:50%}
-    .wfi-word{position:relative;font-family:'Cinzel Decorative',serif;font-weight:700;font-size:var(--wfifs);
+    .wfi-word{position:relative;top:var(--wfiLift,0px);font-family:'Cinzel Decorative',serif;font-weight:700;font-size:var(--wfifs);
       line-height:1.15;color:#fff;white-space:nowrap;display:inline-flex;align-items:baseline;letter-spacing:.5px;
       text-shadow:0 0 26px rgba(<%= _wfiC %>,.6),0 2px 14px rgba(0,0,0,.5)}
     .wfi-word i{display:inline-block;font-style:normal;opacity:0}
@@ -366,6 +372,27 @@
         var lgm=logo?parseFloat(getComputedStyle(logo).marginRight)||0:0;
         var ww=word?word.scrollWidth:0;
         dx=Math.max(0,(ww+gap+lgm)/2);
+        /* محاذاة مستوى الحروف: نقيس قد إيش أسفل الـ W المرئي تحت خط أساس الكلمة
+           (--wfiLift) — CSS ينزل الكلمة تحت بنفس المقدار فيجلس قاع الـ W على خط
+           الأساس مثل باقي الحروف، واللوغو يظل وسط الشاشة تماماً بالمرحلة 1.
+           الملف فيه بادجة شفافة (تحت 6.2% من ارتفاعه) فنحسب قاعدة الـ W المرئية من
+           نسب الملف الثابتة (1331×1024، المحتوى حتى y=960) — تقيس من العرض المرسوم
+           فتشتغل حتى لو الصورة ما اكتمل تحميلها. حرف W الاحتياطي النصي بلا بادجة */
+        var lift=0;
+        if(logo&&word){
+          var lb=logo.getBoundingClientRect(), wb=word.getBoundingClientRect();
+          var visBottom=(logo.tagName==='IMG')?(lb.top+lb.width*(960/1331)):lb.bottom;
+          /* خط الأساس من مقاييس الخط الحقيقية عبر canvas (fontBoundingBox) */
+          var fs=parseFloat(getComputedStyle(word).fontSize)||16;
+          var lh=parseFloat(getComputedStyle(word).lineHeight)||fs*1.15;
+          var ctx2d=document.createElement('canvas').getContext('2d');
+          ctx2d.font='700 '+fs+'px "Cinzel Decorative",serif';
+          var mt=ctx2d.measureText('n');
+          var fbA=mt.fontBoundingBoxAscent||fs*0.8, fbD=mt.fontBoundingBoxDescent||fs*0.2;
+          var baseY=wb.top+(lh-fbA-fbD)/2+fbA;
+          lift=Math.max(0,visBottom-baseY);
+        }
+        intro.style.setProperty('--wfiLift',lift.toFixed(1)+'px');
       }catch(e){}
       intro.style.setProperty('--wfiDx',dx.toFixed(1)+'px');
       intro.style.setProperty('--wfiS2','1.15s');
