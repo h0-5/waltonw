@@ -13,11 +13,17 @@ async function safeQuery(sql, params = []) {
   }
 }
 
-// Get site settings
-async function getSettings() {
+// Get site settings (cached 30s — settings таблица يتغير نادراً، وقاعدة الـVPN API بعيدة)
+let settingsCache = null;
+let settingsCacheAt = 0;
+const SETTINGS_TTL = 30000;
+async function getSettings(force = false) {
+  if (!force && settingsCache && Date.now() - settingsCacheAt < SETTINGS_TTL) return settingsCache;
   const rows = await safeQuery('SELECT setting_key, setting_value FROM site_settings');
   const settings = {};
   rows.forEach(r => { settings[r.setting_key] = r.setting_value; });
+  settingsCache = settings;
+  settingsCacheAt = Date.now();
   return settings;
 }
 
@@ -55,10 +61,19 @@ router.get('/api/broadcasts', async (req, res) => {
 
 // Home
 router.get('/', isAuthenticated, isInGuild, checkPageAccess('/'), async (req, res) => {
-  const settings = await getSettings();
-  const news = await safeQuery('SELECT * FROM news WHERE is_hidden = 0 ORDER BY created_at DESC LIMIT 10');
-  const memberCount = await safeQuery('SELECT COUNT(*) as c FROM users');
-  const giveaways = await safeQuery("SELECT * FROM news WHERE type = 'giveaway' AND expires_at > NOW() AND is_hidden = 0");
+  const [settingsResult, newsResult, memberCountResult, giveawaysResult, storePreviewResult, rulesPreviewResult, joinAppsResult] = await Promise.all([
+    getSettings(),
+    safeQuery('SELECT * FROM news WHERE is_hidden = 0 ORDER BY created_at DESC LIMIT 10'),
+    safeQuery('SELECT COUNT(*) as c FROM users'),
+    safeQuery("SELECT * FROM news WHERE type = 'giveaway' AND expires_at > NOW() AND is_hidden = 0"),
+    safeQuery('SELECT id, name, price_points, price_money, category_type, description FROM fs_products ORDER BY id ASC LIMIT 2'),
+    safeQuery('SELECT category, rule_text FROM rules ORDER BY sort_order ASC LIMIT 8'),
+    safeQuery('SELECT application_type, requirements FROM application_settings ORDER BY id ASC')
+  ]);
+  const settings = settingsResult;
+  const news = newsResult;
+  const memberCount = memberCountResult;
+  const giveaways = giveawaysResult;
 
   const stats = {
     members: settings.stat_members || (memberCount[0] ? memberCount[0].c : '50+'),
@@ -67,13 +82,11 @@ router.get('/', isAuthenticated, isInGuild, checkPageAccess('/'), async (req, re
   };
 
   /* معاينات خفيفة للوحة bento: LIMIT محدد، بلا JOIN — تفشل بأمان لقائمة فارغة */
-  const storePreview = await safeQuery('SELECT id, name, price_points, price_money, category_type, description FROM fs_products ORDER BY id ASC LIMIT 2');
-  const rulesPreview = await safeQuery('SELECT category, rule_text FROM rules ORDER BY sort_order ASC LIMIT 8');
 
   /* شروط الانضمام — من صفحة التقديمات نفسها: حقل «المتطلبات» المحفوظ بتقديم Join Family
      (نفس المصدر الذي تعرضه بطاقة التقديم بصفحة /applications). يفشل بأمان لقائمة فارغة
      والواجهة تعرض البدائل الثابتة حين لا توجد متطلبات محفوظة */
-  const joinApps = await safeQuery('SELECT application_type, requirements FROM application_settings ORDER BY id ASC');
+  const joinApps = joinAppsResult;
   const joinSrc = joinApps.filter(function(a) { return a.application_type === 'Join Family' && (a.requirements || '').trim(); })[0]
                 || joinApps.filter(function(a) { return (a.requirements || '').trim(); })[0];
   const joinReqs = joinSrc
@@ -83,9 +96,11 @@ router.get('/', isAuthenticated, isInGuild, checkPageAccess('/'), async (req, re
   /* نقاطي ورتبتي (للمسجّل فقط) — استعلامان صغيران بنمط صفحة البروفايل */
   let myStats = null;
   if (req.user) {
-    const pts = await safeQuery('SELECT points, total_earned FROM bot_points WHERE discord_id = ? LIMIT 1', [req.user.discord_id]);
+    const [pts, rk] = await Promise.all([
+      safeQuery('SELECT points, total_earned FROM bot_points WHERE discord_id = ? LIMIT 1', [req.user.discord_id]),
+      safeQuery('SELECT COUNT(*) + 1 AS pos FROM bot_points WHERE points > ?', [0])
+    ]);
     const myPoints = pts.length ? (pts[0].points || 0) : 0;
-    const rk = await safeQuery('SELECT COUNT(*) + 1 AS pos FROM bot_points WHERE points > ?', [myPoints]);
     myStats = {
       points: myPoints,
       total_earned: pts.length ? (pts[0].total_earned || 0) : 0,
@@ -95,14 +110,16 @@ router.get('/', isAuthenticated, isInGuild, checkPageAccess('/'), async (req, re
 
   res.render('pages/home', {
     title: settings.site_name || 'الرئيسية',
-    news, stats, activeGiveaways: giveaways, settings, storePreview, rulesPreview, myStats
+    news, stats, activeGiveaways: giveaways, settings, storePreview: storePreviewResult, rulesPreview: rulesPreviewResult, myStats
   });
 });
 
 // About
 router.get('/about', isAuthenticated, isInGuild, checkPageAccess('/about'), async (req, res) => {
-  const settings = await getSettings();
-  const aboutRows = await safeQuery('SELECT content_key, content_value FROM about_us_content');
+  const [settings, aboutRows] = await Promise.all([
+    getSettings(),
+    safeQuery('SELECT content_key, content_value FROM about_us_content')
+  ]);
   const about = {};
   aboutRows.forEach(r => { about[r.content_key] = r.content_value; });
 

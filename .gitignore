@@ -5,6 +5,5 @@ server-err.log
 test-*.js
 temp_check.js
 *.zip
-public/uploads/
 render/
 _pv_*.html
