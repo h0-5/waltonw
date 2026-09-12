@@ -459,13 +459,6 @@ router.get('/test', (req, res) => {
   res.render('pages/test', { title: 'اختبار التحديث' });
 });
 
-router.get('/__version', (req, res) => {
-  const { execSync } = require('child_process');
-  let rev = 'unknown';
-  try { rev = execSync('git rev-parse --short HEAD').toString().trim(); } catch (e) {}
-  res.json({ commit: rev, uptime: process.uptime(), pid: process.pid });
-});
-
 /* تدفئة الكاش عند الإقلاع — نفس الاستعلامات المشتركة للصفحات الرئيسية، تُنفذ
    مرة واحدة عند بدء الخادم بدل أن يدفع أول زائر بعد كل إعادة نشر ثمن البرودة
    (كان أول طلب بعد التحديث يأخذ ثوانٍ). كل استعلام هنا آمن (qCache/safeQuery)

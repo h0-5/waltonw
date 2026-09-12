@@ -65,7 +65,6 @@ function pageCacheMiddleware(req, res, next) {
         if (isSafeBrowserPublic(p)) {
           res.setHeader('Cache-Control', 'private, max-age=15');
         }
-        res.setHeader('X-WF-PageCache', 'hit');
         return res.type('html').send(hit.html);
       }
     } catch (e) { /* always fall through to normal render */ }
