@@ -230,6 +230,20 @@ const applicationsApi = require('./routes/api/applications');
 const adminApi = require('./routes/api/admin');
 const botApi = require('./routes/api/bot');
 
+// Any write to the DB (admin CRUD) clears the shared page-cache so edits show
+// immediately instead of waiting out the query TTL
+app.use(function (req, res, next) {
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].indexOf(req.method) !== -1) {
+    try {
+      if (indexRoutes.invalidateQueryCache) indexRoutes.invalidateQueryCache();
+    } catch (e) {}
+    try {
+      invalidateSettingsCache();
+    } catch (e) {}
+  }
+  next();
+});
+
 // كاش قصير لصفحات المحتوى شبه الثابت — التنقل بينها يصير لحظي من كاش متصفح العميل
 // بلا أي طلب ولا تكلفة سيرفر (private = كاش العميل فقط). الصفحات الديناميكية
 // (store/company/properties/profile/orders/applications) تبقى بلا TTL — لها ETag

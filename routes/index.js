@@ -13,6 +13,24 @@ async function safeQuery(sql, params = []) {
   }
 }
 
+// Short-lived in-memory cache for semi-static query results. The Aiven free-tier
+// database sits far from the host (~60ms+ round trip per query), so caching the
+// shared content queries for a few seconds removes that round trip for repeat
+// visitors. Per-user data (points/rank) is never cached here.
+const queryCache = new Map(); // key -> { at, rows }
+const QUERY_TTL = 12000;
+async function qCache(sql, params = [], ttl = QUERY_TTL) {
+  const key = sql + '|' + (params || []).join('|');
+  const hit = queryCache.get(key);
+  if (hit && Date.now() - hit.at < ttl) return hit.rows;
+  const rows = await safeQuery(sql, params);
+  queryCache.set(key, { at: Date.now(), rows });
+  return rows;
+}
+function invalidateQueryCache() {
+  queryCache.clear();
+}
+
 // Get site settings (cached 30s — settings таблица يتغير نادراً، وقاعدة الـVPN API بعيدة)
 let settingsCache = null;
 let settingsCacheAt = 0;
@@ -63,12 +81,12 @@ router.get('/api/broadcasts', async (req, res) => {
 router.get('/', isAuthenticated, isInGuild, checkPageAccess('/'), async (req, res) => {
   const [settingsResult, newsResult, memberCountResult, giveawaysResult, storePreviewResult, rulesPreviewResult, joinAppsResult] = await Promise.all([
     getSettings(),
-    safeQuery('SELECT * FROM news WHERE is_hidden = 0 ORDER BY created_at DESC LIMIT 10'),
-    safeQuery('SELECT COUNT(*) as c FROM users'),
-    safeQuery("SELECT * FROM news WHERE type = 'giveaway' AND expires_at > NOW() AND is_hidden = 0"),
-    safeQuery('SELECT id, name, price_points, price_money, category_type, description FROM fs_products ORDER BY id ASC LIMIT 2'),
-    safeQuery('SELECT category, rule_text FROM rules ORDER BY sort_order ASC LIMIT 8'),
-    safeQuery('SELECT application_type, requirements FROM application_settings ORDER BY id ASC')
+    qCache('SELECT * FROM news WHERE is_hidden = 0 ORDER BY created_at DESC LIMIT 10'),
+    qCache('SELECT COUNT(*) as c FROM users'),
+    qCache("SELECT * FROM news WHERE type = 'giveaway' AND expires_at > NOW() AND is_hidden = 0", [], 5000),
+    qCache('SELECT id, name, price_points, price_money, category_type, description FROM fs_products ORDER BY id ASC LIMIT 2'),
+    qCache('SELECT category, rule_text FROM rules ORDER BY sort_order ASC LIMIT 8'),
+    qCache('SELECT application_type, requirements FROM application_settings ORDER BY id ASC')
   ]);
   const settings = settingsResult;
   const news = newsResult;
@@ -118,7 +136,7 @@ router.get('/', isAuthenticated, isInGuild, checkPageAccess('/'), async (req, re
 router.get('/about', isAuthenticated, isInGuild, checkPageAccess('/about'), async (req, res) => {
   const [settings, aboutRows] = await Promise.all([
     getSettings(),
-    safeQuery('SELECT content_key, content_value FROM about_us_content')
+    qCache('SELECT content_key, content_value FROM about_us_content')
   ]);
   const about = {};
   aboutRows.forEach(r => { about[r.content_key] = r.content_value; });
@@ -197,17 +215,19 @@ router.get('/about', isAuthenticated, isInGuild, checkPageAccess('/about'), asyn
 
 // Rules
 router.get('/rules', isAuthenticated, isInGuild, checkPageAccess('/rules'), async (req, res) => {
-  const settings = await getSettings();
-  const rules = await safeQuery('SELECT * FROM rules ORDER BY sort_order ASC');
-  const categories = await safeQuery('SELECT * FROM rule_categories ORDER BY sort_order ASC');
-  const stages = await safeQuery('SELECT * FROM rule_stages ORDER BY sort_order ASC, id ASC');
+  const [settings, rules, categories, stages] = await Promise.all([
+    getSettings(),
+    qCache('SELECT * FROM rules ORDER BY sort_order ASC'),
+    qCache('SELECT * FROM rule_categories ORDER BY sort_order ASC'),
+    qCache('SELECT * FROM rule_stages ORDER BY sort_order ASC, id ASC')
+  ]);
   res.render('pages/rules', { title: 'القواعد', rules, categories, stages, settings });
 });
 
 // Store
 router.get('/store', isAuthenticated, isInGuild, checkPageAccess('/store'), async (req, res) => {
   const settings = await getSettings();
-  let products = await safeQuery('SELECT * FROM fs_products ORDER BY id ASC');
+  let products = await qCache('SELECT * FROM fs_products ORDER BY id ASC');
   
   // Get user points if logged in
   let userPoints = 0;
@@ -237,8 +257,10 @@ router.get('/community', isAuthenticated, isInGuild, checkPageAccess('/community
 
 // Applications
 router.get('/applications', isAuthenticated, isInGuild, checkPageAccess('/applications'), async (req, res) => {
-  const settings = await getSettings();
-  const applications = await safeQuery('SELECT * FROM application_settings ORDER BY id ASC');
+  const [settings, applications] = await Promise.all([
+    getSettings(),
+    qCache('SELECT * FROM application_settings ORDER BY id ASC', [], 30000)
+  ]);
   res.render('pages/applications', { title: 'الطلبات', applications, settings });
 });
 
@@ -401,7 +423,7 @@ router.get('/games/aviator', isAuthenticated, isInGuild, checkPageAccess('/games
 
 // Properties
 router.get('/properties', isAuthenticated, isInGuild, checkPageAccess('/properties'), async (req, res) => {
-  const all = await safeQuery('SELECT * FROM properties ORDER BY sort_order ASC, id ASC');
+  const all = await qCache('SELECT * FROM properties ORDER BY sort_order ASC, id ASC');
   const palaces = all.filter(p => p.category === 'palaces');
   const vehicles = all.filter(p => p.category === 'vehicles');
   res.render('pages/properties', { title: 'الممتلكات', palaces, vehicles });
@@ -411,8 +433,11 @@ router.get('/properties', isAuthenticated, isInGuild, checkPageAccess('/properti
 router.get('/company', isAuthenticated, isInGuild, checkPageAccess('/company'), async (req, res) => {
   // ضمان جداول المزرعة قبل قراءة الحالة (صفحة الشركة أول من ينادي getPublicState)
   try { await require('./api/farm').ensureFarmSchema(); } catch (e) {}
-  const infoItems = await safeQuery("SELECT * FROM company_items WHERE category = 'info' ORDER BY sort_order ASC, id ASC");
-  const activityItems = await safeQuery("SELECT * FROM company_items WHERE category = 'activities' ORDER BY sort_order ASC, id ASC");
+  const [infoItems, activityItems, farmState] = await Promise.all([
+    qCache("SELECT * FROM company_items WHERE category = 'info' ORDER BY sort_order ASC, id ASC", [], 20000),
+    qCache("SELECT * FROM company_items WHERE category = 'activities' ORDER BY sort_order ASC, id ASC", [], 20000),
+    (async () => { try { return await require('./api/farm').getPublicState(req.user ? req.user.id : null); } catch (e) { console.error('[company] farm state:', e.message); return null; } })()
+  ]);
 
   // أسئلة وبكجات كل الخدمات باستعلامين فقط (بدل N+1)
   const servicesQuestions = {};
@@ -420,22 +445,19 @@ router.get('/company', isAuthenticated, isInGuild, checkPageAccess('/company'), 
   const svcIds = activityItems.filter(i => i.service_status).map(i => i.id);
   if (svcIds.length) {
     const inCl = svcIds.map(() => '?').join(',');
-    const qs = await safeQuery(`SELECT * FROM service_questions WHERE service_id IN (${inCl}) ORDER BY sort_order ASC, id ASC`, svcIds);
-    const pks = await safeQuery(`SELECT * FROM service_packages WHERE service_id IN (${inCl}) ORDER BY sort_order ASC, id ASC`, svcIds);
+    const [qs, pks] = await Promise.all([
+      qCache(`SELECT * FROM service_questions WHERE service_id IN (${inCl}) ORDER BY sort_order ASC, id ASC`, svcIds, 20000),
+      qCache(`SELECT * FROM service_packages WHERE service_id IN (${inCl}) ORDER BY sort_order ASC, id ASC`, svcIds, 20000)
+    ]);
     qs.forEach(q => { (servicesQuestions[q.service_id] = servicesQuestions[q.service_id] || []).push(q); });
     pks.forEach(p => { (servicesPackages[p.service_id] = servicesPackages[p.service_id] || []).push(p); });
   }
-  // حالة خدمة استئجار المزارع (أسعار/توفر/حجوزات المستخدم)
-  let farmState = null;
-  try {
-    farmState = await require('./api/farm').getPublicState(req.user ? req.user.id : null);
-  } catch (e) { console.error('[company] farm state:', e.message); }
   res.render('pages/company', { title: 'الشركة', infoItems, activityItems, servicesQuestions, servicesPackages, farmState });
 });
 
-// Test page - no auth required
 router.get('/test', (req, res) => {
   res.render('pages/test', { title: 'اختبار التحديث' });
 });
 
 module.exports = router;
+module.exports.invalidateQueryCache = invalidateQueryCache;
