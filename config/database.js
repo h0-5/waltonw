@@ -3,13 +3,25 @@ require('dotenv').config();
 
 function parseUrl(urlStr) {
   const url = new URL(urlStr);
-  return {
+  const sslMode = (url.searchParams.get('ssl-mode') || url.searchParams.get('sslmode') || '').toUpperCase();
+  const out = {
     host: url.hostname,
     port: parseInt(url.port) || 3306,
-    user: url.username,
-    password: url.password,
+    user: decodeURIComponent(url.username),
+    password: decodeURIComponent(url.password),
     database: url.pathname.replace(/^\//, '')
   };
+  // SQL خارجي يفرض TLS (مثل Aiven بـ ssl-mode=REQUIRED) — يشغّل SSL تلقائياً.
+  // لو حاط CA شهادة بـ MYSQL_CA نتأكد منها، وإلا اتصال مشفر بدون تحقق من الشهادة.
+  const ca = process.env.MYSQL_CA || '';
+  const wantsSSL = sslMode && sslMode !== 'DISABLED';
+  const hostIsLocal = /localhost|127\.0\.0\.1|::1/.test(url.hostname);
+  if ((wantsSSL && !hostIsLocal) || (!wantsSSL && process.env.MYSQL_SSL === '1')) {
+    out.ssl = ca
+      ? { rejectUnauthorized: true, ca }
+      : { rejectUnauthorized: false };
+  }
+  return out;
 }
 
 const baseConfig = {
