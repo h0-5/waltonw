@@ -155,59 +155,6 @@
     }
   </style>
 
-  <style>
-    .loading-bar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 3px;
-      z-index: 300000; /* فوق الافتتاحية (200000) — هادي: وضع التحميل لازم يبان أثناء الأنميشن */
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.2s;
-    }
-    /* مسار الشريط بخلفية خفيفة — يوضح إن التحميل شغال حتى قبل ما يمتلئ («بخلفية» مثل ما طلب) */
-    .loading-bar::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: rgba(255,255,255,.14);
-      box-shadow: 0 1px 3px rgba(0,0,0,.18);
-    }
-    .loading-bar.active { opacity: 1; }
-    .loading-bar-progress {
-      position: relative;
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, var(--ac), var(--ac-light), var(--ac));
-      background-size: 200% 100%;
-      animation: loadingBarShimmer 1.5s linear infinite;
-      border-radius: 0 2px 2px 0;
-      transition: width 0.3s ease;
-      box-shadow: 0 0 10px var(--ac), 0 0 5px var(--ac);
-    }
-    @keyframes loadingBarShimmer {
-      0% { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
-    }
-    .loading-bar.active .loading-bar-progress {
-      animation: loadingBarProgress 2s ease-in-out forwards, loadingBarShimmer 1.5s linear infinite;
-    }
-    @keyframes loadingBarProgress {
-      0% { width: 0%; }
-      20% { width: 30%; }
-      50% { width: 60%; }
-      80% { width: 85%; }
-      100% { width: 95%; }
-    }
-    .loading-bar.done .loading-bar-progress {
-      width: 100% !important;
-      animation: none;
-      transition: width 0.2s ease;
-    }
-  </style>
-
   <%
     /* ══════════ افتتاحية Walton Family ══════════
        بنفسجية واضحة بأسلوب بلورة الهدر — تظهر مرة واحدة لكل تبويب فقط.
@@ -251,21 +198,22 @@
       opacity:0;pointer-events:none;border-radius:2px}
     /* البراند: [اللوغو = حرف W] + [alton Family] — صف flex واحد، اتجاه ltr للكلمة الإنجليزية.
        --wfiDx يقيسه JS = إزاحة تُبقي اللوغو وسط الشاشة تماماً في المرحلة الأولى */
-    /* اللوغو كبير — حجمه بمستوى لوغو الرئيسية (orb 225px/180px جوال) أو أكبر:
-       الحد الأدنى 155px جوال (الـ W المرئي ~99px مقابل ~97px لوغو الرئيسية بالجوال)
-       والحد الأقصى 290px ديسكتوب (الـ W المرئي ~185px مقابل ~121px بالرئيسية)
-       --wfifs مربوطة بـ --wfilw بنسبة ثابتة (0.209) — الكلمة تكبر تلقائياً بنفس
-       نسبة اللوغو ليبقى التناسق بأي مقاس، والحروف تبقى أصغر من اللوغو */
-    /* ملاءمة الشاشة احتياطاً قبل قياس JS — الحد الأقصى للكلمة 7vw فما يطلع شي برا الشاشة
-       حتى لو JS تعطل (القياس الحي بـ measureAndGo يظبطها أدق) */
+    /* اللوغو أكبر من لوغو الرئيسية (58px جوال) لكن بلا تضخيم يقصّ الشاشة —
+       بلاغ هادي بصورة جواله (سكرين 412px): بالـ 155px الكلمة تنسحق على حافة الشاشة
+       والفراغ بين الـ W وحرف a يبان كبير — الحين: جوال 128px (الـ W المرئي ~94px = ×1.6
+       لوغو الرئيسية) وديسكتوب 290px زي ما هو، فالكلمة تلحق حجمها المتناسق وتظل
+       مساحة تنفس يمين ويسار الصف */
+    /* --wfifs مربوطة بـ --wfilw بنسبة ثابتة (0.209) — الكلمة تكبر تلقائياً بنفس
+       نسبة اللوغو ليبقى التناسق بأي مقاس (سقف 8vw احتياط JS فقط)، والحروف تبقى أصغر من اللوغو */
     .wfi-brand{position:absolute;top:50%;left:50%;z-index:4;display:flex;align-items:center;gap:2px;
-      --wfilw:clamp(155px,20vw,290px);--wfifs:min(calc(var(--wfilw)*0.209),7vw);
+      --wfilw:clamp(118px,31vw,290px);--wfifs:min(calc(var(--wfilw)*0.209),8vw);
       transform:translate(-50%,-50%);direction:ltr;opacity:1;
       will-change:transform,opacity,filter}
     /* اللوغو كبير — والهامش السالب يمتص البادجة الشفافة جوة ملف اللوغو
-       عشان حرف a يلصق بالـ W مثل حرف عادي بكلمة Walton — تقريب 2mm
-       بطلب هادي: الامتصاص 10% بدل 7.5% والفجوة 2px = فراغ مرئي ~7px ديسكتوب */
-    .wfi-logo{width:var(--wfilw);height:auto;flex-shrink:0;margin-right:calc(var(--wfilw)*-0.10);
+       عشان حرف a يلصق بالـ W مثل حرف عادي بكلمة Walton — بلاغ هادي «ليه كل هالفراغ
+       بين حرف الa واللوغو»: الامتصاص 11.5% (أقل من البادجة اليمنى 12.2% فما يتصادمان)
+       والفجوة 2px = فراغ حبر مرئي ~3-5px جوال و ~7px ديسكتوب */
+    .wfi-logo{width:var(--wfilw);height:auto;flex-shrink:0;margin-right:calc(var(--wfilw)*-0.115);
       filter:drop-shadow(0 0 18px rgba(<%= _wfiC %>,.85)) drop-shadow(0 4px 22px rgba(0,0,0,.55));opacity:0}
     .wfi-wfb{font-family:'Cinzel Decorative',serif;font-weight:700;font-size:calc(var(--wfilw)*0.72);
       color:#fff;line-height:1;display:flex;align-items:center;justify-content:center}
@@ -323,10 +271,6 @@
 <body>
   <!-- الخلفية الثابتة للهاتف (فوقها كل المحتوى) -->
   <div id="wfBgFix" aria-hidden="true"></div>
-  <!-- Loading Bar -->
-  <div id="loadingBar" class="loading-bar">
-    <div class="loading-bar-progress"></div>
-  </div>
 
   <!-- ═══ افتتاحية Walton Family — مرة واحدة لكل تبويب ═══ -->
   <div id="wfIntro" aria-hidden="true">
@@ -343,14 +287,24 @@
   (function(){
     var intro=document.getElementById('wfIntro');
     if(!intro)return;
+    /* صفحة تنقل لاحقة بنفس التبويب (الافتتاحية شفتها من قبل ومخفية)؟ ما ننتظر الأنميشن —
+       نكمل فوراً حتى يبدأ سحب الصفحات بالخلفية بدري (التنقل اللحظي هو المطلوب).
+       مؤجلة بماكرو-تاسك لأن startPrefetch معرفة بلوك سكربت لاحق ما اننفذ بعد */
+    try{if(document.documentElement.className.indexOf('wf-no-intro')!==-1){setTimeout(function(){try{finishNow();}catch(e){}},0);return;}}catch(e){}
     var finished=false;
+    function finishNow(){
+      finished=true;
+      try{sessionStorage.setItem('wfIntroDone','1');}catch(e){}
+      if(intro&&intro.parentNode){intro.parentNode.removeChild(intro);intro=null;}
+      startPrefetch();
+    }
     function finish(){
       if(finished)return;
       /* وضع التجميد (التصوير): العقدة تبقى مجمدة ما تنشال */
       try{if(intro&&intro.classList.contains('wfi-hold'))return;}catch(e){}
       finished=true;
       try{sessionStorage.setItem('wfIntroDone','1');}catch(e){}
-      /* إشارة لنهاية الافتتاحية — شريط التحميل يسمعها فيكمل وينطفي (وضع التحميل أثناء الأنميشن) */
+      /* إشارة دورة حياة لنهاية الافتتاحية (يستخدمها التحميل الخفي للصفحات) */
       try{window.dispatchEvent(new Event('wf:intro-done'));}catch(e){}
       if(intro&&intro.parentNode){intro.parentNode.removeChild(intro);intro=null;}
       startPrefetch();
@@ -385,15 +339,16 @@
         var brand=intro.querySelector('.wfi-brand');
         var logo=intro.querySelector('.wfi-logo');
         var word=intro.querySelector('.wfi-word');
-        /* ═══ ملاءمة الشاشة (ملاحظة هادي من صورة جواله: الكلمة تقصّ برا الشاشة) ═══
+        /* ═══ ملاءمة الشاشة (بلاغ هادي بصورة جواله: الكلمة تنسحق على حافة الشاشة) ═══
            لو صف البراند كله أعرض من الشاشة: ننقص خط الكلمة واللوغو يبقى بحجمه
-           (أكبر من لوغو الرئيسية) لحد ما الصف كله يدخل بهامش 10px من كل جهة —
-           الحروف تلحق اللوغو وما يطلع شي برا. شاشات ضيقة جداً: الكلمة تتجمد
-           عند 15px واللوغو هو الآخر ينقص. جولتا قياس لأن letter-spacing ثابت */
+           لحد ما الصف يدخل بهامش حقيقي من كل جهة (5.5% من الشاشة أو 22px على الأقل
+           — مو 10px كانت تخلي الكلمة تلتصق بالحافة وتiban مدحوشة). شاشات ضيقة
+           جداً: الكلمة تتجمد عند 15px واللوغو هو الآخر ينقص. جولتا قياس لأن letter-spacing ثابت */
         var fitInfo='';
         if(word&&logo){
           var vw=document.documentElement.clientWidth||window.innerWidth||360;
-          var maxTotal=vw-20;
+          var sideM=Math.max(22,Math.round(vw*0.055));
+          var maxTotal=vw-sideM*2;
           for(var fp=0;fp<2;fp++){
             var gapF=parseFloat(getComputedStyle(brand).columnGap)||2;
             var lgmF=parseFloat(getComputedStyle(logo).marginRight)||0;
@@ -482,92 +437,55 @@
     else{window.addEventListener('load',start);}
   })();
 
-  /* ═══ التحميل الخفي للصفحات الأساسية (شغل خلفي ما يشوفه اللاعب) ═══
-     بعد ما تخلص الافتتاحية — ولا لو انخطفت — يسحب الصفحات الرئيسية بكاش
-     المتصفح فالتنقل بينها يصير لحظي. متسلسل بفواصل 350ms عشان ما يزاحم
-     أول تحميل، ويتوقف كلياً لو وضع توفير البيانات أو شبكة 2G */
+  /* ═══ التحميل الخفي للصفحات بالخلفية (المعنى الصحيح لطلب هادي «الموقع يحمل الصفحات
+     على جهاز المستخدم بالخلفية عشان التنقل يصير أسرع» — مو شريط أثناء الأنميشن) ═══
+     ٣ طبقات:
+     ١) بعد الافتتاحية (أو فوراً بصفحات التنقل اللاحقة) يسحب الصفحات الرئيسية وحدة وحدة
+        بفواصل 350ms بأولية منخفضة — كاش المتصفح يحتفظ فيها فالنقر يفتح لحظياً
+     ٢) أي رابط داخلي (حتى المو بس بالقائمة): أول ما اللاعب يلمسه/يمر عليه يبدأ تحميله
+        فوراً — اللمسة تسبق النقر بـ ١٠٠-٣٠٠ms فتلاقي الصفحة جاهزة
+     ٣) حراس: توفير البيانات/2G يلغيان الكل، والزائر ما نسحب له الصفحات المحمية */
   var WFI_USER=<%= (typeof user !== 'undefined' && user) ? 'true' : 'false' %>;
   var WFI_PAGES=['/about','/rules','/store','/games','/community','/applications','/support','/profile','/properties','/company','/contact'];
   var WFI_STARTED=false;
+  var WFI_WARMED={};
+  function wfiWarm(p){
+    if(WFI_WARMED[p])return;WFI_WARMED[p]=true;
+    try{fetch(p,{credentials:'same-origin',cache:'default',priority:'low'}).catch(function(){});}catch(e){}
+  }
   function startPrefetch(){
     if(WFI_STARTED)return;WFI_STARTED=true;
-    if(!WFI_USER)return; /* زائر غير مسجل: الصفحات تعيد توجيه للدخول — لا نحمّل شي */
+    var CONN_OK=true;
     try{
-      if(navigator.connection&&(navigator.connection.saveData||/^(slow-)?2g$/.test(navigator.connection.effectiveType||'')))return;
+      if(navigator.connection&&(navigator.connection.saveData||/^(slow-)?2g$/.test(navigator.connection.effectiveType||'')))CONN_OK=false;
     }catch(e){}
+    if(!CONN_OK)return; /* توفير بيانات أو 2G: لا سحب خلفي كلياً */
+    /* ٢) تسخين باللمس/المرور لأي رابط داخلي — للكل (مسجل وزائر) */
+    document.addEventListener('pointerdown',function(e){
+      try{
+        var a=e.target.closest?e.target.closest('a[href]'):null;if(!a)return;
+        var h=a.getAttribute('href')||'';
+        if(!h||h.charAt(0)==='#'||h.indexOf('javascript:')===0||h.indexOf('mailto:')===0)return;
+        if(a.target==='_blank'||a.hasAttribute('download'))return;
+        if(a.hostname&&a.hostname!==location.hostname)return;
+        if(h.charAt(0)==='/')wfiWarm(h);
+      }catch(e){}
+    },{capture:true,passive:true});
+    if(!WFI_USER)return; /* زائر غير مسجل: الصفحات تعيد توجيه للدخول — التسخين باللمس يكفيه */
+    /* ١) سحب القائمة الرئيسية بالخلفية بعد ما يهدأ أول تحميل */
     var i=0;
     function step(){
       if(i>=WFI_PAGES.length)return;
       var p=WFI_PAGES[i++];
       if(location.pathname===p){step();return;}
-      var f=null;
-      try{f=fetch(p,{credentials:'same-origin',cache:'default',priority:'low'});}catch(e){}
-      var done=function(){setTimeout(step,350);};
-      if(f&&f.then){f.then(function(){},function(){}).then(done);}
-      else{done();}
+      wfiWarm(p);
+      setTimeout(step,350);
     }
     var kick=window.requestIdleCallback||function(cb){return setTimeout(cb,1100);};
     kick(function(){setTimeout(step,250);});
   }
   </script>
 
-  <script>
-    (function() {
-      var bar = document.getElementById('loadingBar');
-      var progress = bar ? bar.querySelector('.loading-bar-progress') : null;
-      var loaded = false, introDone = false, ended = false;
-      /* الافتتاحية منحظورة بهاي التبويب (شفتها قبل)؟ ما ننتظرها — الشريط يكمل مع تحميل الصفحة بس */
-      try { if (document.documentElement.className.indexOf('wf-no-intro') !== -1) introDone = true; } catch(e) {}
-
-      function startLoading() {
-        if (!bar) return;
-        bar.classList.add('active');
-        bar.classList.remove('done');
-        progress.style.width = '0%';
-      }
-      function endLoading() {
-        if (!bar) return;
-        bar.classList.add('done');
-        setTimeout(function() {
-          bar.classList.remove('active', 'done');
-          progress.style.width = '0%';
-        }, 400);
-      }
-      function maybeEnd() {
-        if (ended) return;
-        if (loaded && introDone) { ended = true; endLoading(); }
-      }
-
-      /* وضع التحميل أثناء الأنميشن (طلب هادي: «ابي اشوف وضع التحميل بخلفية أثناء انميشن»):
-         الشريط يشتغل تلقائياً أول ما تفتح الصفحة — فوق الافتتاحية (z-index أعلى) بمساره
-         الخفيف — ويمتلئ مع التحميل الحقيقي، وينكمل 100% لما الصفحة والافتتاحية يخلصو مع بعض */
-      startLoading();
-      if (document.readyState === 'complete') loaded = true;
-      window.addEventListener('load', function() { loaded = true; maybeEnd(); });
-      window.addEventListener('wf:intro-done', function() { introDone = true; maybeEnd(); });
-      setTimeout(function() { loaded = true; maybeEnd(); }, 6000); /* لو حدث load ضاع */
-      setTimeout(maybeEnd, 9000); /* فشل آمن — ما يبقى الشريط معلق */
-
-      /* التنقل الداخلي: نفس السلوك — يبين مع أي رابط داخلي وينكمل بـ pageshow
-         (السلكتور a[href] — إصلاح 116-e لازم يبقى، انصلح سابقاً وكان يرتد بالتعديلات) */
-      document.addEventListener('click', function(e) {
-        var link = e.target.closest('a[href]');
-        if (!link) return;
-        var href = link.getAttribute('href');
-        if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('mailto:')) return;
-        if (link.target === '_blank') return;
-        if (link.hasAttribute('download')) return;
-        if (link.hostname && link.hostname !== location.hostname) return;
-        ended = false; loaded = false; introDone = true; /* الافتتاحية ما تعيد نفسها بالتنقل */
-        startLoading();
-      });
-
-      /* رجوع من الكاش (bfcache): ما فيه تحميل جديد — أنهي فوراً */
-      window.addEventListener('pageshow', function(e) {
-        if (e.persisted) { loaded = true; introDone = true; ended = false; maybeEnd(); }
-      });
-    })();
-  </script>
   <!-- News Ticker Bar -->
   <style>
     .news-ticker{display:none;background:linear-gradient(90deg,rgba(var(--ac-rgb),0.12),rgba(var(--ac-rgb),0.04),rgba(var(--ac-rgb),0.12));border-bottom:1px solid rgba(var(--ac-rgb),0.15);padding:10px 16px;position:relative;z-index:50;
