@@ -53,9 +53,15 @@ app.use(session(sessionConfig));
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Static files — long cache for images/fonts, 1 day for css/js
-app.use('/images', express.static(path.join(__dirname, 'public/images'), { maxAge: '7d' }));
+// Static files — long cache for images (stable content), short for css/js
+// (css/js have no version params in templates, so long immutable cache would
+//  freeze design updates — keep them short so new styles always appear)
+app.use('/images', express.static(path.join(__dirname, 'public/images'), { maxAge: '30d', immutable: true }));
+app.use('/css', express.static(path.join(__dirname, 'public/css'), { maxAge: '1h' }));
+app.use('/js', express.static(path.join(__dirname, 'public/js'), { maxAge: '1h' }));
 app.use('/fonts', express.static(path.join(__dirname, 'public/fonts'), { maxAge: '30d', immutable: true }));
+// Uploads are user content, can change — shorter cache (1h ok, browser revalidates)
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads'), { maxAge: '1h' }));
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1d' }));
 
 // Visit analytics (daily page views + unique visitors) — skips /admin /api assets bots

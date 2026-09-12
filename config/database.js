@@ -71,6 +71,12 @@ pool.getConnection()
     console.error('❌ Database connection failed:', err.message);
   });
 
+/* حارس يقظة القاعدة (Aiven free تنام بعد خمول فترتفع أول استعلام بعدها لثوانٍ —
+   هذه النبضة كل 45 ثانية تبقيها متيقظة + الاتصالات حارة لأي طلب فوري) */
+setInterval(() => {
+  pool.query('SELECT 1').catch(() => { /* استمرار الحركة حتى لو انقطع لحظياً */ });
+}, 45 * 1000).unref();
+
 pool.dbConfig = dbConfig;
 
 module.exports = pool;
