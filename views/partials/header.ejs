@@ -28,6 +28,16 @@
        كل الأقسام ظاهرة بدل فراغ أبيض — نفس عائلة بلاغ «صفحة من نحن مو ظاهرة كاملة» */
   %>
   <script>if('IntersectionObserver' in window){document.documentElement.className+=' wf-reveal-armed';}</script>
+  <%
+    /* حارس الافتتاحية: تُعرض مرة واحدة فقط لكل تبويب (sessionStorage) — لا تتكرر مع
+       التنقل بين الصفحات ولا مع الرجوع للرئيسية. يُقرأ هنا قبل أي رسم فلا وميض:
+       - wf-no-intro   : شفتها سابقاً → الافتتاحية display:none فوراً
+       - wf-intro-armed: أول مرة بهذا التبويب → تُعرض، والعلامة تُكتب من الحين */
+  %>
+  <script>(function(){var s=null;try{s=sessionStorage.getItem('wfIntroDone');}catch(e){}
+    var force=location.search.indexOf('wfiforce')!==-1; /* وضع التصوير/التصحيح فقط */
+    if(s==='1'&&!force){document.documentElement.className+=' wf-no-intro';}
+    else{document.documentElement.className+=' wf-intro-armed';try{sessionStorage.setItem('wfIntroDone','1');}catch(e){}}})();</script>
   <% /* مود ليل/نهار أُزيل كلياً (طلب المستخدم) — لا wfTheme ولا data-theme: الثيم الداكن القديم دائم */ %>
   <%
     /* عنوان التبويب: «اسم الصفحة | اسم الموقع» — لكن لو عنوان الصفحة هو اسم الموقع
@@ -186,6 +196,104 @@
       transition: width 0.2s ease;
     }
   </style>
+
+  <%
+    /* ══════════ افتتاحية Walton Family ══════════
+       بنفسجية واضحة بأسلوب بلورة الهدر — تظهر مرة واحدة لكل تبويب فقط.
+       المراحل (كلها CSS animations ذاتية بلا JS timing — JS فقط يقيس عرض الكلمة ويشغل ويكمل):
+         1) اللوغو ينفرط وسط الشاشة بتوهج (0.1 → 1.05s)
+         2) اللوغو ينزلق لليسار وكلمة alton Family تُكتب حرف حرف بجنبه (1.15 → 2.45s)
+            — حرف W هو اللوغو نفسه مب حرف عادي، والباقي كلمة عادية
+         3) لمعة تمر على الكلمة (2.55s) ثم البراند والهالات يختفون (3.3s)
+         4) الخلفية تنقسم نصين: النص العلوي يطلع فوق ويصفر، السفلي ينزل تحت ويصفر،
+            والصفحة الحقيقية تنكشف بينهم (3.72s) — وبعدها ينشال العنصر من DOM كلياً
+       حمايات: wf-no-intro (تكرار) / prefers-reduced-motion (تخطي) / failsafe CSS
+       يخفي الافتتاحية عند 6.2s لو JS مات بنص الطريق / أي لمسة = تخطي سريع */
+  %>
+  <style>
+    html.wf-no-intro #wfIntro{display:none!important}
+    @media (prefers-reduced-motion: reduce){#wfIntro{display:none!important}}
+    #wfIntro{position:fixed;inset:0;z-index:200000;overflow:hidden;visibility:hidden;background:#170529}
+    #wfIntro.wfi-go{visibility:visible}
+    #wfIntro.wfi-hold *{animation-play-state:paused!important}
+    /* نصفي الخلفية: تدرج واحد متصل (background-size 200%) — لحظة الانقسام كل نصف يحمل نصيبه */
+    .wfi-half{position:absolute;left:0;width:100%;height:50.25%;z-index:1;
+      background-image:linear-gradient(180deg,#170529 0%,#250a40 42%,#3c0d6e 78%,#55109c 100%);
+      background-size:100% 200%;background-repeat:no-repeat;will-change:transform,opacity}
+    .wfi-top{top:0;background-position:top}
+    .wfi-bot{bottom:0;background-position:bottom}
+    /* خط ضوء يشتعل عند خط الفصل لحظة الانقسام */
+    .wfi-seam{position:absolute;top:50%;left:6%;width:88%;height:2px;margin-top:-1px;z-index:2;
+      background:linear-gradient(90deg,transparent,rgba(188,19,254,.95) 18%,#e9b8ff 50%,rgba(188,19,254,.95) 82%,transparent);
+      opacity:0;pointer-events:none;border-radius:2px}
+    /* هالات بنفسجية مموّهة — نفس إحساس بلورة الهدر لكن بنفسجي بدل الأبيض */
+    .wfi-aura{position:absolute;inset:-12%;z-index:3;filter:blur(64px);pointer-events:none;opacity:1}
+    .wfi-aura i{position:absolute;border-radius:50%;opacity:0;will-change:transform,opacity}
+    .wfi-b1{width:56vmax;height:56vmax;top:-18vmax;right:-12vmax;background:radial-gradient(circle,rgba(188,19,254,.5),transparent 65%)}
+    .wfi-b2{width:50vmax;height:50vmax;bottom:-16vmax;left:-10vmax;background:radial-gradient(circle,rgba(122,14,207,.55),transparent 65%)}
+    .wfi-b3{width:34vmax;height:34vmax;top:32%;left:33%;background:radial-gradient(circle,rgba(233,184,255,.3),transparent 60%)}
+    /* البراند: [اللوغو = حرف W] + [alton Family] — صف flex واحد، اتجاه ltr للكلمة الإنجليزية.
+       --wfiDx يقيسه JS = إزاحة تُبقي اللوغو وسط الشاشة تماماً في المرحلة الأولى */
+    .wfi-brand{position:absolute;top:50%;left:50%;z-index:4;display:flex;align-items:center;gap:14px;
+      --wfifs:clamp(1.35rem,5.4vw,3.2rem);transform:translate(-50%,-50%);direction:ltr;opacity:1;
+      will-change:transform,opacity,filter}
+    .wfi-logo{width:clamp(50px,8vw,94px);height:auto;flex-shrink:0;
+      filter:drop-shadow(0 0 18px rgba(188,19,254,.85)) drop-shadow(0 4px 22px rgba(0,0,0,.55));opacity:0}
+    .wfi-wfb{font-family:'Cinzel Decorative',serif;font-weight:700;font-size:clamp(2.4rem,5vw,4.2rem);
+      color:#fff;line-height:1;display:flex;align-items:center;justify-content:center}
+    /* هالة ضوء دائرية فوق اللوغو بالضبط (تتمركز على منتصف عرض اللوغو مهما تغير حجم البراند) */
+    .wfi-flare{position:absolute;width:30vmax;height:30vmax;left:clamp(25px,4vw,47px);top:50%;z-index:-1;
+      background:radial-gradient(circle,rgba(233,184,255,.32),rgba(188,19,254,.15) 45%,transparent 70%);
+      filter:blur(28px);transform:translate(-50%,-50%);pointer-events:none;opacity:0;border-radius:50%}
+    .wfi-word{position:relative;font-family:'Cinzel Decorative',serif;font-weight:700;font-size:var(--wfifs);
+      line-height:1.15;color:#fff;white-space:nowrap;display:inline-flex;align-items:baseline;letter-spacing:.5px;
+      text-shadow:0 0 26px rgba(188,19,254,.6),0 2px 14px rgba(0,0,0,.5)}
+    .wfi-word i{display:inline-block;font-style:normal;opacity:0}
+    .wfi-sp{width:.34em}
+    /* لمعة ناعمة مموّهة تمر على الكلمة بعد اكتمالها */
+    .wfi-word::after{content:'';position:absolute;top:-16%;bottom:-16%;left:0;width:30%;
+      background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);
+      filter:blur(12px);transform:translateX(-260%) rotate(8deg);opacity:0;pointer-events:none}
+    /* ─── المراحل (تفعّل فقط مع .wfi-go) ─── */
+    #wfIntro.wfi-go .wfi-aura i{animation:wfiAuraIn 1.1s ease .05s forwards}
+    #wfIntro.wfi-go .wfi-b2{animation-delay:.15s}
+    #wfIntro.wfi-go .wfi-b3{animation-delay:.25s}
+    #wfIntro.wfi-go .wfi-aura{animation:wfiAuraOut .45s ease 3.32s forwards}
+    @keyframes wfiAuraIn{to{opacity:1}}
+    @keyframes wfiAuraOut{to{opacity:0}}
+    #wfIntro.wfi-go .wfi-flare{animation:wfiFlareIn .9s cubic-bezier(.2,.9,.3,1.3) .12s forwards}
+    @keyframes wfiFlareIn{from{opacity:0;transform:translate(-50%,-50%) scale(.4)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+    #wfIntro.wfi-go .wfi-logo{animation:wfiLogoIn .95s cubic-bezier(.2,.9,.3,1.25) .1s forwards,wfiFloat 3.4s ease-in-out 1.15s infinite}
+    @keyframes wfiLogoIn{0%{opacity:0;transform:scale(.35)}60%{opacity:1;transform:scale(1.14)}100%{opacity:1;transform:scale(1)}}
+    @keyframes wfiFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+    /* المرحلة 2: الانزلاق لليسار + كتابة الكلمة — fill:both عشان إزاحة المرحلة الأولى
+       (من keyframes from) تنطبق من لحظة wfi-go مو بس من بداية الأنميشن */
+    #wfIntro.wfi-go .wfi-brand{animation:wfiShift .85s cubic-bezier(.7,0,.25,1) var(--wfiS2,1.15s) both,wfiBrandOut .5s ease 3.3s forwards}
+    @keyframes wfiShift{from{opacity:1;transform:translate(calc(-50% + var(--wfiDx,0px)),-50%)}to{opacity:1;transform:translate(-50%,-50%)}}
+    @keyframes wfiBrandOut{to{opacity:0;transform:translate(-50%,-50%) scale(.94);filter:blur(6px)}}
+    #wfIntro.wfi-go .wfi-l{animation:wfiL .5s cubic-bezier(.2,.9,.3,1.2) forwards;
+      animation-delay:calc(var(--wfiS2,1.15s) + .12s + var(--i,0)*.062s)}
+    @keyframes wfiL{from{opacity:0;transform:translateY(16px) scale(.7);filter:blur(6px)}to{opacity:1;transform:none;filter:blur(0)}}
+    #wfIntro.wfi-go .wfi-word::after{animation:wfiShine 1.05s cubic-bezier(.4,0,.2,1) 2.55s forwards}
+    @keyframes wfiShine{0%{opacity:0;transform:translateX(-260%) rotate(8deg)}12%{opacity:1}100%{opacity:0;transform:translateX(760%) rotate(8deg)}}
+    /* المرحلة 4: الانقسام — الفوق يطلع والتحت ينزل وكلاهم يصفر والصفحة تنكشف */
+    #wfIntro.wfi-go .wfi-seam{animation:wfiSeam .6s ease-out 3.68s forwards}
+    @keyframes wfiSeam{0%{opacity:0;transform:scaleX(.4)}35%{opacity:1;transform:scaleX(1)}100%{opacity:0;transform:scaleX(1.25)}}
+    #wfIntro.wfi-go .wfi-top{animation:wfiTop .95s cubic-bezier(.75,0,.25,1) 3.72s forwards}
+    #wfIntro.wfi-go .wfi-bot{animation:wfiBot .95s cubic-bezier(.75,0,.25,1) 3.8s forwards}
+    @keyframes wfiTop{0%{transform:translateY(0);opacity:1}75%{opacity:1}100%{transform:translateY(-104%);opacity:0}}
+    @keyframes wfiBot{0%{transform:translateY(0);opacity:1}75%{opacity:1}100%{transform:translateY(104%);opacity:0}}
+    /* فشل آمن: لو JS مات بنص الطريق تختفي الافتتاحية بحد ذاتها بعد 6.2s */
+    #wfIntro.wfi-go{animation:wfiKill .01s linear 6.2s forwards}
+    @keyframes wfiKill{to{opacity:0;visibility:hidden}}
+    /* تخطي سريع بأي لمسة */
+    #wfIntro.wfi-skip .wfi-brand{animation:wfiBrandOut .3s ease forwards!important}
+    #wfIntro.wfi-skip .wfi-aura{opacity:0;transition:opacity .3s ease}
+    #wfIntro.wfi-skip .wfi-top{animation:wfiTop .5s cubic-bezier(.7,0,.3,1) .15s forwards!important}
+    #wfIntro.wfi-skip .wfi-bot{animation:wfiBot .5s cubic-bezier(.7,0,.3,1) .22s forwards!important}
+    #wfIntro.wfi-skip .wfi-seam{animation:wfiSeam .4s ease-out .1s forwards!important}
+    @media (max-width:520px){.wfi-brand{gap:10px}}
+  </style>
 </head>
 <body>
   <!-- الخلفية الثابتة للهاتف (فوقها كل المحتوى) -->
@@ -194,6 +302,134 @@
   <div id="loadingBar" class="loading-bar">
     <div class="loading-bar-progress"></div>
   </div>
+
+  <!-- ═══ افتتاحية Walton Family — مرة واحدة لكل تبويب ═══ -->
+  <div id="wfIntro" aria-hidden="true">
+    <div class="wfi-half wfi-top"></div>
+    <div class="wfi-half wfi-bot"></div>
+    <div class="wfi-seam"></div>
+    <div class="wfi-aura"><i class="wfi-b1"></i><i class="wfi-b2"></i><i class="wfi-b3"></i></div>
+    <div class="wfi-brand">
+      <span class="wfi-flare"></span>
+      <img class="wfi-logo" src="<%= _logoUrl %>" alt="">
+      <span class="wfi-word" dir="ltr"><% var _wfiTxt='alton Family'; for(var _wi=0;_wi<_wfiTxt.length;_wi++){ var _wc=_wfiTxt.charAt(_wi); if(_wc===' '){ %><i class="wfi-sp" style="--i:<%= _wi %>"></i><% } else { %><i class="wfi-l" style="--i:<%= _wi %>"><%= _wc %></i><% } } %></span>
+    </div>
+  </div>
+  <script>
+  (function(){
+    var intro=document.getElementById('wfIntro');
+    if(!intro)return;
+    var finished=false;
+    function finish(){
+      if(finished)return;
+      /* وضع التجميد (التصوير): العقدة تبقى مجمدة ما تنشال */
+      try{if(intro&&intro.classList.contains('wfi-hold'))return;}catch(e){}
+      finished=true;
+      try{sessionStorage.setItem('wfIntroDone','1');}catch(e){}
+      if(intro&&intro.parentNode){intro.parentNode.removeChild(intro);intro=null;}
+      startPrefetch();
+    }
+    /* تخطي سريع بأي لمسة/عجلة/زر — خروج أنيق بنصف ثانية */
+    var skipped=false;
+    function skip(){
+      if(skipped||finished||!intro)return;skipped=true;
+      try{intro.classList.add('wfi-skip');}catch(e){}
+      setTimeout(finish,700);
+    }
+    window.addEventListener('pointerdown',skip,{capture:true,passive:true});
+    window.addEventListener('touchstart',skip,{capture:true,passive:true});
+    window.addEventListener('wheel',skip,{capture:true,passive:true});
+    window.addEventListener('keydown',skip,{capture:true});
+    if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches){finish();return;}
+    /* لو اللوغو المخصص فشل تحميله: حرف W بخط البراند بداله */
+    try{
+      var _lg=intro.querySelector('.wfi-logo');
+      if(_lg)_lg.addEventListener('error',function(){
+        var fb=document.createElement('span');fb.className='wfi-logo wfi-wfb';fb.textContent='W';
+        if(_lg.parentNode)_lg.parentNode.replaceChild(fb,_lg);
+      });
+    }catch(e){}
+    /* الانطلاق: نقيس عرض الكلمة بعد جاهزية الخط (بحد أقصى 900ms) نحسب إزاحة
+       المرحلة الأولى --wfiDx اللي تُبقي اللوغو وسط الشاشة تماماً قبل الانزلاق لليسار */
+    var started=false;
+    function measureAndGo(){
+      if(finished)return;
+      var dx=0;
+      try{
+        var brand=intro.querySelector('.wfi-brand');
+        var logo=intro.querySelector('.wfi-logo');
+        var word=intro.querySelector('.wfi-word');
+        var gap=parseFloat(getComputedStyle(brand).columnGap)||14;
+        var ww=word?word.scrollWidth:0;
+        dx=Math.max(0,(ww+gap)/2);
+      }catch(e){}
+      intro.style.setProperty('--wfiDx',dx.toFixed(1)+'px');
+      intro.style.setProperty('--wfiS2','1.15s');
+      intro.classList.add('wfi-go');
+      setTimeout(finish,5200);
+      /* وضع تجميد للتصوير والتصحيح: ?wfihold=1300 يجمّد الأنميشن عند اللحظة المحددة */
+      var m=location.search.match(/wfihold=(\d+)/);
+      if(m){setTimeout(function(){try{if(intro)intro.classList.add('wfi-hold');}catch(e){}},parseInt(m[1],10));}
+      /* وضع تشخيص: ?wfidbg=1 يعرض حالة الافتتاحية على الشاشة */
+      if(location.search.indexOf('wfidbg=1')!==-1){
+        setTimeout(function(){
+          try{
+            var lg=intro.querySelector('.wfi-logo');
+            var br=intro.querySelector('.wfi-brand');
+            var wd=intro.querySelector('.wfi-word');
+            var cs=getComputedStyle(lg);
+            var d=document.createElement('div');
+            d.style.cssText='position:fixed;bottom:8px;left:8px;z-index:999999;background:rgba(0,0,0,.85);color:#0f0;font:12px monospace;padding:8px 10px;direction:ltr;white-space:pre;border-radius:6px';
+            d.textContent='go='+intro.classList.contains('wfi-go')+
+              ' hold='+intro.classList.contains('wfi-hold')+
+              '\nlogo.complete='+lg.complete+' natural='+lg.naturalWidth+'x'+lg.naturalHeight+
+              '\nlogo.opacity='+cs.opacity+' display='+cs.display+' rect='+lg.getBoundingClientRect().width+'x'+lg.getBoundingClientRect().height+
+              '\nbrand.rect='+br.getBoundingClientRect().width+'x'+br.getBoundingClientRect().height+
+              ' word.scrollW='+wd.scrollWidth+
+              '\nbrandPos='+getComputedStyle(br).transform;
+            document.body.appendChild(d);
+          }catch(e){}
+        },1600);
+      }
+    }
+    function start(){
+      if(started||finished)return;started=true;
+      if(document.fonts&&document.fonts.ready){document.fonts.ready.then(function(){requestAnimationFrame(measureAndGo);});}
+      else{requestAnimationFrame(measureAndGo);}
+    }
+    setTimeout(start,900);
+    if(document.readyState==='complete'){start();}
+    else{window.addEventListener('load',start);}
+  })();
+
+  /* ═══ التحميل الخفي للصفحات الأساسية (شغل خلفي ما يشوفه اللاعب) ═══
+     بعد ما تخلص الافتتاحية — ولا لو انخطفت — يسحب الصفحات الرئيسية بكاش
+     المتصفح فالتنقل بينها يصير لحظي. متسلسل بفواصل 350ms عشان ما يزاحم
+     أول تحميل، ويتوقف كلياً لو وضع توفير البيانات أو شبكة 2G */
+  var WFI_USER=<%= (typeof user !== 'undefined' && user) ? 'true' : 'false' %>;
+  var WFI_PAGES=['/about','/rules','/store','/games','/community','/applications','/support','/profile','/properties','/company','/contact'];
+  var WFI_STARTED=false;
+  function startPrefetch(){
+    if(WFI_STARTED)return;WFI_STARTED=true;
+    if(!WFI_USER)return; /* زائر غير مسجل: الصفحات تعيد توجيه للدخول — لا نحمّل شي */
+    try{
+      if(navigator.connection&&(navigator.connection.saveData||/^(slow-)?2g$/.test(navigator.connection.effectiveType||'')))return;
+    }catch(e){}
+    var i=0;
+    function step(){
+      if(i>=WFI_PAGES.length)return;
+      var p=WFI_PAGES[i++];
+      if(location.pathname===p){step();return;}
+      var f=null;
+      try{f=fetch(p,{credentials:'same-origin',cache:'default',priority:'low'});}catch(e){}
+      var done=function(){setTimeout(step,350);};
+      if(f&&f.then){f.then(function(){},function(){}).then(done);}
+      else{done();}
+    }
+    var kick=window.requestIdleCallback||function(cb){return setTimeout(cb,1100);};
+    kick(function(){setTimeout(step,250);});
+  }
+  </script>
 
   <script>
     (function() {

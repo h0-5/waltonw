@@ -230,6 +230,18 @@ const applicationsApi = require('./routes/api/applications');
 const adminApi = require('./routes/api/admin');
 const botApi = require('./routes/api/bot');
 
+// كاش قصير لصفحات المحتوى شبه الثابت — التنقل بينها يصير لحظي من كاش متصفح العميل
+// بلا أي طلب ولا تكلفة سيرفر (private = كاش العميل فقط). الصفحات الديناميكية
+// (store/company/properties/profile/orders/applications) تبقى بلا TTL — لها ETag
+// revalidation تلقائي مع التحميل الخفي فترد 304 سريعة بدون إعادة تنزيل
+var CONTENT_TTL_PAGES = ['/', '/about', '/rules', '/community', '/contact', '/support', '/games'];
+app.use(function (req, res, next) {
+  if (req.method === 'GET' && CONTENT_TTL_PAGES.indexOf(req.path) !== -1) {
+    res.set('Cache-Control', 'private, max-age=30');
+  }
+  next();
+});
+
 app.use('/', indexRoutes);
 app.use('/auth', authRoutes);
 app.use('/admin', adminRoutes);
