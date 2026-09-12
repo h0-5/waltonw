@@ -264,8 +264,10 @@
       background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);
       filter:blur(12px);transform:translateX(-260%) rotate(8deg);opacity:0;pointer-events:none}
     /* ─── المراحل (تفعّل فقط مع .wfi-go) ─── */
-    #wfIntro.wfi-go .wfi-flare{animation:wfiFlareIn .9s cubic-bezier(.2,.9,.3,1.3) .12s forwards}
+    #wfIntro.wfi-go .wfi-flare{animation:wfiFlareIn .9s cubic-bezier(.2,.9,.3,1.3) .12s forwards,wfiFlareGone .6s ease var(--wfiS2,1.15s) forwards}
     @keyframes wfiFlareIn{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:scale(1)}}
+    /* الوهج جميل بالمرحلة 1 (اللوغو وسط الشاشة) وينطفي مع بداية الانزلاق — المراحل 2 و3 تصير نظيفة تماماً */
+    @keyframes wfiFlareGone{to{opacity:0}}
     #wfIntro.wfi-go .wfi-logo{animation:wfiLogoIn .95s cubic-bezier(.2,.9,.3,1.25) .1s forwards,wfiFloat 3.4s ease-in-out 1.15s infinite}
     @keyframes wfiLogoIn{0%{opacity:0;transform:scale(.35)}60%{opacity:1;transform:scale(1.14)}100%{opacity:1;transform:scale(1)}}
     @keyframes wfiFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
