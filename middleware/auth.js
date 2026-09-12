@@ -48,6 +48,19 @@ async function getRoleKeyPerms(db, roleId) {
 let guildCheckCooldownUntil = 0;
 let lastGuildErrLog = 0;
 
+// In-memory guild-membership cache (10 min) — prevents a remote DB read + live
+// Discord API call on EVERY page load for returning members
+const GUILD_TTL = 10 * 60 * 1000;
+const guildStatusCache = new Map(); // user_id -> { ok: bool, at: ms }
+setInterval(() => {
+  const now = Date.now();
+  guildStatusCache.forEach((v, k) => { if (now - v.at > GUILD_TTL) guildStatusCache.delete(k); });
+}, 60 * 1000).unref();
+function clearGuildCache(userId) {
+  if (userId == null) guildStatusCache.clear();
+  else guildStatusCache.delete(Number(userId));
+}
+
 const isAuthenticated = (req, res, next) => {
   if (req.user) {
     // Check if user is banned
@@ -97,6 +110,23 @@ const isInGuild = async (req, res, next) => {
     });
   }
 
+  // In-memory cache (10 min) — cut the per-page DB read AND the Discord API
+  // round-trip down to nothing for returning members. The old code hit
+  // `SELECT in_guild FROM users` (remote DB RTT) on EVERY page and, when
+  // in_guild wasn't 1, fired a live Discord API call every single load —
+  // that alone cost 200-600ms per page on the Aiven setup.
+  try {
+    const cachedGuild = guildStatusCache.get(req.user.id);
+    if (cachedGuild && (Date.now() - cachedGuild.at) < GUILD_TTL) {
+      if (cachedGuild.ok) return next();
+      return res.render('pages/not-in-server', {
+        title: 'انضم لسيرفرنا',
+        joinLink: JOIN_LINK,
+        error: 'not_in_server'
+      });
+    }
+  } catch (e) {}
+
   try {
     const axios = require('axios');
     const db = require('../config/database');
@@ -105,6 +135,7 @@ const isInGuild = async (req, res, next) => {
     // Check cached result in database
     const [cached] = await db.execute('SELECT in_guild FROM users WHERE id = ?', [req.user.id]);
     if (cached.length > 0 && cached[0].in_guild === 1) {
+      guildStatusCache.set(req.user.id, { ok: true, at: Date.now() });
       return next();
     }
 
@@ -127,6 +158,7 @@ const isInGuild = async (req, res, next) => {
 
     // Cache result
     await db.execute('UPDATE users SET in_guild = ? WHERE id = ?', [isInServer ? 1 : 0, req.user.id]);
+    guildStatusCache.set(req.user.id, { ok: isInServer, at: Date.now() });
 
     if (!isInServer) {
       return res.render('pages/not-in-server', {
@@ -141,6 +173,7 @@ const isInGuild = async (req, res, next) => {
     const st = err.response && err.response.status;
     // 404 = member not found in guild (valid token, real answer)
     if (st === 404) {
+      guildStatusCache.set(req.user.id, { ok: false, at: Date.now() });
       return res.render('pages/not-in-server', {
         title: 'انضم لسيرفرنا',
         joinLink: JOIN_LINK,
@@ -371,4 +404,4 @@ async function checkSideRolePageAccess(db, userId, pagePath, next, res) {
   return denyAccess(res);
 }
 
-module.exports = { isAuthenticated, isInGuild, isAdmin, checkPagePermission, checkElementPermission, checkCanBan, checkPermission, checkPageAccess, userHasPermission, REQUIRED_GUILD_ID };
+module.exports = { isAuthenticated, isInGuild, isAdmin, checkPagePermission, checkElementPermission, checkCanBan, checkPermission, checkPageAccess, userHasPermission, REQUIRED_GUILD_ID, clearGuildCache };
