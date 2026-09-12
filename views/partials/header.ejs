@@ -143,7 +143,10 @@
       position: fixed;
       inset: 0;
       z-index: -1;
-      background-image: var(--mobile-bg-url);
+      /* طبقة التسود نفسها الموجودة بالبيسي (body::before بنفس rgba(13,14,26,.82)) مركّبة فوق
+         صورة خلفية الجوال — كانت مخفية وراء #wfBgFix الشفافية الكاملة ما تمر — طلب هادي:
+         «ع هاتف رجع طبقة للتسود الخلفية ذي ماهية بالبيسي لانها احلى» */
+      background-image: linear-gradient(rgba(13, 14, 26, 0.82), rgba(13, 14, 26, 0.82)), var(--mobile-bg-url);
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
