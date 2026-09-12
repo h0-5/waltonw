@@ -870,7 +870,7 @@ router.post('/applications/:id/approve', checkPermission('apps_approve'), async 
     if (app[0].status !== 'pending') return res.status(400).json({ error: 'يمكن قبول الطلبات المعلقة فقط' });
 
     await db.query(
-      "UPDATE submitted_applications SET status = 'waiting_join', reviewed_by = ?, reviewed_at = NOW(), review_notes = ? WHERE id = ?",
+      "UPDATE submitted_applications SET status = 'waiting_join', reviewed_by = ?, reviewed_at = NOW(), review_note = ? WHERE id = ?",
       [req.user.id, req.body.notes || null, id]
     );
 
@@ -913,7 +913,7 @@ router.post('/applications/:id/reject', checkPermission('apps_reject'), async (r
     }
 
     await db.query(
-      "UPDATE submitted_applications SET status = 'rejected', reviewed_by = ?, reviewed_at = NOW(), review_notes = ?, cooldown_until = ? WHERE id = ?",
+      "UPDATE submitted_applications SET status = 'rejected', reviewed_by = ?, reviewed_at = NOW(), review_note = ?, cooldown_until = ? WHERE id = ?",
       [req.user.id, notes || null, cooldownUntil, id]
     );
 
