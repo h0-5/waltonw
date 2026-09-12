@@ -201,7 +201,8 @@ router.get('/store', isAuthenticated, isInGuild, checkPageAccess('/store'), asyn
 
   res.render('pages/store', {
     title: 'المتجر',
-    products, userPoints, settings
+    products, userPoints, settings,
+    cat: req.query.cat || ''
   });
 });
 

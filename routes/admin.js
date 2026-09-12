@@ -291,7 +291,8 @@ router.get('/users', checkPermission('users_view'), async (req, res) => {
     const [roles] = await db.execute('SELECT name, display_name, color, icon FROM roles WHERE is_virtual = 0 ORDER BY is_admin_role DESC, sort_order ASC, id ASC');
     res.render('admin/users', { title: 'إدارة المستخدمين', users, sideRoles, roles, currentUser: req.user, currentPath: req.originalUrl });
   } catch(err) {
-    res.render('admin/users', { title: 'إدارة المستخدمين', users: [], sideRoles: [], roles: [], currentPath: req.originalUrl });
+    console.error('[Admin/Users]', err.message);
+    res.render('admin/users', { title: 'إدارة المستخدمين', users: [], sideRoles: [], roles: [], currentUser: req.user, currentPath: req.originalUrl });
   }
 });
 
@@ -383,7 +384,7 @@ router.get('/settings', checkPermission('site_settings_view'), async (req, res) 
     const [rows] = await db.execute('SELECT setting_key, setting_value FROM site_settings');
     rows.forEach(r => { settings[r.setting_key] = r.setting_value; });
     const [roles] = await db.execute('SELECT name, display_name, icon FROM roles ORDER BY sort_order ASC, id ASC');
-    const [aboutRows] = await db.execute('SELECT * FROM about_page LIMIT 1');
+    const [aboutRows] = await db.execute('SELECT * FROM about_us_content LIMIT 1');
     const about = aboutRows[0] || {};
     res.render('admin/settings', { title: 'الإعدادات', settings, roles, about, currentPath: req.originalUrl });
   } catch(err) {
