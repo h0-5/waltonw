@@ -54,6 +54,13 @@ app.use(session(sessionConfig));
 app.use(passport.initialize());
 app.use(passport.session());
 
+// In-memory HTML page cache (12s per user+path) — serves fully-rendered pages
+// from RAM: no EJS re-render, no per-user DB reads on repeat navigation.
+// Must sit after session (req.user available) and before routes. Safe rules
+// inside the middleware (GET/render/200 only, skips admin/api/auth/dot paths).
+const { pageCacheMiddleware, invalidatePageCache } = require('./middleware/page-cache');
+app.use(pageCacheMiddleware);
+
 // Static files — long cache for images (stable content), short for css/js
 // (css/js have no version params in templates, so long immutable cache would
 //  freeze design updates — keep them short so new styles always appear)
@@ -246,6 +253,9 @@ app.use(function (req, res, next) {
     } catch (e) {}
     try {
       invalidateSettingsCache();
+    } catch (e) {}
+    try {
+      invalidatePageCache(null);
     } catch (e) {}
   }
   next();

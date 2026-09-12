@@ -1,6 +1,7 @@
 const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
 const mysql = require('mysql2');
+const { EventEmitter } = require('events');
 const pool = require('./database');
 
 const sessionPool = mysql.createPool({
@@ -34,7 +35,9 @@ const sessionStore = new MySQLStore({
 const SESSION_CACHE_TTL = 10 * 1000;
 const sessionReadCache = new Map(); // sid -> { data, at }
 
-const cachedSessionStore = {
+/* express-session требует EventEmitter من الـ store (يتصل بالـ on('disconnect'))
+   — نلحقه بالوراثة ونعيد بث أحداث الخادم الأساسي */
+class CachedMySQLStore extends EventEmitter {
   get(sid, cb) {
     const hit = sessionReadCache.get(sid);
     if (hit && (Date.now() - hit.at) < SESSION_CACHE_TTL) return cb(null, hit.data);
@@ -42,27 +45,42 @@ const cachedSessionStore = {
       if (!err && data) sessionReadCache.set(sid, { data, at: Date.now() });
       cb(err, data);
     });
-  },
+  }
   set(sid, data, cb) {
     sessionReadCache.set(sid, { data, at: Date.now() });
     sessionStore.set(sid, data, cb);
-  },
+  }
   destroy(sid, cb) {
     sessionReadCache.delete(sid);
     sessionStore.destroy(sid, cb);
-  },
+  }
   touch(sid, data, cb) {
     sessionReadCache.set(sid, { data, at: Date.now() });
     if (sessionStore.touch) sessionStore.touch(sid, data, cb);
     else cb();
-  },
-  all: sessionStore.all.bind(sessionStore),
+  }
+  all(cb) { sessionStore.all(cb); }
+  createSession(sess) {
+    // express-session ≥1.19 يدعو store.createSession عبر inflate()
+    // — نغلف بنسخة صالحة من Session (MySQLStore يوفره أو نبنيه يدوياً)
+    if (sessionStore && typeof sessionStore.createSession === 'function') {
+      return sessionStore.createSession(sess);
+    }
+    const SessionCtor = session.Session;
+    if (SessionCtor) return new SessionCtor(sess || {});
+    return sess;
+  }
   clear(cb) {
     sessionReadCache.clear();
     sessionStore.clear(cb);
-  },
+  }
   length(cb) { sessionStore.length(cb); }
-};
+}
+const cachedSessionStore = new CachedMySQLStore();
+// إعادة بث أحداث الاتصال/الانقطاع من الـ store الميانية (التي تعرف متى تغلق القاعدة)
+['disconnect', 'connect', 'error'].forEach(ev => {
+  sessionStore.on(ev, (...a) => cachedSessionStore.emit(ev, ...a));
+});
 
 // Periodic cleanup of stale cache entries
 setInterval(() => {
