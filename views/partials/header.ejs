@@ -204,9 +204,9 @@
        بنفسجية واضحة بأسلوب بلورة الهدر — تظهر مرة واحدة لكل تبويب فقط.
        المراحل (كلها CSS animations ذاتية بلا JS timing — JS فقط يقيس عرض الكلمة ويشغل ويكمل):
          1) اللوغو ينفرط وسط الشاشة بتوهج (0.1 → 1.05s)
-         2) اللوغو ينزلق لليسار وكلمة alton Family تُكتب حرف حرف بجنبه (1.15 → 2.45s)
-            — حرف W هو اللوغو نفسه مب حرف عادي، والباقي كلمة عادية
-         3) لمعة تمر على الكلمة (2.55s) ثم البراند يختفي (3.3s)
+         2) اللوغو ينزلق سريعاً لمكانه النهائي ويقف ثابت، والاحرف تنزلق من اليمين
+            باتجاه اللوغو حرف حرف بميل خفيف (1.15 → 2.8s) — والكلمة تنملأ الشاشة دايماً
+         3) لمعة تمر على الكلمة (2.85s) ثم البراند يختفي (3.3s)
          4) الخلفية تنقسم نصين: النص العلوي يطلع فوق ويصفر، السفلي ينزل تحت ويصفر،
             والصفحة الحقيقية تنكشف بينهم (3.72s) — وبعدها ينشال العنصر من DOM كلياً
        حمايات: wf-no-intro (تكرار) / prefers-reduced-motion (تخطي) / failsafe CSS
@@ -247,8 +247,10 @@
        والحد الأقصى 290px ديسكتوب (الـ W المرئي ~185px مقابل ~121px بالرئيسية)
        --wfifs مربوطة بـ --wfilw بنسبة ثابتة (0.209) — الكلمة تكبر تلقائياً بنفس
        نسبة اللوغو ليبقى التناسق بأي مقاس، والحروف تبقى أصغر من اللوغو */
+    /* ملاءمة الشاشة احتياطاً قبل قياس JS — الحد الأقصى للكلمة 7vw فما يطلع شي برا الشاشة
+       حتى لو JS تعطل (القياس الحي بـ measureAndGo يظبطها أدق) */
     .wfi-brand{position:absolute;top:50%;left:50%;z-index:4;display:flex;align-items:center;gap:2px;
-      --wfilw:clamp(155px,20vw,290px);--wfifs:calc(var(--wfilw)*0.209);
+      --wfilw:clamp(155px,20vw,290px);--wfifs:min(calc(var(--wfilw)*0.209),7vw);
       transform:translate(-50%,-50%);direction:ltr;opacity:1;
       will-change:transform,opacity,filter}
     /* اللوغو كبير — والهامش السالب يمتص البادجة الشفافة جوة ملف اللوغو
@@ -279,15 +281,17 @@
     #wfIntro.wfi-go .wfi-logo{animation:wfiLogoIn .95s cubic-bezier(.2,.9,.3,1.25) .1s forwards,wfiFloat 3.4s ease-in-out 1.15s infinite}
     @keyframes wfiLogoIn{0%{opacity:0;transform:scale(.35)}60%{opacity:1;transform:scale(1.14)}100%{opacity:1;transform:scale(1)}}
     @keyframes wfiFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
-    /* المرحلة 2: الانزلاق لليسار + كتابة الكلمة — fill:both عشان إزاحة المرحلة الأولى
-       (من keyframes from) تنطبق من لحظة wfi-go مو بس من بداية الأنميشن */
-    #wfIntro.wfi-go .wfi-brand{animation:wfiShift .85s cubic-bezier(.7,0,.25,1) var(--wfiS2,1.15s) both,wfiBrandOut .5s ease 3.3s forwards}
+    /* المرحلة 2: اللوغو يوصل مكانه النهائي بانزلاق سريع (.45s) ثم يقف ثابت تماماً،
+       والاحرف بعدها تنزلق من اليمين باتجاه اللوغو (طلب هادي: خلي اللوغو ثابت وحرك الاحرف شوية)
+       مع ميل خفيف 2.2° ينعدم مع الوصول — fill:both عشان إزاحة المرحلة الأولى تنطبق من لحظة wfi-go */
+    #wfIntro.wfi-go .wfi-brand{animation:wfiShift .45s cubic-bezier(.65,0,.35,1) var(--wfiS2,1.15s) both,wfiBrandOut .5s ease 3.3s forwards}
     @keyframes wfiShift{from{opacity:1;transform:translate(calc(-50% + var(--wfiDx,0px)),-50%)}to{opacity:1;transform:translate(-50%,-50%)}}
     @keyframes wfiBrandOut{to{opacity:0;transform:translate(-50%,-50%) scale(.94);filter:blur(6px)}}
-    #wfIntro.wfi-go .wfi-l{animation:wfiL .5s cubic-bezier(.2,.9,.3,1.2) forwards;
-      animation-delay:calc(var(--wfiS2,1.15s) + .12s + var(--i,0)*.062s)}
-    @keyframes wfiL{from{opacity:0;transform:translateY(16px) scale(.7);filter:blur(6px)}to{opacity:1;transform:none;filter:blur(0)}}
-    #wfIntro.wfi-go .wfi-word::after{animation:wfiShine 1.05s cubic-bezier(.4,0,.2,1) 2.55s forwards}
+    #wfIntro.wfi-go .wfi-l{animation:wfiL .55s cubic-bezier(.25,.9,.3,1.05) forwards;
+      animation-delay:calc(var(--wfiS2,1.15s) + .47s + var(--i,0)*.055s)}
+    /* الاحرف تبدأ يمين موقعها ~0.92em بميل 2.2° وتنساب يسار باتجاه اللوغو وتنعدم بمكانها */
+    @keyframes wfiL{0%{opacity:0;transform:translate(.92em,6px) rotate(2.2deg);filter:blur(5px)}60%{opacity:1;filter:blur(0)}100%{opacity:1;transform:none;filter:blur(0)}}
+    #wfIntro.wfi-go .wfi-word::after{animation:wfiShine 1.05s cubic-bezier(.4,0,.2,1) 2.85s forwards}
     @keyframes wfiShine{0%{opacity:0;transform:translateX(-260%) rotate(8deg)}12%{opacity:1}100%{opacity:0;transform:translateX(760%) rotate(8deg)}}
     /* المرحلة 4: الانقسام — الفوق يطلع والتحت ينزل وكلاهم يصفر والصفحة تنكشف */
     #wfIntro.wfi-go .wfi-seam{animation:wfiSeam .6s ease-out 3.68s forwards}
@@ -370,6 +374,37 @@
         var brand=intro.querySelector('.wfi-brand');
         var logo=intro.querySelector('.wfi-logo');
         var word=intro.querySelector('.wfi-word');
+        /* ═══ ملاءمة الشاشة (ملاحظة هادي من صورة جواله: الكلمة تقصّ برا الشاشة) ═══
+           لو صف البراند كله أعرض من الشاشة: ننقص خط الكلمة واللوغو يبقى بحجمه
+           (أكبر من لوغو الرئيسية) لحد ما الصف كله يدخل بهامش 10px من كل جهة —
+           الحروف تلحق اللوغو وما يطلع شي برا. شاشات ضيقة جداً: الكلمة تتجمد
+           عند 15px واللوغو هو الآخر ينقص. جولتا قياس لأن letter-spacing ثابت */
+        var fitInfo='';
+        if(word&&logo){
+          var vw=document.documentElement.clientWidth||window.innerWidth||360;
+          var maxTotal=vw-20;
+          for(var fp=0;fp<2;fp++){
+            var gapF=parseFloat(getComputedStyle(brand).columnGap)||2;
+            var lgmF=parseFloat(getComputedStyle(logo).marginRight)||0;
+            var lwF=logo.getBoundingClientRect().width;
+            var wwF=word.scrollWidth;
+            var rowF=lwF+lgmF+gapF+wwF;
+            if(rowF<=maxTotal)break;
+            var fsCur=parseFloat(getComputedStyle(word).fontSize)||16;
+            var fsFit=Math.floor(fsCur*(maxTotal-lwF-lgmF-gapF)/wwF);
+            if(fsFit>=15){
+              brand.style.setProperty('--wfifs',fsFit+'px');
+            }else{
+              brand.style.setProperty('--wfifs','15px');
+              var ww15=Math.round(wwF*15/fsCur);
+              var lwFit=Math.max(64,Math.floor((maxTotal-gapF-ww15)/0.90)); /* 0.90 = اللوغو+هامشه السالب نسبياً */
+              brand.style.setProperty('--wfilw',lwFit+'px');
+            }
+          }
+          var lcs2=getComputedStyle(logo), wcs2=getComputedStyle(word);
+          fitInfo='\nfit: fs='+wcs2.fontSize+' lw='+logo.getBoundingClientRect().width.toFixed(0)+
+            ' row='+(logo.getBoundingClientRect().width+parseFloat(lcs2.marginRight)+ (parseFloat(getComputedStyle(brand).columnGap)||2) + word.scrollWidth).toFixed(0)+'/'+maxTotal;
+        }
         var gap=parseFloat(getComputedStyle(brand).columnGap)||3;
         var lgm=logo?parseFloat(getComputedStyle(logo).marginRight)||0:0;
         var ww=word?word.scrollWidth:0;
@@ -415,6 +450,7 @@
             d.style.cssText='position:fixed;bottom:8px;left:8px;z-index:999999;background:rgba(0,0,0,.85);color:#0f0;font:12px monospace;padding:8px 10px;direction:ltr;white-space:pre;border-radius:6px';
             d.textContent='go='+intro.classList.contains('wfi-go')+
               ' hold='+intro.classList.contains('wfi-hold')+
+              fitInfo+
               '\nlogo.complete='+lg.complete+' natural='+lg.naturalWidth+'x'+lg.naturalHeight+
               '\nlogo.opacity='+cs.opacity+' display='+cs.display+' rect='+lg.getBoundingClientRect().width+'x'+lg.getBoundingClientRect().height+
               '\nbrand.rect='+br.getBoundingClientRect().width+'x'+br.getBoundingClientRect().height+

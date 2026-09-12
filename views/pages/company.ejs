@@ -1,5 +1,5 @@
 <%- include('../partials/header') %>
-<link rel="stylesheet" href="/css/company-page.css?v=6">
+<link rel="stylesheet" href="/css/company-page.css?v=7">
 <%- include('../partials/navbar') %>
 
 <%
@@ -686,15 +686,15 @@ function farmRenderMy() {
              (b.end_iso ? '<span>النهاية: <b>' + farmFmtDT(b.end_iso) + '</b></span>' : '') +
              '</div>';
         if (b.status === 'pending_payment' && b.deadline_iso) {
-            h += '<div style="margin-top:.6rem;font-size:.8rem;color:rgba(255,255,255,.7)">' +
+            h += '<div class="cy-f-note">' +
                  (b.is_future ? '<b style="color:#38bdf8">حجز مستقبلي</b> — يبدأ ' + farmFmtDT(b.scheduled_start_iso) + ' بعد انتهاء الحجز الحالي، والعربون اليوم (أول يوم حجز) — ' : '') +
                  'مهلة الدفع تنتهي خلال <span class="cy-f-count" data-dl="' + b.deadline_iso + '">—</span> — حوّل ' + farmMoney(b.deposit_amount) + '$ على <b style="direction:ltr;display:inline-block">' + farmState.config.bank_account + '</b> واضغط «دفعت العربون»</div>';
         }
         if (b.status === 'pending_confirm') {
-            h += '<div style="margin-top:.6rem;font-size:.8rem;color:#c084fc"><i class="fas fa-hourglass-half"></i> أعلنت الدفع — بانتظار تأكيد الإدارة لوصول المبلغ</div>';
+            h += '<div class="cy-f-note info"><i class="fas fa-hourglass-half"></i> أعلنت الدفع — بانتظار تأكيد الإدارة لوصول المبلغ</div>';
         }
         if (b.status === 'confirmed' && b.remainder) {
-            h += '<div style="margin-top:.7rem;padding:.65rem .85rem;border-radius:10px;background:rgba(56,189,248,.07);border:1px solid rgba(56,189,248,.28);font-size:.8rem;color:rgba(255,255,255,.85);line-height:1.7">';
+            h += '<div class="cy-f-note boxed">';
             h += '<b style="color:#38bdf8"><i class="fas fa-sack-dollar"></i> النص الثاني: ' + farmMoney(b.remainder.amount) + '$</b> — حوّله على <b style="direction:ltr;display:inline-block">' + farmState.config.bank_account + '</b> ';
             if (b.remainder.status === 'confirmed' && b.is_future) {
                 h += '— <b style="color:#34d399">انسدد كامل الإيجار ✅</b> حجزك راح يبدأ تلقائياً ' + farmFmtDT(b.scheduled_start_iso) + ' وتجيك إشعار الإضافة لفاكشن العائلة وقتها';
@@ -708,13 +708,13 @@ function farmRenderMy() {
             h += '</div>';
         }
         if (b.status === 'active' && !b.faction_added) {
-            h += '<div style="margin-top:.6rem;font-size:.8rem;color:#34d399"><i class="fas fa-users"></i> بانتظار إضافتك لفاكشن العائلة — الإدارة تتولاه</div>';
+            h += '<div class="cy-f-note ok"><i class="fas fa-users"></i> بانتظار إضافتك لفاكشن العائلة — الإدارة تتولاه</div>';
         }
         if (b.status === 'cancelled' && b.cancel_penalty > 0) {
-            h += '<div style="margin-top:.6rem;font-size:.8rem;color:#ef4444"><i class="fas fa-ban"></i> أُلغي الحجز وخسرت ' + farmMoney(b.cancel_penalty) + '$ من العربون — الباقي ' + farmMoney(b.deposit_amount - b.cancel_penalty) + '$ راجع لك</div>';
+            h += '<div class="cy-f-note err"><i class="fas fa-ban"></i> أُلغي الحجز وخسرت ' + farmMoney(b.cancel_penalty) + '$ من العربون — الباقي ' + farmMoney(b.deposit_amount - b.cancel_penalty) + '$ راجع لك</div>';
         }
         if (b.extend && ['pending_payment','pending_confirm'].indexOf(b.extend.status) !== -1) {
-            h += '<div style="margin-top:.7rem;padding:.6rem .8rem;border-radius:9px;background:rgba(var(--accent-rgb),.08);border:1px solid rgba(var(--accent-rgb),.25);font-size:.8rem">';
+            h += '<div class="cy-f-note boxed ext">';
             h += '<b style="color:var(--accent)">طلب تمديد ' + b.extend.days + ' يوم</b> — ' + (b.extend.status === 'pending_payment'
                 ? 'حوّل ' + farmMoney(b.extend.deposit) + '$ واضغط «دفعت» — المهلة <span class="cy-f-count" data-dl="' + b.extend.deadline_iso + '">—</span> <button class="cy-farm-btn warn small" style="margin-right:6px" onclick="farmExtPaid(' + b.id + ')"><i class="fas fa-money-bill"></i> دفعت عربون التمديد</button>'
                 : 'بانتظار تأكيد الإدارة');
@@ -727,7 +727,7 @@ function farmRenderMy() {
         }
         if (b.can.addWorker) {
             h += '<div class="cy-f-workers" style="border-top:none;padding-top:.2rem"><div style="display:flex;gap:8px">' +
-                 '<input type="text" id="farmWName_' + b.id + '" placeholder="اسم شخصية العامل كما بالسيرفر (مثال: Hadi_Walton)" style="flex:1;box-sizing:border-box;padding:.55rem .8rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--text, #fff);font-size:.8rem;direction:ltr;text-align:left">' +
+                 '<input type="text" id="farmWName_' + b.id + '" placeholder="اسم شخصية العامل كما بالسيرفر (مثال: Hadi_Walton)" class="cy-f-winput">' +
                  '<button class="cy-farm-btn ok small" onclick="farmAddWorker(' + b.id + ')"><i class="fas fa-plus"></i> اضافة عامل (' + farmMoney(farmState.config.worker_price) + '$)</button></div></div>';
         }
         var acts = farmBkActions(b);
