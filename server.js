@@ -569,6 +569,14 @@ async function start() {
   } catch (e) { console.log('⚠️ company schema ensure failed:', e.message); }
   try { await seedCompanyServices(); } catch (e) { console.log('⚠️ company services seed failed:', e.message); }
 
+  // تدفئة كاش المحتوى المشترك عند الإقلاع — أول طلب بعد إعادة النشر يجب ألا يدفع
+  // ثمن برودة الكاش (كان يأخذ ثوانٍ لأن قاعدة Aiven بعيدة). تستند بصمت على الفشل.
+  try {
+    const { prewarmSharedCaches } = require('./routes/index');
+    await prewarmSharedCaches();
+    console.log('✅ Shared caches prewarmed');
+  } catch (e) { console.log('⚠️ cache prewarm failed:', e.message); }
+
   server.listen(PORT, () => {
     console.log(`\n  Walton Family Server running on http://localhost:${PORT}\n`);
     // Auto-connect Discord bot if enabled

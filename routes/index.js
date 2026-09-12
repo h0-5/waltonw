@@ -459,5 +459,40 @@ router.get('/test', (req, res) => {
   res.render('pages/test', { title: 'اختبار التحديث' });
 });
 
+/* تدفئة الكاش عند الإقلاع — نفس الاستعلامات المشتركة للصفحات الرئيسية، تُنفذ
+   مرة واحدة عند بدء الخادم بدل أن يدفع أول زائر بعد كل إعادة نشر ثمن البرودة
+   (كان أول طلب بعد التحديث يأخذ ثوانٍ). كل استعلام هنا آمن (qCache/safeQuery)
+   والفشل يتجاهل بصمت — لا يكسر الإقلاع أبداً. */
+async function prewarmSharedCaches() {
+  const warm = async (name, fn) => {
+    try { await fn(); } catch (e) { /* تجاهل — التدفئة غير حرجة */ }
+  };
+  await Promise.all([
+    warm('settings', () => getSettings(true)),
+    warm('home', () => Promise.all([
+      qCache('SELECT * FROM news WHERE is_hidden = 0 ORDER BY created_at DESC LIMIT 10'),
+      qCache('SELECT COUNT(*) as c FROM users'),
+      qCache("SELECT * FROM news WHERE type = 'giveaway' AND expires_at > NOW() AND is_hidden = 0", [], 5000),
+      qCache('SELECT id, name, price_points, price_money, category_type, description FROM fs_products ORDER BY id ASC LIMIT 2'),
+      qCache('SELECT category, rule_text FROM rules ORDER BY sort_order ASC LIMIT 8'),
+      qCache('SELECT application_type, requirements FROM application_settings ORDER BY id ASC')
+    ])),
+    warm('rules', () => Promise.all([
+      qCache('SELECT * FROM rules ORDER BY sort_order ASC'),
+      qCache('SELECT * FROM rule_categories ORDER BY sort_order ASC'),
+      qCache('SELECT * FROM rule_stages ORDER BY sort_order ASC, id ASC')
+    ])),
+    warm('applications', () => qCache('SELECT * FROM application_settings ORDER BY id ASC', [], 30000)),
+    warm('about', () => qCache('SELECT content_key, content_value FROM about_us_content')),
+    warm('store', () => qCache('SELECT * FROM fs_products ORDER BY id ASC')),
+    warm('properties', () => qCache('SELECT * FROM properties ORDER BY sort_order ASC, id ASC')),
+    warm('company', () => Promise.all([
+      qCache("SELECT * FROM company_items WHERE category = 'info' ORDER BY sort_order ASC, id ASC", [], 20000),
+      qCache("SELECT * FROM company_items WHERE category = 'activities' ORDER BY sort_order ASC, id ASC", [], 20000)
+    ]))
+  ]);
+}
+
 module.exports = router;
 module.exports.invalidateQueryCache = invalidateQueryCache;
+module.exports.prewarmSharedCaches = prewarmSharedCaches;
