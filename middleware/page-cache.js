@@ -22,6 +22,16 @@ const CONTENT_TTL = 12000;
 const pageCache = new Map(); // key -> { at, html }
 
 const SKIP_PREFIXES = ['/admin', '/api', '/auth', '/games/'];
+
+/* صفحات عامة آمنة لكاش المتصفح (لا تعرض بيانات المستخدم الشخصية) — نفس مبادئ
+   WFI_PAGES في header.ejs لكن بلا /profile /applications /home لأنها خصوصية.
+   Cache-Control:private,max-age يسمح للمتصفح بفتح الصفحة لحظياً عند التنقل
+   المتكرر خلال المدة، دون أن تُخزَّن في CDN/مشاركة. */
+const SAFE_BROWSER_PUBLIC = ['/about', '/rules', '/store', '/games', '/community', '/support', '/properties', '/company', '/contact'];
+function isSafeBrowserPublic(p) {
+  return p && SAFE_BROWSER_PUBLIC.indexOf(p) !== -1;
+}
+
 function cacheKey(req, uid) {
   const q = req.originalUrl.split('?')[0];
   return (uid || 'anon') + '|' + q;
@@ -51,6 +61,10 @@ function pageCacheMiddleware(req, res, next) {
       const hit = pageCache.get(key);
       const ct = res.get('Content-Type');
       if (hit && Date.now() - hit.at < CONTENT_TTL && (!ct || ct.indexOf('html') !== -1)) {
+        const p = req.path || req.originalUrl.split('?')[0];
+        if (isSafeBrowserPublic(p)) {
+          res.setHeader('Cache-Control', 'private, max-age=15');
+        }
         return res.type('html').send(hit.html);
       }
     } catch (e) { /* always fall through to normal render */ }
@@ -102,6 +116,9 @@ function pageCacheMiddleware(req, res, next) {
           const html = bodyPieces.join('');
           if (html && html.length > 500) {
             pageCache.set(cacheKey(req, uid), { at: Date.now(), html });
+            if (isSafeBrowserPublic(p) && !res.get('Set-Cookie')) {
+              res.setHeader('Cache-Control', 'private, max-age=15');
+            }
           }
         }
       } catch (e) {}

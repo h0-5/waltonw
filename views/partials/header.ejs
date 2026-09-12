@@ -487,6 +487,11 @@
     var kick=window.requestIdleCallback||function(cb){return setTimeout(cb,1100);};
     kick(function(){setTimeout(step,250);});
   }
+  /* ═══ بدء التحميل الخفي أثناء الانيميشن مباشرة (مقترح «استغل وقت انميشن السينمائي») ═══
+     لو الانيميشن شغّال (أول زيارة بنفس التبويب) نبدأ السحب حالا قبل ما يخلص —
+     لكن بشروط أمان: لا نبدأ قبل أول paint ولا نقطع الـ WFI_WARMED (الـ fetch
+     يصل للخادم ويملأ كاش المتصفح + كاش RAM بالسيرفر فيصير التنقل لحظي). */
+  setTimeout(function(){try{startPrefetch();}catch(e){}},0);
   </script>
 
   <!-- News Ticker Bar -->
