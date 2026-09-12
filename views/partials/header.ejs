@@ -48,11 +48,11 @@
 
   <!-- أيقونة التبويب: لوغو العيلة (W بالتاج) — بدل كرة الأرض الافتراضية -->
   <% /* ?v=2 يكسر كاش الأيقونات بالهاتف — أيقونات جديدة بخلفية بنفسجية واضحة بدل الداكنة */ %>
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png?v=2">
-  <link rel="icon" type="image/png" sizes="64x64" href="/images/favicon-64.png?v=2">
-  <link rel="icon" type="image/png" sizes="256x256" href="/images/favicon-256.png?v=2">
-  <link rel="shortcut icon" href="/favicon.ico?v=2">
-  <link rel="apple-touch-icon" href="/images/apple-touch-icon.png?v=2">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png?v=3">
+  <link rel="icon" type="image/png" sizes="64x64" href="/images/favicon-64.png?v=3">
+  <link rel="icon" type="image/png" sizes="256x256" href="/images/favicon-256.png?v=3">
+  <link rel="shortcut icon" href="/favicon.ico?v=3">
+  <link rel="apple-touch-icon" href="/images/apple-touch-icon.png?v=3">
 
   <!-- Preload الصور الحرجة (اللوغو والخلفية المحلية فقط) — أول ما تفتح الصفحة تبدأ بالتحميل فوراً مع الكاش 7 أيام فما تعيد التحميل مع كل تنقل -->
   <% var _logoUrl = (typeof settings !== 'undefined' && settings && settings.site_logo_url) ? settings.site_logo_url : '/images/logo.png'; %>
@@ -242,19 +242,21 @@
       opacity:0;pointer-events:none;border-radius:2px}
     /* البراند: [اللوغو = حرف W] + [alton Family] — صف flex واحد، اتجاه ltr للكلمة الإنجليزية.
        --wfiDx يقيسه JS = إزاحة تُبقي اللوغو وسط الشاشة تماماً في المرحلة الأولى */
-    .wfi-brand{position:absolute;top:50%;left:50%;z-index:4;display:flex;align-items:center;gap:3px;
-      --wfilw:clamp(108px,18.4vw,245px);--wfifs:clamp(1.35rem,5.4vw,3.2rem);
+    /* اللوغو كبير — حجمه بمستوى لوغو الرئيسية (orb 225px/180px جوال) أو أكبر:
+       الحد الأدنى 155px جوال (الـ W المرئي ~99px مقابل ~97px لوغو الرئيسية بالجوال)
+       والحد الأقصى 290px ديسكتوب (الـ W المرئي ~185px مقابل ~121px بالرئيسية)
+       --wfifs مربوطة بـ --wfilw بنسبة ثابتة (0.209) — الكلمة تكبر تلقائياً بنفس
+       نسبة اللوغو ليبقى التناسق بأي مقاس، والحروف تبقى أصغر من اللوغو */
+    .wfi-brand{position:absolute;top:50%;left:50%;z-index:4;display:flex;align-items:center;gap:2px;
+      --wfilw:clamp(155px,20vw,290px);--wfifs:calc(var(--wfilw)*0.209);
       transform:translate(-50%,-50%);direction:ltr;opacity:1;
       will-change:transform,opacity,filter}
-    /* اللوغو كبير — والهامش السالب يمتص البادجة الشفافة جوة ملف اللوغو (~12% من عرضه يمين)
-       عشان حرف a ولقطة الكلمة يلصقون بالـ W مثل حرف عادي بكلمة Walton مو كلمة منفصلة.
-       المحاذاة الرأسية: بدل رفع اللوغو (يكسر توسيط المرحلة 1 والوهج اللي اعتمد عليه)
-       ننزل الكلمة تحت بمقدار --wfiLift (يقيسه JS = قد أسفل الـ W المرئي تحت خط الأساس)
-       فيجلس قاع الـ W على خط أساس الحروف — نفس مستوى باقي الحروف — والمرحلة 1
-       (اللوغو لوحده وسط الشاشة) تبقى كما هي حرفياً بلا أي إزاحة */
-    .wfi-logo{width:var(--wfilw);height:auto;flex-shrink:0;margin-right:calc(var(--wfilw)*-0.075);
+    /* اللوغو كبير — والهامش السالب يمتص البادجة الشفافة جوة ملف اللوغو
+       عشان حرف a يلصق بالـ W مثل حرف عادي بكلمة Walton — تقريب 2mm
+       بطلب هادي: الامتصاص 10% بدل 7.5% والفجوة 2px = فراغ مرئي ~7px ديسكتوب */
+    .wfi-logo{width:var(--wfilw);height:auto;flex-shrink:0;margin-right:calc(var(--wfilw)*-0.10);
       filter:drop-shadow(0 0 18px rgba(<%= _wfiC %>,.85)) drop-shadow(0 4px 22px rgba(0,0,0,.55));opacity:0}
-    .wfi-wfb{font-family:'Cinzel Decorative',serif;font-weight:700;font-size:clamp(6rem,13.1vw,10.9rem);
+    .wfi-wfb{font-family:'Cinzel Decorative',serif;font-weight:700;font-size:calc(var(--wfilw)*0.72);
       color:#fff;line-height:1;display:flex;align-items:center;justify-content:center}
     /* هالة ضوء دائرية فوق اللوغو بالضبط — تتمركز بالـ calc وتتبع حجم اللوغو (بلا filter حماية من علة blur+transform بالكروم) */
     .wfi-flare{position:absolute;width:30vmax;height:30vmax;left:calc(var(--wfilw)/2 - 15vmax);top:calc(50% - 15vmax);z-index:-1;

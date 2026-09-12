@@ -1,5 +1,5 @@
 <%- include('../partials/header') %>
-<link rel="stylesheet" href="/css/company-page.css">
+<link rel="stylesheet" href="/css/company-page.css?v=6">
 <%- include('../partials/navbar') %>
 
 <%
@@ -245,6 +245,17 @@
                 <i class="fas fa-building-columns"></i>
                 <code id="farmBank"><%= farmState.config.bank_account %></code>
                 <button onclick="farmCopyBank()"><i class="fas fa-copy"></i> نسخ</button>
+            </div>
+
+            <% /* اسم شخصية المستأجر + صورة إثبات التحويل — إلزامية تحت بنك الشركة بطلب هادي */ %>
+            <div class="cy-f-field" style="margin-top:1rem">
+                <label for="farmRenterName"><i class="fas fa-user-pen" style="color:var(--accent)"></i> اسم شخصية المستأجر <span style="color:#f87171">*</span></label>
+                <input type="text" id="farmRenterName" maxlength="64" dir="ltr" placeholder="Hadi_Walton — الاسم الكامل كما هو بالسيرفر" autocomplete="off" style="text-align:left">
+            </div>
+            <div class="cy-f-field">
+                <label for="farmProofImg"><i class="fas fa-file-image" style="color:var(--accent)"></i> صورة إثبات التحويل على بنك الشركة <span style="color:#f87171">*</span></label>
+                <input type="file" id="farmProofImg" accept="image/*" onchange="farmProofPicked(this)">
+                <div id="farmProofHint" style="font-size:.72rem;color:rgba(255,255,255,.5);margin-top:.4rem;line-height:1.6">PNG / JPG — حتى 5MB — صورة واضحة لعملية التحويل</div>
             </div>
 
             <div class="cy-farm-actions" style="margin-top:1.1rem">
@@ -573,12 +584,26 @@ function farmPickDur(d) {
 async function farmSubmitBook() {
     if (!farmSelDur) return;
     var btn = document.getElementById('farmBookSubmit');
+    /* اسم شخصية المستأجر + صورة الإثبات — إلزامية قبل إنشاء الحجز */
+    var nameEl = document.getElementById('farmRenterName');
+    var fileEl = document.getElementById('farmProofImg');
+    var cname = (nameEl && nameEl.value || '').trim();
+    if (!/^[A-Za-z0-9_.]{3,64}$/.test(cname)) {
+        farmToast('اكتب اسم شخصية المستأجر كاملاً وصحيحاً (مثال: Hadi_Walton)', true);
+        if (nameEl) nameEl.focus();
+        return;
+    }
+    var file = fileEl && fileEl.files && fileEl.files[0];
+    if (!file) { farmToast('أرفق صورة إثبات التحويل على بنك الشركة', true); return; }
+    if (String(file.type || '').indexOf('image/') !== 0) { farmToast('المرفق لازم يكون صورة (PNG/JPG)', true); return; }
+    if (file.size > 5 * 1024 * 1024) { farmToast('حجم الصورة أكبر من 5MB — صغّرها وجرب', true); return; }
     btn.disabled = true;
     try {
-        var r = await fetch('/api/farm/book', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ duration_days: farmSelDur })
-        });
+        var fd = new FormData();
+        fd.append('duration_days', farmSelDur);
+        fd.append('renter_char_name', cname);
+        fd.append('transfer_proof', file);
+        var r = await fetch('/api/farm/book', { method: 'POST', body: fd });
         var data = await r.json();
         if (data.success) {
             farmClose('farmBookModal');
@@ -587,6 +612,18 @@ async function farmSubmitBook() {
             openFarmMy();
         } else { farmToast(data.error || 'خطأ', true); btn.disabled = false; }
     } catch (e) { farmToast('خطأ بالاتصال', true); btn.disabled = false; }
+}
+/* تأكيد اختيار صورة الإثبات — اسم الملف + صح خضراء */
+function farmProofPicked(inp) {
+    var hint = document.getElementById('farmProofHint');
+    var f = inp && inp.files && inp.files[0];
+    if (!hint) return;
+    if (f) {
+        hint.innerHTML = '<i class="fas fa-circle-check" style="color:#34d399"></i> <span style="direction:ltr;display:inline-block;color:#34d399;font-weight:700">' +
+            String(f.name).replace(/[<>&]/g, '').slice(0, 40) + '</span> — ' + (f.size / 1024 / 1024).toFixed(2) + 'MB';
+    } else {
+        hint.textContent = 'PNG / JPG — حتى 5MB — صورة واضحة لعملية التحويل';
+    }
 }
 
 /* ── نافذة حجوزاتي ── */

@@ -477,7 +477,7 @@ function farmRenderBookings() {
   if (!list.length) { tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:1.5rem;color:var(--text-dim)">لا توجد حجوزات بعد</td></tr>'; return; }
   tb.innerHTML = list.map(b => `<tr>
     <td style="direction:ltr;font-family:ui-monospace,Menlo,monospace;color:var(--accent);font-weight:800">${b.ref}</td>
-    <td>${b.username || '—'}</td>
+    <td>${b.username || '—'}${b.renter_char_name ? `<br><span style="direction:ltr;display:inline-block;font-size:.75rem;font-weight:700;color:var(--accent)"><i class="fas fa-user-pen"></i> ${b.renter_char_name}</span>` : ''}${b.transfer_proof ? `<br><a href="${b.transfer_proof}" target="_blank" rel="noopener" style="font-size:.72rem;color:#38bdf8;text-decoration:none"><i class="fas fa-image"></i> صورة الإثبات</a>` : ''}</td>
     <td>${b.farm_name || '#' + (b.farm_id || b.farm_no)}</td>
     <td>${b.duration_days} يوم${b.extend_days && b.extend_status === 'confirmed' ? ` <span style="color:#34d399">+${b.extend_days}</span>` : ''}</td>
     <td style="direction:ltr">${farmMoney(b.rent_amount)}$ / <b style="color:var(--accent)">${farmMoney(b.deposit_amount)}$</b>${b.status === 'confirmed' ? `<br><span style="font-size:.72rem;color:#38bdf8">نص ثاني ${farmMoney(b.remainder_amount || (b.rent_amount - b.deposit_amount))}$</span>` : ''}</td>

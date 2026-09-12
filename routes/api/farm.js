@@ -26,6 +26,8 @@
  */
 const express = require('express');
 const router = express.Router();
+const fs = require('fs');
+const path = require('path');
 const db = require('../../config/database');
 const { isAuthenticated, checkPermission } = require('../../middleware/auth');
 const { sendWebhook } = require('../../utils/webhooks');
@@ -162,6 +164,11 @@ async function ensureFarmSchema() {
     await ensureColumn('farm_bookings', 'scheduled_start', 'scheduled_start DATETIME NULL');
     await ensureColumn('farm_bookings', 'remainder_reminded', 'remainder_reminded TINYINT(1) DEFAULT 0');
   } catch (e) { console.error('[farm] schedule cols:', e.message); }
+  /* أعمدة «اسم شخصية المستأجر + صورة إثبات التحويل» — مطلوبة عند إنشاء الحجز */
+  try {
+    await ensureColumn('farm_bookings', 'renter_char_name', "renter_char_name VARCHAR(64) DEFAULT ''");
+    await ensureColumn('farm_bookings', 'transfer_proof', "transfer_proof VARCHAR(255) DEFAULT ''");
+  } catch (e) { console.error('[farm] renter cols:', e.message); }
   /* ترحيل من المزارع الثابتة (1/2) إلى الجدول الديناميكي — مرة واحدة */
   try {
     await ensureColumn('farm_bookings', 'farm_id', 'farm_id INT NULL');
@@ -436,6 +443,18 @@ router.post('/book', isAuthenticated, async (req, res) => {
   try {
     const days = parseInt(req.body.duration_days);
     if (!DURATIONS.includes(days)) return res.status(400).json({ error: 'المدة غير متاحة — المدد الثابتة فقط (1/3/5/7/10/14 يوم)' });
+    /* اسم شخصية المستأجر + صورة إثبات التحويل — إلزامية عند إنشاء الحجز
+       (الاسم بالإنجليزية مثل أسماء السيرفر Hadi_Walton — الصورة حتى 5MB صورة فقط) */
+    const renterName = String(req.body.renter_char_name || '').trim();
+    if (!/^[A-Za-z0-9_.]{3,64}$/.test(renterName)) {
+      return res.status(400).json({ error: 'اكتب اسم شخصية المستأجر كاملاً وصحيحاً بالإنجليزية (مثال: Hadi_Walton) — مسؤولية الاسم على صاحبها' });
+    }
+    const proof = req.files && req.files.transfer_proof;
+    if (!proof || !(proof.size > 0)) return res.status(400).json({ error: 'أرفق صورة إثبات التحويل على بنك الشركة' });
+    if (proof.truncated) return res.status(400).json({ error: 'حجم صورة الإثبات أكبر من الحد المسموح (5MB)' });
+    if (proof.mimetype && String(proof.mimetype).indexOf('image/') !== 0) return res.status(400).json({ error: 'مرفق الإثبات لازم يكون صورة (PNG/JPG)' });
+    const rawExt = String(proof.name || 'img.png').split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '');
+    const proofExt = ['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(rawExt) ? rawExt : 'png';
     const farms = await getFarms();
     if (!farms.some(f => Number(f.enabled) === 1)) {
       return res.status(400).json({ error: 'الخدمة مقفلة حالياً' });
@@ -483,10 +502,16 @@ router.post('/book', isAuthenticated, async (req, res) => {
       return res.status(400).json({ error: 'عندك حجوزات انتهت مهلتها بدون دفع خلال آخر 24 ساعة — راجع إدارة الشركة قبل الحجز مرة ثانية' });
     }
     const schedVal = scheduledStart ? [toDbDT(scheduledStart)] : [];
+    /* حفظ صورة الإثبات قبل الإدراج — التخزين public/uploads/farm وتُخدم من /uploads/farm */
+    const proofFname = 'fproof_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '.' + proofExt;
+    const uploadDir = path.join(__dirname, '../../public/uploads/farm');
+    fs.mkdirSync(uploadDir, { recursive: true });
+    await proof.mv(path.join(uploadDir, proofFname));
+    const proofUrl = '/uploads/farm/' + proofFname;
     const [ins] = await db.execute(
-      `INSERT INTO farm_bookings (ref, user_id, username, discord_id, farm_no, farm_id, duration_days, rent_amount, deposit_amount, status, payment_deadline${scheduledStart ? ', scheduled_start' : ''})
-       VALUES ('', ?, ?, ?, ?, ?, ?, ?, ?, 'pending_payment', DATE_ADD(NOW(), INTERVAL ? HOUR)${scheduledStart ? ', ?' : ''})`,
-      [req.user.id, req.user.username || '', req.user.discord_id || '', farmRow.id, farmRow.id, days, rent, deposit, Number(cfg.payment_window_hours), ...schedVal]);
+      `INSERT INTO farm_bookings (ref, user_id, username, discord_id, farm_no, farm_id, duration_days, rent_amount, deposit_amount, status, payment_deadline, renter_char_name, transfer_proof${scheduledStart ? ', scheduled_start' : ''})
+       VALUES ('', ?, ?, ?, ?, ?, ?, ?, ?, 'pending_payment', DATE_ADD(NOW(), INTERVAL ? HOUR), ?, ?${scheduledStart ? ', ?' : ''})`,
+      [req.user.id, req.user.username || '', req.user.discord_id || '', farmRow.id, farmRow.id, days, rent, deposit, Number(cfg.payment_window_hours), renterName, proofUrl, ...schedVal]);
     const ref = 'WT-F-' + (1000 + ins.insertId);
     await db.execute('UPDATE farm_bookings SET ref = ? WHERE id = ?', [ref, ins.insertId]);
     const schedStr = scheduledStart
@@ -499,10 +524,12 @@ router.post('/book', isAuthenticated, async (req, res) => {
     const bookFields = [
       { name: 'المرجع', value: ref, inline: true },
       { name: 'المستأجر', value: String(req.user.username), inline: true },
+      { name: 'شخصية المستأجر', value: renterName, inline: true },
       { name: 'المزرعة', value: farmRow.name, inline: true },
       { name: 'المدة', value: days + ' يوم', inline: true },
       { name: 'الإيجار', value: money(rent) + '$', inline: true },
       { name: 'العربون المطلوب', value: money(deposit) + '$', inline: true },
+      { name: 'إثبات التحويل', value: '[فتح الصورة](' + (process.env.SITE_URL || '') + proofUrl + ')', inline: false },
       { name: 'بنك الشركة', value: cfg.bank_account, inline: false },
       { name: 'مهلة الدفع', value: Number(cfg.payment_window_hours) + ' ساعات من الآن (اليوم أول يوم حجز)', inline: false }
     ];
