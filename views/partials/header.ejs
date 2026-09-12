@@ -442,14 +442,19 @@
 
   /* ═══ التحميل الخفي للصفحات بالخلفية (المعنى الصحيح لطلب هادي «الموقع يحمل الصفحات
      على جهاز المستخدم بالخلفية عشان التنقل يصير أسرع» — مو شريط أثناء الأنميشن) ═══
-     ٣ طبقات:
+     ٤ طبقات:
      ١) بعد الافتتاحية (أو فوراً بصفحات التنقل اللاحقة) يسحب الصفحات الرئيسية وحدة وحدة
         بفواصل 350ms بأولية منخفضة — كاش المتصفح يحتفظ فيها فالنقر يفتح لحظياً
+     ١ب) ملفات كل صفحة الخاصة (CSS/JS) بعد الصفحات — public max-age=30 يوم immutable
+        فمجرد سحبة وحدة بالافتتاحية تخليها بالكاش للأبد وأول فتح للصفحة يكتمل لحظياً
+        (HTML من كاش 60 ثانية + CSS/JS من كاش 30 يوم = صفر انتظار أول مرة)
      ٢) أي رابط داخلي (حتى المو بس بالقائمة): أول ما اللاعب يلمسه/يمر عليه يبدأ تحميله
         فوراً — اللمسة تسبق النقر بـ ١٠٠-٣٠٠ms فتلاقي الصفحة جاهزة
      ٣) حراس: توفير البيانات/2G يلغيان الكل، والزائر ما نسحب له الصفحات المحمية */
   var WFI_USER=<%= (typeof user !== 'undefined' && user) ? 'true' : 'false' %>;
   var WFI_PAGES=['/about','/rules','/store','/games','/community','/applications','/support','/profile','/properties','/company','/contact'];
+  /* ملفات الصفحات الخاصة مو المشتركة — المشترك (main/design-system) ينحمّل مع أول صفحة أصلاً */
+  var WFI_ASSETS=['/css/applications-page.css','/css/properties.css','/css/properties-inline.css','/css/company-page.css','/js/community.js'];
   var WFI_STARTED=false;
   var WFI_WARMED={};
   function wfiWarm(p){
@@ -475,14 +480,21 @@
       }catch(e){}
     },{capture:true,passive:true});
     if(!WFI_USER)return; /* زائر غير مسجل: الصفحات تعيد توجيه للدخول — التسخين باللمس يكفيه */
-    /* ١) سحب القائمة الرئيسية بالخلفية بعد ما يهدأ أول تحميل */
-    var i=0;
+    /* ١) سحب القائمة الرئيسية بالخلفية بعد ما يهدأ أول تحميل ثم ملفات الصفحات الخاصة */
+    var i=0,j=0;
     function step(){
-      if(i>=WFI_PAGES.length)return;
-      var p=WFI_PAGES[i++];
-      if(location.pathname===p){step();return;}
-      wfiWarm(p);
-      setTimeout(step,350);
+      if(i<WFI_PAGES.length){
+        var p=WFI_PAGES[i++];
+        if(location.pathname===p){step();return;}
+        wfiWarm(p);
+        setTimeout(step,350);
+        return;
+      }
+      if(j<WFI_ASSETS.length){
+        wfiWarm(WFI_ASSETS[j++]);
+        setTimeout(step,300);
+        return;
+      }
     }
     var kick=window.requestIdleCallback||function(cb){return setTimeout(cb,1100);};
     kick(function(){setTimeout(step,250);});
