@@ -762,11 +762,16 @@ router.delete('/company/items/:id', checkPermission('company_delete'), async (re
 });
 
 // Company Service Request Actions
+/* svc-b9: نفحص سكيمة الجدول + نطبع id رقمياً — الطلبات اللي نزلت بلا رقم (جدول قديم مكسور)
+   كانت ترجع «الطلب غير موجود» بلا تفسير — الحين هناك رسالة واضحة والإصلاح الذاتي عند الإقلاع */
 router.post('/company/requests/:id/approve', checkPermission('company_edit'), async (req, res) => {
   try {
-    const [rows] = await db.execute('SELECT sr.*, ci.title AS service_title FROM service_requests sr LEFT JOIN company_items ci ON sr.service_id = ci.id WHERE sr.id = ?', [req.params.id]);
-    if (!rows.length) return res.status(404).json({ error: 'الطلب غير موجود' });
-    await db.execute("UPDATE service_requests SET status = 'approved', admin_id = ?, reviewed_at = NOW() WHERE id = ?", [req.user.id, req.params.id]);
+    try { await require('./company').ensureCompanySchema(); } catch (_) {}
+    const reqId = parseInt(req.params.id, 10);
+    if (!reqId || reqId <= 0) return res.status(400).json({ error: 'رقم الطلب غير صالح (' + req.params.id + ') — حدّث الصفحة وجرب مرة ثانية [svc-b9]' });
+    const [rows] = await db.execute('SELECT sr.*, ci.title AS service_title FROM service_requests sr LEFT JOIN company_items ci ON sr.service_id = ci.id WHERE sr.id = ?', [reqId]);
+    if (!rows.length) return res.status(404).json({ error: 'الطلب غير موجود — يمكن انحذف أو انراجع من قبل، حدّث الصفحة [svc-b9]' });
+    await db.execute("UPDATE service_requests SET status = 'approved', admin_id = ?, reviewed_at = NOW() WHERE id = ?", [req.user.id, reqId]);
     await db.execute('INSERT INTO notifications (user_id, title, message, type, link, is_read, created_at) VALUES (?, ?, ?, ?, ?, 0, NOW())',
       [rows[0].user_id, 'تم قبول طلب خدمتك', 'طلبك على خدمة «' + (rows[0].service_title || '') + '» تم قبوله — الإدارة راح تتواصل معك للتنفيذ', 'success', '/company']);
     notifyCompany({ title: '✅ قبول طلب خدمة — ' + (rows[0].service_title || ''), color: 0x34d399, fields: [
@@ -778,10 +783,13 @@ router.post('/company/requests/:id/approve', checkPermission('company_edit'), as
 
 router.post('/company/requests/:id/reject', checkPermission('company_edit'), async (req, res) => {
   try {
-    const [rows] = await db.execute('SELECT sr.*, ci.title AS service_title FROM service_requests sr LEFT JOIN company_items ci ON sr.service_id = ci.id WHERE sr.id = ?', [req.params.id]);
-    if (!rows.length) return res.status(404).json({ error: 'الطلب غير موجود' });
+    try { await require('./company').ensureCompanySchema(); } catch (_) {}
+    const reqId = parseInt(req.params.id, 10);
+    if (!reqId || reqId <= 0) return res.status(400).json({ error: 'رقم الطلب غير صالح (' + req.params.id + ') — حدّث الصفحة وجرب مرة ثانية [svc-b9]' });
+    const [rows] = await db.execute('SELECT sr.*, ci.title AS service_title FROM service_requests sr LEFT JOIN company_items ci ON sr.service_id = ci.id WHERE sr.id = ?', [reqId]);
+    if (!rows.length) return res.status(404).json({ error: 'الطلب غير موجود — يمكن انحذف أو انراجع من قبل، حدّث الصفحة [svc-b9]' });
     const notes = typeof req.body.notes === 'string' ? req.body.notes.substring(0, 500) : '';
-    await db.execute("UPDATE service_requests SET status = 'rejected', admin_id = ?, reviewed_at = NOW() WHERE id = ?", [req.user.id, req.params.id]);
+    await db.execute("UPDATE service_requests SET status = 'rejected', admin_id = ?, reviewed_at = NOW() WHERE id = ?", [req.user.id, reqId]);
     await db.execute('INSERT INTO notifications (user_id, title, message, type, link, is_read, created_at) VALUES (?, ?, ?, ?, ?, 0, NOW())',
       [rows[0].user_id, 'تم رفض طلب خدمتك', 'طلبك على خدمة «' + (rows[0].service_title || '') + '» ما تم قبوله' + (notes ? ' — السبب: ' + notes : ''), 'warning', '/company']);
     notifyCompany({ title: '❌ رفض طلب خدمة — ' + (rows[0].service_title || ''), color: 0xef4444, fields: [

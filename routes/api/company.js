@@ -16,7 +16,7 @@ const webhooks = require('../../config/webhooks');
 const REQ_STATUS_AR = { pending: 'بانتظار المراجعة', approved: 'مقبول', rejected: 'مرفوض' };
 const MAX_PENDING_PER_USER = 5;
 /* وسم البناء — يظهر برسالة الخطأ وويبهوك التشخيص حتى نعرف أن نسخة السايت محدّثة فعلاً */
-const SVC_BUILD = 'svc-b8';
+const SVC_BUILD = 'svc-b9';
 /* نفس نمط أسماء الشخصيات بنظام المزرعة — الاسم الكامل مطلوب بأسئلة الخدمات */
 const NAME_RE = /^[A-Za-z]{2,16}_[A-Za-z]{2,16}(_[A-Za-z]{2,16})?$/;
 
@@ -79,7 +79,55 @@ async function ensureCompanySchema() {
   for (const [t, c, def] of cols) {
     try { await ensureColumn(t, c, def); } catch (e) { console.error(`[company-schema] ${t}.${c}:`, e.message); }
   }
+  /* طبيب عمود id — يشخّص ويرمم عمود المفتاح بجدول الطلبات عند كل إقلاع */
+  try { await ensureRequestIdPK(); } catch (e) { console.error('[company-schema] id-doctor:', e.message); }
   schemaReady = true;
+}
+
+/* ═══ طبيب عمود id بجدول service_requests ═══
+   الأصل: قواعد v1 القديمة أو شفاء سابق ممكن يخلي عمود id بدون PRIMARY KEY/بدون AUTO_INCREMENT
+   — أو حتى يقبل NULL — فكل طلب جديد ينزل بلا رقم، القائمة تعرضه بعمود # فاضي،
+   وأزرار القبول/الرفض بلوحة الإدارة تبعث undefined فيرجع «الطلب غير موجود».
+   الطبيب يفحص العمود عند كل إقلاع ويرممه ذاتياً: عبّي الصفوف اللي بلا رقم بأرقام
+   فريدة فوق أعلى رقم موجود (بدون فقدان أي طلب) ويرجّع العمود INT NOT NULL AUTO_INCREMENT PK */
+let requestIdPkOk = false;
+async function ensureRequestIdPK(force) {
+  if (requestIdPkOk && !force) return false;
+  const [c] = await db.query("SHOW COLUMNS FROM `service_requests` LIKE 'id'");
+  if (!c.length) {
+    await db.query("ALTER TABLE `service_requests` ADD COLUMN `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY FIRST");
+    console.log('🔧 company-schema: service_requests.id انضاف (INT AUTO_INCREMENT PK)');
+    requestIdPkOk = true;
+    return true;
+  }
+  const col = c[0] || {};
+  const isInt = /int/i.test(String(col.Type || ''));
+  const isPri = col.Key === 'PRI';
+  const isAuto = String(col.Extra || '').indexOf('auto_increment') !== -1;
+  if (isInt && isPri && isAuto) { requestIdPkOk = true; return false; }
+  console.log('🔧 company-schema: عمود service_requests.id مكسور —', JSON.stringify({ type: col.Type, key: col.Key, extra: col.Extra }), '— بدأ الإصلاح الذاتي');
+  /* 1) نزل خاصية auto_increment أول شي (ما تنساح مع DROP PRIMARY KEY) */
+  if (isAuto) await db.query('ALTER TABLE `service_requests` MODIFY COLUMN `id` ' + (isInt ? 'INT' : String(col.Type)) + ' NULL');
+  /* 2) شيل PRIMARY KEY لو موجود */
+  const [pk] = await db.query("SHOW KEYS FROM `service_requests` WHERE Key_name = 'PRIMARY'");
+  if (pk.length) await db.query('ALTER TABLE `service_requests` DROP PRIMARY KEY');
+  /* 3) وحّد النوع إلى INT — لو كان نصياً نبطل كل القيم (كانت عديمة الفائدة أصلاً) والبيانات الأخرى ما تنمس */
+  if (!isInt) await db.query('UPDATE `service_requests` SET `id` = NULL');
+  await db.query('ALTER TABLE `service_requests` MODIFY COLUMN `id` INT NULL');
+  /* 4) عبّي الصفوف اللي بلا رقم بأرقام فريدة فوق أعلى رقم موجود — ولا طلب ينفقد */
+  const [mx] = await db.query('SELECT COALESCE(MAX(id), 0) AS m FROM `service_requests`');
+  let next = Number(mx[0].m) || 0;
+  for (;;) {
+    const [broken] = await db.query('SELECT id FROM `service_requests` WHERE id IS NULL OR id = 0 LIMIT 1');
+    if (!broken.length) break;
+    next++;
+    await db.query('UPDATE `service_requests` SET `id` = ? WHERE `id` IS NULL OR `id` = 0 LIMIT 1', [next]);
+  }
+  /* 5) رجّع العمود كما يجب */
+  await db.query('ALTER TABLE `service_requests` MODIFY COLUMN `id` INT NOT NULL AUTO_INCREMENT, ADD PRIMARY KEY (`id`)');
+  console.log('✅ company-schema: service_requests.id انرمم — ' + next + ' صف مرقّم، العمود صار INT AUTO_INCREMENT PK — أزرار القبول/الرفض ترجع تشتغل');
+  requestIdPkOk = true;
+  return true;
 }
 
 router.use(async (req, res, next) => {
@@ -135,8 +183,14 @@ const REQ_COL_DEFS = {
 };
 
 /* شفاء «Field 'X' doesn't have a default value» — الجداول القديمة تنشئ أعمدة NOT NULL بلا افتراضي
-   نقرأ نوع العمود الحالي ونعيد تعريفه NULL — وcreated_at نعطيه DEFAULT CURRENT_TIMESTAMP */
+   نقرأ نوع العمود الحالي ونعيد تعريفه NULL — وcreated_at نعطيه DEFAULT CURRENT_TIMESTAMP
+   🛡️ عمود id محظور نهائياً — شفاؤه سابقاً أسقط AUTO_INCREMENT/PK فنزلت كل الطلبات الجديدة بلا رقم
+   وتحولت أزرار القبول/الرفض بلوحة الإدارة إلى «الطلب غير موجود» */
 async function healNoDefault(col) {
+  if (String(col).toLowerCase() === 'id') {
+    console.log('🛡️ company-schema: تخطي شفاء عمود id — عمود المفتاح ممنوع ينعاد تعريفه (هذا اللي كان يكسر أرقام الطلبات)');
+    return false;
+  }
   const [c] = await db.query('SHOW COLUMNS FROM `service_requests` LIKE ?', [col]);
   if (!c.length) return false;
   const type = c[0].Type || 'VARCHAR(255)';
@@ -343,3 +397,4 @@ router.get('/my-requests', isAuthenticated, async (req, res) => {
 
 module.exports = router;
 module.exports.ensureCompanySchema = ensureCompanySchema;
+module.exports.ensureRequestIdPK = ensureRequestIdPK;
