@@ -70,31 +70,55 @@ function pageCacheMiddleware(req, res, next) {
     } catch (e) { /* always fall through to normal render */ }
   }
 
-  // Capture the FULLY-RENDERED html via res.render callback — this wraps BEFORE
-  // compression (compression wraps res.write/res.end, so byte-capturing there
-  // misses the body). Only takes over when the route calls render without a
-  // callback (the normal page pattern), preserving the send path otherwise.
-  const origRender = res.render;
-  res.render = function (view, opts, cb) {
-    if (req.method === 'GET' && typeof cb !== 'function') {
-      const p = req.path || (req.originalUrl || '').split('?')[0];
-      const notSkipped = p && !SKIP_PREFIXES.some(pre => p.startsWith(pre)) && p.indexOf('.') === -1 && p.indexOf('?') === -1;
-      return origRender.call(this, view, opts, (err, html) => {
-        if (!err && typeof html === 'string' && html.length > 500 && notSkipped) {
-          if (isSafeBrowserPublic(p)) {
-            res.setHeader('Cache-Control', 'private, max-age=15');
-          }
-          pageCache.set(cacheKey(req, uid), { at: Date.now(), html });
-        }
-        if (err) {
-          /* let the app's normal error path handle it (error template or 500) */
-          return origRender.call(this, view, opts, cb);
-        }
-        res.locals = res.locals || {};
-        return res.send(html);
-      });
+  // Capture rendered output via res.write/res.end — safe, never overrides
+  // the normal send path (no res.render wrapper: that caused a 500 loop on
+  // DB errors). Compression wraps these and hides the body from us, but the
+  // RAM cache still fills on non-compressed paths and errors pass through.
+  const bodyPieces = [];
+  const origWrite = res.write.bind(res);
+  const origEnd = res.end.bind(res);
+  let captured = null;
+
+  res.write = function (chunk, ...rest) {
+    if (captured !== false) {
+      const tracking = captured === null;
+      captured = true;
+      if (tracking && chunk) {
+        bodyPieces.push(Buffer.isBuffer(chunk) ? chunk.toString('utf8') : String(chunk));
+      }
     }
-    return origRender.call(this, view, opts, cb);
+    return origWrite(chunk, ...rest);
+  };
+
+  res.end = function (chunk, enc, cb) {
+    try {
+      res.write = origWrite;
+      res.end = origEnd;
+    } catch (e) {}
+
+    if (chunk && (Buffer.isBuffer(chunk) || typeof chunk === 'string' || chunk instanceof Uint8Array)) {
+      bodyPieces.push(Buffer.isBuffer(chunk) ? chunk.toString('utf8') : String(chunk));
+    }
+
+    if (bodyPieces.length) {
+      try {
+        const ct = res.get('Content-Type') || '';
+        const p = req.path || (req.originalUrl || '').split('?')[0];
+        const notSkipped = p && !SKIP_PREFIXES.some(pre => p.startsWith(pre)) && p.indexOf('.') === -1 && p.indexOf('?') === -1;
+        if (res.statusCode === 200 && ct.indexOf('html') !== -1 && notSkipped) {
+          const html = bodyPieces.join('');
+          if (html && html.length > 500) {
+            pageCache.set(cacheKey(req, uid), { at: Date.now(), html });
+            if (isSafeBrowserPublic(p)) {
+              res.setHeader('Cache-Control', 'private, max-age=15');
+            }
+          }
+        }
+      } catch (e) {}
+    }
+    captured = null;
+
+    return origEnd(chunk, enc, cb);
   };
 
   next();
