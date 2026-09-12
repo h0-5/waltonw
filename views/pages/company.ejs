@@ -1,5 +1,5 @@
 <%- include('../partials/header') %>
-<link rel="stylesheet" href="/css/company-page.css?v=7">
+<link rel="stylesheet" href="/css/company-page.css?v=8">
 <%- include('../partials/navbar') %>
 
 <%
@@ -38,8 +38,8 @@
                 <div><div class="stat-num"><%= realAvailable %></div><div class="stat-lbl">خدمات متاحة</div></div>
             </div>
             <% if (farmState) {
-                var fsTxt = !farmState.serviceOpen ? 'مقفلة' : (farmState.anyFree ? 'متاحة' : (farmState.anyQueueable ? 'مشغولة' : 'غير متاحة'));
-                var fsSt = !farmState.serviceOpen ? 'off' : (farmState.anyFree ? 'ok' : (farmState.anyQueueable ? 'future' : 'no'));
+                var fsTxt = !farmState.serviceOpen ? 'مقفلة' : (farmState.anyFree ? 'متاحة' : (farmState.anyBookable ? 'حجز مسبق' : 'غير متاحة'));
+                var fsSt = !farmState.serviceOpen ? 'off' : (farmState.anyFree ? 'ok' : (farmState.anyBookable ? 'future' : 'no'));
             %>
             <div class="cy-co-stat pu">
                 <div class="stat-ic"><i class="fas fa-seedling"></i></div>
@@ -115,8 +115,9 @@
             <% if (farmState) { %>
             <!-- خدمة استئجار المزارع — البطاقة المميزة -->
             <% /* بادج أولي من السيرفر — للمستخدم يعيد حسابه JS فوراً، وللزائر يبقى صحيحاً بدل «جاري التحديث» */ %>
-            <% var fbTxt = !farmState.serviceOpen ? '<i class="fas fa-lock"></i> الخدمة مقفلة حالياً' : (farmState.anyFree ? '<i class="fas fa-check-circle"></i> متوفر — احجز الآن' : (farmState.anyQueueable ? '<i class="fas fa-clock"></i> مشغولة — تقدر تحجز للفترة الجاية' : '<i class="fas fa-times-circle"></i> غير متوفر'));
-               var fbCls = !farmState.serviceOpen ? 'off' : (farmState.anyFree ? 'ok' : (farmState.anyQueueable ? 'future' : 'no')); %>
+            <% var advN = farmState.advance_days || 14;
+               var fbTxt = !farmState.serviceOpen ? '<i class="fas fa-lock"></i> الخدمة مقفلة حالياً' : (farmState.anyFree ? '<i class="fas fa-check-circle"></i> متوفر — احجز الآن' : (farmState.anyBookable ? '<i class="fas fa-calendar-days"></i> متاح حجز مسبق — أيام فاضية خلال ' + advN + ' يوم' : '<i class="fas fa-times-circle"></i> غير متوفر'));
+               var fbCls = !farmState.serviceOpen ? 'off' : (farmState.anyFree ? 'ok' : (farmState.anyBookable ? 'future' : 'no')); %>
             <div class="cy-co-card farm cy-co-reveal">
                 <div class="cy-co-header">
                     <div class="cy-co-icon"><i class="fas fa-seedling"></i></div>
@@ -126,6 +127,7 @@
                 <div class="cy-co-body">
                     <p class="cy-co-desc">احجز مزرعتك من شركة والتون — الأسعار والشروط وبيانات التحويل كلها داخل نافذة الحجز.</p>
                     <div class="cy-farm-chips">
+                        <span class="f-chip"><i class="fas fa-calendar-days"></i> حجز مسبق حتى <b><%= farmState.advance_days || 14 %></b> يوم للأمام</span>
                         <span class="f-chip"><i class="fas fa-coins"></i> العربون <b><%= farmState.config.deposit_pct %>%</b> من الإيجار</span>
                         <span class="f-chip"><i class="fas fa-hourglass-half"></i> مهلة الدفع <b><%= farmState.config.payment_window_hours %></b> ساعة</span>
                         <span class="f-chip"><i class="fas fa-users"></i> حتى <b><%= farmState.config.max_workers %></b> عمال — <b><%= Number(farmState.config.worker_price).toLocaleString('en-US') %>$</b> للعامل</span>
@@ -211,6 +213,7 @@
             </div>
 
             <ul class="cy-farm-rules cy-f-rules-mini">
+                <li><i class="fas fa-calendar-days"></i><span><b>الحجز المسبق:</b> متاح حتى <b><%= farmState.advance_days || 14 %></b> يوم للأمام — كل حجز ياخذ أيامه فقط والباقي يظل فاضي لغيره، وإذا انحجبت كل الأيام تصير المزرعة غير متاحة.</span></li>
                 <li><i class="fas fa-coins"></i><span><b>العربون:</b> <%= farmState.config.deposit_pct %>% من الإيجار على بنك الشركة — وبعد تأكيده تحوّل <b>النص الثاني</b> (باقي الإيجار) وإلا ما ينعكس الحجز.</span></li>
                 <li><i class="fas fa-hourglass-half"></i><span><b>مهلة الدفع:</b> <%= farmState.config.payment_window_hours %> ساعات للعربون — بعدها ينلغى تلقائياً.</span></li>
                 <li><i class="fas fa-hourglass-start"></i><span><b>النص الثاني:</b> بعد تأكيد العربون يبقى عندك <%= farmState.config.remainder_window_hours %> ساعات — وإلا قبل البداية بساعة ينلغي الحجز <b>وتخسر العربون</b>.</span></li>
@@ -230,7 +233,9 @@
 
             <div style="font-size:.8rem;color:rgba(255,255,255,.6);margin-bottom:.8rem">اختر المدة — المدد ثابتة والأسعار من إدارة الشركة:</div>
             <div class="cy-f-dur-grid" id="farmDurGrid"></div>
+            <div id="farmStartGrid" style="margin-top:1rem"></div>
             <div class="cy-f-summary" id="farmBookSummary" style="display:none">
+                <div class="row"><span>بداية الحجز</span><b id="farmSumStart">—</b></div>
                 <div class="row"><span>قيمة الإيجار</span><b id="farmSumRent">—</b></div>
                 <div class="row dep"><span>العربون المطلوب الآن (<%= farmState.config.deposit_pct %>%)</span><b id="farmSumDep">—</b></div>
                 <div class="row muted"><span>مهلة الدفع</span><span><%= farmState.config.payment_window_hours %> ساعات — بعدها ينلغى تلقائياً</span></div>
@@ -445,6 +450,7 @@ async function submitServiceRequest(e) {
 /* ═══ نظام استئجار المزارع ═══ */
 var farmState = <%- JSON.stringify(farmState) %>;
 var farmSelDur = null, farmExtBid = null, farmExtDur = null;
+var farmSelFarm = null, farmSelStart = null; /* بداية الحجز المحددة: مزرعة + تاريخ (فارغ = الآن) */
 
 function farmMoney(n) { return Number(n || 0).toLocaleString('en-US'); }
 function farmFmtDT(iso) {
@@ -505,55 +511,56 @@ function farmRenderCard() {
     if (stFarm) {
         if (!farmState.serviceOpen) { stFarm.textContent = 'مقفلة'; stFarm.dataset.st = 'off'; }
         else if (farmState.anyFree) { stFarm.textContent = 'متاحة'; stFarm.dataset.st = 'ok'; }
-        else if (farmState.anyQueueable) { stFarm.textContent = 'مشغولة'; stFarm.dataset.st = 'future'; }
+        else if (farmState.anyBookable) { stFarm.textContent = 'حجز مسبق'; stFarm.dataset.st = 'future'; }
         else { stFarm.textContent = 'غير متاحة'; stFarm.dataset.st = 'no'; }
     }
     if (!farmState.serviceOpen) {
         badge.className = 'cy-farm-badge off'; badge.innerHTML = '<i class="fas fa-lock"></i> الخدمة مقفلة حالياً';
     } else if (farmState.anyFree) {
         badge.className = 'cy-farm-badge ok'; badge.innerHTML = '<i class="fas fa-check-circle"></i> متوفر — احجز الآن';
-    } else if (farmState.anyQueueable) {
-        badge.className = 'cy-farm-badge future'; badge.innerHTML = '<i class="fas fa-clock"></i> مشغولة — تقدر تحجز للفترة الجاية';
+    } else if (farmState.anyBookable) {
+        badge.className = 'cy-farm-badge future'; badge.innerHTML = '<i class="fas fa-calendar-days"></i> متاح حجز مسبق — أيام فاضية خلال ' + (farmState.advance_days || 14) + ' يوم';
     } else {
         badge.className = 'cy-farm-badge no'; badge.innerHTML = '<i class="fas fa-times-circle"></i> غير متوفر';
     }
+    var adv = farmState.advance_days || 14;
     if (avail) {
         avail.innerHTML = farmState.farms.map(function(f) {
-            var cls, ic, txt;
-            if (!f.enabled) { cls = 'disabled'; ic = 'fa-pause'; txt = f.name + ' — موقوفة'; }
-            else if (f.free) { cls = 'free'; ic = 'fa-check'; txt = f.name + ' — متاحة الآن'; }
-            else if (f.queueable && f.busy_until_iso) { cls = 'future'; ic = 'fa-clock'; txt = f.name + ' — مشغولة، الحجز الجديد يبدأ ' + farmFmtDT(f.busy_until_iso); }
-            else { cls = 'busy'; ic = 'fa-lock'; txt = f.name + ' — محجوزة'; }
-            return '<span class="' + cls + '"><i class="fas ' + ic + '"></i> ' + txt + '</span>';
+            if (!f.enabled) return '<span class="disabled"><i class="fas fa-pause"></i> ' + f.name + ' — موقوفة</span>';
+            if (!f.windows || !f.windows.length) return '<span class="busy"><i class="fas fa-lock"></i> ' + f.name + ' — محجوزة كاملة (' + adv + ' يوم)</span>';
+            var wtxt = f.windows.slice(0, 2).map(function(w) {
+                var isNow = new Date(w.start_iso).getTime() <= Date.now() + 60e3;
+                return (isNow ? 'من الآن' : 'من ' + farmFmtDT(w.start_iso)) + ' — ' + (Math.round(w.days * 10) / 10) + ' يوم فاضي';
+            }).join(' ، ') + (f.windows.length > 2 ? ' …' : '');
+            var w0 = f.windows[0];
+            var nowish = new Date(w0.start_iso).getTime() <= Date.now() + 60e3;
+            if (nowish) return '<span class="free"><i class="fas fa-check"></i> ' + f.name + ' — متاحة الآن (' + wtxt + ')</span>';
+            return '<span class="future"><i class="fas fa-clock"></i> ' + f.name + ' — حجز مسبق: ' + wtxt + '</span>';
         }).join('');
     }
     if (btn) {
         if (!farmState.serviceOpen) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-lock"></i> الخدمة مقفلة'; }
         else if (farmState.anyFree) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-seedling"></i> حجز المزرعة'; }
-        else if (farmState.anyQueueable) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-clock"></i> حجز — يبدأ بعد الحجز الحالي'; }
+        else if (farmState.anyBookable) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-calendar-days"></i> حجز مسبق — أيام فاضية'; }
         else { btn.disabled = true; btn.innerHTML = '<i class="fas fa-times-circle"></i> غير متوفر'; }
     }
 }
 
 /* ── نافذة الحجز ── */
 function openFarmBook() {
-    farmSelDur = null;
+    farmSelDur = null; farmSelFarm = null; farmSelStart = null;
     farmSetStep(1);
     var g = document.getElementById('farmDurGrid');
     g.innerHTML = farmState.config.prices.map(function(p) {
         return '<div class="cy-f-dur-chip" data-d="' + p.days + '" onclick="farmPickDur(' + p.days + ')"><b>' + p.days + ' يوم</b><span>' + farmMoney(p.price) + '$</span></div>';
     }).join('');
+    var sg = document.getElementById('farmStartGrid');
+    if (sg) sg.innerHTML = '<div style="font-size:.78rem;color:rgba(255,255,255,.5);padding:.2rem 0">اختر المدة أولاً — بعدها تظهر لك بدايات الحجز الفاضية داخل ' + (farmState.advance_days || 14) + ' يوم</div>';
     var fn = document.getElementById('farmFutureNote');
     if (fn) {
-        if (!farmState.anyFree && farmState.anyQueueable) {
-            var earliest = null;
-            (farmState.farms || []).forEach(function(f) {
-                if (f.enabled && f.queueable && f.busy_until_iso && (!earliest || f.busy_until_iso < earliest)) earliest = f.busy_until_iso;
-            });
+        if (!farmState.anyFree && farmState.anyBookable) {
             fn.style.display = '';
-            fn.innerHTML = '<i class="fas fa-clock" style="color:#38bdf8"></i> <b style="color:#38bdf8">حجز مستقبلي:</b> كل المزارع مشغولة حالياً — حجزك راح يبدأ تلقائياً بعد انتهاء الحجز الحالي' +
-                (earliest ? ' (أقرب بداية متاحة: <b>' + farmFmtDT(earliest) + '</b>)' : '') + '. ' +
-                '<b>العربون يتحول اليوم (أول يوم حجز)</b> — وعداد النص الثاني يبدأ آخر ' + farmState.config.remainder_window_hours + ' ساعات قبل بداية حجزك.';
+            fn.innerHTML = '<i class="fas fa-calendar-days" style="color:#38bdf8"></i> <b style="color:#38bdf8">حجز مسبق:</b> كل المزارع مشغولة حالياً — بس تقدر تحجز بالأيام الفاضية خلال ' + (farmState.advance_days || 14) + ' يوم. <b>العربون يتحول خلال مهلة الدفع لتثبيت الحجز</b> — وعداد النص الثاني يبدأ آخر ' + farmState.config.remainder_window_hours + ' ساعات قبل بداية حجزك.';
         } else fn.style.display = 'none';
     }
     document.getElementById('farmBookSummary').style.display = 'none';
@@ -562,11 +569,12 @@ function openFarmBook() {
     document.getElementById('farmBookSubmit').disabled = true;
     document.getElementById('farmBookModal').classList.add('open');
 }
-/* زر إنشاء الحجز يشتغل فقط بعد اختيار المدة + التعهد بتحويل العربون */
+/* زر إنشاء الحجز يشتغل فقط بعد اختيار المدة + بداية الحجز + التعهد بتحويل العربون */
 function farmPledgeTick() {
     var cb = document.getElementById('farmPledge');
-    document.getElementById('farmBookSubmit').disabled = !(farmSelDur && cb && cb.checked);
-    if (farmSelDur && cb && cb.checked) farmSetStep(3); else if (farmSelDur) farmSetStep(2);
+    var ok = farmSelDur && farmSelFarm !== null && cb && cb.checked;
+    document.getElementById('farmBookSubmit').disabled = !ok;
+    if (ok) farmSetStep(3); else if (farmSelDur) farmSetStep(2);
 }
 function farmPickDur(d) {
     farmSelDur = d;
@@ -578,11 +586,51 @@ function farmPickDur(d) {
     document.getElementById('farmSumRent').textContent = farmMoney(price) + '$';
     document.getElementById('farmSumDep').textContent = farmMoney(dep) + '$';
     document.getElementById('farmBookSummary').style.display = '';
-    farmSetStep(2);
+    renderFarmStarts(d);
+    farmPledgeTick();
+}
+/* بدايات الحجز الممكنة للمدة المختارة — من فجوات كل مزرعة داخل نافذة الحجز المسبق */
+function renderFarmStarts(d) {
+    var sg = document.getElementById('farmStartGrid');
+    if (!sg) return;
+    var opts = [];
+    (farmState.farms || []).forEach(function(f) {
+        if (!f.enabled || !f.windows) return;
+        f.windows.forEach(function(w) { if (w.days + 1e-6 >= d) opts.push({ farm: f, w: w }); });
+    });
+    opts.sort(function(a, b) { return new Date(a.w.start_iso).getTime() - new Date(b.w.start_iso).getTime(); });
+    var st = document.getElementById('farmSumStart');
+    if (!opts.length) {
+        sg.innerHTML = '<div class="cy-f-starts-empty"><i class="fas fa-calendar-xmark"></i> ما في فترة فاضية متصلة تكفي ' + d + ' يوم خلال ' + (farmState.advance_days || 14) + ' يوم — الحجوزات القائمة تاخذ كل الأيام. جرب مدة أقصر أو تابع لاحقاً.</div>';
+        farmSelFarm = null; farmSelStart = null;
+        if (st) st.textContent = '—';
+        return;
+    }
+    sg.innerHTML = '<div style="font-size:.8rem;color:rgba(255,255,255,.6);margin-bottom:.6rem">اختر بداية الحجز — الفترات الفاضية داخل ' + (farmState.advance_days || 14) + ' يوم:</div>' +
+        '<div class="cy-f-start-grid">' + opts.slice(0, 10).map(function(o, i) {
+            var isNow = new Date(o.w.start_iso).getTime() <= Date.now() + 60e3;
+            return '<div class="cy-f-start-chip' + (i === 0 ? ' sel' : '') + '" data-farm="' + o.farm.id + '" data-start="' + (isNow ? '' : o.w.start_iso) + '" onclick="farmPickStart(this)">' +
+                '<b>' + (isNow ? 'الآن — فوري' : farmFmtDT(o.w.start_iso)) + '</b><span>' + o.farm.name + ' — فجوة ' + (Math.round(o.w.days * 10) / 10) + ' يوم فاضية</span></div>';
+        }).join('') + '</div>';
+    var first = opts[0];
+    var firstNow = new Date(first.w.start_iso).getTime() <= Date.now() + 60e3;
+    farmSelFarm = first.farm.id;
+    farmSelStart = firstNow ? '' : first.w.start_iso;
+    if (st) st.textContent = firstNow ? 'الآن — ' + first.farm.name : farmFmtDT(first.w.start_iso) + ' — ' + first.farm.name;
+}
+function farmPickStart(el) {
+    var chips = document.querySelectorAll('#farmStartGrid .cy-f-start-chip');
+    for (var i = 0; i < chips.length; i++) chips[i].classList.remove('sel');
+    el.classList.add('sel');
+    farmSelFarm = +el.dataset.farm;
+    farmSelStart = el.dataset.start || '';
+    var st = document.getElementById('farmSumStart');
+    if (st) st.textContent = (farmSelStart ? farmFmtDT(farmSelStart) : 'الآن — فوري') + ' — ' + ((farmState.farms || []).filter(function(f) { return f.id === farmSelFarm; })[0] || {}).name;
     farmPledgeTick();
 }
 async function farmSubmitBook() {
     if (!farmSelDur) return;
+    if (farmSelFarm === null) { farmToast('ما في بداية متاحة للمدة المختارة — جرب مدة أقصر', true); return; }
     var btn = document.getElementById('farmBookSubmit');
     /* اسم شخصية المستأجر + صورة الإثبات — إلزامية قبل إنشاء الحجز */
     var nameEl = document.getElementById('farmRenterName');
@@ -601,6 +649,8 @@ async function farmSubmitBook() {
     try {
         var fd = new FormData();
         fd.append('duration_days', farmSelDur);
+        fd.append('farm_id', farmSelFarm);
+        if (farmSelStart) fd.append('start_at', farmSelStart);
         fd.append('renter_char_name', cname);
         fd.append('transfer_proof', file);
         var r = await fetch('/api/farm/book', { method: 'POST', body: fd });
@@ -681,13 +731,13 @@ function farmRenderMy() {
              '<span>الإيجار: <b>' + farmMoney(b.rent_amount) + '$</b></span>' +
              '<span>العربون: <b style="color:var(--accent)">' + farmMoney(b.deposit_amount) + '$</b></span>' +
              '<span>الإنشاء: <b>' + farmFmtDT(b.created_iso) + '</b></span>' +
-             (b.is_future && b.scheduled_start_iso ? '<span style="color:#38bdf8"><i class="fas fa-clock"></i> البداية المتوقعة: <b>' + farmFmtDT(b.scheduled_start_iso) + '</b></span>' : '') +
+             (b.is_future && b.scheduled_start_iso ? '<span style="color:#38bdf8"><i class="fas fa-calendar-days"></i> بداية الحجز المسبق: <b>' + farmFmtDT(b.scheduled_start_iso) + '</b></span>' : '') +
              (b.start_iso ? '<span>البداية: <b>' + farmFmtDT(b.start_iso) + '</b></span>' : '') +
              (b.end_iso ? '<span>النهاية: <b>' + farmFmtDT(b.end_iso) + '</b></span>' : '') +
              '</div>';
         if (b.status === 'pending_payment' && b.deadline_iso) {
             h += '<div class="cy-f-note">' +
-                 (b.is_future ? '<b style="color:#38bdf8">حجز مستقبلي</b> — يبدأ ' + farmFmtDT(b.scheduled_start_iso) + ' بعد انتهاء الحجز الحالي، والعربون اليوم (أول يوم حجز) — ' : '') +
+                 (b.is_future ? '<b style="color:#38bdf8">حجز مسبق</b> — يبدأ ' + farmFmtDT(b.scheduled_start_iso) + '، والعربون يتحول خلال مهلة الدفع لتثبيت حجزك — ' : '') +
                  'مهلة الدفع تنتهي خلال <span class="cy-f-count" data-dl="' + b.deadline_iso + '">—</span> — حوّل ' + farmMoney(b.deposit_amount) + '$ على <b style="direction:ltr;display:inline-block">' + farmState.config.bank_account + '</b> واضغط «دفعت العربون»</div>';
         }
         if (b.status === 'pending_confirm') {

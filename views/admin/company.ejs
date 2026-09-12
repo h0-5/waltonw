@@ -73,6 +73,7 @@
       <div class="form-group" style="margin:0"><label>حد الإلغاء (ساعات قبل البداية)</label><input type="number" id="f_cancel_cutoff_hours" min="0" max="72" style="direction:ltr"></div>
       <div class="form-group" style="margin:0"><label>نافذة التمديد (ساعات قبل النهاية)</label><input type="number" id="f_extend_window_hours" min="1" max="72" style="direction:ltr"></div>
       <div class="form-group" style="margin:0"><label>مهلة النص الثاني (ساعات بعد تأكيد العربون)</label><input type="number" id="f_remainder_window_hours" min="1" max="72" style="direction:ltr"></div>
+      <div class="form-group" style="margin:0"><label>نافذة الحجز المسبق (يوم — الحجز المسموح حتى هذا العدد من الأيام للأمام)</label><input type="number" id="f_advance_days" min="1" max="60" style="direction:ltr"></div>
     </div>
     <div class="form-group"><label>حساب بنك الشركة</label><input type="text" id="f_bank_account" style="direction:ltr;text-align:left"></div>
     <div class="form-group"><label>منشن إشعارات الإدارة — يطلع مع كل حجز جديد / إعلان دفع / طلب خدمة — @here أو &lt;@&amp;ID&gt; رتبة أو &lt;@ID&gt; شخص</label><input type="text" id="f_ping_mention" placeholder="@here" style="direction:ltr;text-align:left"></div>
@@ -88,8 +89,8 @@
   </div>
   <div style="overflow-x:auto">
   <table class="admin-table" id="farmBkTable">
-    <thead><tr><th>المرجع</th><th>المستأجر</th><th>المزرعة</th><th>المدة</th><th>الإيجار / العربون</th><th>الحالة</th><th>الفاكشن</th><th>البداية / النهاية</th><th>إجراءات</th></tr></thead>
-    <tbody><tr><td colspan="9" style="text-align:center;padding:1.5rem;color:var(--text-dim)">جاري التحميل...</td></tr></tbody>
+    <thead><tr><th>المرجع</th><th>المستأجر</th><th>المزرعة</th><th>المدة</th><th>الإيجار / العربون</th><th>الحالة</th><th>الفاكشن</th><th>البداية / النهاية</th><th>صورة الإثبات</th><th>إجراءات</th></tr></thead>
+    <tbody><tr><td colspan="10" style="text-align:center;padding:1.5rem;color:var(--text-dim)">جاري التحميل...</td></tr></tbody>
   </table>
   </div>
 </div>
@@ -438,6 +439,7 @@ function farmRenderCfg() {
   document.getElementById('f_cancel_cutoff_hours').value = c.cancel_cutoff_hours;
   document.getElementById('f_extend_window_hours').value = c.extend_window_hours;
   document.getElementById('f_remainder_window_hours').value = (c.remainder_window_hours != null ? c.remainder_window_hours : 6);
+  document.getElementById('f_advance_days').value = (c.advance_days != null ? c.advance_days : 14);
   document.getElementById('f_bank_account').value = c.bank_account || '';
   document.getElementById('f_ping_mention').value = c.ping_mention || '';
 }
@@ -449,7 +451,7 @@ async function farmSaveCfg(e) {
     price_7d: g('f_price_7d'), price_10d: g('f_price_10d'), price_14d: g('f_price_14d'),
     worker_price: g('f_worker_price'), max_workers: g('f_max_workers'), deposit_pct: g('f_deposit_pct'),
     payment_window_hours: g('f_payment_window_hours'), cancel_cutoff_hours: g('f_cancel_cutoff_hours'),
-    extend_window_hours: g('f_extend_window_hours'), remainder_window_hours: g('f_remainder_window_hours'), bank_account: g('f_bank_account'),
+    extend_window_hours: g('f_extend_window_hours'), remainder_window_hours: g('f_remainder_window_hours'), advance_days: g('f_advance_days'), bank_account: g('f_bank_account'),
     ping_mention: g('f_ping_mention')
   };
   const res = await fetch('/api/farm/admin/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -474,16 +476,17 @@ function farmBkActions(b) {
 function farmRenderBookings() {
   const tb = document.querySelector('#farmBkTable tbody');
   const list = farmData.bookings || [];
-  if (!list.length) { tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:1.5rem;color:var(--text-dim)">لا توجد حجوزات بعد</td></tr>'; return; }
+  if (!list.length) { tb.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:1.5rem;color:var(--text-dim)">لا توجد حجوزات بعد</td></tr>'; return; }
   tb.innerHTML = list.map(b => `<tr>
     <td style="direction:ltr;font-family:ui-monospace,Menlo,monospace;color:var(--accent);font-weight:800">${b.ref}</td>
-    <td>${b.username || '—'}${b.renter_char_name ? `<br><span style="direction:ltr;display:inline-block;font-size:.75rem;font-weight:700;color:var(--accent)"><i class="fas fa-user-pen"></i> ${b.renter_char_name}</span>` : ''}${b.transfer_proof ? `<br><a href="${b.transfer_proof}" target="_blank" rel="noopener" style="font-size:.72rem;color:#38bdf8;text-decoration:none"><i class="fas fa-image"></i> صورة الإثبات</a>` : ''}</td>
+    <td>${b.username || '—'}${b.renter_char_name ? `<br><span style="direction:ltr;display:inline-block;font-size:.75rem;font-weight:700;color:var(--accent)"><i class="fas fa-user-pen"></i> ${b.renter_char_name}</span>` : ''}</td>
     <td>${b.farm_name || '#' + (b.farm_id || b.farm_no)}</td>
     <td>${b.duration_days} يوم${b.extend_days && b.extend_status === 'confirmed' ? ` <span style="color:#34d399">+${b.extend_days}</span>` : ''}</td>
     <td style="direction:ltr">${farmMoney(b.rent_amount)}$ / <b style="color:var(--accent)">${farmMoney(b.deposit_amount)}$</b>${b.status === 'confirmed' ? `<br><span style="font-size:.72rem;color:#38bdf8">نص ثاني ${farmMoney(b.remainder_amount || (b.rent_amount - b.deposit_amount))}$</span>` : ''}</td>
     <td><div style="display:flex;flex-direction:column;align-items:flex-start;gap:5px">${farmBadge(FARM_ST_BADGE, b.status)}${b.status === 'confirmed' ? `<span style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:var(--text-dim);white-space:nowrap">النص الثاني: ${farmBadge(FARM_R_BADGE, b.remainder_status || 'pending_payment')}</span>` : ''}${b.is_future ? `<span style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:#38bdf8;white-space:nowrap"><i class="fas fa-clock"></i> مستقبلي — يبدأ ${farmDT(b.scheduled_start_iso)}</span>` : ''}${b.status === 'confirmed' && (b.remainder_status || '') === 'confirmed' && b.is_future ? '<span style="font-size:.7rem;color:#34d399;white-space:nowrap">مدفوع كامل — يتفعل بوقته</span>' : ''}${b.extend_status === 'pending_payment' || b.extend_status === 'pending_confirm' ? `<span style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:var(--text-dim);white-space:nowrap">تمديد ${b.extend_days} يوم ${farmBadge(FARM_ST_BADGE, b.extend_status)}</span>` : ''}</div></td>
     <td>${b.status === 'active' || b.status === 'ended' ? (Number(b.faction_added) === 1 ? '<span style="color:#34d399">مضاف</span>' : '<span style="color:#eab308">بانتظار الإضافة</span>') + (b.status === 'ended' ? '<br>' + (Number(b.faction_removed) === 1 ? '<span style="color:#34d399">منزال</span>' : '<span style="color:#eab308">بانتظار الإزالة</span>') : '') : '—'}</td>
     <td style="font-size:.78rem">${b.is_future ? `<span style="color:#38bdf8">مجدول: ${farmDT(b.scheduled_start_iso)}</span><br><span style="color:var(--text-dim)">${farmDT(b.start_at)}</span>` : `${farmDT(b.start_at)}<br>${farmDT(b.end_at)}`}</td>
+    <td title="صورة إثبات التحويل — تنحذف تلقائياً من الاستضافة بعد تأكيد استلام العربون">${b.transfer_proof ? `<a href="${b.transfer_proof}" target="_blank" rel="noopener"><img src="${b.transfer_proof}" alt="صورة الإثبات" loading="lazy" style="width:54px;height:54px;object-fit:cover;border-radius:9px;border:1px solid rgba(255,255,255,.18);display:block;cursor:zoom-in" onerror="this.style.display='none'"></a>` : '<span style="font-size:.72rem;color:var(--text-dim)">—</span>'}</td>
     <td style="display:flex;gap:4px;flex-wrap:wrap">${farmBkActions(b)}</td>
   </tr>`).join('');
 }

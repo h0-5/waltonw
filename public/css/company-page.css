@@ -1101,6 +1101,58 @@
     color: #fff;
 }
 
+/* ── خيارات بداية الحجز (الفترات الفاضية داخل نافذة الحجز المسبق) ── */
+.cy-f-start-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.cy-f-start-chip {
+    border-radius: 14px;
+    padding: 11px 12px;
+    cursor: pointer;
+    transition: all .25s;
+    background: rgba(255,255,255,.035);
+    border: 1px solid rgba(255,255,255,.1);
+    color: rgba(255,255,255,.8);
+    text-align: right;
+}
+
+.cy-f-start-chip:hover { border-color: rgba(var(--accent-rgb), .4); }
+
+.cy-f-start-chip.sel {
+    background: rgba(var(--accent-rgb), .09);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), .12), 0 0 22px rgba(var(--accent-rgb), .15);
+}
+
+.cy-f-start-chip b {
+    display: block;
+    font-size: .8rem;
+    font-weight: 800;
+    color: var(--accent);
+    direction: ltr;
+    text-align: right;
+}
+
+.cy-f-start-chip span {
+    display: block;
+    font-size: .72rem;
+    margin-top: 3px;
+    color: rgba(255,255,255,.6);
+}
+
+.cy-f-starts-empty {
+    padding: .8rem 1rem;
+    border-radius: 12px;
+    background: rgba(239,68,68,.07);
+    border: 1px solid rgba(239,68,68,.3);
+    color: #fca5a5;
+    font-size: .8rem;
+    line-height: 1.7;
+}
+
 /* ═══════════════ ملخص الحجز ═══════════════ */
 .cy-f-summary {
     border-radius: 14px;
@@ -1668,6 +1720,7 @@
 @media (max-width: 760px) {
     .cy-f-meta { grid-template-columns: 1fr; }
     .cy-f-dur-grid { grid-template-columns: repeat(2, 1fr); }
+    .cy-f-start-grid { grid-template-columns: 1fr; }
     .cy-co-nav { width: 100%; }
     .cy-co-nav-btn { flex: 1; justify-content: center; padding: .6rem .8rem; font-size: .8rem; }
     .cy-f-box-head, .cy-f-box-body { padding-inline: 1.1rem; }

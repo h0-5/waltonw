@@ -169,6 +169,10 @@ async function ensureFarmSchema() {
     await ensureColumn('farm_bookings', 'renter_char_name', "renter_char_name VARCHAR(64) DEFAULT ''");
     await ensureColumn('farm_bookings', 'transfer_proof', "transfer_proof VARCHAR(255) DEFAULT ''");
   } catch (e) { console.error('[farm] renter cols:', e.message); }
+  /* نافذة الحجز المسبق (يوم) — افتراضي 14: الحجز المسموح حتى هذا العدد من الأيام للأمام */
+  try {
+    await ensureColumn('farm_config', 'advance_days', `advance_days INT DEFAULT ${DEFAULT_ADVANCE_DAYS}`);
+  } catch (e) { console.error('[farm] advance col:', e.message); }
   /* ترحيل من المزارع الثابتة (1/2) إلى الجدول الديناميكي — مرة واحدة */
   try {
     await ensureColumn('farm_bookings', 'farm_id', 'farm_id INT NULL');
@@ -227,6 +231,21 @@ async function logEvent(bookingId, actor, actorType, action, details) {
   } catch (e) {}
 }
 
+/* حذف صورة إثبات التحويل من الاستضافة + تفريغ الحقل (طلب هادي:
+   بعد ما تُأكد وصول الفلوس تنحذف الصورة تلقائياً من الاستضافة)
+   تنحذف عند: تأكيد العربون — الإلغاء — الإبطال — رفض النص الثاني — انتهاء المهلة */
+async function deleteProofFile(booking) {
+  const url = booking && booking.transfer_proof ? String(booking.transfer_proof) : '';
+  if (url) {
+    try {
+      const dir = path.join(__dirname, '../../public/uploads/farm');
+      const fp = path.join(dir, path.basename(url));
+      if (fp.startsWith(dir) && fs.existsSync(fp)) fs.unlinkSync(fp);
+    } catch (e) { console.error('[farm] proof unlink:', e.message); }
+  }
+  try { await db.execute('UPDATE farm_bookings SET transfer_proof = \'\' WHERE id = ?', [booking.id]); } catch (e) {}
+}
+
 /* تنبيه المستأجر: إشعار داخل الموقع + رسالة ديسكورد خاصة (إذا البوت فعال) */
 async function renterNotify(userId, title, message) {
   try {
@@ -265,40 +284,122 @@ async function farmsBusy() {
   return m;
 }
 
-/* نهاية الاحتياط الفعلي للحجز (لحساب بداية الحجز المستقبلي بعده):
-   فعال → end_at | مؤكد مستقبلي → scheduled_start + المدة | مؤكد فوري → deadline النص الثاني + المدة
-   معلق (عربون/تمديد معلق) → تقدير: مهلة الدفع + مهلة النص الثاني + المدة */
-function bookingEffectiveEnd(b, rHours) {
-  const days = Number(b.duration_days) || 0;
-  if (b.status === 'active' && b.end_at) return new Date(toIso(b.end_at));
-  if (b.scheduled_start) return new Date(new Date(toIso(b.scheduled_start)).getTime() + days * 864e5);
-  if (b.remainder_deadline) return new Date(new Date(toIso(b.remainder_deadline)).getTime() + days * 864e5);
-  if (b.payment_deadline) return new Date(new Date(toIso(b.payment_deadline)).getTime() + (Number(rHours) || 6) * 3600e3 + days * 864e5);
+/* ═══ محرك التوافر الزمني — الحجز المسبق حتى 14 يوم للأمام ═══
+   النظام الجديد (طلب هادي): الحجز ما يسكّر المزرعة كاملة — كل حجز ياخذ مدته من
+   خط زمني 14 يوم للأمام، والباقي يظل متاحاً لغيره. مثال: حجز 7 أيام → يبقى 7 أيام
+   فاضية يقدر غيره يحجزها، وإذا انحجزت الـ14 يوم كاملة تصير المزرعة غير متاحة،
+   وإذا انحجز منها 13 يوم يظل ممكن حجز يوم واحد فقط — وهكذا.
+   الفجوات تُحسب من الاستعلام نفسه (استعلام واحد لكل المزارع) — لا استعلامات لكل مزرعة. */
+
+const DEFAULT_ADVANCE_DAYS = 14;
+
+/* الاستعلام الواحد: كل الحجوزات الحاجزة للوقت (تحجز فترتها من الخط الزمني) */
+async function liveOccupancies() {
+  const [rows] = await db.execute(
+    `SELECT farm_id, status, duration_days, start_at, end_at, scheduled_start, payment_deadline, remainder_deadline
+     FROM farm_bookings
+     WHERE farm_id IS NOT NULL AND (${BUSY_WHERE})`);
+  return rows;
+}
+
+/* قارن متسامح: يعيد ميلي ثانية من قيمة تاريخ — يفهم Date و'YYYY-MM-DD HH:MM:SS' (+03 قاعدة البيانات) وISO */
+function msOf(v) {
+  if (!v) return 0;
+  if (v instanceof Date) return v.getTime();
+  const t = toIso(v);
+  if (t) return new Date(t).getTime();
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? 0 : d.getTime();
+}
+
+/* فترة احتلال الحجز على الخط الزمني [بداية، نهاية) بالميلي ثانية
+   - فعال: [start_at, end_at) الحقيقية
+   - مؤكد مستقبلي (بداية مجدولة): [scheduled_start, +المدة)
+   - مؤكد فوري (عداد النص الثاني شغال): [الآن, remainder_deadline + المدة) — تحفظي
+   - معلق (عربون بانتظار دفع/تأكيد): مستقبلي → [scheduled_start, +المدة) | فوري → [الآن, +المدة) */
+function occInterval(b, nowMs) {
+  const dMs = (Number(b.duration_days) || 0) * 864e5;
+  if (!dMs) return null;
+  const schedMs = msOf(b.scheduled_start);
+  const startMs = msOf(b.start_at);
+  const endMs = msOf(b.end_at);
+  if (b.status === 'active') return (startMs && endMs) ? [startMs, Math.max(endMs, startMs)] : null;
+  if (b.status === 'confirmed') {
+    if (schedMs > nowMs) return [schedMs, schedMs + dMs];
+    const remMs = msOf(b.remainder_deadline);
+    if (remMs > nowMs) return [nowMs, remMs + dMs];
+    return [nowMs, nowMs + dMs];
+  }
+  if (schedMs > nowMs) return [schedMs, schedMs + dMs];
+  return [nowMs, nowMs + dMs];
+}
+
+/* فجوات المزرعة الفارغة داخل نافذة الحجز المسبق [الآن، الآن + advanceDays يوم)
+   تعيد مصفوفة مرتبة: [{ s, e }] بالميلي ثانية — فجوة تقبل حجز M يوم إذا (e - s) >= M * 864e5
+   الفجوات الأقصر من دقيقة تُهمل (حواف ثواني من تقريب DATETIME — لا تصلح لأي حجز وأدنى مدة يوم) */
+const MIN_WINDOW_MS = 60e3;
+function farmWindows(occRows, farmId, nowMs, horizonMs) {
+  const ivs = [];
+  occRows.forEach(r => {
+    if (Number(r.farm_id) !== Number(farmId)) return;
+    const iv = occInterval(r, nowMs);
+    if (iv && iv[1] > nowMs) ivs.push(iv);
+  });
+  ivs.sort((a, b2) => a[0] - b2[0]);
+  const gaps = [];
+  let cursor = nowMs;
+  for (const iv of ivs) {
+    if (cursor >= horizonMs) break;
+    if (iv[0] > cursor) {
+      const gapEnd = Math.min(iv[0], horizonMs);
+      if (gapEnd > cursor) gaps.push({ s: cursor, e: gapEnd });
+    }
+    if (iv[1] > cursor) cursor = iv[1];
+  }
+  if (cursor < horizonMs) gaps.push({ s: cursor, e: horizonMs });
+  return gaps.filter(g => (g.e - g.s) >= MIN_WINDOW_MS);
+}
+
+/* هل الفترة [t, t+days) تنحجز داخل فجوة وحدة؟ (بلا تجزئة)
+   سماحية 15 دقيقة على حد النهاية: الفجوة تبدأ من «الآن» (نقطة متحركة) والحدود مخزنة بدقة ثواني —
+   بدونها حجز يمس الحد بالضبط ينرفض لفرق ثواني/دقايق بين لحظة العرض ولحظة الإرسال.
+   التداخل المحتمل ≤ 15 دقيقة على حدود مختارة بدقة أيام — لا أثر تشغيلي */
+const FIT_GRACE_MS = 15 * 60e3;
+function fitsInWindows(windows, tMs, days) {
+  const need = days * 864e5;
+  return windows.some(w => tMs >= w.s && (tMs + need) <= (w.e + FIT_GRACE_MS));
+}
+
+/* أقرب بداية ممكنة لمدة days داخل الفجوات (أول فجوة تكفي) */
+function earliestStart(windows, days) {
+  const need = days * 864e5;
+  for (const w of windows) if ((w.e - w.s) >= need - FIT_GRACE_MS) return w.s;
   return null;
 }
 
-/* أقرب وقت تنفتح فيه المزرعة لحجز جديد (null = فاضية الآن أو ما فيها معلومات كافية) */
-async function farmQueueEnd(farmId, rHours) {
-  const [rows] = await db.execute(
-    `SELECT * FROM farm_bookings WHERE farm_id = ? AND (
-       status = 'pending_confirm' OR status = 'confirmed'
-       OR (status = 'pending_payment' AND payment_deadline > NOW())
-       OR (status = 'active' AND end_at > NOW()))`, [farmId]);
-  let maxEnd = null;
-  rows.forEach(b => {
-    const e = bookingEffectiveEnd(b, rHours);
-    if (e && (!maxEnd || e > maxEnd)) maxEnd = e;
-  });
-  return maxEnd;
+/* قراءة advance_days من الإعدادات (افتراضي 14 — قابل للتعديل من لوحة الإدارة) */
+function advanceDaysOf(cfg) {
+  const n = Math.round(Number(cfg && cfg.advance_days));
+  return (Number.isFinite(n) && n >= 1 && n <= 60) ? n : DEFAULT_ADVANCE_DAYS;
 }
 
-/* هل المزرعة قابلة للحجز المستقبلي؟ (مشغولة بحجز مؤكد/فعال فقط — بدون طلب عربون معلق ملخبط التوقيت) */
-async function farmQueueable(farmId) {
-  const [hold] = await db.execute(
-    `SELECT id FROM farm_bookings WHERE farm_id = ? AND (status = 'pending_confirm' OR (status = 'pending_payment' AND payment_deadline > NOW())) LIMIT 1`, [farmId]);
-  const [blocker] = await db.execute(
-    `SELECT id FROM farm_bookings WHERE farm_id = ? AND (status = 'confirmed' OR (status = 'active' AND end_at > NOW())) LIMIT 1`, [farmId]);
-  return !hold.length && blocker.length > 0;
+/* اختيار المزرعة والبداية لطلب حجز — يعيد { farm, scheduledStart } أو null
+   - تاريخ مستقبلي صريح → لازم يركع داخل فجوة وحدة على المزرعة المطلوبة (أو أول مزرعة تناسبه)
+   - «الآن»/بلا تاريخ → أقرب بداية تناسب المدة (فجوة تبدأ الآن = حجز فوري) */
+function pickFarmBooking(enabledFarms, occRows, opts) {
+  const farmId = opts.farmId ? Number(opts.farmId) : 0;
+  const candidates = farmId ? enabledFarms.filter(f => Number(f.id) === farmId) : enabledFarms;
+  if (opts.startRaw && opts.wantStartMs > opts.nowMs + 60e3) {
+    const farm = candidates.find(f => fitsInWindows(farmWindows(occRows, f.id, opts.nowMs, opts.horizonMs), opts.wantStartMs, opts.days)) || null;
+    return farm ? { farm, scheduledStart: new Date(opts.wantStartMs) } : null;
+  }
+  let best = null;
+  for (const f of candidates) {
+    const s = earliestStart(farmWindows(occRows, f.id, opts.nowMs, opts.horizonMs), opts.days);
+    if (s !== null && (!best || s < best.s)) best = { farm: f, s };
+  }
+  if (!best) return null;
+  return { farm: best.farm, scheduledStart: best.s > opts.nowMs + 60e3 ? new Date(best.s) : null };
 }
 
 async function getFarms() {
@@ -308,27 +409,34 @@ async function getFarms() {
 
 /* ── حالة الخدمة (تُستخدم في API وصفحة الشركة) ── */
 async function getPublicState(userId) {
-  const cfg = await getConfig();
-  const [farmsRaw, busy] = await Promise.all([getFarms(), farmsBusy()]);
-  const rHours = Math.max(1, Number(cfg.remainder_window_hours) || 6);
-  /* لكل مزرعة: أقرب بداية متاحة للحجز المستقبلي + هل تقبل حجزاً مستقبلياً */
-  const farms = await Promise.all(farmsRaw.map(async f => {
-    const id = Number(f.id);
-    const queueable = busy[id] ? await farmQueueable(id) : false;
-    const qEnd = queueable ? await farmQueueEnd(id, rHours) : null;
+  const nowMs = Date.now();
+  /* قراءات متوازية — 3 جولات بدل 8+ استعلام متسلسل (قاعدة بعيدة ~60ms/استعلام) */
+  const [cfg, farmsRaw, occRows] = await Promise.all([getConfig(), getFarms(), liveOccupancies()]);
+  const advDays = advanceDaysOf(cfg);
+  const horizonMs = nowMs + advDays * 864e5;
+  /* لكل مزرعة: فجواتها الفارغة داخل نافذة الـ14 يوم — فجوة من الآن = حجز فوري، وفجوة لاحقة = حجز مسبق */
+  const farms = farmsRaw.map(f => {
+    const enabled = Number(f.enabled) === 1;
+    const wins = enabled ? farmWindows(occRows, f.id, nowMs, horizonMs) : [];
     return {
-      id,
+      id: Number(f.id),
       name: f.name,
-      enabled: Number(f.enabled) === 1,
-      free: !busy[id],
-      queueable,
-      busy_until_iso: qEnd ? qEnd.toISOString() : null
+      enabled,
+      free: wins.length > 0 && wins[0].s <= nowMs + 60e3,
+      bookable: wins.length > 0,
+      advance_days: advDays,
+      windows: wins.map(w => ({
+        start_iso: new Date(w.s).toISOString(),
+        end_iso: new Date(w.e).toISOString(),
+        days: Math.round((w.e - w.s) / 864e5 * 100) / 100
+      }))
     };
-  }));
+  });
   const state = {
     serviceOpen: farms.some(f => f.enabled),
     anyFree: farms.some(f => f.enabled && f.free),
-    anyQueueable: farms.some(f => f.enabled && f.queueable),
+    anyBookable: farms.some(f => f.enabled && f.bookable),
+    advance_days: advDays,
     farms,
     config: {
       bank_account: cfg.bank_account,
@@ -455,51 +563,60 @@ router.post('/book', isAuthenticated, async (req, res) => {
     if (proof.mimetype && String(proof.mimetype).indexOf('image/') !== 0) return res.status(400).json({ error: 'مرفق الإثبات لازم يكون صورة (PNG/JPG)' });
     const rawExt = String(proof.name || 'img.png').split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '');
     const proofExt = ['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(rawExt) ? rawExt : 'png';
-    const farms = await getFarms();
+    /* كل القراءات المستقلة بجولة وحدة متوازية بدل 5+ استعلامات متسلسلة (كانت تصيّع ~0.5s+ على قاعدة بعيدة)
+       — هذا سبب بطء إرسال طلب الحجز القديم (طلب هادي) */
+    const [farms, cfg, occRows, mine, spam] = await Promise.all([
+      getFarms(),
+      getConfig(),
+      liveOccupancies(),
+      db.execute(`SELECT id, ref FROM farm_bookings WHERE user_id = ? AND ${BUSY_WHERE} LIMIT 1`, [req.user.id]),
+      db.execute("SELECT COUNT(*) AS n FROM farm_bookings WHERE user_id = ? AND status = 'expired' AND created_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)", [req.user.id])
+    ]);
     if (!farms.some(f => Number(f.enabled) === 1)) {
       return res.status(400).json({ error: 'الخدمة مقفلة حالياً' });
     }
     // حجز قائم واحد لكل مستأجر
-    const [mine] = await db.execute(
-      `SELECT id, ref FROM farm_bookings WHERE user_id = ? AND ${BUSY_WHERE} LIMIT 1`, [req.user.id]);
-    if (mine.length) return res.status(400).json({ error: `عندك حجز قائم بالفعل (${mine[0].ref})` });
-
-    const busy = await farmsBusy();
-    const cfg = await getConfig();
-    const rHours = Math.max(1, Number(cfg.remainder_window_hours) || 6);
-    /* 1) مزرعة فاضية الآن → حجز فوري — 2) كلها مشغولة → حجز مستقبلي يبدأ بعد انتهاء الحجز الحالي */
-    let farmRow = farms.find(f => Number(f.enabled) === 1 && !busy[f.id]) || null;
-    let scheduledStart = null;
-    if (!farmRow) {
-      const queueables = [];
-      for (const f of farms) {
-        if (Number(f.enabled) !== 1 || !busy[f.id]) continue;
-        if (!(await farmQueueable(f.id))) continue;
-        const qEnd = await farmQueueEnd(f.id, rHours);
-        if (qEnd) queueables.push({ farm: f, qEnd });
-      }
-      /* الأسبق وقتياً — أقرب مزرعة تنفتح */
-      queueables.sort((a, b2) => a.qEnd - b2.qEnd);
-      if (queueables.length) {
-        farmRow = queueables[0].farm;
-        scheduledStart = queueables[0].qEnd;
-      }
+    if (mine[0].length) return res.status(400).json({ error: `عندك حجز قائم بالفعل (${mine[0][0].ref})` });
+    // ضد الحجز المجاني المتكرر: تجاوز المهلة مرتين خلال 24 ساعة = ما ينحجز مرة ثانية حتى تراجع الإدارة
+    if (Number(spam[0][0].n) >= 2) {
+      return res.status(400).json({ error: 'عندك حجوزات انتهت مهلتها بدون دفع خلال آخر 24 ساعة — راجع إدارة الشركة قبل الحجز مرة ثانية' });
     }
-    if (!farmRow) return res.status(400).json({ error: 'غير متوفر — في طلبات حجز معلقة على المزارع، جرب بعد شوي' });
-    const farmNo = farmRow.id;
+
+    const nowMs = Date.now();
+    const advDays = advanceDaysOf(cfg);
+    const horizonMs = nowMs + advDays * 864e5;
+    const rHours = Math.max(1, Number(cfg.remainder_window_hours) || 6);
+    const enabledFarms = farms.filter(f => Number(f.enabled) === 1);
+
+    /* بداية الحجز: «الآن» (فجوة شغالة) أو تاريخ مستقبلي داخل نافذة الـ14 يوم — الاثنين يتحققون ضد فجوات الخط الزمني */
+    let wantStartMs = null;
+    const startRaw = String(req.body.start_at || '').trim();
+    if (startRaw) {
+      /* datetime-local بصيغة YYYY-MM-DDTHH:MM — توقيت الجمهور +03 (نفس توقيت السيرفر/قاعدة البيانات) */
+      const m = startRaw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+      if (!m) return res.status(400).json({ error: 'تاريخ بداية الحجز غير صالح' });
+      wantStartMs = new Date(m[1] + '-' + m[2] + '-' + m[3] + 'T' + m[4] + ':' + m[5] + ':00+03:00').getTime();
+      if (!Number.isFinite(wantStartMs)) return res.status(400).json({ error: 'تاريخ بداية الحجز غير صالح' });
+      if (wantStartMs < nowMs - 5 * 60e3) return res.status(400).json({ error: 'ما ينعكس حجز بالماضي — اختر بداية من الآن وطالع' });
+      if (wantStartMs >= horizonMs) return res.status(400).json({ error: `الحد الأقصى للحجز المسبق ${advDays} يوم من الآن — اختر بداية داخل النافذة` });
+    }
+
+    /* اختيار المزرعة والبداية — الفترة لازم تركب داخل فجوة وحدة كاملة على الخط الزمني */
+    const wantFarm = parseInt(req.body.farm_id);
+    const picked = pickFarmBooking(enabledFarms, occRows, {
+      farmId: wantFarm, startRaw, wantStartMs, days, nowMs, horizonMs
+    });
+    if (!picked) {
+      return res.status(400).json({ error: `غير متوفر — ما في فترة فاضية متصلة تكفي ${days} يوم داخل نافذة الحجز المسبق (${advDays} يوم) — جرب مدة أقصر أو تاريخ بداية ثاني` });
+    }
+    const farmRow = picked.farm;
+    const scheduledStart = picked.scheduledStart;
 
     const rent = priceOf(cfg, days);
     const deposit = Math.round(rent * Number(cfg.deposit_pct) / 100);
     // الحجز بدون فلوس ممنوع — الأسعار لازم تكون مضبوطة من الإدارة قبل أي حجز
     if (!(rent > 0) || !(deposit > 0)) {
       return res.status(400).json({ error: 'أسعار الخدمة غير مضبوطة من إدارة الشركة — ما ينعكس إنشاء الحجز حالياً' });
-    }
-    // ضد الحجز المجاني المتكرر: تجاوز المهلة مرتين خلال 24 ساعة = ما ينحجز مرة ثانية حتى تراجع الإدارة
-    const [spam] = await db.execute(
-      "SELECT COUNT(*) AS n FROM farm_bookings WHERE user_id = ? AND status = 'expired' AND created_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)",
-      [req.user.id]);
-    if (Number(spam[0].n) >= 2) {
-      return res.status(400).json({ error: 'عندك حجوزات انتهت مهلتها بدون دفع خلال آخر 24 ساعة — راجع إدارة الشركة قبل الحجز مرة ثانية' });
     }
     const schedVal = scheduledStart ? [toDbDT(scheduledStart)] : [];
     /* حفظ صورة الإثبات قبل الإدراج — التخزين public/uploads/farm وتُخدم من /uploads/farm */
@@ -531,9 +648,9 @@ router.post('/book', isAuthenticated, async (req, res) => {
       { name: 'العربون المطلوب', value: money(deposit) + '$', inline: true },
       { name: 'إثبات التحويل', value: '[فتح الصورة](' + (process.env.SITE_URL || '') + proofUrl + ')', inline: false },
       { name: 'بنك الشركة', value: cfg.bank_account, inline: false },
-      { name: 'مهلة الدفع', value: Number(cfg.payment_window_hours) + ' ساعات من الآن (اليوم أول يوم حجز)', inline: false }
+      { name: 'مهلة الدفع', value: Number(cfg.payment_window_hours) + ' ساعات من الآن' + (scheduledStart ? ' — العربون يثبت الحجز المسبق' : ' — اليوم أول يوم حجز'), inline: false }
     ];
-    if (scheduledStart) bookFields.push({ name: '🕒 بداية الحجز المتوقعة', value: schedStr + ' — بعد انتهاء الحجز الحالي — عداد النص الثاني يبدأ آخر ' + rHours + ' ساعات قبل البداية', inline: false });
+    if (scheduledStart) bookFields.push({ name: '🕒 بداية الحجز', value: schedStr + ' — عداد النص الثاني يبدأ آخر ' + rHours + ' ساعات قبل البداية والتحويل لازم يتم قبل البداية بساعة', inline: false });
     farmNotify({
       title: scheduledStart ? '🕒 حجز مزرعة مستقبلي — بانتظار العربون' : '🌾 حجز مزرعة جديد — بانتظار العربون',
       color: 0xbc13fe,
@@ -544,7 +661,7 @@ router.post('/book', isAuthenticated, async (req, res) => {
       success: true, ref, deposit, rent, farm_no: farmRow.id, farm_name: farmRow.name,
       scheduled_start_iso: scheduledStart ? scheduledStart.toISOString() : null,
       message: scheduledStart
-        ? `تم إنشاء الحجز المستقبلي ${ref} على ${farmRow.name} — المزرعة مشغولة حالياً وحجزك راح يبدأ ${schedStr} بعد انتهاء الحجز الحالي. حوّل العربون ${money(deposit)}$ اليوم (أول يوم حجز) على بنك الشركة واضغط «دفعت العربون» — وعداد النص الثاني يبدأ آخر ${rHours} ساعات قبل بداية حجزك`
+        ? `تم إنشاء الحجز المسبق ${ref} على ${farmRow.name} — بداية حجزك ${schedStr}. حوّل العربون ${money(deposit)}$ خلال ${cfg.payment_window_hours} ساعات على بنك الشركة واضغط «دفعت العربون» لتثبت حجزك — والنص الثاني يتحول قبل بداية الحجز بساعة (عداد النص الثاني يبدأ آخر ${rHours} ساعات قبل البداية)`
         : `تم إنشاء الحجز ${ref} على ${farmRow.name} — حوّل العربون ${money(deposit)}$ على بنك الشركة واضغط «دفعت العربون» — وبعد تأكيده حوّل النص الثاني قبل بداية الحجز`
     });
   } catch (e) {
@@ -639,6 +756,7 @@ router.post('/bookings/:id/cancel', isAuthenticated, async (req, res) => {
       return res.status(400).json({ error: 'هذا الحجز ما ينلغى' });
     }
     await db.execute("UPDATE farm_bookings SET status = 'cancelled', cancel_penalty = ? WHERE id = ?", [penalty, b.id]);
+    await deleteProofFile(b); /* الحجز انلغى — صورة الإثبات ما عاد لها فائدة */
     await logEvent(b.id, req.user.username, 'user', 'cancel', penalty > 0 ? `ألغى الحجز — خسر ${money(penalty)}$ من العربون` : 'ألغى الحجز قبل الدفع — بدون خسارة');
     farmNotify({
       title: '🚫 إلغاء حجز مزرعة',
@@ -675,13 +793,17 @@ router.post('/bookings/:id/extend', isAuthenticated, async (req, res) => {
     const w = Number(cfg.extend_window_hours);
     if (Date.now() < endMs - w * 3600e3) return res.status(400).json({ error: `التمديد متاح فقط خلال آخر ${w} ساعة قبل انتهاء الحجز` });
     if (Date.now() >= endMs) return res.status(400).json({ error: 'الحجز انتهى — ما ينعكس التمديد' });
-    // الحجوزات المستقبلية المبنية على نهاية حجزك — بدايتها راح تنإجد تلقائياً بقدر التمديد
-    const [queued] = await db.execute(
-      `SELECT ref, username, user_id, status FROM farm_bookings
-       WHERE farm_id = ? AND id != ? AND scheduled_start IS NOT NULL
-       AND scheduled_start >= ? AND status IN ('pending_payment','pending_confirm','confirmed')
-       ORDER BY scheduled_start ASC`,
-      [b.farm_id, b.id, b.end_at]);
+    /* النظام الزمني (فجوات الـ14 يوم): بدايات الحجوزات الأخرى ثابتة — التمديد لازم ما يركب
+       على حجز ثاني على نفس المزرعة بدايته داخل فترة التمديد */
+    const [collide] = await db.execute(
+      `SELECT ref, username FROM farm_bookings
+       WHERE farm_id = ? AND id != ? AND ${BUSY_WHERE}
+       AND COALESCE(scheduled_start, start_at, NOW()) < DATE_ADD(?, INTERVAL ? DAY)
+       AND COALESCE(end_at, DATE_ADD(COALESCE(scheduled_start, start_at, NOW()), INTERVAL duration_days DAY)) > ?`,
+      [b.farm_id, b.id, b.end_at, days, b.end_at]);
+    if (collide.length) {
+      return res.status(400).json({ error: `ما ينعكس التمديد — في حجز تاني (${collide[0].ref}${collide[0].username ? ' — ' + collide[0].username : ''}) على نفس المزرعة يبدا خلال فترة التمديد` });
+    }
 
     const rent = priceOf(cfg, days);
     const deposit = Math.round(rent * Number(cfg.deposit_pct) / 100);
@@ -694,13 +816,9 @@ router.post('/bookings/:id/extend', isAuthenticated, async (req, res) => {
       { name: 'المستأجر', value: b.username, inline: true },
       { name: 'التمديد', value: days + ' يوم', inline: true },
       { name: 'العربون المطلوب', value: money(deposit) + '$', inline: true },
-      { name: 'بنك الشركة', value: cfg.bank_account, inline: false }
+      { name: 'بنك الشركة', value: cfg.bank_account, inline: false },
+      { name: 'النهاية الجديدة', value: new Date(endMs + days * 864e5 + 3 * 3600e3).toISOString().slice(0, 16).replace('T', ' '), inline: true }
     ];
-    if (queued.length) extFields.push({
-      name: '🕒 حجوزات مستقبلية وراء حجزك (' + queued.length + ')',
-      value: queued.map(q => q.ref + (q.username ? ' (' + q.username + ')' : '')).join(' ، ') + ' — بداياتهم راح تنإجد تلقائياً بقدر التمديد عند تأكيده',
-      inline: false
-    });
     farmNotify({
       title: '⏳ طلب تمديد حجز — بانتظار العربون',
       color: 0xbc13fe,
@@ -881,13 +999,14 @@ adminRouter.post('/config', async (req, res) => {
       Math.min(num(b.cancel_cutoff_hours, Number(cfg.cancel_cutoff_hours), 72), 72),
       Math.min(num(b.extend_window_hours, Number(cfg.extend_window_hours), 72), 72),
       Math.min(Math.max(num(b.remainder_window_hours, Number(cfg.remainder_window_hours || 6), 72), 1), 72),
+      Math.min(Math.max(num(b.advance_days, advanceDaysOf(cfg), 60), 1), 60),
       String(b.ping_mention || cfg.ping_mention).slice(0, 32)
     ];
     await db.execute(
       `UPDATE farm_config SET bank_account=?,
        price_1d=?, price_3d=?, price_5d=?, price_7d=?, price_10d=?, price_14d=?,
        worker_price=?, max_workers=?, deposit_pct=?, payment_window_hours=?,
-       cancel_cutoff_hours=?, extend_window_hours=?, remainder_window_hours=?, ping_mention=?, updated_at=NOW() WHERE id=1`, vals);
+       cancel_cutoff_hours=?, extend_window_hours=?, remainder_window_hours=?, advance_days=?, ping_mention=?, updated_at=NOW() WHERE id=1`, vals);
     await logEvent(null, req.user.username, 'admin', 'config', 'تحديث إعدادات خدمة المزارع');
     res.json({ success: true });
   } catch (e) {
@@ -976,6 +1095,8 @@ adminRouter.post('/bookings/:id/confirm-payment', async (req, res) => {
       await logEvent(b.id, req.user.username, 'admin', 'confirm_payment',
         `تأكيد استلام العربون — الحجز مؤكد والبداية متجددة بعد ${rHours} ساعات إذا انسدد النص الثاني (${money(remainder)}$)`);
     }
+    /* حذف صورة إثبات التحويل تلقائياً من الاستضافة بعد تأكيد وصول العربون (طلب هادي) */
+    await deleteProofFile(b);
     /* تنبيه المستأجر */
     const startStr = isFuture
       ? new Date(schedMs + 3 * 3600e3).toISOString().slice(0, 16).replace('T', ' ')
@@ -1001,11 +1122,10 @@ adminRouter.post('/bookings/:id/confirm-payment', async (req, res) => {
     farmNotify({
       title: isFuture ? '✅ تم تأكيد استلام العربون — حجز مستقبلي مؤكد' : '✅ تم تأكيد استلام العربون — الحجز مؤكد',
       color: 0x34d399,
-      description: isFuture
-        ? `الحجز يبدأ ${startStr} — عداد النص الثاني (${money(remainder)}$) يبدأ آخر ${rHours} ساعات قبل البداية (${counterStr}). ` +
-          'اشعار الإضافة للفاكشن ما راح يطلع إلا بعد تأكيد وصول النص الثاني وبدء الحجز بوقته.'
-        : `البداية متجددة بعد ${rHours} ساعات — بانتظار تحويل النص الثاني (${money(remainder)}$). ` +
-          'اشعار الإضافة للفاكشن ما راح يطلع إلا بعد تأكيد وصول النص الثاني.',
+      description: (isFuture
+        ? `الحجز يبدأ ${startStr} — عداد النص الثاني (${money(remainder)}$) يبدأ آخر ${rHours} ساعات قبل البداية (${counterStr}). `
+        : `البداية متجددة بعد ${rHours} ساعات — بانتظار تحويل النص الثاني (${money(remainder)}$). `) +
+        'اشعار الإضافة للفاكشن ما راح يطلع إلا بعد تأكيد وصول النص الثاني. 🗑️ صورة إثبات التحويل انحذفت تلقائياً من الاستضافة.',
       fields: [
         { name: 'المرجع', value: b.ref, inline: true },
         { name: 'المستأجر', value: b.username, inline: true },
@@ -1119,6 +1239,7 @@ adminRouter.post('/bookings/:id/reject-remainder', async (req, res) => {
     await db.execute(
       "UPDATE farm_bookings SET status = 'cancelled', remainder_status = 'rejected', cancel_penalty = ? WHERE id = ?",
       [Number(b.deposit_amount), b.id]);
+    await deleteProofFile(b); /* الحجز انلغى — صورة الإثبات ما عاد لها فائدة */
     await logEvent(b.id, req.user.username, 'admin', 'reject_remainder',
       `رفض النص الثاني — انلغي الحجز وخسر المستأجر العربون (${money(b.deposit_amount)}$)`);
     farmNotify({
@@ -1191,7 +1312,7 @@ adminRouter.post('/bookings/:id/remove-confirm-2', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ' }); }
 });
 
-// تأكيد دفع عربون التمديد — وبدايات الحجوزات المستقبلية المبنية على نهايته تنإجد بقدر التمديد
+// تأكيد دفع عربون التمديد — مع إعادة فحص التعارض (بدايات الحجوزات الأخرى ثابتة بالنظام الزمني)
 adminRouter.post('/bookings/:id/confirm-extension', async (req, res) => {
   try {
     const b = await getBooking(req.params.id);
@@ -1200,44 +1321,33 @@ adminRouter.post('/bookings/:id/confirm-extension', async (req, res) => {
     const cfgX = await getConfig();
     const rHX = Math.max(1, Number(cfgX.remainder_window_hours) || 6);
     const oldEnd = toIso(b.end_at) ? new Date(toIso(b.end_at)).getTime() : 0;
+    /* إعادة الفحص وقت التأكيد — ممكن فترة التمديد انحجزت من شخص ثاني بعد ما طلبها المستأجر */
+    const [collide] = await db.execute(
+      `SELECT ref, username FROM farm_bookings
+       WHERE farm_id = ? AND id != ? AND ${BUSY_WHERE}
+       AND COALESCE(scheduled_start, start_at, NOW()) < DATE_ADD(?, INTERVAL ? DAY)
+       AND COALESCE(end_at, DATE_ADD(COALESCE(scheduled_start, start_at, NOW()), INTERVAL duration_days DAY)) > ?`,
+      [b.farm_id, b.id, b.end_at, Number(b.extend_days), b.end_at]);
+    if (collide.length) {
+      await db.execute("UPDATE farm_bookings SET extend_days = NULL, extend_rent = NULL, extend_deposit = NULL, extend_status = '', extend_deadline = NULL WHERE id = ?", [b.id]);
+      await logEvent(b.id, req.user.username, 'admin', 'confirm_extension',
+        `التمديد ما انأكد — فترة التمديد انحجزت من حجز ثاني (${collide[0].ref}) — عربون التمديد راجع للمستأجر`);
+      renterNotify(b.user_id, '❌ ما انأكد تمديد حجزك',
+        `طلب تمديد حجزك ${b.ref} ما انأكد — فترة التمديد انحجزت من حجز ثاني (${collide[0].ref}). عربون التمديد ${money(Number(b.extend_deposit))}$ راجع لك حسب نظام الشركة.`);
+      farmNotify({ title: '❌ التمديد ما انأكد — الفترة انحجزت', color: 0xef4444, fields: [
+        { name: 'المرجع', value: b.ref, inline: true }, { name: 'المستأجر', value: b.username, inline: true },
+        { name: 'الحجز المعيق', value: collide[0].ref, inline: true }
+      ], description: 'عربون التمديد راجع للمستأجر — أعد الأموال يدوياً.' });
+      return res.status(400).json({ error: `ما ينعكس التأكيد — فترة التمديد انحجزت من حجز ثاني (${collide[0].ref}) — عربون التمديد راجع للمستأجر` });
+    }
     await db.execute("UPDATE farm_bookings SET end_at = DATE_ADD(end_at, INTERVAL ? DAY), extend_status = 'confirmed' WHERE id = ?",
       [Number(b.extend_days), b.id]);
-    await logEvent(b.id, req.user.username, 'admin', 'confirm_extension', `تمديد ${b.extend_days} يوم — النهاية الجديدة مسجلة`);
-    /* إنجاج الحجوزات المستقبلية المبنية على النهاية القديمة — نفس مقدار التمديد */
-    let slid = [];
-    if (oldEnd) {
-      const [qrows] = await db.execute(
-        `SELECT * FROM farm_bookings
-         WHERE farm_id = ? AND id != ? AND scheduled_start IS NOT NULL
-         AND scheduled_start >= ? AND status IN ('pending_payment','pending_confirm','confirmed')
-         ORDER BY scheduled_start ASC`,
-        [b.farm_id, b.id, b.end_at]);
-      for (const q of qrows) {
-        const unpaidRemainder = !q.remainder_status || q.remainder_status === '' || q.remainder_status === 'pending_payment';
-        await db.execute(
-          `UPDATE farm_bookings SET scheduled_start = DATE_ADD(scheduled_start, INTERVAL ? DAY)${unpaidRemainder ? ', remainder_deadline = DATE_ADD(remainder_deadline, INTERVAL ? DAY)' : ''} WHERE id = ?`,
-          unpaidRemainder ? [Number(b.extend_days), Number(b.extend_days), q.id] : [Number(b.extend_days), q.id]);
-        slid.push(q);
-        if (Number(q.user_id)) {
-          const newStart = new Date(new Date(toIso(q.scheduled_start)).getTime() + Number(b.extend_days) * 864e5 + 3 * 3600e3)
-            .toISOString().slice(0, 16).replace('T', ' ');
-          renterNotify(q.user_id, '🕒 تجددت بداية حجزك المستقبلي',
-            `المستأجر السابق على مزرعتك مدّد حجزه ${b.extend_days} يوم — بداية حجزك المستقبلي ${q.ref} تجددت تلقائياً إلى ${newStart}. ` +
-            `العربون مسدد/مهله شغالة وعداد النص الثاني راح يبدأ آخر ${rHX} ساعات قبل بدايتك الجديدة.`);
-        }
-        await logEvent(q.id, req.user.username, 'admin', 'reschedule_extend',
-          `تمديد الحجز السابق (${b.extend_days} يوم) — بداية الحجز المستقبلي تجددت تلقائياً`);
-      }
-    }
+    await logEvent(b.id, req.user.username, 'admin', 'confirm_extension', `تمديد ${b.extend_days} يوم — النهاية الجديدة مسجلة (${rHX} ساعة عداد النص الثاني للحجوزات القادمة)`);
     const extFields = [
       { name: 'المرجع', value: b.ref, inline: true }, { name: 'المستأجر', value: b.username, inline: true },
       { name: 'التمديد', value: b.extend_days + ' يوم', inline: true }
     ];
-    if (slid.length) extFields.push({
-      name: '🕒 حجوزات مستقبلية تجددت بدايتها (' + slid.length + ')',
-      value: slid.map(q => q.ref + (q.username ? ' (' + q.username + ')' : '')).join(' ، ') + ' — وصلتهم رسالة بالبداية الجديدة',
-      inline: false
-    });
+    if (oldEnd) extFields.push({ name: 'النهاية الجديدة', value: new Date(oldEnd + Number(b.extend_days) * 864e5 + 3 * 3600e3).toISOString().slice(0, 16).replace('T', ' '), inline: true });
     farmNotify({ title: '⏱️ تم تأكيد التمديد — زادت مدة الحجز', color: 0x34d399, fields: extFields });
     res.json({ success: true });
   } catch (e) { console.error('[farm] confirm-extension:', e.message); res.status(500).json({ error: 'خطأ' }); }
@@ -1250,6 +1360,7 @@ adminRouter.post('/bookings/:id/release', async (req, res) => {
     if (!b) return res.status(404).json({ error: 'غير موجود' });
     if (!['pending_payment', 'pending_confirm'].includes(b.status)) return res.status(400).json({ error: 'الحجز مو معلق' });
     await db.execute("UPDATE farm_bookings SET status = 'expired' WHERE id = ?", [b.id]);
+    await deleteProofFile(b); /* حجز ملبوط انبطال — صورة الإثبات تنحذف */
     await logEvent(b.id, req.user.username, 'admin', 'release', 'إبطال حجز معلق يدوياً');
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: 'خطأ' }); }
@@ -1262,6 +1373,7 @@ adminRouter.post('/bookings/:id/force-end', async (req, res) => {
     if (!b) return res.status(404).json({ error: 'غير موجود' });
     if (b.status !== 'active') return res.status(400).json({ error: 'الحجز مو فعال' });
     await db.execute("UPDATE farm_bookings SET status = 'ended', end_at = NOW() WHERE id = ?", [b.id]);
+    await deleteProofFile(b); /* الحجز انتهى — صورة الإثبات ما عاد لها فائدة */
     await logEvent(b.id, req.user.username, 'admin', 'force_end', 'إنهاء يدوي لحجز فعال');
     farmNotify({ title: '⏹️ إنهاء يدوي لحجز مزرعة', color: 0xef4444, fields: [
       { name: 'المرجع', value: b.ref, inline: true }, { name: 'المستأجر', value: b.username, inline: true }
@@ -1347,6 +1459,7 @@ async function processTick() {
     await db.execute("UPDATE farm_bookings SET status = 'expired' WHERE status = 'pending_payment' AND payment_deadline <= NOW()");
     const cfgE = await getConfig();
     for (const b of expired) {
+      await deleteProofFile(b); /* انتهت المهلة بدون دفع — صورة الإثبات تنحذف */
       await logEvent(b.id, 'system', 'system', 'expire', `تجاوز مهلة الدفع (${b.payment_deadline}) — أُلغي تلقائياً`);
       farmNotify({ title: '⌛ انتهت مهلة الدفع — أُلغي الحجز تلقائياً', color: 0xef4444, fields: [
         { name: 'المرجع', value: b.ref, inline: true }, { name: 'المستأجر', value: b.username, inline: true },
@@ -1398,6 +1511,7 @@ async function processTick() {
       `UPDATE farm_bookings SET status = 'cancelled', remainder_status = '', cancel_penalty = deposit_amount
        WHERE id IN (${ids.map(() => '?').join(',')})`, ids);
     for (const b of forfeit) {
+      await deleteProofFile(b); /* انلغي تلقائياً — صورة الإثبات تنحذف */
       await logEvent(b.id, 'system', 'system', 'remainder_forfeit',
         `النص الثاني ما انحول قبل بداية الحجز بساعة — انلغي تلقائياً وخسر العربون (${money(b.deposit_amount)}$)`);
       farmNotify({
@@ -1453,28 +1567,8 @@ async function processTick() {
         `إذا ما حوّلته قبل بداية الحجز بساعة ينلغي الحجز وتخسر العربون ${money(b.deposit_amount)}$`);
     }
   }
-  // 7) مزامنة بداية الحجوزات المستقبلية المعلقة (العربون ما انأكد بعد) مع نهاية الحجز الحالي —
-  //    لو المستأجر السابق مدّد/اننهى مبكراً، البداية تتحرك تلقائياً مع نهايته الفعلية
-  const [queuedPending] = await db.execute(
-    "SELECT * FROM farm_bookings WHERE status = 'pending_payment' AND scheduled_start IS NOT NULL");
-  for (const b of queuedPending) {
-    const qEnd = await farmQueueEnd(b.farm_id, rH);
-    let next = null;
-    if (qEnd && qEnd.getTime() > Date.now()) next = qEnd;
-    else {
-      /* ما بقى حجز معيق — نبقي البداية المجدولة إذا لسا مستقبلية (وعد مثبت)، وتنمسح فقط إذا صارت بالماضي */
-      const curMs = toIso(b.scheduled_start) ? new Date(toIso(b.scheduled_start)).getTime() : 0;
-      if (curMs > Date.now()) next = new Date(curMs);
-    }
-    const nextStr = next ? toDbDT(next) : null;
-    const curStr = b.scheduled_start instanceof Date ? toDbDT(b.scheduled_start) : String(b.scheduled_start);
-    if ((nextStr || null) !== curStr) {
-      await db.execute('UPDATE farm_bookings SET scheduled_start = ? WHERE id = ?', [nextStr, b.id]);
-      await logEvent(b.id, 'system', 'system', 'reschedule',
-        nextStr ? `بداية الحجز المستقبلي تجددت من ${curStr} إلى ${nextStr} حسب نهاية الحجز الحالي`
-                : `ما بقى حجز معيق والبداية المجدولة صارت بالماضي — البداية صارت فورية`);
-    }
-  }
+  /* ملاحظة (النظام الزمني): بدايات الحجوزات المسبقة صارت ثابتة بتاريخ يختاره المستأجر ضد الفجوات —
+     ما عاد في إعادة جدولة تلقائية وراء الحجز السابق، والإلغاء/انتهاء المهلة يحرر الفترة لحالها */
 }
 
 // تنبيه ساعي: مستأجرين فعالين لسا ما انضافوا للفاكشن + عداد النص الثاني الشغال
@@ -1547,4 +1641,6 @@ function startFarmCron() {
   console.log('🌾 Farm cron: tick every minute + faction-add ping hourly');
 }
 
-module.exports = { router, ensureFarmSchema, startFarmCron, getPublicState, processTick };
+module.exports = { router, ensureFarmSchema, startFarmCron, getPublicState, processTick,
+  /* أدوات اختبار/تحقق — محرك الفجوات الزمنية */
+  __test: { occInterval, farmWindows, fitsInWindows, earliestStart, advanceDaysOf, pickFarmBooking, DEFAULT_ADVANCE_DAYS, FIT_GRACE_MS } };
