@@ -268,9 +268,9 @@
 </div>
 
 <script>
-var allItems = <%- JSON.stringify(items) %>;
-var allQuestions = <%- JSON.stringify(questions) %>;
-var allPackages = <%- JSON.stringify(packages) %>;
+var allItems = <%- JSON.stringify(items).replace(/</g,'\\u003c') %>;
+var allQuestions = <%- JSON.stringify(questions).replace(/</g,'\\u003c') %>;
+var allPackages = <%- JSON.stringify(packages).replace(/</g,'\\u003c') %>;
 var svcItemIds = allItems.filter(i => i.category === 'activities').map(i => i.id);
 
 function showAddItem(cat) {

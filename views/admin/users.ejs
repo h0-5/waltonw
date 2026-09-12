@@ -168,8 +168,8 @@
 </div>
 
 <script>
-const SIDE_ROLES = <%- JSON.stringify(sideRoles) %>;
-const ROLES = <%- JSON.stringify(roles) %>;
+const SIDE_ROLES = <%- JSON.stringify(sideRoles).replace(/</g,'\\u003c') %>;
+const ROLES = <%- JSON.stringify(roles).replace(/</g,'\\u003c') %>;
 const MY_ROLE = '<%= currentUser.role %>';
 const ROLE_RANK = {};
 ROLES.forEach(function(r, i) { ROLE_RANK[r.name] = i; });

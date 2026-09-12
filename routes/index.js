@@ -48,30 +48,10 @@ async function getSettings(force = false) {
   return settings;
 }
 
-// Test banned page (temp route - remove after testing)
-router.get('/test-banned', (req, res) => {
-  res.render('pages/banned', {
-    title: 'محظور',
-    username: 'TestUser#1234',
-    banReason: 'انتهاك قوانين المجتمع - سلوك غير لائق',
-    bannedAt: new Date(Date.now() - 86400000).toISOString(),
-    bannedUntil: null,
-    bannedBy: 'Admin'
-  });
-});
-
-// Test lockdown page (temp route - remove after testing)
-router.get('/test-lockdown', (req, res) => {
-  res.render('pages/lockdown', {
-    title: 'الموقع مغلق',
-    message: 'الموقع مغلق حالياً للصيانة. يرجى المحاولة لاحقاً.',
-    reason: 'تحديثات دورية على الموقع',
-    image: ''
-  });
-});
-
 // Public API - Active broadcasts for ticker
 router.get('/api/broadcasts', async (req, res) => {
+  /* كاش قصير بالمتصفح — الشريط يتفحص بكل تحميل صفحة، 20 ثانية كاش تقلل الاستعلامات بلا أي فرق محسوس */
+  res.set('Cache-Control', 'public, max-age=20');
   try {
     const [rows] = await db.execute(
       "SELECT id, title, message, type, created_at, expires_at FROM broadcasts WHERE is_active = 1 AND (expires_at IS NULL OR expires_at > NOW()) ORDER BY created_at DESC LIMIT 5"
@@ -270,7 +250,7 @@ router.get('/applications', isAuthenticated, isInGuild, checkPageAccess('/applic
 // Application form
 router.get('/applications/form/:type', isAuthenticated, isInGuild, checkPageAccess('/applications'), async (req, res) => {
   const settings = await getSettings();
-  const type = decodeURIComponent(req.params.type);
+  const type = (() => { try { return decodeURIComponent(req.params.type); } catch (e) { return req.params.type; } })();
 
   // Guarded: a DB hiccup here must render the error page, never crash the process
   let appSetting, questions;
@@ -456,10 +436,6 @@ router.get('/company', isAuthenticated, isInGuild, checkPageAccess('/company'), 
     pks.forEach(p => { (servicesPackages[p.service_id] = servicesPackages[p.service_id] || []).push(p); });
   }
   res.render('pages/company', { title: 'الشركة', infoItems, activityItems, servicesQuestions, servicesPackages, farmState });
-});
-
-router.get('/test', (req, res) => {
-  res.render('pages/test', { title: 'اختبار التحديث' });
 });
 
 /* تدفئة الكاش عند الإقلاع — نفس الاستعلامات المشتركة للصفحات الرئيسية، تُنفذ

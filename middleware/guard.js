@@ -24,6 +24,7 @@ const DEFAULT_CONFIG = {
   probeBlockMinutes: 20,
   honeypot: true,                                       // فخ المسارات الفخية
   honeypotBlockMinutes: 120,
+  scoreThreshold: 60,                                   // عتبة طبقة التقييم السلوكي (خطأ أقل من 1%)
   whitelist: []                                         // IPs ما تنحظر تلقائياً أبداً (الحظر اليدوي يظل)
 };
 
@@ -50,6 +51,7 @@ function clampConfig(raw) {
   c.probeBlockMinutes = num(raw.probeBlockMinutes, 5, 1440, DEFAULT_CONFIG.probeBlockMinutes);
   c.honeypotBlockMinutes = num(raw.honeypotBlockMinutes, 10, 1440, DEFAULT_CONFIG.honeypotBlockMinutes);
   c.honeypot = raw.honeypot !== false;
+  c.scoreThreshold = num(raw.scoreThreshold, 30, 200, DEFAULT_CONFIG.scoreThreshold);
   if (Array.isArray(raw.whitelist)) {
     c.whitelist = raw.whitelist.map(x => String(x).trim()).filter(x => /^[\d.a-fA-F:]+$/.test(x) && x.length <= 45).slice(0, 50);
   }
@@ -181,6 +183,70 @@ function probeHit(ip) {
   }
 }
 
+/* ═══ طبقة التقييم السلوكي (تكمّل الفخ والمسبار ووضع البوتات) ═══
+   تلتقط السكربتات المتنكرة بـUA متصفح: ترويسات ناقصة، مسارات فحص مو فخية،
+   ضغط متكرر — نقاط تتحلل نصف كل 5 دقائق، وعند العتبة حظر مؤقت فقط.
+   حامل كوكي جلسة الموقع (wf_session) يتجاوزها كلياً = صفر خطأ للأعضاء
+   والزوار السابقين. الزائر البشري بمتصفح عادي نقاطه صفر دائماً. */
+const SCORES = { probePath: 30, noAccept: 15, noLang: 10, botUA: 10, burst: 5 };
+const PROBE_RE = /(\/vendor\/phpunit|\/eval-|\.sql($|\?)|\.bak$|\.ini$|\.aws\/|\/\.ssh|\/actuator|\.aspx($|\?)|\/cgi-bin|\/pma\/)/i;
+const smartScores = new Map();  // ip -> { score, at }
+const smartEvents = [];         // آخر 60 حدث — تُعرض بمركز الحماية
+
+function recordSmart(ip, score, signals, blocked) {
+  smartEvents.unshift({ ip: String(ip).slice(0, 45), score, signals, blocked, at: Date.now() });
+  if (smartEvents.length > 60) smartEvents.length = 60;
+}
+
+function smartScoreCheck(req, res, cls, burstCount) {
+  if (!cfg.enabled || !Array.isArray(cfg.whitelist)) return false;
+  const ip = req.ip || (req.connection && req.connection.remoteAddress) || 'unknown';
+  if (isWhitelisted(ip)) return false;
+  /* كوكي الجلسة = إنسان مؤكد — يتجاوز التقييم كلياً (السكربتات ما تحمل كوكي جلسة) */
+  const ck = req.headers.cookie || '';
+  if (ck.indexOf('wf_session=') !== -1) return false;
+
+  const now = Date.now();
+  let entry = smartScores.get(ip);
+  if (entry) {
+    const mins = Math.floor((now - entry.at) / 300000);
+    if (mins > 0) entry.score = entry.score * Math.pow(0.5, mins); // تحلل نصف كل 5 دقائق
+    entry.at = now;
+  } else { entry = { score: 0, at: now }; }
+  let score = entry.score;
+  const signals = [];
+
+  const ua = (req.headers['user-agent'] || '').toLowerCase();
+  const path = req.path || req.url || '/';
+
+  if (PROBE_RE.test(path)) { score += SCORES.probePath; signals.push('probe'); }
+  if (!req.headers['accept']) { score += SCORES.noAccept; signals.push('no-accept'); }
+  else if (!req.headers['accept-language']) { score += SCORES.noLang; signals.push('no-lang'); }
+  if (cls === 'bot') { score += SCORES.botUA; signals.push('bot-ua'); }
+  if (burstCount > cfg.burstLimit * 0.5) { score += SCORES.burst; signals.push('burst'); }
+
+  if (smartScores.size > 10000) {
+    smartScores.forEach((v, k) => { if (now - v.at > 1800000) smartScores.delete(k); });
+  }
+
+  const threshold = cfg.scoreThreshold || 60;
+  if (score >= threshold) {
+    smartScores.delete(ip);
+    if (cfg.botMode === 'log') {
+      recordSmart(ip, Math.round(score), signals, false); // مراقبة فقط
+      smartScores.set(ip, { score: 0, at: now });
+      return false;
+    }
+    recordSmart(ip, Math.round(score), signals, true);
+    blockIp(ip, 'smart-score (' + signals.join('+') + ' score=' + Math.round(score) + ')', ua, cfg.autoBlockMinutes);
+    deny(res, 429, 'Too Many Requests — تم حظرك مؤقتاً بسبب سلوك آلي', cfg.autoBlockMinutes * 60);
+    return true;
+  }
+  entry.score = score;
+  smartScores.set(ip, entry);
+  return false;
+}
+
 // ── Periodic refresh: pull DB blocks into memory + prune counters ──
 setInterval(() => {
   ensureTables()
@@ -278,7 +344,10 @@ function guard(req, res, next) {
     return deny(res, 429, 'Too Many Requests — تم حظرك مؤقتاً (' + cfg.autoBlockMinutes + ' دقيقة)', cfg.autoBlockMinutes * 60);
   }
 
-  // 5) مسبار 404 — نسمع النتيجة من finish (بعد ما يعرف الراوتر الرد)
+  // 5) التقييم السلوكي — بلا أي تكلفة DB
+  if (smartScoreCheck(req, res, cls, burst.count)) return;
+
+  // 6) مسبار 404 — نسمع النتيجة من finish (بعد ما يعرف الراوتر الرد)
   if (res.on) {
     res.on('finish', () => {
       try { if (res.statusCode === 404) probeHit(ip); } catch (e) {}
@@ -290,7 +359,7 @@ function guard(req, res, next) {
 
 module.exports = {
   guard, classifyUA, blockIp, unblockIp, ensureTables, probeHit,
-  botUAStats, blockedCache,
+  botUAStats, blockedCache, smartEvents, recordSmart,
   getGuardConfig, setGuardConfig, loadGuardSettings, clampConfig, TRAP_RE, SEARCH_BOT_RE,
   stats: { get blockedTotal() { return lastBotTotal; } },
   KILL_RE, BOT_RE

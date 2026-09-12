@@ -978,7 +978,7 @@ router.get('/applications/questions/:type', checkPermission('app_types_view'), a
 // Add question
 router.post('/applications/questions', checkPermission('app_types_edit'), async (req, res) => {
   try {
-    const { application_type, question, type, required, options, order_index, max_selections } = req.body;
+    const { application_type, question, type, required, options, order_index, max_selections, keyword } = req.body;
     if (!application_type || !question) return res.status(400).json({ error: 'البيانات ناقصة' });
     const validTypes = ['text','textarea','number','select','radio','multiple_choice','true_false','server_name','image'];
     const qType = validTypes.includes(type) ? type : 'text';
@@ -1532,7 +1532,7 @@ router.post('/side-roles/:id/page-access', checkPermission('roles_config_edit'),
 });
 
 // Profile API - Send Warning
-router.post('/profile/warnings', async (req, res) => {
+router.post('/profile/warnings', require('../../middleware/auth').isAuthenticated, async (req, res) => {
   try {
     const { user_id, reason } = req.body;
 
@@ -1556,7 +1556,7 @@ router.post('/profile/warnings', async (req, res) => {
 });
 
 // Profile API - Delete Warning
-router.delete('/profile/warnings/:id', async (req, res) => {
+router.delete('/profile/warnings/:id', require('../../middleware/auth').isAuthenticated, async (req, res) => {
   try {
     if (req.user.role !== 'owner') {
       const [role] = await db.execute('SELECT id, is_admin_role FROM roles WHERE name = ?', [req.user.role]);
@@ -1572,9 +1572,20 @@ router.delete('/profile/warnings/:id', async (req, res) => {
 });
 
 // Profile API - Submit Excuse
-router.post('/profile/excuses', async (req, res) => {
+/* كان مفتوحاً للجميع بلا أي فحص — أي زائر يقدر يزرع أعذار بأي اسم!
+   الحين: تسجيل دخول + صلاحية admin_profile_excuse (نفس باب التحذيرات) */
+router.post('/profile/excuses', require('../../middleware/auth').isAuthenticated, async (req, res) => {
   try {
     const { user_id, reason, start_date, end_date } = req.body;
+    if (req.user.role !== 'owner') {
+      const [myRole] = await db.execute('SELECT id, is_admin_role FROM roles WHERE name = ?', [req.user.role]);
+      let allowed = !!(myRole.length && myRole[0].is_admin_role);
+      if (!allowed && myRole.length) {
+        const [perm] = await db.execute('SELECT enabled FROM role_role_permissions WHERE role_id = ? AND permission_key = "admin_profile_excuse" AND enabled = 1', [myRole[0].id]);
+        allowed = perm.length > 0;
+      }
+      if (!allowed) return res.status(403).json({ error: 'ليس لديك صلاحية لإرسال الأعذار' });
+    }
     const [target] = await db.execute('SELECT username FROM users WHERE id = ?', [user_id]);
     await db.execute('INSERT INTO admin_excuses (user_id, username, reason, start_date, end_date) VALUES (?, ?, ?, ?, ?)',
       [user_id, target[0]?.username || '', reason, start_date, end_date]);

@@ -173,7 +173,10 @@ function trackVisit(req, res, next) {
   try {
     if (req.method === 'GET') {
       const p = req.path || '';
-      const skipped = SKIP_PREFIXES.some(pre => p === pre || p.startsWith(pre));
+      let skipped = SKIP_PREFIXES.some(pre => p === pre || p.startsWith(pre));
+      /* التحميل الخفي (prefetch) ما يعد زيارة — كان يضاعف عداد زيارات الداشبورد:
+         كل زائر يفتح الموقع يسحب 11 صفحة بالخلفية كانت تنحسب زيارات حقيقية */
+      if (req.headers['x-wfi-prefetch'] === '1' || req.headers['sec-purpose'] === 'prefetch') skipped = true;
       if (!skipped && !p.includes('.')) {
         const ua = req.headers['user-agent'] || '';
         isBotVisit = !ua || ua.length < 10 || BOT_RE.test(ua);

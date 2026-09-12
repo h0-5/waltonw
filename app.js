@@ -33,6 +33,17 @@ app.use(guard);
 app.use(securityHeaders);
 app.use(sanitizeInput);
 
+/* الملفات الثابتة قبل الجلسة — كل طلب CSS/JS/صورة كان يفتح جلسة ويقرأها من
+   مخزن MySQL (10+ قراءة DB لكل تحميل صفحة بلا أي فائدة) — الآن صفر قراءات
+   للجلسة على الأصول الثابتة. كاش 30 يوم + ختم ؟v= (تحت) ما يتأثر إطلاقاً */
+app.use('/images', express.static(path.join(__dirname, 'public/images'), { maxAge: '30d', immutable: true }));
+app.use('/css', express.static(path.join(__dirname, 'public/css'), { maxAge: '30d', immutable: true }));
+app.use('/js', express.static(path.join(__dirname, 'public/js'), { maxAge: '30d', immutable: true }));
+app.use('/fonts', express.static(path.join(__dirname, 'public/fonts'), { maxAge: '30d', immutable: true }));
+// Uploads are user content, can change — shorter cache (1h ok, browser revalidates)
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads'), { maxAge: '1h' }));
+app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1d' }));
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW) || 60000,
@@ -60,19 +71,6 @@ app.use(passport.session());
 // inside the middleware (GET/render/200 only, skips admin/api/auth/dot paths).
 const { pageCacheMiddleware, invalidatePageCache } = require('./middleware/page-cache');
 app.use(pageCacheMiddleware);
-
-// Static files — long cache for images AND css/js: the ?v= boot-stamp middleware
-// (below) rewrites every /css & /js URL with a new version on each deploy, so
-// immutable caching can never freeze design updates — browsers refetch the moment
-// a new build ships. Repeat visits load css/js straight from disk cache: zero
-// requests, zero revalidation round trips against the free host.
-app.use('/images', express.static(path.join(__dirname, 'public/images'), { maxAge: '30d', immutable: true }));
-app.use('/css', express.static(path.join(__dirname, 'public/css'), { maxAge: '30d', immutable: true }));
-app.use('/js', express.static(path.join(__dirname, 'public/js'), { maxAge: '30d', immutable: true }));
-app.use('/fonts', express.static(path.join(__dirname, 'public/fonts'), { maxAge: '30d', immutable: true }));
-// Uploads are user content, can change — shorter cache (1h ok, browser revalidates)
-app.use('/uploads', express.static(path.join(__dirname, 'public/uploads'), { maxAge: '1h' }));
-app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1d' }));
 
 // Visit analytics (daily page views + unique visitors) — skips /admin /api assets bots
 const { trackVisit } = require('./middleware/analytics');
@@ -275,6 +273,13 @@ app.use(function (req, res, next) {
   next();
 });
 
+/* الصيانة والإغلاق قبل كل الراوترات — كانت مثبتة بعدها فما كانت تشتغل أبداً
+   (أي راوت يطابق الطلب يرد قبل ما توصل الطبقة) — الآن فعّالة فعلاً:
+   بعد الإعدادات (req.settings جاهز) وبعد الجلسة (req.user يشتغل) وبعد
+   الملفات الثابتة (الصور/CSS تكمل شغالة أثناء الصيانة) و /auth يبقى شغال */
+app.use(maintenanceMode);
+app.use(lockdownMode);
+
 app.use('/', indexRoutes);
 app.use('/auth', authRoutes);
 app.use('/admin', adminRoutes);
@@ -291,12 +296,6 @@ app.use('/api/bot', botApi);
 app.use('/api/notifications', require('./routes/api/notifications'));
 app.use('/api/farm', require('./routes/api/farm').router);
 app.use('/api/company', require('./routes/api/company'));
-
-// Maintenance mode (after routes, before static)
-app.use(maintenanceMode);
-
-// Lockdown mode
-app.use(lockdownMode);
 
 // Ensure all view locals always exist (fallback for error/404 pages)
 app.use((req, res, next) => {

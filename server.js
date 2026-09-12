@@ -48,28 +48,10 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('chat:send', async (data) => {
-    if (!data || !data.message || !data.userId) return;
-    try {
-      const [result] = await db.execute(
-        'INSERT INTO community_messages (user_id, username, avatar, message, created_at) VALUES (?, ?, ?, ?, NOW())',
-        [data.userId, data.username, data.avatar || '', data.message.substring(0, 2000)]
-      );
-      const msg = {
-        id: result.insertId,
-        user_id: data.userId,
-        username: data.username,
-        avatar: data.avatar || '',
-        message: data.message.substring(0, 2000),
-        created_at: new Date().toISOString()
-      };
-      io.emit('chat:message', msg);
-    } catch(e) { console.error('Chat error:', e.message); }
-  });
-
-  socket.on('chat:typing', (userData) => {
-    if (userData) socket.broadcast.emit('chat:typing', userData);
-  });
+  /* chat:send/chat:typing انشالوا — كانوا يقبلون userId/username/avatar من العميل مباشرة
+     (socket.io cors: '*' → أي سكربت خارجي يقدر يرسل رسائل باسم أي عضو حقيقي، لأن /messages
+     يعرض username/avatar من جدول users عبر user_id). ولا عميل رسمي يستخدمهم أصلاً
+     — دردشة المجتمع تمشي عبر HTTP (/api/community/send) الموثق بالجلسة */
 
   socket.on('disconnect', () => {
     for (const [userId, user] of onlineUsers.entries()) {
@@ -541,6 +523,31 @@ async function start() {
     }
     await seedRuleStagesIfEmpty();
   } catch (e) { console.log('⚠️ rule_stages self-heal failed:', e.message); }
+
+  // شفاء ذاتي لأعمدة تستخدمها الـ APIs لكنها غير مضمونة بمخطط migrate —
+  // من دون هذا: قاعدة منشأة من migrate() الحالي تكسر (قبول/رفض التقديمات، إضافة أسئلة
+  // بخانات options/keyword، إعدادات التقديم site_role، إرسال دردشة community) بصحة 500
+  // — فحص information_schema رخيص كل إقلاع، ALTER فقط لو العمود ناقص فعلاً
+  try {
+    const ensureCol = async (table, col, colDef) => {
+      const [c] = await db.query(
+        "SELECT COUNT(*) AS n FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?",
+        [table, col]
+      );
+      if (!c[0].n) {
+        await db.query(`ALTER TABLE \`${table}\` ADD COLUMN ${colDef}`);
+        console.log(`✅ self-healed column ${table}.${col}`);
+      }
+    };
+    await ensureCol('submitted_applications', 'review_notes', "review_notes TEXT");
+    await ensureCol('application_settings', 'site_role', "site_role VARCHAR(50) DEFAULT ''");
+    await ensureCol('application_settings', 'discord_role_id_2', "discord_role_id_2 VARCHAR(50)");
+    await ensureCol('application_settings', 'discord_role_id_3', "discord_role_id_3 VARCHAR(50)");
+    await ensureCol('application_questions', 'options', "options TEXT");
+    await ensureCol('application_questions', 'order_index', "order_index INT DEFAULT 0");
+    await ensureCol('application_questions', 'max_selections', "max_selections INT DEFAULT NULL");
+    await ensureCol('community_messages', 'channel_id', "channel_id VARCHAR(100) DEFAULT 'general'");
+  } catch (e) { console.log('⚠️ API columns self-heal failed:', e.message); }
 
   // روابط الويبهوك المحفوظة من لوحة الإدارة (site_settings) تتغلب على متغيرات Railway —
   // تحميل عند الإقلاع + تحديث كل دقيقة عشان أي تعديل من اللوحة ينطبق بدون إعادة نشر

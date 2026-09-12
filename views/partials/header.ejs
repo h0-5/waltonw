@@ -459,7 +459,7 @@
   var WFI_WARMED={};
   function wfiWarm(p){
     if(WFI_WARMED[p])return;WFI_WARMED[p]=true;
-    try{fetch(p,{credentials:'same-origin',cache:'default',priority:'low'}).catch(function(){});}catch(e){}
+    try{fetch(p,{credentials:'same-origin',cache:'default',priority:'low',headers:{'X-WFI-Prefetch':'1'}}).catch(function(){});}catch(e){}
   }
   function startPrefetch(){
     if(WFI_STARTED)return;WFI_STARTED=true;

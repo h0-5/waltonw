@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function() {
     messageEl.className = `chat-message ${isOwn ? 'own' : ''}`;
     messageEl.innerHTML = `
       <div class="message-avatar">
-        <img src="${msg.avatar || '/images/default-avatar.png'}" alt="avatar">
+        <img src="${escapeAttr(msg.avatar || '/images/default-avatar.png')}" alt="avatar">
       </div>
       <div class="message-content">
         <div class="message-header">
@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function() {
         onlineCount.textContent = data.users.length;
         onlineUsers.innerHTML = data.users.map(user => `
           <div class="online-user">
-            <img src="${user.avatar || '/images/default-avatar.png'}" alt="avatar">
+            <img src="${escapeAttr(user.avatar || '/images/default-avatar.png')}" alt="avatar">
             <span>${escapeHtml(user.username)}</span>
           </div>
         `).join('');
@@ -120,6 +120,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+  /* escapeHtml يكفي للنصوص لكنه ما يلمس علامات التنصيص — للحقن داخل src="..." نحتاج تعطيل علامات التنصيص نفسها */
+  function escapeAttr(text) {
+    return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
   function formatTime(dateStr) {

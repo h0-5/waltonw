@@ -3,142 +3,6 @@ const router = express.Router();
 const db = require('../config/database');
 const { isAdmin, checkPermission, isAuthenticated } = require('../middleware/auth');
 
-// DEBUG PAGE - shows exactly what's wrong
-router.get('/debug', isAuthenticated, async (req, res) => {
-  let debug = {};
-  debug.user = req.user ? { id: req.user.id, username: req.user.username, role: req.user.role, discord_id: req.user.discord_id } : null;
-
-  try {
-    const [allRoles] = await db.execute('SELECT * FROM roles');
-    debug.allRoles = allRoles;
-  } catch(e) { debug.rolesError = e.message; }
-
-  if (req.user) {
-    try {
-      const [myRole] = await db.execute('SELECT id, is_admin_role FROM roles WHERE name = ?', [req.user.role]);
-      debug.myRoleFromDB = myRole.length ? myRole[0] : null;
-    } catch(e) { debug.myRoleError = e.message; }
-  }
-
-  // Try rendering the roles page and capture errors
-  try {
-    const [roles] = await db.execute('SELECT * FROM roles ORDER BY is_admin_role DESC, sort_order ASC, id ASC');
-    const [perms] = await db.execute('SELECT * FROM role_permissions');
-    const permissions = {};
-    perms.forEach(p => {
-      if (!permissions[p.role_id]) permissions[p.role_id] = {};
-      permissions[p.role_id][p.page] = { can_access: p.can_access, can_edit: p.can_edit, can_delete: p.can_delete, can_manage: p.can_manage };
-    });
-
-    let pagePerms = {};
-    try { const [pp] = await db.execute('SELECT * FROM role_page_permissions'); pp.forEach(p => { if (!pagePerms[p.role_id]) pagePerms[p.role_id] = {}; pagePerms[p.role_id][p.page] = {}; }); } catch(e) { debug.pagePermsError = e.message; }
-
-    let elemPerms = {};
-    try { const [ep] = await db.execute('SELECT * FROM role_element_permissions'); ep.forEach(p => { if (!elemPerms[p.role_id]) elemPerms[p.role_id] = {}; }); } catch(e) { debug.elemPermsError = e.message; }
-
-    let punishData = {};
-    try { const [pd] = await db.execute('SELECT * FROM role_punishments'); pd.forEach(p => { punishData[p.role_id] = {}; }); } catch(e) { debug.punishError = e.message; }
-
-    let unifiedPerms = {};
-    try { const [up] = await db.execute('SELECT role_id, permission_key, enabled FROM role_role_permissions'); up.forEach(p => { if (!unifiedPerms[p.role_id]) unifiedPerms[p.role_id] = {}; unifiedPerms[p.role_id][p.permission_key] = p.enabled; }); } catch(e) { debug.unifiedError = e.message; }
-
-    let sideRoles = [];
-    try { const [sr] = await db.execute('SELECT * FROM side_roles ORDER BY sort_order ASC'); sideRoles = sr; } catch(e) { debug.sideRolesError = e.message; }
-
-    let userSideRoles = {};
-    try { const [usr] = await db.execute('SELECT user_id, side_role_id FROM user_side_roles'); usr.forEach(r => { if (!userSideRoles[r.user_id]) userSideRoles[r.user_id] = []; userSideRoles[r.user_id].push(r.side_role_id); }); } catch(e) { debug.userSideRolesError = e.message; }
-
-    const { PERMISSION_GROUPS } = require('../config/permissions');
-
-    let pageAccess = {};
-    try { const [pa] = await db.execute('SELECT role_id, page_path, can_access FROM role_page_access'); pa.forEach(r => { if (!pageAccess[r.role_id]) pageAccess[r.role_id] = {}; pageAccess[r.role_id][r.page_path] = r.can_access; }); } catch(e) { debug.pageAccessError = e.message; }
-
-    debug.renderData = { rolesCount: roles.length, rolesNames: roles.map(r => r.name), permsCount: Object.keys(permissions).length, pagePermsCount: Object.keys(pagePerms).length, unifiedPermsCount: Object.keys(unifiedPerms).length };
-    debug.renderErrors = debug.pagePermsError || debug.elemPermsError || debug.punishError || debug.unifiedError || debug.sideRolesError || debug.pageAccessError ? debug : 'none';
-  } catch(e) { debug.renderFatalError = e.message; }
-
-  res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  res.send(`<pre style="background:#111;color:#0f0;padding:2rem;font-size:14px;white-space:pre-wrap;direction:ltr">${JSON.stringify(debug, null, 2)}</pre>`);
-});
-
-// PROFILE DEBUG PAGE
-router.get('/profile-debug', isAuthenticated, async (req, res) => {
-  const steps = [];
-  const safe = (label, fn) => {
-    try { const r = fn(); steps.push({ step: label, ok: true, result: r }); return r; }
-    catch(e) { steps.push({ step: label, ok: false, error: e.message, stack: e.stack }); return null; }
-  };
-  const safeAsync = async (label, fn) => {
-    try { const r = await fn(); steps.push({ step: label, ok: true, result: r }); return r; }
-    catch(e) { steps.push({ step: label, ok: false, error: e.message, stack: e.stack }); return null; }
-  };
-
-  const step0 = safe('1. Check req.user', () => {
-    if (!req.user) throw new Error('req.user is undefined!');
-    return { id: req.user.id, username: req.user.username, role: req.user.role };
-  });
-
-  const step1 = safe('2. Check role', () => {
-    const roles = ['owner','admin','moderator','support'];
-    if (!roles.includes(req.user.role)) throw new Error('Role not allowed: ' + req.user.role);
-    return true;
-  });
-
-  const step2 = await safeAsync('3. Fetch user from DB', async () => {
-    const [rows] = await db.execute(`
-      SELECT u.*, r.display_name as role_display, r.color as role_color, r.icon as role_icon
-      FROM users u LEFT JOIN roles r ON u.role = r.name
-      WHERE u.id = ?
-    `, [req.user.id]);
-    if (!rows[0]) throw new Error('User not found in DB! id=' + req.user.id);
-    return { id: rows[0].id, username: rows[0].username, role: rows[0].role, hasProfilePicture: !!rows[0].profile_picture, hasRoleColor: !!rows[0].role_color, created_at: rows[0].created_at, last_login: rows[0].last_login };
-  });
-
-  const safeQuery = async (label, sql, params) => {
-    try { const [r] = await db.execute(sql, params); steps.push({ step: label, ok: true, count: r.length }); return r; }
-    catch(e) { steps.push({ step: label, ok: false, error: e.message }); return []; }
-  };
-
-  await safeQuery('4. Query support_tickets', 'SELECT COUNT(*) as c FROM support_tickets WHERE admin_id = ?', [req.user.id]);
-  await safeQuery('5. Query submitted_applications', 'SELECT COUNT(*) as c FROM submitted_applications WHERE reviewed_by = ?', [req.user.id]);
-  await safeQuery('6. Query orders', 'SELECT COUNT(*) as c FROM orders WHERE user_id = ?', [req.user.id]);
-  await safeQuery('7. Query admin_logs', 'SELECT COUNT(*) as c FROM admin_logs WHERE user_id = ? AND DATE(created_at) = CURDATE()', [req.user.id]);
-  await safeQuery('8. Query admin_warnings', 'SELECT * FROM admin_warnings WHERE user_id = ? AND is_deleted = 0 ORDER BY created_at DESC LIMIT 5', [req.user.id]);
-  await safeQuery('9. Query admin_excuses', 'SELECT * FROM admin_excuses WHERE user_id = ? ORDER BY created_at DESC LIMIT 5', [req.user.id]);
-  await safeQuery('10. Query admin_profile_logs', 'SELECT * FROM admin_profile_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT 5', [req.user.id]);
-  await safeQuery('11. Query orders+products join', 'SELECT o.*, p.name as product_name FROM orders o LEFT JOIN products p ON o.product_id = p.id WHERE o.user_id = ? ORDER BY o.created_at DESC LIMIT 5', [req.user.id]);
-  await safeQuery('12. Query staff', `SELECT u.id, u.username, u.profile_picture, u.role, r.display_name as role_display, r.color as role_color, r.icon as role_icon, r.sort_order FROM users u LEFT JOIN roles r ON u.role = r.name WHERE r.is_admin_role = 1 OR u.role IN ('owner','admin','moderator','support') ORDER BY r.sort_order ASC, u.id ASC`);
-
-  const stepChart = await safeAsync('13. Build chartData', async () => {
-    const chartRows = await db.execute(`SELECT DATE(created_at) as day, COUNT(*) as actions FROM admin_logs WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) GROUP BY DATE(created_at)`, [req.user.id]);
-    var chartData = [];
-    for (var i = 6; i >= 0; i--) {
-      var d = new Date(); d.setDate(d.getDate() - i);
-      chartData.push({ day: d.toISOString().slice(0,10) });
-    }
-    return { dataPoints: chartData.length };
-  });
-
-  const stepRender = await safeAsync('14. TEST RENDER profile.ejs', async () => {
-    const user = step2;
-    const stats = { tickets: 0, applications: 0, orders: 0, todayActions: 0, weekActions: 0, avgRating: '—' };
-    const chartData = [{ day: 'test', actions: 0, tickets: 0, applications: 0 }];
-    return new Promise((resolve, reject) => {
-      res.render('admin/profile', {
-        title: 'Debug Profile',
-        user, stats, chartData,
-        warnings: [], excuses: [], allLogs: [], tickets: [], applications: [], orders: [], staff: [],
-        canWarn: false, canExcuse: false, currentPath: '/admin/profile'
-      }, (err, html) => {
-        if (err) reject(err);
-        else resolve({ htmlLength: html.length });
-      });
-    });
-  });
-
-  res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  res.send(`<pre style="background:#0a0a0f;color:#0f0;padding:2rem;font-size:13px;white-space:pre-wrap;direction:ltr;font-family:monospace">${JSON.stringify(steps, null, 2)}</pre>`);
-});
 
 // Load user permissions for sidebar filtering
 router.use(isAdmin, async (req, res, next) => {
@@ -258,6 +122,9 @@ router.get('/security', checkPermission('logs_view'), async (req, res) => {
     } catch(e) {}
   } catch(e) {}
   sec.topBots = Array.from(guardModule.botUAStats.entries()).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  /* فعاليات طبقة التقييم السلوكي + العتبة الحالية — للعرض داخل بطاقة الدرع الذكي */
+  sec.smartEvents = guardModule.smartEvents.slice(0, 20);
+  sec.scoreThreshold = guardModule.getGuardConfig().scoreThreshold;
   res.render('admin/security', { title: 'مركز الحماية', sec, currentPath: req.originalUrl });
 });
 
@@ -507,7 +374,7 @@ router.get('/profile', isAuthenticated, async (req, res) => {
     });
   } catch(err) {
     console.error('[Admin/Profile]', err);
-    res.status(500).send(`<pre>Profile Error: ${err.message}\n\n${err.stack}</pre>`);
+    res.status(500).render('pages/error', { title: 'خطأ في الخادم', error: 'حدث خطأ غير متوقع، يرجى المحاولة لاحقاً' });
   }
 });
 
@@ -626,7 +493,7 @@ router.get('/profile/:userId', isAuthenticated, async (req, res) => {
     });
   } catch(err) {
     console.error('[Admin/Profile/:userId]', err);
-    res.status(500).send(`<pre>Profile Error: ${err.message}\n\n${err.stack}</pre>`);
+    res.status(500).render('pages/error', { title: 'خطأ في الخادم', error: 'حدث خطأ غير متوقع، يرجى المحاولة لاحقاً' });
   }
 });
 
@@ -901,13 +768,13 @@ router.get('/logs', checkPermission('logs_view'), async (req, res) => {
       if (err) {
         console.error('[LOGS] Render error:', err.message);
         console.error('[LOGS] Render stack:', err.stack);
-        return res.status(500).send('Render failed: ' + err.message);
+        return res.status(500).render('pages/error', { title: 'خطأ في الخادم', error: 'حدث خطأ غير متوقع، يرجى المحاولة لاحقاً' });
       }
       res.send(html);
     });
   } catch(e) {
     console.error('[LOGS] Sync error:', e.message);
-    res.status(500).send('Sync error: ' + e.message);
+    res.status(500).render('pages/error', { title: 'خطأ في الخادم', error: 'حدث خطأ غير متوقع، يرجى المحاولة لاحقاً' });
   }
 });
 

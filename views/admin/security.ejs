@@ -74,6 +74,9 @@
         <label style="font-size:11px;color:rgba(255,255,255,0.45)">حظر الانفجار (دقيقة)
           <input type="number" id="g_burstBlockMinutes" value="<%= sec.guardCfg.burstBlockMinutes %>" min="5" max="1440" style="width:100%;margin-top:4px;padding:9px 10px;background:rgba(var(--ac-rgb),0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none">
         </label>
+        <label style="font-size:11px;color:rgba(255,255,255,0.45)">عتبة التقييم السلوكي (نقطة)
+          <input type="number" id="g_scoreThreshold" value="<%= sec.guardCfg.scoreThreshold %>" min="30" max="200" style="width:100%;margin-top:4px;padding:9px 10px;background:rgba(var(--ac-rgb),0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none">
+        </label>
         <label style="font-size:11px;color:rgba(255,255,255,0.45)">مسبار 404 (خطأ/دقيقة)
           <input type="number" id="g_probeLimit" value="<%= sec.guardCfg.probeLimit %>" min="5" max="500" style="width:100%;margin-top:4px;padding:9px 10px;background:rgba(var(--ac-rgb),0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none">
         </label>
@@ -95,6 +98,30 @@
         <span id="guardMsg" style="font-size:12px;color:rgba(74,222,128,0.9)"></span>
       </div>
     </form>
+  </div>
+
+  <!-- ═══ فعاليات طبقة التقييم السلوكي ═══ -->
+  <div class="admin-card" style="margin-bottom:20px">
+    <h3><i class="fas fa-wave-square"></i> التقييم السلوكي — آخر الأحداث <span style="font-size:10px;color:rgba(255,255,255,0.3);font-weight:400">(منذ آخر إقلاع — عتبة الحظر <%= sec.scoreThreshold %> نقطة)</span></h3>
+    <p style="font-size:11.5px;color:rgba(255,255,255,0.4);margin:6px 0 12px">
+      السكربتات المتنكرة بمتصفح حقيقي تُكشف بترويسات ناقصة ومسارات فحص وسلوك آلي — النقاط تتحلل نصف كل 5 دقائق، ووضع «مراقبة فقط» يسجل هنا بدون حظر. حامل كوكي جلسة الموقع يتجاوز هذه الطبقة كلياً.
+    </p>
+    <% if (sec.smartEvents.length) { %>
+      <div style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto">
+        <% sec.smartEvents.forEach(function(ev) { %>
+          <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;background:rgba(<%= ev.blocked ? '239,68,68' : '250,204,21' %>,0.07);border:1px solid rgba(<%= ev.blocked ? '239,68,68' : '250,204,21' %>,0.2);border-radius:10px;padding:7px 12px">
+            <span style="font-family:'Space Grotesk',monospace;font-size:11.5px;direction:ltr"><%= ev.ip %></span>
+            <span style="font-size:10.5px;color:rgba(255,255,255,0.45);direction:ltr"><%= (ev.signals || []).join(' + ') || '—' %></span>
+            <span style="font-size:11px;color:var(--ac);font-weight:700"><%= ev.score %> نقطة</span>
+            <span class="status-badge <%= ev.blocked ? 'status-cancelled' : 'status-processing' %>" style="font-size:9px"><%= ev.blocked ? 'انحظر' : 'مراقبة' %></span>
+          </div>
+        <% }); %>
+      </div>
+    <% } else { %>
+      <div style="text-align:center;padding:1rem;color:rgba(255,255,255,0.3);font-size:12px">
+        ما توجد فعاليات بعد — أول ما تمر سكربتات مشبوهة بتظهر هنا
+      </div>
+    <% } %>
   </div>
 
   <div class="admin-grid" style="margin-bottom:20px">
@@ -208,6 +235,7 @@
       probeLimit: +document.getElementById('g_probeLimit').value,
       probeBlockMinutes: +document.getElementById('g_probeBlockMinutes').value,
       honeypotBlockMinutes: +document.getElementById('g_honeypotBlockMinutes').value,
+        scoreThreshold: +document.getElementById('g_scoreThreshold').value,
       whitelist: wl
     };
     fetch('/api/admin/security/guard-settings', {

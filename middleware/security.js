@@ -37,6 +37,8 @@ const sanitizeInput = (req, res, next) => {
 /* الصيانة والإغلاق يقرآن من كاش الإعدادات العام (req.settings — يُحمّل كل 5 دقائق ويتلغى فور
    الحفظ من اللوحة) بدل استعلامين لكل طلب صفحة — تخفيف Railway بدون أي تغيير بالميزة */
 const maintenanceMode = (req, res, next) => {
+  /* تسجيل الدخول يبقى شغال أثناء الصيانة — بدون هذا حتى المالك ما يقدر يدخل يطفّي الصيانة */
+  if (req.path === '/auth/login' || req.path.startsWith('/auth/')) return next();
   const cached = req.settings ? req.settings['maintenance_mode'] : null;
   if (cached !== null && cached !== undefined) {
     if (cached === '1') {
