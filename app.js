@@ -18,8 +18,9 @@ app.set('trust proxy', 1);
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 app.use(cors({ origin: process.env.SITE_URL || 'http://localhost:3000', credentials: true }));
 
-// Response compression (gzip) — level 4 = same bandwidth saving, noticeably
-// less CPU per response than 6 (Railway bills CPU)
+// Response compression — brotli preferred automatically (compression@1.8 uses
+// zlib, serves brotli to clients that advertise it), gzip fallback. level 4 =
+// good size savings without the CPU spike (Wispbyte bills CPU usage)
 const compression = require('compression');
 app.use(compression({ level: 4, threshold: 1024 }));
 
