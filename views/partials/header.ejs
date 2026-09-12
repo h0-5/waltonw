@@ -162,13 +162,22 @@
       left: 0;
       width: 100%;
       height: 3px;
-      z-index: 99999;
+      z-index: 300000; /* فوق الافتتاحية (200000) — هادي: وضع التحميل لازم يبان أثناء الأنميشن */
       pointer-events: none;
       opacity: 0;
       transition: opacity 0.2s;
     }
+    /* مسار الشريط بخلفية خفيفة — يوضح إن التحميل شغال حتى قبل ما يمتلئ («بخلفية» مثل ما طلب) */
+    .loading-bar::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,.14);
+      box-shadow: 0 1px 3px rgba(0,0,0,.18);
+    }
     .loading-bar.active { opacity: 1; }
     .loading-bar-progress {
+      position: relative;
       height: 100%;
       width: 0%;
       background: linear-gradient(90deg, var(--ac), var(--ac-light), var(--ac));
@@ -265,7 +274,7 @@
       background:radial-gradient(circle,rgba(<%= _wfiLC %>,.34),rgba(<%= _wfiC %>,.18) 42%,rgba(<%= _wfiC %>,.06) 58%,transparent 72%);
       pointer-events:none;opacity:0;border-radius:50%}
     .wfi-word{position:relative;top:var(--wfiLift,0px);font-family:'Cinzel Decorative',serif;font-weight:700;font-size:var(--wfifs);
-      line-height:1.15;color:#fff;white-space:nowrap;display:inline-flex;align-items:baseline;letter-spacing:.5px;
+      line-height:1.15;color:#ffd54a;white-space:nowrap;display:inline-flex;align-items:baseline;letter-spacing:.5px; /* أحرف صفراء — طلب هادي: «تبقى أحرف أصفر» */
       text-shadow:0 0 26px rgba(<%= _wfiC %>,.6),0 2px 14px rgba(0,0,0,.5)}
     .wfi-word i{display:inline-block;font-style:normal;opacity:0}
     .wfi-sp{width:.34em}
@@ -341,6 +350,8 @@
       try{if(intro&&intro.classList.contains('wfi-hold'))return;}catch(e){}
       finished=true;
       try{sessionStorage.setItem('wfIntroDone','1');}catch(e){}
+      /* إشارة لنهاية الافتتاحية — شريط التحميل يسمعها فيكمل وينطفي (وضع التحميل أثناء الأنميشن) */
+      try{window.dispatchEvent(new Event('wf:intro-done'));}catch(e){}
       if(intro&&intro.parentNode){intro.parentNode.removeChild(intro);intro=null;}
       startPrefetch();
     }
@@ -504,6 +515,9 @@
     (function() {
       var bar = document.getElementById('loadingBar');
       var progress = bar ? bar.querySelector('.loading-bar-progress') : null;
+      var loaded = false, introDone = false, ended = false;
+      /* الافتتاحية منحظورة بهاي التبويب (شفتها قبل)؟ ما ننتظرها — الشريط يكمل مع تحميل الصفحة بس */
+      try { if (document.documentElement.className.indexOf('wf-no-intro') !== -1) introDone = true; } catch(e) {}
 
       function startLoading() {
         if (!bar) return;
@@ -519,7 +533,23 @@
           progress.style.width = '0%';
         }, 400);
       }
+      function maybeEnd() {
+        if (ended) return;
+        if (loaded && introDone) { ended = true; endLoading(); }
+      }
 
+      /* وضع التحميل أثناء الأنميشن (طلب هادي: «ابي اشوف وضع التحميل بخلفية أثناء انميشن»):
+         الشريط يشتغل تلقائياً أول ما تفتح الصفحة — فوق الافتتاحية (z-index أعلى) بمساره
+         الخفيف — ويمتلئ مع التحميل الحقيقي، وينكمل 100% لما الصفحة والافتتاحية يخلصو مع بعض */
+      startLoading();
+      if (document.readyState === 'complete') loaded = true;
+      window.addEventListener('load', function() { loaded = true; maybeEnd(); });
+      window.addEventListener('wf:intro-done', function() { introDone = true; maybeEnd(); });
+      setTimeout(function() { loaded = true; maybeEnd(); }, 6000); /* لو حدث load ضاع */
+      setTimeout(maybeEnd, 9000); /* فشل آمن — ما يبقى الشريط معلق */
+
+      /* التنقل الداخلي: نفس السلوك — يبين مع أي رابط داخلي وينكمل بـ pageshow
+         (السلكتور a[href] — إصلاح 116-e لازم يبقى، انصلح سابقاً وكان يرتد بالتعديلات) */
       document.addEventListener('click', function(e) {
         var link = e.target.closest('a[href]');
         if (!link) return;
@@ -528,11 +558,14 @@
         if (link.target === '_blank') return;
         if (link.hasAttribute('download')) return;
         if (link.hostname && link.hostname !== location.hostname) return;
+        ended = false; loaded = false; introDone = true; /* الافتتاحية ما تعيد نفسها بالتنقل */
         startLoading();
       });
 
-      window.addEventListener('pageshow', endLoading);
-      setTimeout(endLoading, 8000);
+      /* رجوع من الكاش (bfcache): ما فيه تحميل جديد — أنهي فوراً */
+      window.addEventListener('pageshow', function(e) {
+        if (e.persisted) { loaded = true; introDone = true; ended = false; maybeEnd(); }
+      });
     })();
   </script>
   <!-- News Ticker Bar -->
