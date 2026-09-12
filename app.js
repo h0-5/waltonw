@@ -54,19 +54,21 @@ app.use(session(sessionConfig));
 app.use(passport.initialize());
 app.use(passport.session());
 
-// In-memory HTML page cache (12s per user+path) — serves fully-rendered pages
+// In-memory HTML page cache (60s per user+path) — serves fully-rendered pages
 // from RAM: no EJS re-render, no per-user DB reads on repeat navigation.
 // Must sit after session (req.user available) and before routes. Safe rules
 // inside the middleware (GET/render/200 only, skips admin/api/auth/dot paths).
 const { pageCacheMiddleware, invalidatePageCache } = require('./middleware/page-cache');
 app.use(pageCacheMiddleware);
 
-// Static files — long cache for images (stable content), short for css/js
-// (css/js have no version params in templates, so long immutable cache would
-//  freeze design updates — keep them short so new styles always appear)
+// Static files — long cache for images AND css/js: the ?v= boot-stamp middleware
+// (below) rewrites every /css & /js URL with a new version on each deploy, so
+// immutable caching can never freeze design updates — browsers refetch the moment
+// a new build ships. Repeat visits load css/js straight from disk cache: zero
+// requests, zero revalidation round trips against the free host.
 app.use('/images', express.static(path.join(__dirname, 'public/images'), { maxAge: '30d', immutable: true }));
-app.use('/css', express.static(path.join(__dirname, 'public/css'), { maxAge: '1h' }));
-app.use('/js', express.static(path.join(__dirname, 'public/js'), { maxAge: '1h' }));
+app.use('/css', express.static(path.join(__dirname, 'public/css'), { maxAge: '30d', immutable: true }));
+app.use('/js', express.static(path.join(__dirname, 'public/js'), { maxAge: '30d', immutable: true }));
 app.use('/fonts', express.static(path.join(__dirname, 'public/fonts'), { maxAge: '30d', immutable: true }));
 // Uploads are user content, can change — shorter cache (1h ok, browser revalidates)
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads'), { maxAge: '1h' }));
@@ -268,7 +270,7 @@ app.use(function (req, res, next) {
 var CONTENT_TTL_PAGES = ['/', '/about', '/rules', '/community', '/contact', '/support', '/games'];
 app.use(function (req, res, next) {
   if (req.method === 'GET' && CONTENT_TTL_PAGES.indexOf(req.path) !== -1) {
-    res.set('Cache-Control', 'private, max-age=30');
+    res.set('Cache-Control', 'private, max-age=60');
   }
   next();
 });

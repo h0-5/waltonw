@@ -577,6 +577,14 @@ async function start() {
     console.log('✅ Shared caches prewarmed');
   } catch (e) { console.log('⚠️ cache prewarm failed:', e.message); }
 
+  /* تدفئة دورية كل 45 ثانية — مع TTL الكاش الجديد (60 ثانية) تبقي الاستعلامات
+     المشتركة حارة دائماً فلا يدفع أي زائر ثمن برودة القاعدة البعيدة أبداً.
+     الجولات اللاحقة تكاد تكون مجانية: qCache يرد من الذاكرة ما دام الإدخال حياً،
+     ويُعاد جلب القصيرة فقط (giveaway 5s / company 20s / settings force). */
+  setInterval(() => {
+    require('./routes/index').prewarmSharedCaches().catch(() => {});
+  }, 45 * 1000).unref();
+
   server.listen(PORT, () => {
     console.log(`\n  Walton Family Server running on http://localhost:${PORT}\n`);
     // Auto-connect Discord bot if enabled

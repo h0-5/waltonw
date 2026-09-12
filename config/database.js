@@ -28,10 +28,11 @@ const baseConfig = {
   charset: 'utf8mb4',
   waitForConnections: true,
   connectionLimit: 10,
-  /* تخفيف Railway: الاتصالات الخاملة تنسكر بعد دقيقة — ما تنحجز مقاعد/ذاكرة بلا داعي
-     (maxIdle أقل من connectionLimit يخلي الذروة ممكنة والراحة موفرة) */
-  maxIdle: 4,
-  idleTimeout: 60000,
+  /* قاعدة بعيدة = كل اتصال جديد يدفع TLS+auth بعدة جولات شبكة (~200-400ms).
+     نُبقي كل اتصالات الـ pool حية (maxIdle = connectionLimit) بذاكرة تافهة،
+     وidleTimeout خمس دقائق بدل دقيقة — النبضة كل 25s تُبقيها حارة أصلاً. */
+  maxIdle: 10,
+  idleTimeout: 300000,
   queueLimit: 0,
   enableKeepAlive: true,
   keepAliveInitialDelay: 0,

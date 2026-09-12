@@ -15,10 +15,13 @@ async function safeQuery(sql, params = []) {
 
 // Short-lived in-memory cache for semi-static query results. The Aiven free-tier
 // database sits far from the host (~60ms+ round trip per query), so caching the
-// shared content queries for a few seconds removes that round trip for repeat
+// shared content queries for a full minute removes that round trip for repeat
 // visitors. Per-user data (points/rank) is never cached here.
+/* لماذا 60 ثانية (كانت 12): القاعدة البعيدة تعني ~60ms+ لكل استعلام — TTL قصير
+   كان يجعل معظم الزوار يدفعون ثمن البرودة. أي POST/PUT/PATCH/DELETE يمسح الكاش
+   فوراً (خطاف app.js) فالتعديلات تظهر لحظياً — لا داعي لانتهاء قصير صناعي. */
 const queryCache = new Map(); // key -> { at, rows }
-const QUERY_TTL = 12000;
+const QUERY_TTL = 60000;
 async function qCache(sql, params = [], ttl = QUERY_TTL) {
   const key = sql + '|' + (params || []).join('|');
   const hit = queryCache.get(key);

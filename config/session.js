@@ -6,9 +6,9 @@ const pool = require('./database');
 
 const sessionPool = mysql.createPool({
   ...pool.dbConfig,
-  connectionLimit: 3, // جلسات فقط — بُكرة صغيرة تكفي (تخفيف Railway: اتصالات وذاكرة أقل)
-  maxIdle: 2,
-  idleTimeout: 60000
+  connectionLimit: 3, // جلسات فقط — بُكرة صغيرة تكفي (قاعدة بعيدة: الاتصال الجديد غالٍ)
+  maxIdle: 3,
+  idleTimeout: 300000
 });
 
 const sessionStore = new MySQLStore({
@@ -28,11 +28,12 @@ const sessionStore = new MySQLStore({
 
 /* ── كاش قراءة ميموري للجلسات (تخفيف Aiven: قاعدة بعيدة ~60ms لكل طلب) ──
    كانت قراءة الجلسة = استعلام MySQL للقاعدة الخارجية على كل طلب للمسجل.
-   هنا: القارئات المتكررة تصرف من الذاكرة (ابتداءً <10s) — الجلسات في هذا الموقع
+   هنا: القارئات المتكررة تصرف من الذاكرة (ابتداءً <30s) — الجلسات في هذا الموقع
    شبه ثابتة (passport.user id + returnTo فقط)، فالتجمد القصير غير مؤثر.
-   أي تعديل (set/destroy/touch) يحدّث الذاكرة فوراً + القاعدة.
+   أي تعديل (set/destroy/touch) يحدّث الذاكرة فوراً + القاعدة — والكتابة دائماً من
+   نفس العملية، فلا يوجد مصدر خارجي يغيّر الجلسات خلف ظهرنا (مقبول حتى 30s).
    إعادة التشغيل فقط تتسبب بزيارة MySQL واحدة لكل مستخدم (مقبول). */
-const SESSION_CACHE_TTL = 10 * 1000;
+const SESSION_CACHE_TTL = 30 * 1000;
 const sessionReadCache = new Map(); // sid -> { data, at }
 
 /* express-session требует EventEmitter من الـ store (يتصل بالـ on('disconnect'))

@@ -1,7 +1,7 @@
 /**
  * Walton Family — In-memory HTML page cache
  *
- * Caches the FULLY-RENDERED HTML of semi-static pages for 12s per (user, path).
+ * Caches the FULLY-RENDERED HTML of semi-static pages for 60s per (user, path).
  * The Aiven free MySQL sits far from the host (~60ms+ per query) and EJS
  * re-renders + per-user reads happen on every request even when the shared
  * query cache is warm. Serving the rendered bytes from RAM removes:
@@ -13,12 +13,13 @@
  *   - Skipped for /admin, /api, /auth, /games/ and any path with '.', '?' or
  *     non-page segments — those are dynamic or asset requests
  *   - Keyed by user id + path: different members never see each other's HTML
- *   - TTL 12s: edits show within a few seconds max; any POST/PUT/PATCH/DELETE
- *     clears the whole page cache (same hook as invalidateQueryCache)
+ *   - TTL 60s: any POST/PUT/PATCH/DELETE clears the whole page cache instantly
+ *     (same hook as invalidateQueryCache), so edits still appear immediately —
+ *     the longer TTL only saves re-renders between writes (far DB ~60ms/query)
  *   - Never caches responses that set Set-Cookie in the body flow
  *   - Failure-proof: any cache hiccup falls back to normal render (try/catch)
  */
-const CONTENT_TTL = 12000;
+const CONTENT_TTL = 60000;
 const pageCache = new Map(); // key -> { at, html }
 
 const SKIP_PREFIXES = ['/admin', '/api', '/auth', '/games/'];
