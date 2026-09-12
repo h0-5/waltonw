@@ -234,17 +234,20 @@
     .wfi-b3{width:34vmax;height:34vmax;top:32%;left:33%;background:radial-gradient(circle,rgba(233,184,255,.3),transparent 60%)}
     /* البراند: [اللوغو = حرف W] + [alton Family] — صف flex واحد، اتجاه ltr للكلمة الإنجليزية.
        --wfiDx يقيسه JS = إزاحة تُبقي اللوغو وسط الشاشة تماماً في المرحلة الأولى */
-    .wfi-brand{position:absolute;top:50%;left:50%;z-index:4;display:flex;align-items:center;gap:14px;
-      --wfifs:clamp(1.35rem,5.4vw,3.2rem);transform:translate(-50%,-50%);direction:ltr;opacity:1;
+    .wfi-brand{position:absolute;top:50%;left:50%;z-index:4;display:flex;align-items:center;gap:3px;
+      --wfilw:clamp(62px,10.5vw,140px);--wfifs:clamp(1.35rem,5.4vw,3.2rem);
+      transform:translate(-50%,-50%);direction:ltr;opacity:1;
       will-change:transform,opacity,filter}
-    .wfi-logo{width:clamp(50px,8vw,94px);height:auto;flex-shrink:0;
+    /* اللوغو كبير — والهامش السالب يمتص البادجة الشفافة جوة ملف اللوغو (~12% من عرضه يمين)
+       عشان حرف a ولقطة الكلمة يلصقون بالـ W مثل حرف عادي بكلمة Walton مو كلمة منفصلة */
+    .wfi-logo{width:var(--wfilw);height:auto;flex-shrink:0;margin-right:calc(var(--wfilw)*-0.075);
       filter:drop-shadow(0 0 18px rgba(188,19,254,.85)) drop-shadow(0 4px 22px rgba(0,0,0,.55));opacity:0}
-    .wfi-wfb{font-family:'Cinzel Decorative',serif;font-weight:700;font-size:clamp(2.4rem,5vw,4.2rem);
+    .wfi-wfb{font-family:'Cinzel Decorative',serif;font-weight:700;font-size:clamp(3.4rem,7.5vw,6.2rem);
       color:#fff;line-height:1;display:flex;align-items:center;justify-content:center}
-    /* هالة ضوء دائرية فوق اللوغو بالضبط (تتمركز على منتصف عرض اللوغو مهما تغير حجم البراند) */
-    .wfi-flare{position:absolute;width:30vmax;height:30vmax;left:clamp(25px,4vw,47px);top:50%;z-index:-1;
-      background:radial-gradient(circle,rgba(233,184,255,.32),rgba(188,19,254,.15) 45%,transparent 70%);
-      filter:blur(28px);transform:translate(-50%,-50%);pointer-events:none;opacity:0;border-radius:50%}
+    /* هالة ضوء دائرية فوق اللوغو بالضبط (تتمركز بالـ calc مو بالترانسفورم عشان تتفادى علة تركيب blur+transform اللي تطلع رقعة رمادية بالكروم) */
+    .wfi-flare{position:absolute;width:30vmax;height:30vmax;left:calc(clamp(30px,5vw,70px) - 15vmax);top:calc(50% - 15vmax);z-index:-1;
+      background:radial-gradient(circle,rgba(233,184,255,.34),rgba(188,19,254,.18) 42%,rgba(188,19,254,.06) 58%,transparent 72%);
+      pointer-events:none;opacity:0;border-radius:50%}
     .wfi-word{position:relative;font-family:'Cinzel Decorative',serif;font-weight:700;font-size:var(--wfifs);
       line-height:1.15;color:#fff;white-space:nowrap;display:inline-flex;align-items:baseline;letter-spacing:.5px;
       text-shadow:0 0 26px rgba(188,19,254,.6),0 2px 14px rgba(0,0,0,.5)}
@@ -262,7 +265,7 @@
     @keyframes wfiAuraIn{to{opacity:1}}
     @keyframes wfiAuraOut{to{opacity:0}}
     #wfIntro.wfi-go .wfi-flare{animation:wfiFlareIn .9s cubic-bezier(.2,.9,.3,1.3) .12s forwards}
-    @keyframes wfiFlareIn{from{opacity:0;transform:translate(-50%,-50%) scale(.4)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+    @keyframes wfiFlareIn{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:scale(1)}}
     #wfIntro.wfi-go .wfi-logo{animation:wfiLogoIn .95s cubic-bezier(.2,.9,.3,1.25) .1s forwards,wfiFloat 3.4s ease-in-out 1.15s infinite}
     @keyframes wfiLogoIn{0%{opacity:0;transform:scale(.35)}60%{opacity:1;transform:scale(1.14)}100%{opacity:1;transform:scale(1)}}
     @keyframes wfiFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
@@ -292,7 +295,7 @@
     #wfIntro.wfi-skip .wfi-top{animation:wfiTop .5s cubic-bezier(.7,0,.3,1) .15s forwards!important}
     #wfIntro.wfi-skip .wfi-bot{animation:wfiBot .5s cubic-bezier(.7,0,.3,1) .22s forwards!important}
     #wfIntro.wfi-skip .wfi-seam{animation:wfiSeam .4s ease-out .1s forwards!important}
-    @media (max-width:520px){.wfi-brand{gap:10px}}
+    @media (max-width:520px){.wfi-brand{gap:2px}}
   </style>
 </head>
 <body>
@@ -359,9 +362,10 @@
         var brand=intro.querySelector('.wfi-brand');
         var logo=intro.querySelector('.wfi-logo');
         var word=intro.querySelector('.wfi-word');
-        var gap=parseFloat(getComputedStyle(brand).columnGap)||14;
+        var gap=parseFloat(getComputedStyle(brand).columnGap)||3;
+        var lgm=logo?parseFloat(getComputedStyle(logo).marginRight)||0:0;
         var ww=word?word.scrollWidth:0;
-        dx=Math.max(0,(ww+gap)/2);
+        dx=Math.max(0,(ww+gap+lgm)/2);
       }catch(e){}
       intro.style.setProperty('--wfiDx',dx.toFixed(1)+'px');
       intro.style.setProperty('--wfiS2','1.15s');
