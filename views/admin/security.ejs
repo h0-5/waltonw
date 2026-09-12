@@ -27,10 +27,74 @@
     <div class="stat-card">
       <div class="stat-icon users"><i class="fas fa-toggle-on"></i></div>
       <div class="stat-info">
-        <h3 style="font-size:16px"><%= sec.botMode === 'block' ? 'حظر البوتات' : 'مراقبة البوتات' %></h3>
-        <p>الوضع: <%= sec.botMode === 'block' ? 'GUARD_BOT_MODE=block' : 'GUARD_BOT_MODE=log' %></p>
+        <h3 style="font-size:16px"><%= !sec.guardCfg.enabled ? 'الدرع مطفي' : (sec.botMode === 'block' ? 'وضع صارم' : (sec.botMode === 'smart' ? 'درع ذكي' : 'مراقبة فقط')) %></h3>
+        <p>الوضع: <%= sec.botMode %><%= sec.guardCfg.honeypot ? ' + فخ' : '' %></p>
       </div>
     </div>
+  </div>
+
+  <!-- ═══ الدرع الذكي — التحكم الكامل (يُطبّق فوراً بدون إعادة نشر) ═══ -->
+  <div class="admin-card" style="margin-bottom:20px">
+    <h3><i class="fas fa-robot"></i> الدرع الذكي — الحماية التلقائية ضد البوتات</h3>
+    <p style="font-size:11.5px;color:rgba(255,255,255,0.4);margin:6px 0 14px">
+      حظر تلقائي ذكي بنسبة خطأ تحت 1%: ما يُحظر إلا المتأكد من أنه بوت. محركات البحث الكبرى (Google/Bing/DuckDuckGo) تمر دائماً،
+      ومتصفحات التطبيقات (ديسكورد/واتساب) محسوبة كزوار حقيقيين. كل التغييرات تُطبّق فوراً على السيرفر بدون إعادة تشغيل.
+    </p>
+
+    <form id="guardForm" style="display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="g_enabled" <%= sec.guardCfg.enabled ? 'checked' : '' %> style="width:16px;height:16px;accent-color:var(--ac)">
+          الدرع مُفعّل
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="g_honeypot" <%= sec.guardCfg.honeypot ? 'checked' : '' %> style="width:16px;height:16px;accent-color:var(--ac)">
+          فخ البوتات (مسارات فخ تُحظر فوراً)
+        </label>
+        <label style="font-size:12px;color:rgba(255,255,255,0.55)">
+          وضع التعامل مع البوتات:
+          <select id="g_botMode" style="margin-right:6px;padding:8px 10px;background:rgba(var(--ac-rgb),0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none">
+            <option value="log" <%= sec.botMode === 'log' ? 'selected' : '' %>>مراقبة فقط (تسجيل بلا حظر)</option>
+            <option value="smart" <%= sec.botMode === 'smart' ? 'selected' : '' %>>ذكي — يُحظر المتأكد بوت فقط (موصى به)</option>
+            <option value="block" <%= sec.botMode === 'block' ? 'selected' : '' %>>صارم — حظر كل بوت</option>
+          </select>
+        </label>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">
+        <label style="font-size:11px;color:rgba(255,255,255,0.45)">حماية الفيضان (طلب/دقيقة)
+          <input type="number" id="g_rateLimit" value="<%= sec.guardCfg.rateLimit %>" min="30" max="5000" style="width:100%;margin-top:4px;padding:9px 10px;background:rgba(var(--ac-rgb),0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none">
+        </label>
+        <label style="font-size:11px;color:rgba(255,255,255,0.45)">انفجار لحظي (طلب/10 ثوان)
+          <input type="number" id="g_burstLimit" value="<%= sec.guardCfg.burstLimit %>" min="10" max="2000" style="width:100%;margin-top:4px;padding:9px 10px;background:rgba(var(--ac-rgb),0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none">
+        </label>
+        <label style="font-size:11px;color:rgba(255,255,255,0.45)">حظر الفيضان (دقيقة)
+          <input type="number" id="g_autoBlockMinutes" value="<%= sec.guardCfg.autoBlockMinutes %>" min="5" max="1440" style="width:100%;margin-top:4px;padding:9px 10px;background:rgba(var(--ac-rgb),0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none">
+        </label>
+        <label style="font-size:11px;color:rgba(255,255,255,0.45)">حظر الانفجار (دقيقة)
+          <input type="number" id="g_burstBlockMinutes" value="<%= sec.guardCfg.burstBlockMinutes %>" min="5" max="1440" style="width:100%;margin-top:4px;padding:9px 10px;background:rgba(var(--ac-rgb),0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none">
+        </label>
+        <label style="font-size:11px;color:rgba(255,255,255,0.45)">مسبار 404 (خطأ/دقيقة)
+          <input type="number" id="g_probeLimit" value="<%= sec.guardCfg.probeLimit %>" min="5" max="500" style="width:100%;margin-top:4px;padding:9px 10px;background:rgba(var(--ac-rgb),0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none">
+        </label>
+        <label style="font-size:11px;color:rgba(255,255,255,0.45)">حظر المسبار (دقيقة)
+          <input type="number" id="g_probeBlockMinutes" value="<%= sec.guardCfg.probeBlockMinutes %>" min="5" max="1440" style="width:100%;margin-top:4px;padding:9px 10px;background:rgba(var(--ac-rgb),0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none">
+        </label>
+        <label style="font-size:11px;color:rgba(255,255,255,0.45)">حظر الفخ (دقيقة)
+          <input type="number" id="g_honeypotBlockMinutes" value="<%= sec.guardCfg.honeypotBlockMinutes %>" min="10" max="1440" style="width:100%;margin-top:4px;padding:9px 10px;background:rgba(var(--ac-rgb),0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none">
+        </label>
+      </div>
+
+      <label style="font-size:11px;color:rgba(255,255,255,0.45)">
+        القائمة البيضاء (IP واحد بكل سطر — ما تنحظر تلقائياً أبداً):
+        <textarea id="g_whitelist" rows="3" placeholder="192.168.1.50" style="width:100%;margin-top:4px;padding:9px 10px;background:rgba(var(--ac-rgb),0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none;font-family:'Space Grotesk',monospace;font-size:12px;direction:ltr"><%= (sec.guardCfg.whitelist || []).join('\n') %></textarea>
+      </label>
+
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button type="submit" class="admin-btn success" id="guardSaveBtn"><i class="fas fa-floppy-disk"></i> حفظ وتفعيل فوري</button>
+        <span id="guardMsg" style="font-size:12px;color:rgba(74,222,128,0.9)"></span>
+      </div>
+    </form>
   </div>
 
   <div class="admin-grid" style="margin-bottom:20px">
@@ -45,7 +109,7 @@
         <button type="submit" class="admin-btn danger" style="flex:0"><i class="fas fa-ban"></i> حظر دائم</button>
       </form>
       <p style="font-size:11.5px;color:rgba(255,255,255,0.35);margin-top:10px">
-        الحظر اليدوي دائم حتى الإزالة. الحظر التلقائي (فيضان/هجوم) مؤقت — <%= '15-30' %> دقيقة ثم ينحذف تلقائياً.
+        الحظر اليدوي دائم حتى الإزالة. الحظر التلقائي (فيضان/هجوم/فخ) مؤقت ويُظهر سببه بالقائمة أدناه.
       </p>
     </div>
 
@@ -117,6 +181,59 @@
     <% } %>
   </div>
 </div>
+
+<script>
+(function() {
+  var form = document.getElementById('guardForm');
+  if (!form) return;
+  form.addEventListener('submit', function(ev) {
+    ev.preventDefault();
+    var btn = document.getElementById('guardSaveBtn');
+    var msg = document.getElementById('guardMsg');
+    btn.disabled = true;
+    msg.textContent = 'جاري الحفظ...';
+    msg.style.color = 'rgba(255,255,255,0.5)';
+    var wl = document.getElementById('g_whitelist').value.split('\n')
+      .map(function(s) { return s.trim(); })
+      .filter(function(s) { return s.length > 0 && /^[\d.a-fA-F:]+$/.test(s); })
+      .slice(0, 50);
+    var payload = {
+      enabled: document.getElementById('g_enabled').checked,
+      honeypot: document.getElementById('g_honeypot').checked,
+      botMode: document.getElementById('g_botMode').value,
+      rateLimit: +document.getElementById('g_rateLimit').value,
+      burstLimit: +document.getElementById('g_burstLimit').value,
+      autoBlockMinutes: +document.getElementById('g_autoBlockMinutes').value,
+      burstBlockMinutes: +document.getElementById('g_burstBlockMinutes').value,
+      probeLimit: +document.getElementById('g_probeLimit').value,
+      probeBlockMinutes: +document.getElementById('g_probeBlockMinutes').value,
+      honeypotBlockMinutes: +document.getElementById('g_honeypotBlockMinutes').value,
+      whitelist: wl
+    };
+    fetch('/api/admin/security/guard-settings', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(j) {
+      if (j.success) {
+        msg.textContent = '✓ تم الحفظ والتفعيل الفوري — الدرع يعمل بالإعدادات الجديدة الآن';
+        msg.style.color = 'rgba(74,222,128,0.95)';
+        setTimeout(function() { location.reload(); }, 900);
+      } else {
+        throw new Error(j.error || 'فشل غير معروف');
+      }
+    })
+    .catch(function(e) {
+      msg.textContent = '✗ فشل الحفظ: ' + e.message;
+      msg.style.color = 'rgba(248,113,113,0.95)';
+      btn.disabled = false;
+    });
+  });
+})();
+</script>
 
 <style>
 .stat-card { animation: fadeIn 0.4s ease both; }

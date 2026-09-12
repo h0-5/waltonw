@@ -432,6 +432,12 @@
       }
     })();
   </script>
+  <!-- Honeypot: روابط فخ غير مرئية — السكانر الذي يتبع كل الروابط يسقط فيها ويُحظر تلقائياً من مركز الحماية -->
+  <div aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;opacity:0;pointer-events:none;height:0;overflow:hidden">
+    <a href="/wp-login.php" rel="nofollow noindex" tabindex="-1"></a>
+    <a href="/.env" rel="nofollow noindex" tabindex="-1"></a>
+    <a href="/phpmyadmin/" rel="nofollow noindex" tabindex="-1"></a>
+  </div>
 <%- include('../partials/footer') %>
 </body>
 </html>

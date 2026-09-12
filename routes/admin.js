@@ -246,7 +246,7 @@ router.get('/', checkPermission('users_view'), async (req, res) => {
 const guardModule = require('../middleware/guard');
 
 router.get('/security', checkPermission('logs_view'), async (req, res) => {
-  const sec = { blockedNow: 0, blockedToday: 0, botVisitsToday: 0, blockedList: [], topBots: [], botMode: (process.env.GUARD_BOT_MODE || 'log') };
+  const sec = { blockedNow: 0, blockedToday: 0, botVisitsToday: 0, blockedList: [], topBots: [], botMode: guardModule.getGuardConfig().botMode, guardCfg: guardModule.getGuardConfig() };
   try {
     await guardModule.ensureTables();
     try { const [r] = await db.execute("SELECT COUNT(*) c FROM blocked_ips WHERE expires_at IS NULL OR expires_at > NOW()"); sec.blockedNow = r[0].c; } catch(e) {}

@@ -377,6 +377,22 @@ router.post('/settings', checkPermission('site_settings_edit'), async (req, res)
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== Guard Settings — الدرع الذكي من مركز الحماية (يُطبّق فوراً بالذاكرة + يُخزن بالقاعدة) =====
+const guardApi = require('../../middleware/guard');
+router.get('/security/guard-settings', checkPermission('logs_view'), async (req, res) => {
+  try { res.json({ success: true, config: guardApi.getGuardConfig() }); }
+  catch(e) { res.status(500).json({ error: e.message }); }
+});
+router.post('/security/guard-settings', checkPermission('site_settings_edit'), async (req, res) => {
+  try {
+    const cfg = await guardApi.setGuardConfig(req.body || {});
+    try {
+      logAdminAction(req.user.id, req.user.username, 'guard_settings', '', null, '', JSON.stringify(cfg).slice(0, 900));
+    } catch(e) {}
+    res.json({ success: true, config: cfg });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== Webhook Settings — روابط ويبهوك الإشعارات من لوحة الإدارة (بدون Railway) =====
 router.get('/webhook-settings', checkPermission('site_settings_edit'), async (req, res) => {
   try {

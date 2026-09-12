@@ -166,6 +166,7 @@ function trackVisit(req, res, next) {
   let shouldTrack = false;
   let isBotVisit = false;
   let trackAnyStatus = false;
+  let isRealNavigation = true;
   let cleanPath = '/';
   let vid = null;
 
@@ -181,6 +182,22 @@ function trackVisit(req, res, next) {
         shouldTrack = true;
         if (isBotVisit) trackAnyStatus = true;
         cleanPath = (p.length > 180 ? p.slice(0, 180) : p) || '/';
+
+        /* ── تمييز التنقل الحقيقي عن السحب الخلفي (إصلاح مضاعفة الزيارات) ──
+           السحب الخلفي بالافتتاحية (fetch) والأدوات الآلية يرسلون نفس GET —
+           الفارق الموثوق: ترويسات Sec-Fetch (كل المتصفحات الحديثة):
+             - التنقل الحقيقي: sec-fetch-dest: document
+             - fetch/prefetch: sec-fetch-dest: empty (+sec-purpose: prefetch للسحب المسبق)
+           المتصفحات القديمة بلا Sec-Fetch: التنقل يرسل Accept يبدأ text/html
+           بينما fetch الافتراضي يرسل Accept عام — نفس الفصل بدون ترويسات.
+           البوتات تظل تُسجَّل كلها (إشارة أمنية) بغض النظر عن النوع. */
+        if (!isBotVisit) {
+          const sp = String(req.headers['sec-purpose'] || '').toLowerCase();
+          const sfd = String(req.headers['sec-fetch-dest'] || '').toLowerCase();
+          if (sp === 'prefetch' || sp === 'prerender') isRealNavigation = false;
+          else if (sfd) isRealNavigation = (sfd === 'document');
+          else isRealNavigation = /text\/html/i.test(String(req.headers.accept || ''));
+        }
 
         // Unique visitor id (1-year cookie) — humans only
         if (!isBotVisit) {
@@ -206,6 +223,9 @@ function trackVisit(req, res, next) {
 
     // تجميع بالذاكرة فقط — الصفر استعلامات على مسار الطلب
     if (bufSiteViews.size + bufBotViews.size < BUF_LIMIT) {
+      /* زيارات البوتات: كلها تُسجَّل — زيارات البشر: التنقل الحقيقي فقط
+         (السحب الخلفي للصفحات يصل السيرفر لكنه لا يُحسب زيارة) */
+      if (!isBotVisit && !isRealNavigation) return;
       const target = isBotVisit ? bufBotViews : bufSiteViews;
       const k = bufKey(localDate(), cleanPath);
       target.set(k, (target.get(k) || 0) + 1);
