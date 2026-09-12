@@ -33,8 +33,9 @@ function isSafeBrowserPublic(p) {
 }
 
 function cacheKey(req, uid) {
-  const q = req.originalUrl.split('?')[0];
-  return (uid || 'anon') + '|' + q;
+  /* المفتاح بروابط الاستعلام كاملة — /store?cat=x و /store?cat=y محتواها يختلف
+     (الراوتر يمرر cat للعرض) فمفتاح بلا query كان يجعل أول نسخة تُخدم للبقية 12 ثانية */
+  return (uid || 'anon') + '|' + (req.originalUrl || req.url || '');
 }
 
 function invalidatePageCache(userId) {
@@ -80,12 +81,10 @@ function pageCacheMiddleware(req, res, next) {
   let captured = null;
 
   res.write = function (chunk, ...rest) {
-    if (captured !== false) {
-      const tracking = captured === null;
+    /* نلتقط كل القطع (HTML كبير يبث على دفعات — اقتطاع الأول فقط كان يخزن صفحة مقطوعة) */
+    if (captured !== false && chunk) {
+      bodyPieces.push(Buffer.isBuffer(chunk) ? chunk.toString('utf8') : String(chunk));
       captured = true;
-      if (tracking && chunk) {
-        bodyPieces.push(Buffer.isBuffer(chunk) ? chunk.toString('utf8') : String(chunk));
-      }
     }
     return origWrite(chunk, ...rest);
   };

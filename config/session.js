@@ -60,15 +60,14 @@ class CachedMySQLStore extends EventEmitter {
     else cb();
   }
   all(cb) { sessionStore.all(cb); }
-  createSession(sess) {
-    // express-session ≥1.19 يدعو store.createSession عبر inflate()
-    // — نغلف بنسخة صالحة من Session (MySQLStore يوفره أو نبنيه يدوياً)
-    if (sessionStore && typeof sessionStore.createSession === 'function') {
-      return sessionStore.createSession(sess);
-    }
-    const SessionCtor = session.Session;
-    if (SessionCtor) return new SessionCtor(sess || {});
-    return sess;
+  createSession(req, sess) {
+    /* عقد express-session ≥1.19 (index.js سطر 387): store.createSession(req, sess)
+       بوسيطين — والدالة مسؤولة عن تحويل sess.cookie لنسخة Cookie وتسبيق req.session
+       بنفسها (Store.prototype.createSession). التمرير بوسيط واحد كان يجعل req يدخل
+       مكان sess فترمي Store TypeError (reading 'cookie') داخل inflate → caught →
+       next(e) → 500 لكل طلب يحمل كوكي جلسة صالح (حلقة 500 الكاملة للموقع).
+       الحل: تفويض الوسيطين كما هما للمخزن الحقيقي اللي يرث التنفيذ الصحيح. */
+    return sessionStore.createSession(req, sess);
   }
   clear(cb) {
     sessionReadCache.clear();
