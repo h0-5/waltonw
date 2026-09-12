@@ -27,7 +27,7 @@ const SKIP_PREFIXES = ['/admin', '/api', '/auth', '/games/'];
    WFI_PAGES في header.ejs لكن بلا /profile /applications /home لأنها خصوصية.
    Cache-Control:private,max-age يسمح للمتصفح بفتح الصفحة لحظياً عند التنقل
    المتكرر خلال المدة، دون أن تُخزَّن في CDN/مشاركة. */
-const SAFE_BROWSER_PUBLIC = ['/about', '/rules', '/store', '/games', '/community', '/support', '/properties', '/company', '/contact'];
+const SAFE_BROWSER_PUBLIC = ['/test', '/about', '/rules', '/store', '/games', '/community', '/support', '/properties', '/company', '/contact'];
 function isSafeBrowserPublic(p) {
   return p && SAFE_BROWSER_PUBLIC.indexOf(p) !== -1;
 }
