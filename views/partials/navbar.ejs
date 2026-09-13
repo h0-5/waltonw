@@ -229,21 +229,20 @@ async function deleteAllNotifications() {
     .catch(function () {});
 })();
 
-/* ═══ حبة التنقل (ديسكتوب ≥1024 فقط) — نسخة «الخط الحي» بطلب هادي:
-   ① خط حافة الكبسولة نفسه هو اللي ينطعج: قطع منفصلة (wb-edge) كل وحدة تغور
-     بعمق جاوس حسب بعدها عن الكرة وتدور بميل المماس — المنطعج يتشكّل بمكانها
-     الجديد والقديم يرجع طبيعي بنفس مدة وسرعة التدحرج (طلب 1548519324744941720)
-   ② تدحرج فيزيائي: الدوران يتناسب مع المسافة بنفس المدة والمنحنى النابض،
-     ومدة الحركة تتناسب مع البعد
-   ③ الحفرة (ودّ داكن + انعكاس بلون الثيم) تتبع الكرة وتشمّ اتجاهها (wb-lean-*)
-     — ظاهرة دائماً حتى والكرة بمقرّها
-   ④ ثقل: الوقوف على الشريط يغور الكرة 4px داخل الودّ ويغور الرابط الحامل 2px
-     وتهبط الكبسولة 2px، وعند الارتطام بعد قفزة طويلة تنضغط وترتد (transitionend)
-   ⑤ لا فتح تلقائي إلا بعد وصول الكرة ثم وقوف ثانية كاملة فوق الرابط — طلب هادي
-     الصريح: «خليها تصبر ثانية» — العد يبدأ بعد الهبوط لا بعد الهوفر
-   الكرة كلها بلون ثيم الموقع var(--accent) بلا أي أبيض — وكل الحركة
-   transform/opacity فقط — بلا مؤقتات دورية ولا rAF: مؤقتان قصيران عند
-   الأحداث فقط (انتظار الوصول ثم عدّ الوقوف) ═══ */
+/* ═══ حبة التنقل (ديسكتوب ≥1024 فقط) — v10 بطلب هادي (1548712672487546951):
+   ① لا فتح تلقائي نهائياً — بطلبه الصريح: «شيل انميشن الدائرة لما تنزل لتحت
+     عشان تفتح الصفحة شيله ما نحتاجه اصلا»: الكرة زينة وتدحرج وثقل فقط،
+     والصفحة ما تنفتح إلا بنقرة حقيقية من المستخدم — انشال عدّ الوقوف
+     كله بمؤقتيه وصار السكربت صفر مؤقتات مطلقاً
+   ② خط الحافة طبيعي مطابق للحد السفلي: 1px بشفافية .14 (نفس --glass-line)
+     — كان يطلع 2px بـ .46 فيقرأ أثخن وأسطع من خط الكبسولة «حين مختلف»
+   ③ الانطعاج تحت الدائرة فقط (v8): جاوس σ15 وغور 13px والقطع تدور بميل
+     المماس — المنطعج يتشكّل بمكانها الجديد والقديم يرجع بنفس المدة والمنحنى
+     (طلب 1548519324744941720)
+   ④ الثقل كما هو: الوقوف على الشريط يغور الكرة 4px داخل الودّ ويغور الرابط
+     الحامل 2px وتهبط الكبسولة 2px، وعند الارتطام بعد قفزة طويلة تنضغط وترتد
+   ⑤ تدحرج فيزيائي: الدوران من الإزاحة الحقيقية ÷ نصف القطر، ومدة الحركة
+     تتناسب مع البعد — وكل الحركة transform/opacity فقط بلا أي مؤقت ═══ */
 (function () {
   var wrap = document.querySelector('.ds-navlinks');
   if (!wrap || !window.matchMedia('(min-width: 1024px)').matches) return;
@@ -264,10 +263,9 @@ async function deleteAllNotifications() {
 
   var active = wrap.querySelector('.ds-navlink.active') || wrap.querySelector('.ds-navlink');
   var lastX = null, lastDist = 0, lastDur = 0, rot = 0;
-  var curLink = null, armTimer = null, dwellTimer = null;
+  var curLink = null;
   var R = 21;              /* نصف قطر الكرة 42px — الإزاحة ÷ نصف القطر = زاوية التدحرج */
   var RAD = 180 / Math.PI; /* راديان → درجة */
-  var DWELL = 1000;        /* وقوف كامل: ثانية فوق الرابط بعد وصول الكرة حتى يفتح */
 
   /* خط الحافة الحيّ — قطع متداخلة تقرأ كخط واحد متصل (v9 بطلب هادي 1548700388948054030:
      «خلي خط الهدر يظهر كخط متصل مثل الخط اللي من تحت مع حفاظ ع تأثير»):
@@ -327,48 +325,22 @@ async function deleteAllNotifications() {
     lastX = x;
   }
 
-  function clearTimers() {
-    if (armTimer) { clearTimeout(armTimer); armTimer = null; }
-    if (dwellTimer) { clearTimeout(dwellTimer); dwellTimer = null; }
-  }
-
-  /* سلسلة الفتح: تنتظر وصول الكرة (مدة تدحرجها) ثم عدّ ثانية الوقوف كاملة */
-  function armDwell(a, delay) {
-    clearTimers();
-    armTimer = setTimeout(function () {
-      armTimer = null;
-      dwellTimer = setTimeout(function () {
-        dwellTimer = null;
-        if (curLink === a && !a.classList.contains('active')) a.click();
-      }, DWELL);
-    }, delay);
-  }
-
   function clearPress() {
     wrap.classList.remove('wb-press');
     if (curLink) { curLink.classList.remove('wb-under'); curLink = null; }
-    clearTimers();
   }
 
-  /* تفويض واحد على الحاوية بدل مستمع لكل رابط */
+  /* تفويض واحد على الحاوية بدل مستمع لكل رابط — الكرة زينة فقط: تدحرج وثقل
+     بلا أي فتح تلقائي، الصفحة تنفتح بنقرة المستخدم على الرابط حصراً */
   wrap.addEventListener('mouseover', function (e) {
     var a = e.target && e.target.closest ? e.target.closest('.ds-navlink') : null;
-    if (!a) { /* فوق الكبسولة لا فوق رابط: ألغِ العدّ فقط، الحبة تبقى بمكانها */
-      clearTimers();
-      return;
-    }
-    if (a === curLink) {
-      /* رجع لنفس الرابط بعد مرور بالفجوة ألغى العدّ — أعد عدّ الوقوف */
-      if (!armTimer && !dwellTimer) armDwell(a, 0);
-      return;
-    }
+    if (!a || a === curLink) return;
     clearPress();
     curLink = a;
     bead.classList.remove('wb-land'); /* أوقف انضغاط الارتطام السابق إن كان يجري */
     a.classList.add('wb-under');
     wrap.classList.add('wb-press');
     goTo(a);
-    armDwell(a, lastDur + 60); /* العد يبدأ بعد هبوط الكرة لا لحظة الهوفر */
   });
 
   wrap.addEventListener('mouseleave', function () {
