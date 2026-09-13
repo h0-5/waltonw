@@ -1,7 +1,7 @@
 /* ==========================================
    GAMES PAGE STYLES
    ========================================== */
-.game-page { padding-top: 70px; min-height: 100vh; }
+.game-page { padding-top: var(--nav-h, 86px); min-height: 100vh; }
 .game-header {
   display: flex; align-items: center; gap: 20px; padding: 20px 24px;
   background: var(--bg-card); border-bottom: 1px solid var(--border-color);

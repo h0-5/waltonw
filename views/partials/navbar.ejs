@@ -228,4 +228,40 @@ async function deleteAllNotifications() {
     .then(function (d) { if (d && typeof d.unread === 'number') _nfBadge(d.unread); })
     .catch(function () {});
 })();
+
+/* ═══ حبة التنقل (ديسكتوب ≥1024 فقط) — فكرة هادي من مرجع Meniscus:
+   دائرة متوهجة تتزلق فوق كبسولة الروابط وتثبت في مقرّها فوق الرابط المشير إليه،
+   وتعود للرابط النشط عند مغادرة الشريط. أحداث فقط: بلا مؤقتات ولا rAF ولا قياسات دورية —
+   الحبة عنصر داخل الكبسولة فتتحرك معها لو انسحرت أفقياً، وtransform فقط = تسريع العتاد ═══ */
+(function () {
+  var wrap = document.querySelector('.ds-navlinks');
+  if (!wrap || !window.matchMedia('(min-width: 1024px)').matches) return;
+  var bead = document.createElement('span');
+  bead.className = 'wb-bead';
+  bead.setAttribute('aria-hidden', 'true');
+  wrap.appendChild(bead);
+  var active = wrap.querySelector('.ds-navlink.active') || wrap.querySelector('.ds-navlink');
+  function moveTo(a) {
+    if (!a) return;
+    /* offsetLeft داخل الكبسولة (relative) — مركز الرابط بالضبط */
+    bead.style.setProperty('--wb-x', (a.offsetLeft + a.offsetWidth / 2) + 'px');
+  }
+  /* تفويض واحد على الحاوية بدل مستمع لكل رابط */
+  wrap.addEventListener('mouseover', function (e) {
+    var a = e.target && e.target.closest ? e.target.closest('.ds-navlink') : null;
+    if (a) moveTo(a);
+  });
+  wrap.addEventListener('mouseleave', function () { moveTo(active); });
+  function sync() {
+    active = wrap.querySelector('.ds-navlink.active') || active;
+    moveTo(active);
+    bead.classList.add('wb-bead-ready'); /* تظهر بعد أول تحديد — لا وميض بموضع خاطئ */
+  }
+  sync();
+  window.addEventListener('resize', sync);
+  /* الخط قد يغيّر عرض الروابط بعد أول قياس — إعادة محاذاة واحدة عند جهوزيته */
+  if (document.fonts && document.fonts.ready && document.fonts.ready.then) {
+    document.fonts.ready.then(sync).catch(function () {});
+  }
+})();
 </script>

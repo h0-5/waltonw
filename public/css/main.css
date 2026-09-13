@@ -795,7 +795,7 @@ button { cursor: pointer; font-family: inherit; }
 /* ==========================================
    COMMUNITY PAGE
    ========================================== */
-.community-page { padding-top: 70px; height: 100vh; display: flex; position: relative; z-index: 1; }
+.community-page { padding-top: var(--nav-h, 86px); height: 100vh; display: flex; position: relative; z-index: 1; }
 .community-layout { display: flex; width: 100%; height: calc(100vh - 70px); }
 .community-sidebar {
   width: 260px;

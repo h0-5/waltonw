@@ -136,7 +136,7 @@
 /* ==========================================
    COMMUNITY PAGE STYLES
    ========================================== */
-.community-page { padding-top: 70px; height: 100vh; display: flex; }
+.community-page { padding-top: var(--nav-h, 86px); height: 100vh; display: flex; }
 .community-layout { display: flex; width: 100%; height: calc(100vh - 70px); }
 .community-sidebar {
   width: 280px; background: var(--bg-secondary); border-left: 1px solid var(--border-color);

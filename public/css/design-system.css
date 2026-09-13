@@ -27,7 +27,7 @@
   --font-body: 'IBM Plex Sans Arabic', 'Cairo', sans-serif;
   --container: 1200px;
   --speed: 180ms;
-  --nav-h: 70px;
+  --nav-h: 86px; /* كان 70px — نزل الهدر بطلب هادي لنرفع فوقه «حبة التنقل» المتحركة، وكل الصفحات تنزل معه تلقائياً لأنها تحسب بدايتها من نفس المتغير */
 }
 
 /* مود ليل/نهار أُزيل كلياً بطلب المستخدم — لا توجد نسخة فاتحة: الثيم الداكن دائم حتى لمن فعّل الفاتح سابقاً
@@ -412,6 +412,56 @@ a.ds-card:hover, .ds-card-hover:hover {
 .ds-navlink:hover { color: var(--text); background: rgba(139, 143, 153, 0.08); }
 .ds-navlink.active { color: var(--accent); }
 .ds-navlink-ds { color: var(--accent); }
+
+/* ═══ حبة التنقل (ديسكتوب فقط) — فكرة مرجع Meniscus بصورة هادي:
+   دائرة متوهجة تتزلق فوق كبسولة الروابط وتثبت في «مقرّ» محفور بالحافة العلوية
+   فوق الرابط المشير إليه، وتعود لمقرّ الرابط النشط عند مغادرة الشريط.
+   صفر صور وصفر طلبات: كرة CSS متدرجة + مقرّ داكن يُقرأ كحفرة بحافة الزجاج،
+   والموضع متغير --wb-x يحدّثه سكربت navbar الموجود أصلاً عند الأحداث فقط
+   (mouseover/mouseleave/resize — بلا مؤقتات ولا rAF) ═══ */
+@media (min-width: 1024px) {
+  /* relative ليتحسب offsetLeft الروابط داخله، وoverflow ظاهر ليخرج رأس الحبة فوق الحافة
+     (الروابط بلا أيقونات <1200 وتسبق فيها المساحة، وبأيقونات ≥1200 فيها فائض ~45px مقاس) */
+  .ds-navlinks { position: relative; overflow: visible; }
+  .wb-bead {
+    position: absolute;
+    top: 0; left: 0;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 3;
+    /* صندوق العنصر = المقرّ/الحفرة (40px) ويتمركز مركزه على حافة الكبسولة —
+       طبقاته: الحفرة (خلفية العنصر) ثم الكرة (::before) ثم اللمعة (::after) */
+    transform: translateX(calc(var(--wb-x, -200px) - 50%)) translateY(-50%);
+    transition: transform .34s cubic-bezier(.3, 1.4, .45, 1), opacity .2s ease;
+    opacity: 0; /* تختفي حتى يحدد السكربت أول مقرّ — لا وميض بموضع خاطئ */
+    /* الحفرة — قرص داكن يقطع حافة الزجاج بصرياً + ظل داخلي يرسم عمق الطَمر */
+    background: radial-gradient(circle, #0e0c1a 55%, rgba(14, 12, 26, 0) 62%);
+    box-shadow: inset 0 3px 5px rgba(0, 0, 0, .85);
+  }
+  .wb-bead.wb-bead-ready { opacity: 1; }
+  /* الكرة البنفسجية (30px داخل مقرّ 40px) — بهوية الموقع بلا أي صورة */
+  .wb-bead::before {
+    content: '';
+    position: absolute;
+    inset: 5px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 28%, #f0d5ff 0%, #d24dff 40%, #bc13fe 64%, #8a0ebd 100%);
+    box-shadow: 0 0 14px rgba(188, 19, 254, .55), 0 0 4px rgba(188, 19, 254, .85), inset 0 -3px 6px rgba(0, 0, 0, .35);
+  }
+  /* لمعة أعلى الكرة — إحساس الكروية بدون صورة */
+  .wb-bead::after {
+    content: '';
+    position: absolute;
+    top: 8px; left: 12px; right: 12px; height: 8px;
+    border-radius: 50%;
+    background: linear-gradient(rgba(255, 255, 255, .75), rgba(255, 255, 255, 0));
+    filter: blur(1px);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .wb-bead { transition: opacity .2s ease; }
+  }
+}
 
 /* منطقة الإجراءات — ملزقة بزاوية الشاشة اليسرى نفسها (~1سم قبل الزاوية) بطلب المستخدم:
    على الشاشات الواسعة كانت تنحشر بهامش حاوية 1200px الموسّط فتبعد ~99px عن الزاوية —
