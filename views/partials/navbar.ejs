@@ -261,7 +261,16 @@ async function deleteAllNotifications() {
      pointer events و transitionend حصراً
    ⑧ «ابي حرف الهدر يبان تحتها وهو معطوج لان الان مب واضح كأنه مختفي»:
      الرابط الحامل يرتفع بالرسم فوق الكرة بلون فاتح وظل ناعم — اسم الصفحة
-     يبان واضح تحت دائرتها بدل ما يبتلعه القرص الداكن والتوهج (بالـ CSS) ═══ */
+     يبان واضح تحت دائرتها بدل ما يبتلعه القرص الداكن والتوهج (بالـ CSS)
+   ⑨ v14 (هادي 1548796998872866937: «ارفع دائرة خلها فوق الخط تماما مب بالمنتصف»):
+     راحة الكرة REST_DY = -20px — المركز مقبوض بمقدار نصف قطر الكرة فوق حافة
+     الكبسولة فقاعها يلمس الخط تماماً ولا ينصّفه، والكبسولة نزلت 18px داخل
+     الشريط (padding-top 36px بالنافبار بالـ CSS) عشان الكرة كاملة ما تقص بحافة
+     الشاشة، ورفعة المسك LIFT وحدود اللعب الرأسي مبنية على الراحة الجديدة،
+     ونافذة إفلات الصفحة اتسعت إلى 52px عمودياً لأن مركز الكرة صار أعلى من
+     نصوص الروابط
+   ⑩ «شيل ذا الخيال الاسود لتحرك جوا الدائرة» — بالـ CSS: الكرة لون الثيم
+     الصافي وما فيها أي بقع داكنة تتحرك جواها أثناء التدحرج ═══ */
 (function () {
   var wrap = document.querySelector('.ds-navlinks');
   if (!wrap || !window.matchMedia('(min-width: 1024px)').matches) return;
@@ -440,8 +449,9 @@ async function deleteAllNotifications() {
   var carryLink = null, pendingCarry = null, holds = [];
   var drag = null, opening = false;
   var REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var HOLD_R = 22; /* نصف قطر جسم الكرة القابل للمسك — الهوفر والنقر على الروابط لم يُمس */
-  var LIFT = -10;  /* رفعة أول المسك — الكرة تنشل من الودّ مثل المقطع */
+  var HOLD_R = 22;   /* نصف قطر جسم الكرة القابل للمسك — الهوفر والنقر على الروابط لم يُمس */
+  var REST_DY = -20; /* راحة الكرة فوق الخط (v14): المركز مقبوض بمقدار نصف القطر — القاع يلامس الحافة تماماً */
+  var LIFT = -24;    /* رفعة أول المسك — تنشل 4px فوق راحتها، وسقف مساحة الرأس فوق (ما تقص بالحافة) */
 
   /* أيقونة الرابط تطلع من فتحتها بالهدر (+24px من تحت) وتستقر بمركز الكرة،
      وعن المغادرة ترجع لفتحتها — كل عنصر ينشأ بالسكربت (صفر HTML زيادة)
@@ -491,15 +501,17 @@ async function deleteAllNotifications() {
     else window.location.assign(a.href);
   }
 
+  /* نافذة الإفلات العمودية 52px (v14): مركز الكرة فوق الخط أعلى بنحو نصف قطرها
+     من نصوص الروابط — النافذة الأوسع تلتقط الإفلات وهي راكبة على الخط */
   function hitLink(cx, cy) {
     for (var i = 0; i < drag.rects.length; i++) {
       var r = drag.rects[i];
-      if (cx >= r.l - 6 && cx <= r.r + 6 && Math.abs(cy - r.cy) <= 30) return r.a;
+      if (cx >= r.l - 6 && cx <= r.r + 6 && Math.abs(cy - r.cy) <= 52) return r.a;
     }
     return null;
   }
 
-  /* المسك من مستند كامل — لأن نصف الكرة العلوي يطلع خارج حدود الكبسولة */
+  /* المسك من مستند كامل — الكرة راحةً وسحباً تعلو حدود الكبسولة فوق الخط (v14) */
   document.addEventListener('pointerdown', function (e) {
     if (drag || opening || (e.button !== undefined && e.button !== 0)) return;
     var b = bead.getBoundingClientRect();
@@ -534,7 +546,8 @@ async function deleteAllNotifications() {
     }
     var wr = wrap.getBoundingClientRect();
     var px = Math.max(16, Math.min(wr.width - 16, e.clientX - wr.left));
-    var py = Math.max(-18, Math.min(46, e.clientY - wr.top));
+    /* اللعب الرأسي فوق الحافة (v14): من −25 (رفع بحدود مساحة الرأس — ما تقص بالحافة) إلى +8 (غرز بالكبسولة) */
+    var py = Math.max(-25, Math.min(8, e.clientY - wr.top));
     if (lastX !== null && px !== lastX) {
       rot += ((px - lastX) / R) * RAD; /* تدحرج فيزيائي مع اليد — نفس نسبة التدحرج */
       wrap.style.setProperty('--wb-rot', rot.toFixed(1) + 'deg');
@@ -556,13 +569,13 @@ async function deleteAllNotifications() {
     if (!drag || e.pointerId !== drag.id) return;
     var d = drag;
     var wr = wrap.getBoundingClientRect();
-    var py = Math.max(-18, Math.min(46, e.clientY - wr.top));
+    var py = Math.max(-25, Math.min(8, e.clientY - wr.top));
     var over = cancelled ? null : hitLink(e.clientX, wr.top + py);
     drag = null;
     document.documentElement.style.cursor = '';
     try { wrap.releasePointerCapture(d.id); } catch (err) {}
     if (!d.moved) {
-      wrap.style.setProperty('--wb-dy', '0px'); /* ضغطة بلا سحب — ترجع للودّ */
+      wrap.style.setProperty('--wb-dy', REST_DY + 'px'); /* ضغطة بلا سحب — ترجع لراحتها فوق الخط */
       return;
     }
     wrap.classList.remove('wb-dragging');
@@ -573,7 +586,7 @@ async function deleteAllNotifications() {
       over.classList.add('wb-under');
       wrap.classList.add('wb-press');
       goTo(over); /* تثبيت بمركز الصفحة بنفس فيزياء التدحرج والنابض */
-      wrap.style.setProperty('--wb-dy', '0px');
+      wrap.style.setProperty('--wb-dy', REST_DY + 'px'); /* جلوس فوق الخط تماماً */
       squish.classList.remove('wb-land'); /* انضغاط الجلوس في الودّ */
       void squish.offsetWidth;
       squish.classList.add('wb-land');
@@ -584,7 +597,7 @@ async function deleteAllNotifications() {
       clearPress();
       goTo(curLink || active);
       parkedLink = curLink || active;
-      wrap.style.setProperty('--wb-dy', '0px');
+      wrap.style.setProperty('--wb-dy', REST_DY + 'px');
     }
   }
   document.addEventListener('pointerup', function (e) { endDrag(e, false); });
