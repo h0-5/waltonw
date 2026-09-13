@@ -413,16 +413,38 @@ a.ds-card:hover, .ds-card-hover:hover {
 .ds-navlink.active { color: var(--accent); }
 .ds-navlink-ds { color: var(--accent); }
 
-/* ═══ حبة التنقل (ديسكتوب فقط) — فكرة مرجع Meniscus بصورة هادي:
-   دائرة متوهجة تتزلق فوق كبسولة الروابط وتثبت في «مقرّ» محفور بالحافة العلوية
-   فوق الرابط المشير إليه، وتعود لمقرّ الرابط النشط عند مغادرة الشريط.
-   صفر صور وصفر طلبات: كرة CSS متدرجة + مقرّ داكن يُقرأ كحفرة بحافة الزجاج،
-   والموضع متغير --wb-x يحدّثه سكربت navbar الموجود أصلاً عند الأحداث فقط
-   (mouseover/mouseleave/resize — بلا مؤقتات ولا rAF) ═══ */
+/* ═══ حبة التنقل (ديسكتوب فقط) — فيزياء ثقل كاملة بفكرة هادي (مرجع Meniscus):
+   ① تدحرج حقيقي: دوران الكرة يتناسب مع الإزاحة بنفس المدة والمنحنى = تدحرج بلا انزلاق،
+      ومدة الحركة تتناسب مع المسافة، وتسارع ثم تبطئ بهدوء (بلا ارتداد أفقي غريب)
+   ② الزجاج يتفاعل مع ثقلها: الكبسولة كلها تهبط 1px، الرابط الحامل يغور 2px،
+      وظل انبعاج ناعم يتبعها تحت الكرة، وعند الارتطام بعد قفزة طويلة تنضغط وترتد
+   صفر صور وصفر طلبات: كل الحركة transform/opacity فقط (تسريع العتاد) والأحداث عند
+   الحاجة فقط (mouseover/mouseleave/transitionend/resize — بلا مؤقتات دورية ولا rAF) ═══ */
 @media (min-width: 1024px) {
   /* relative ليتحسب offsetLeft الروابط داخله، وoverflow ظاهر ليخرج رأس الحبة فوق الحافة
      (الروابط بلا أيقونات <1200 وتسبق فيها المساحة، وبأيقونات ≥1200 فيها فائض ~45px مقاس) */
-  .ds-navlinks { position: relative; overflow: visible; }
+  .ds-navlinks { position: relative; overflow: visible; transition: transform .3s cubic-bezier(.34, 1.4, .64, 1); }
+  /* ثقل الكرة يهبط بالكبسولة كلها مليمتراً واحداً وتعود بنابض خفيف عند المغادرة */
+  .ds-navlinks.wb-press { transform: translateY(1px); }
+  /* الرابط الذي تحمله الكرة يغور قليلاً — السطح ينحفر تحت الثقل */
+  .ds-navlink { transition: color var(--speed), background-color var(--speed), transform .22s ease; }
+  .ds-navlinks.wb-press .ds-navlink.wb-under { transform: translateY(2px); }
+
+  /* انبعاج الزجاج تحت الكرة — ظل ناعم يتبع موضعها ويظهر ما دامت واقفة عليها */
+  .wb-dent {
+    position: absolute;
+    top: 3px; left: 0;
+    width: 58px; height: 14px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 1;
+    transform: translateX(calc(var(--wb-x, -200px) - 50%));
+    background: radial-gradient(ellipse at 50% 30%, rgba(0, 0, 0, .5) 0%, rgba(0, 0, 0, .25) 36%, rgba(0, 0, 0, 0) 70%);
+    opacity: 0;
+    transition: transform var(--wb-dur, 340ms) cubic-bezier(.45, .05, .18, 1), opacity .3s ease;
+  }
+  .ds-navlinks.wb-press .wb-dent { opacity: 1; }
+
   .wb-bead {
     position: absolute;
     top: 0; left: 0;
@@ -433,23 +455,39 @@ a.ds-card:hover, .ds-card-hover:hover {
     /* صندوق العنصر = المقرّ/الحفرة (40px) ويتمركز مركزه على حافة الكبسولة —
        طبقاته: الحفرة (خلفية العنصر) ثم الكرة (::before) ثم اللمعة (::after) */
     transform: translateX(calc(var(--wb-x, -200px) - 50%)) translateY(-50%);
-    transition: transform .34s cubic-bezier(.3, 1.4, .45, 1), opacity .2s ease;
+    /* المدة من السكربت تتناسب مع المسافة — منحنى تسارع ثم تباطؤ بلا مبالغة */
+    transition: transform var(--wb-dur, 340ms) cubic-bezier(.45, .05, .18, 1), opacity .2s ease;
     opacity: 0; /* تختفي حتى يحدد السكربت أول مقرّ — لا وميض بموضع خاطئ */
     /* الحفرة — قرص داكن يقطع حافة الزجاج بصرياً + ظل داخلي يرسم عمق الطَمر */
     background: radial-gradient(circle, #0e0c1a 55%, rgba(14, 12, 26, 0) 62%);
     box-shadow: inset 0 3px 5px rgba(0, 0, 0, .85);
   }
   .wb-bead.wb-bead-ready { opacity: 1; }
-  /* الكرة البنفسجية (30px داخل مقرّ 40px) — بهوية الموقع بلا أي صورة */
+  /* الكرة البنفسجية (30px داخل مقرّ 40px) — رقعة ضوء جانبية تجعل دورانها مرئياً */
   .wb-bead::before {
     content: '';
     position: absolute;
     inset: 5px;
     border-radius: 50%;
-    background: radial-gradient(circle at 35% 28%, #f0d5ff 0%, #d24dff 40%, #bc13fe 64%, #8a0ebd 100%);
+    background:
+      radial-gradient(circle at 68% 66%, rgba(255, 255, 255, .18) 0 13%, rgba(255, 255, 255, 0) 40%),
+      radial-gradient(circle at 35% 28%, #f0d5ff 0%, #d24dff 40%, #bc13fe 64%, #8a0ebd 100%);
     box-shadow: 0 0 14px rgba(188, 19, 254, .55), 0 0 4px rgba(188, 19, 254, .85), inset 0 -3px 6px rgba(0, 0, 0, .35);
+    transform: rotate(var(--wb-rot, 0deg));
+    transition: transform var(--wb-dur, 340ms) cubic-bezier(.45, .05, .18, 1);
   }
-  /* لمعة أعلى الكرة — إحساس الكروية بدون صورة */
+  /* لحظة الارتطام بعد قفزة طويلة: الكرة تنضغط رأسياً ثم ترتد — إحساس الثقل
+     (يطلقها السكربت عند transitionend فقط، والأنميشن نفسه يحفظ الدوران الحالي) */
+  .wb-bead.wb-land::before {
+    transform-origin: 50% 78%;
+    animation: wb-squash .46s cubic-bezier(.34, 1.56, .64, 1) both;
+  }
+  @keyframes wb-squash {
+    0%   { transform: rotate(var(--wb-rot, 0deg)) scale(1.14, .78); }
+    55%  { transform: rotate(var(--wb-rot, 0deg)) scale(.94, 1.08); }
+    100% { transform: rotate(var(--wb-rot, 0deg)) scale(1, 1); }
+  }
+  /* لمعة أعلى الكرة — ثابتة نحو مصدر الضوء بينما سطح الكرة يدور تحتها */
   .wb-bead::after {
     content: '';
     position: absolute;
@@ -460,6 +498,10 @@ a.ds-card:hover, .ds-card-hover:hover {
   }
   @media (prefers-reduced-motion: reduce) {
     .wb-bead { transition: opacity .2s ease; }
+    .wb-bead::before { transition: none; }
+    .wb-bead.wb-land::before { animation: none; }
+    .wb-dent { transition: opacity .2s ease; }
+    .ds-navlinks, .ds-navlink { transition: none; }
   }
 }
 

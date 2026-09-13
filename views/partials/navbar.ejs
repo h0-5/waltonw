@@ -229,32 +229,100 @@ async function deleteAllNotifications() {
     .catch(function () {});
 })();
 
-/* ═══ حبة التنقل (ديسكتوب ≥1024 فقط) — فكرة هادي من مرجع Meniscus:
-   دائرة متوهجة تتزلق فوق كبسولة الروابط وتثبت في مقرّها فوق الرابط المشير إليه،
-   وتعود للرابط النشط عند مغادرة الشريط. أحداث فقط: بلا مؤقتات ولا rAF ولا قياسات دورية —
-   الحبة عنصر داخل الكبسولة فتتحرك معها لو انسحرت أفقياً، وtransform فقط = تسريع العتاد ═══ */
+/* ═══ حبة التنقل (ديسكتوب ≥1024 فقط) — فيزياء ثقل كاملة بطلب هادي:
+   ① تدحرج حقيقي: الدوران يتناسب مع المسافة بنفس المدة والمنحنى (بلا انزلاق)،
+     ومدة الحركة تتناسب مع البعد، وتسارع ثم تبطئ بهدوء — بلا ارتداد أفقي غريب
+   ② الهدر يتفاعل مع ثقلها: الكبسولة تهبط 1px، الرابط الحامل يغور 2px،
+     وظل انبعاج يتبعها، وعند الارتطام بعد قفزة طويلة تنضغط وترتد (transitionend)
+   ③ وقوفها فوق أي رابط ~نصف ثانية = وقوف مقصود فيفتح صفحته تلقائياً
+     (الفتح عبر click() يستفيد من التحميل المسبق startPrefetch فتجي الصفحة جاهزة)
+   كل الحركة transform/opacity فقط = تسريع العتاد، والأحداث عند الحاجة فقط:
+   بلا مؤقتات دورية ولا rAF — العنصران يُنشآن هنا فلا وزن بالـHTML ولا طلبات جديدة ═══ */
 (function () {
   var wrap = document.querySelector('.ds-navlinks');
   if (!wrap || !window.matchMedia('(min-width: 1024px)').matches) return;
+
+  var dent = document.createElement('span');
+  dent.className = 'wb-dent';
+  dent.setAttribute('aria-hidden', 'true');
   var bead = document.createElement('span');
   bead.className = 'wb-bead';
   bead.setAttribute('aria-hidden', 'true');
+  wrap.appendChild(dent);
   wrap.appendChild(bead);
+
   var active = wrap.querySelector('.ds-navlink.active') || wrap.querySelector('.ds-navlink');
-  function moveTo(a) {
+  var lastX = null, lastDist = 0, rot = 0;
+  var curLink = null, dwellTimer = null;
+  var R = 15;              /* نصف قطر الكرة 30px — الإزاحة ÷ نصف القطر = زاوية التدحرج */
+  var RAD = 180 / Math.PI; /* راديان → درجة */
+  var DWELL = 480;         /* مدة التوقف التي تُعتبر وقوفاً مقصوداً لا مجرد مرور */
+
+  function goTo(a, instant) {
     if (!a) return;
-    /* offsetLeft داخل الكبسولة (relative) — مركز الرابط بالضبط */
-    bead.style.setProperty('--wb-x', (a.offsetLeft + a.offsetWidth / 2) + 'px');
+    var x = a.offsetLeft + a.offsetWidth / 2; /* مركز الرابط داخل الكبسولة (relative) */
+    if (lastX === null || instant) {
+      /* أول وضع أو إعادة محاذاة (resize/خط) — تثبيت فوري بلا تدحرج */
+      lastDist = 0;
+      wrap.style.setProperty('--wb-dur', '0ms');
+    } else {
+      var dx = x - lastX;
+      lastDist = Math.abs(dx);
+      if (lastDist >= 1) {
+        rot += (dx / R) * RAD; /* نفس النسبة للدوران والإزاحة وبنفس المدة والمنحنى = تدحرج فيزيائي */
+        wrap.style.setProperty('--wb-dur', Math.round(Math.min(620, 220 + lastDist * 0.75)) + 'ms');
+        wrap.style.setProperty('--wb-rot', rot.toFixed(1) + 'deg');
+      }
+    }
+    wrap.style.setProperty('--wb-x', x + 'px');
+    lastX = x;
   }
+
+  function clearPress() {
+    wrap.classList.remove('wb-press');
+    if (curLink) { curLink.classList.remove('wb-under'); curLink = null; }
+    if (dwellTimer) { clearTimeout(dwellTimer); dwellTimer = null; }
+  }
+
   /* تفويض واحد على الحاوية بدل مستمع لكل رابط */
   wrap.addEventListener('mouseover', function (e) {
     var a = e.target && e.target.closest ? e.target.closest('.ds-navlink') : null;
-    if (a) moveTo(a);
+    if (!a) { /* فوق الكبسولة لا فوق رابط: ألغِ الفتح المعلّق فقط، الحبة تبقى بمكانها */
+      if (dwellTimer) { clearTimeout(dwellTimer); dwellTimer = null; }
+      return;
+    }
+    if (a === curLink) return; /* مرور بين أبناء الرابط نفسه (النص/الأيقونة) */
+    clearPress();
+    curLink = a;
+    bead.classList.remove('wb-land'); /* أوقف انضغاط الارتطام السابق إن كان يجري */
+    a.classList.add('wb-under');
+    wrap.classList.add('wb-press');
+    goTo(a);
+    /* وقوف مقصود فوق الرابط يفتح صفحته — طلب هادي (وقف عند من نحن ← يفتح من نحن) */
+    dwellTimer = setTimeout(function () {
+      dwellTimer = null;
+      if (!a.classList.contains('active')) a.click();
+    }, DWELL);
   });
-  wrap.addEventListener('mouseleave', function () { moveTo(active); });
+
+  wrap.addEventListener('mouseleave', function () {
+    clearPress();
+    goTo(active); /* ترجع لمقرّ الرابط النشط */
+  });
+
+  /* نهاية التدحرج الطويل = ارتطام: الكرة تنضغط لحظة ثم ترتد */
+  bead.addEventListener('transitionend', function (e) {
+    if (e.target !== bead || e.propertyName !== 'transform' || lastDist < 40) return;
+    bead.classList.remove('wb-land');
+    void bead.offsetWidth; /* إعادة تشغيل الأنميشن حتى لو تكرر الارتطام بنفس الموضع */
+    bead.classList.add('wb-land');
+  });
+  /* بعد انتهاء الانضغاط تُرفع الكلاس ليعود التحكم بالدوران للانتقال (transition) لا للأنميشن */
+  bead.addEventListener('animationend', function () { bead.classList.remove('wb-land'); });
+
   function sync() {
     active = wrap.querySelector('.ds-navlink.active') || active;
-    moveTo(active);
+    goTo(active, true); /* إعادة محاذاة فورية بلا تدحرج */
     bead.classList.add('wb-bead-ready'); /* تظهر بعد أول تحديد — لا وميض بموضع خاطئ */
   }
   sync();
