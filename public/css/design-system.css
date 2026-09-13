@@ -395,7 +395,7 @@ a.ds-card:hover, .ds-card-hover:hover {
   white-space: nowrap;
   transition: color var(--speed), background-color var(--speed);
 }
-.ds-navlink i { font-size: 12px; opacity: .8; }
+.ds-navlink i { font-size: 12px; opacity: .8; transition: opacity .18s ease; }
 /* النطاق 1024-1199 هو الأضيق (10 روابط + حجز الإجراءات) — خط أصغر وحشوات أقل (روابط
    وكبسولة معاً) تمنع قص آخر رابط — الكبسولة الزجاجية أكلت 20px من مساحة الروابط فيُعاد
    الحساب هنا (يجب أن يأتي بعد القاعدة الأساسية ليتغلب عليها بنفس الخصوصية) */
@@ -498,7 +498,7 @@ a.ds-card:hover, .ds-card-hover:hover {
     z-index: 3;
     /* صندوق العنصر = مقرّ/حفرة الكرة (54px) ويتمركز مركزه على حافة الكبسولة —
        طبقاته: فتحة الحفرة (خلفية العنصر) ثم طبقة المطّ .wb-squish تحمل الكرة (::before) — بلا لمعة بيضاء */
-    transform: translateX(calc(var(--wb-x, -200px) - 50%)) translateY(-50%);
+    transform: translateX(calc(var(--wb-x, -200px) - 50%)) translateY(calc(var(--wb-dy, 0px) - 50%));
     /* المدة من السكربت تتناسب مع المسافة — منحنى تسارع ثم تباطؤ بلا مبالغة،
        وtop منفصل بحركته النابضية: هو غور الثقل عند الوقوف (4px) لا جزء من التدحرج */
     transition: transform var(--wb-dur, 340ms) cubic-bezier(.3, 1.18, .4, 1), opacity .2s ease, top .34s cubic-bezier(.34, 1.56, .64, 1);
@@ -510,6 +510,12 @@ a.ds-card:hover, .ds-card-hover:hover {
   .wb-bead.wb-bead-ready { opacity: 1; }
   /* ثقل الوقوف: الكرة تغور 4px داخل الودّ طوال وجود الماوس على الشريط وترتد عند المغادرة */
   .ds-navlinks.wb-press .wb-bead { top: 4px; }
+
+  /* السحب باليد (مقطع هادي 1548733132562370772 «طبق بحرف»): أثناء القبض
+     الكرة تلصق باليد بلا transition وترتفع بـ --wb-dy (بالسالب = فوق الحافة
+     مثل انشلال المقطع)، وخط الحافة والودّ يتبعان بتأخر ثقيل (--wb-dur 90ms
+     من السكربت) — وعن الإفلات يرجع انتقال الكرة فيرجع بنابضها */
+  .ds-navlinks.wb-dragging .wb-bead { transition: none; }
 
   /* طبقة المطّ الجيلي — المقطع المرجعي من هادي (ريل انستقرام DbfG6fuPE9y:
      «لسا حركة مب طبيعية خليها ذي مقطع بالضبط»): الكرة الحقيقية ما تسافر جامدة،
@@ -558,11 +564,36 @@ a.ds-card:hover, .ds-card-hover:hover {
     55%  { transform: rotate(var(--wb-rot, 0deg)) scale(.94, 1.08); }
     100% { transform: rotate(var(--wb-rot, 0deg)) scale(1, 1); }
   }
+
+  /* لوغو الصفحة داخل الكرة — أيقونة الرابط الحامل تعيش بمركز الكرة، تطلع من
+     فتحتها بالهدر (من تحت: +24px) وتستقر بالمركز، وعن المغادرة ترجع لفتحتها.
+     العنصر ينشأ بالسكربت (صفر HTML زيادة) والحركة transform/opacity فقط —
+     الداكن مثل أيقونات المقطع على الكرة المضيئة */
+  .wb-hold {
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, calc(-50% + 24px));
+    opacity: 0;
+    pointer-events: none;
+    line-height: 1;
+    font-size: 13px;
+    color: #0e0c1a;
+    transition: transform 200ms cubic-bezier(.3, .9, .35, 1.1), opacity 150ms ease;
+    will-change: transform, opacity;
+  }
+  .wb-hold.wb-up {
+    transform: translate(-50%, -50%);
+    opacity: 1;
+    transition: transform 240ms cubic-bezier(.2, .8, .3, 1.18), opacity 180ms ease;
+  }
+  /* فتحة الرابط المحمول بلا أيقونة مكرّرة — اللوغو نفسه بمركز الكرة حصراً */
+  .ds-navlinks .ds-navlink.wb-carry > i { opacity: 0; }
   @media (prefers-reduced-motion: reduce) {
     .wb-bead { transition: opacity .2s ease; }
     .wb-squish { transition: none; }
     .wb-squish::before { transition: none; }
     .wb-squish.wb-land::before { animation: none; }
+    .wb-hold { transition: none; }
     .wb-dent { transition: opacity .2s ease; }
     .wb-edge i { transition: none; }
     .ds-navlinks.wb-lean-l .wb-dent, .ds-navlinks.wb-lean-r .wb-dent { transform: translateX(calc(var(--wb-x, -200px) - 50%)); }

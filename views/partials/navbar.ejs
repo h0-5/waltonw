@@ -247,7 +247,15 @@ async function deleteAllNotifications() {
      ذي مقطع بالضبط»): الكرة ما تتدحرج صلبة، تستطيل أفقاً باتجاه الهدف أثناء
      الطيران (حتى 1.72× والارتفاع ينكمش معكاساً) ومنحاز الممدد نحو الجهة
      القادمة، وعند الوصول يرتد للدائرة بنابض 240ms مع انضغاط الارتطام —
-     طبقة مطّ منفصلة (.wb-squish) عن طبقة الدوران حتى لا تتعارض مُدَتاهما ═══ */
+     طبقة مطّ منفصلة (.wb-squish) عن طبقة الدوران حتى لا تتعارض مُدَتاهما
+   ⑦ السحب والفتح — وصف هادي للمقطع حرفياً (1548733132562370772 «متاكد شفت
+     المقطع كامل؟»): «يسحب الدائرة بالماوس ويوقفها على صفحة يطلع لوغو الصفحة
+     من الهدر لمركز للدائرة وتفتح الصفحة» — الكرة تنمسك من جسمها (22px)
+     وتنشل من الودّ وتتدحرج مع اليد، وأيقونة كل صفحة تقف عندها تطلع من فتحتها
+     بمركز الكرة (.wb-hold تنشأ بالسكربت — صفر HTML) وترجع لفتحتها عند
+     المغادرة، وعن الإفلات على صفحة تثبت فيها ويطلع لوغوها لمركزها وتنفتح
+     الصفحة، والإفلات بمكان ثاني يرجعها لمقرّها بلا فتح — بلا أي مؤقتات:
+     pointer events و transitionend حصراً ═══ */
 (function () {
   var wrap = document.querySelector('.ds-navlinks');
   if (!wrap || !window.matchMedia('(min-width: 1024px)').matches) return;
@@ -314,12 +322,20 @@ async function deleteAllNotifications() {
     if (!a) return;
     var x = a.offsetLeft + a.offsetWidth / 2; /* مركز الرابط داخل الكبسولة (relative) */
     lastDur = 0;
+    /* لوغو الصفحة (مقطع هادي 1548733132562370772 حرفياً): عند التوجه لرابط غير
+       الحامل أيقونته ترجع لفتحتها بالهدر وأيقونة الهدف تطلع لمركز الكرة فور
+       الوصول — وعند التثبيت الفوري ترتفع في الحين */
+    if (carryLink !== a) {
+      swapCarry(null);
+      pendingCarry = a;
+    }
     if (lastX === null || instant) {
       /* أول وضع أو إعادة محاذاة (resize/خط) — تثبيت فوري بلا تدحرج وبلا مطّ */
       lastDist = 0;
       wrap.style.setProperty('--wb-dur', '0ms');
       squish.style.setProperty('--wb-sx', '1');
       squish.style.setProperty('--wb-sy', '1');
+      if (pendingCarry) { swapCarry(pendingCarry); pendingCarry = null; }
     } else {
       var dx = x - lastX;
       lastDist = Math.abs(dx);
@@ -356,6 +372,7 @@ async function deleteAllNotifications() {
   /* تفويض واحد على الحاوية بدل مستمع لكل رابط — الكرة زينة فقط: تدحرج وثقل
      بلا أي فتح تلقائي، الصفحة تنفتح بنقرة المستخدم على الرابط حصراً */
   wrap.addEventListener('mouseover', function (e) {
+    if (drag || opening) return;
     var a = e.target && e.target.closest ? e.target.closest('.ds-navlink') : null;
     if (!a || a === curLink) return;
     clearPress();
@@ -367,6 +384,7 @@ async function deleteAllNotifications() {
   });
 
   wrap.addEventListener('mouseleave', function () {
+    if (drag || opening) return;
     clearPress();
     goTo(active); /* ترجع لمقرّ الرابط النشط */
   });
@@ -376,6 +394,8 @@ async function deleteAllNotifications() {
   bead.addEventListener('transitionend', function (e) {
     if (e.target !== bead || e.propertyName !== 'transform') return;
     wrap.classList.remove('wb-lean-l', 'wb-lean-r');
+    /* وصول الكرة لرابط جديد = لوغوه يطلع من الهدر لمركزها (مثل المقطع حرفياً) */
+    if (pendingCarry && !drag) { swapCarry(pendingCarry); pendingCarry = null; }
     /* رجوع المطّ للدائرة بنابض 240ms — لحظة وصول الكرة بالضبط مثل المقطع */
     squish.style.setProperty('--wb-sx', '1');
     squish.style.setProperty('--wb-sy', '1');
@@ -387,7 +407,162 @@ async function deleteAllNotifications() {
   /* بعد انتهاء الانضغاط تُرفع الكلاس ليعود التحكم بالدوران للانتقال (transition) لا للأنميشن */
   squish.addEventListener('animationend', function () { squish.classList.remove('wb-land'); });
 
+  /* ═══ حوز لوغو الصفحة + السحب باليد + فتح الصفحة — وصف هادي للمقطع حرفياً
+     (1548733132562370772): «يسحب الدائرة بالماوس ويوقفها على صفحة يطلع لوغو
+     الصفحة من الهدر لمركز للدائرة وتفتح الصفحة» ═══ */
+  var carryLink = null, pendingCarry = null, holds = [];
+  var drag = null, opening = false;
+  var REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var HOLD_R = 22; /* نصف قطر جسم الكرة القابل للمسك — الهوفر والنقر على الروابط لم يُمس */
+  var LIFT = -10;  /* رفعة أول المسك — الكرة تنشل من الودّ مثل المقطع */
+
+  /* أيقونة الرابط تطلع من فتحتها بالهدر (+24px من تحت) وتستقر بمركز الكرة،
+     وعن المغادرة ترجع لفتحتها — كل عنصر ينشأ بالسكربت (صفر HTML زيادة)
+     وكل حركة transform/opacity بلا أي مؤقت */
+  function swapCarry(a) {
+    for (var i = holds.length - 1; i >= 0; i--) {
+      if (holds[i].classList.contains('wb-up')) holds[i].classList.remove('wb-up');
+      if (!holds[i].parentNode) holds.splice(i, 1);
+    }
+    if (carryLink && (!a || carryLink !== a)) carryLink.classList.remove('wb-carry');
+    if (!a) { carryLink = null; return; }
+    if (carryLink === a) return;
+    carryLink = a;
+    var ico = a.querySelector('i');
+    if (!ico) return;
+    a.classList.add('wb-carry');
+    var h = document.createElement('span');
+    h.className = 'wb-hold ' + ico.className;
+    bead.appendChild(h);
+    holds.push(h);
+    void h.offsetWidth; /* تثبيت موضع الفتحة قبل طلوع اللوغو للمركز */
+    h.classList.add('wb-up');
+    return h;
+  }
+  /* الأيقونة الساقطة تُشال بعد وصولها لفتحتها (transitionend opacity) */
+  bead.addEventListener('transitionend', function (e) {
+    var t = e.target;
+    if (e.propertyName !== 'opacity' || !t.classList || !t.classList.contains('wb-hold')) return;
+    if (t.classList.contains('wb-up')) return;
+    if (t.parentNode) t.parentNode.removeChild(t);
+    var ix = holds.indexOf(t);
+    if (ix > -1) holds.splice(ix, 1);
+  });
+
+  /* فتح الصفحة بعد ما يستقر لوغوها بمركز الكرة — بالضبط مثل تسلسل المقطع:
+     الوقوف على الصفحة يطلع اللوغو، واكتمال طلوعه يفتح الصفحة */
+  function openPage(a) {
+    if (opening) return;
+    opening = true;
+    pendingCarry = null;
+    if (REDUCED) { window.location.assign(a.href); return; }
+    var h = swapCarry(a);
+    if (h) h.addEventListener('transitionend', function (e) {
+      if (e.propertyName !== 'transform') return;
+      window.location.assign(a.href);
+    });
+    else window.location.assign(a.href);
+  }
+
+  function hitLink(cx, cy) {
+    for (var i = 0; i < drag.rects.length; i++) {
+      var r = drag.rects[i];
+      if (cx >= r.l - 6 && cx <= r.r + 6 && Math.abs(cy - r.cy) <= 30) return r.a;
+    }
+    return null;
+  }
+
+  /* المسك من مستند كامل — لأن نصف الكرة العلوي يطلع خارج حدود الكبسولة */
+  document.addEventListener('pointerdown', function (e) {
+    if (drag || opening || (e.button !== undefined && e.button !== 0)) return;
+    var b = bead.getBoundingClientRect();
+    var gdx = e.clientX - (b.left + b.width / 2);
+    var gdy = e.clientY - (b.top + b.height / 2);
+    if (gdx * gdx + gdy * gdy > HOLD_R * HOLD_R) return;
+    var links = wrap.querySelectorAll('.ds-navlink');
+    var rects = [];
+    for (var i = 0; i < links.length; i++) {
+      var r = links[i].getBoundingClientRect();
+      rects.push({ a: links[i], l: r.left, r: r.right, cy: r.top + r.height / 2 });
+    }
+    drag = { id: e.pointerId, sx: e.clientX, sy: e.clientY, moved: false, rects: rects, over: null, bendX: -1e9 };
+    try { wrap.setPointerCapture(e.pointerId); } catch (err) {}
+    wrap.style.setProperty('--wb-dy', LIFT + 'px'); /* الرفعة أول المسك */
+    e.preventDefault(); /* لا تحديد نص ولا نقرة تمرّ للرابط تحت الكرة */
+  });
+
+  document.addEventListener('pointermove', function (e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    if (!drag.moved) {
+      var mx = e.clientX - drag.sx, my = e.clientY - drag.sy;
+      if (mx * mx + my * my < 36) return; /* تحت 6px = ضغطة بلا سحب */
+      drag.moved = true;
+      swapCarry(null); /* باليد الكرة فاضية — أيقونة المقر رجعت لفتحتها */
+      pendingCarry = null;
+      wrap.classList.add('wb-dragging'); /* ملصوقة باليد: بلا transition */
+      wrap.classList.remove('wb-lean-l', 'wb-lean-r');
+      wrap.style.setProperty('--wb-dur', '90ms'); /* النقش والودّ يتبعان بتأخر ثقيل */
+      wrap.classList.add('wb-press'); /* ثقل اليد */
+      document.documentElement.style.cursor = 'grabbing';
+    }
+    var wr = wrap.getBoundingClientRect();
+    var px = Math.max(16, Math.min(wr.width - 16, e.clientX - wr.left));
+    var py = Math.max(-18, Math.min(46, e.clientY - wr.top));
+    if (lastX !== null && px !== lastX) {
+      rot += ((px - lastX) / R) * RAD; /* تدحرج فيزيائي مع اليد — نفس نسبة التدحرج */
+      wrap.style.setProperty('--wb-rot', rot.toFixed(1) + 'deg');
+    }
+    wrap.style.setProperty('--wb-x', px + 'px');
+    wrap.style.setProperty('--wb-dy', py + 'px');
+    lastX = px;
+    if (px - drag.bendX >= 4 || drag.bendX - px >= 4) { bendEdge(px); drag.bendX = px; }
+    var over = hitLink(e.clientX, wr.top + py);
+    if (over !== drag.over) {
+      if (drag.over) drag.over.classList.remove('wb-under');
+      drag.over = over;
+      if (over) over.classList.add('wb-under');
+      swapCarry(over); /* لوغو الصفحة اللي واقف عندها يطلع من الهدر لمركزها */
+    }
+  });
+
+  function endDrag(e, cancelled) {
+    if (!drag || e.pointerId !== drag.id) return;
+    var d = drag;
+    var wr = wrap.getBoundingClientRect();
+    var py = Math.max(-18, Math.min(46, e.clientY - wr.top));
+    var over = cancelled ? null : hitLink(e.clientX, wr.top + py);
+    drag = null;
+    document.documentElement.style.cursor = '';
+    try { wrap.releasePointerCapture(d.id); } catch (err) {}
+    if (!d.moved) {
+      wrap.style.setProperty('--wb-dy', '0px'); /* ضغطة بلا سحب — ترجع للودّ */
+      return;
+    }
+    wrap.classList.remove('wb-dragging');
+    if (over) {
+      /* الإفلات على صفحة — بالحرف: تثبت فيها ويطلع لوغوها لمركزها وتنفتح */
+      curLink = over;
+      over.classList.add('wb-under');
+      wrap.classList.add('wb-press');
+      goTo(over); /* تثبيت بمركز الصفحة بنفس فيزياء التدحرج والنابض */
+      wrap.style.setProperty('--wb-dy', '0px');
+      squish.classList.remove('wb-land'); /* انضغاط الجلوس في الودّ */
+      void squish.offsetWidth;
+      squish.classList.add('wb-land');
+      openPage(over);
+    } else {
+      /* الإفلات بأي مكان ثاني — ترجع لمقرّها بالنابض ولا شيء ينفتح */
+      if (d.over) d.over.classList.remove('wb-under');
+      clearPress();
+      goTo(curLink || active);
+      wrap.style.setProperty('--wb-dy', '0px');
+    }
+  }
+  document.addEventListener('pointerup', function (e) { endDrag(e, false); });
+  document.addEventListener('pointercancel', function (e) { endDrag(e, true); });
+
   function sync() {
+    if (drag) return; /* لا إعادة محاذاة وسط سحب */
     active = wrap.querySelector('.ds-navlink.active') || active;
     buildEdge(); /* إعادة بناء القطع لو تغير عرض الكبسولة (resize) */
     goTo(active, true); /* إعادة محاذاة فورية بلا تدحرج */
