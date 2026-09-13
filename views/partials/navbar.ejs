@@ -242,7 +242,12 @@ async function deleteAllNotifications() {
    ④ الثقل كما هو: الوقوف على الشريط يغور الكرة 4px داخل الودّ ويغور الرابط
      الحامل 2px وتهبط الكبسولة 2px، وعند الارتطام بعد قفزة طويلة تنضغط وترتد
    ⑤ تدحرج فيزيائي: الدوران من الإزاحة الحقيقية ÷ نصف القطر، ومدة الحركة
-     تتناسب مع البعد — وكل الحركة transform/opacity فقط بلا أي مؤقت ═══ */
+     تتناسب مع البعد — وكل الحركة transform/opacity فقط بلا أي مؤقت
+   ⑥ المطّ الجيلي — المقطع المرجعي من هادي (ريل انستقرام DbfG6fuPE9y، «خليها
+     ذي مقطع بالضبط»): الكرة ما تتدحرج صلبة، تستطيل أفقاً باتجاه الهدف أثناء
+     الطيران (حتى 1.72× والارتفاع ينكمش معكاساً) ومنحاز الممدد نحو الجهة
+     القادمة، وعند الوصول يرتد للدائرة بنابض 240ms مع انضغاط الارتطام —
+     طبقة مطّ منفصلة (.wb-squish) عن طبقة الدوران حتى لا تتعارض مُدَتاهما ═══ */
 (function () {
   var wrap = document.querySelector('.ds-navlinks');
   if (!wrap || !window.matchMedia('(min-width: 1024px)').matches) return;
@@ -256,6 +261,12 @@ async function deleteAllNotifications() {
   var bead = document.createElement('span');
   bead.className = 'wb-bead';
   bead.setAttribute('aria-hidden', 'true');
+  /* طبقة المطّ (المقطع المرجعي): غلاف داخلي تحمله الكرة، يستطيل أفقياً أثناء
+     التدحرج ويرجع دائرة عند الوصول — منفصلة عن طبقة الدوران حتى لكل واحدة
+     مدتها ومنحناها (المطّ نابض ثابت 240ms، والدوران بمدة الرحلة) */
+  var squish = document.createElement('span');
+  squish.className = 'wb-squish';
+  bead.appendChild(squish);
   /* ترتيب الرسم: خط الحافة ثم الحفرة فوقه ثم الكرة فوق الكل */
   wrap.appendChild(edge);
   wrap.appendChild(dent);
@@ -304,9 +315,11 @@ async function deleteAllNotifications() {
     var x = a.offsetLeft + a.offsetWidth / 2; /* مركز الرابط داخل الكبسولة (relative) */
     lastDur = 0;
     if (lastX === null || instant) {
-      /* أول وضع أو إعادة محاذاة (resize/خط) — تثبيت فوري بلا تدحرج */
+      /* أول وضع أو إعادة محاذاة (resize/خط) — تثبيت فوري بلا تدحرج وبلا مطّ */
       lastDist = 0;
       wrap.style.setProperty('--wb-dur', '0ms');
+      squish.style.setProperty('--wb-sx', '1');
+      squish.style.setProperty('--wb-sy', '1');
     } else {
       var dx = x - lastX;
       lastDist = Math.abs(dx);
@@ -318,6 +331,16 @@ async function deleteAllNotifications() {
         /* ميلان السطح مع اتجاه الحركة — يرتد لاستقامته عند الهبوط */
         wrap.classList.remove('wb-lean-l', 'wb-lean-r');
         wrap.classList.add(dx > 0 ? 'wb-lean-r' : 'wb-lean-l');
+        /* المطّ الجيلي (بالمقطع المرجعي حرفياً): الكرة تستطيل باتجاه الهدف
+           أثناء الطيران — كل ما بعدت المسافة زاد الاستطالة (سقف 1.72×)
+           والارتفاع ينكمش معكاساً حفاظاً على حجم الكرة — وأصل التمدد
+           منحاز للجهة القادمة (30% وهي رايحة يمين / 70% رايحة يسار)
+           حتى يبسط المدى الأمامي أكثر من الخلفي، وعند الوصول يرجع 1×1
+           بنابض 240ms من transitionend الكرة */
+        var sx = 1 + Math.min(0.72, lastDist / 420);
+        squish.style.transformOrigin = dx > 0 ? '30% 50%' : '70% 50%';
+        squish.style.setProperty('--wb-sx', sx.toFixed(3));
+        squish.style.setProperty('--wb-sy', Math.max(0.78, 1 / sx).toFixed(3));
       }
     }
     wrap.style.setProperty('--wb-x', x + 'px');
@@ -337,7 +360,7 @@ async function deleteAllNotifications() {
     if (!a || a === curLink) return;
     clearPress();
     curLink = a;
-    bead.classList.remove('wb-land'); /* أوقف انضغاط الارتطام السابق إن كان يجري */
+    squish.classList.remove('wb-land'); /* أوقف انضغاط الارتطام السابق إن كان يجري */
     a.classList.add('wb-under');
     wrap.classList.add('wb-press');
     goTo(a);
@@ -348,17 +371,21 @@ async function deleteAllNotifications() {
     goTo(active); /* ترجع لمقرّ الرابط النشط */
   });
 
-  /* هبوط الكرة: السطح يرتد لاستقامته، والقفزة الطويلة تنضغط لحظة ثم ترتد */
+  /* هبوط الكرة: السطح يرتد لاستقامته، والمطّ يرتد للدائرة، والقفزة الطويلة
+     تنضغط لحظة ثم ترتد — الثلاثة معاً = استقرار المقطع المرجعي */
   bead.addEventListener('transitionend', function (e) {
     if (e.target !== bead || e.propertyName !== 'transform') return;
     wrap.classList.remove('wb-lean-l', 'wb-lean-r');
+    /* رجوع المطّ للدائرة بنابض 240ms — لحظة وصول الكرة بالضبط مثل المقطع */
+    squish.style.setProperty('--wb-sx', '1');
+    squish.style.setProperty('--wb-sy', '1');
     if (lastDist < 40) return;
-    bead.classList.remove('wb-land');
-    void bead.offsetWidth; /* إعادة تشغيل الأنميشن حتى لو تكرر الارتطام بنفس الموضع */
-    bead.classList.add('wb-land');
+    squish.classList.remove('wb-land');
+    void squish.offsetWidth; /* إعادة تشغيل الأنميشن حتى لو تكرر الارتطام بنفس الموضع */
+    squish.classList.add('wb-land');
   });
   /* بعد انتهاء الانضغاط تُرفع الكلاس ليعود التحكم بالدوران للانتقال (transition) لا للأنميشن */
-  bead.addEventListener('animationend', function () { bead.classList.remove('wb-land'); });
+  squish.addEventListener('animationend', function () { squish.classList.remove('wb-land'); });
 
   function sync() {
     active = wrap.querySelector('.ds-navlink.active') || active;

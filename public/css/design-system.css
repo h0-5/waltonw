@@ -497,7 +497,7 @@ a.ds-card:hover, .ds-card-hover:hover {
     pointer-events: none;
     z-index: 3;
     /* صندوق العنصر = مقرّ/حفرة الكرة (54px) ويتمركز مركزه على حافة الكبسولة —
-       طبقاته: فتحة الحفرة (خلفية العنصر) ثم الكرة (::before) — بلا لمعة بيضاء */
+       طبقاته: فتحة الحفرة (خلفية العنصر) ثم طبقة المطّ .wb-squish تحمل الكرة (::before) — بلا لمعة بيضاء */
     transform: translateX(calc(var(--wb-x, -200px) - 50%)) translateY(-50%);
     /* المدة من السكربت تتناسب مع المسافة — منحنى تسارع ثم تباطؤ بلا مبالغة،
        وtop منفصل بحركته النابضية: هو غور الثقل عند الوقوف (4px) لا جزء من التدحرج */
@@ -510,10 +510,27 @@ a.ds-card:hover, .ds-card-hover:hover {
   .wb-bead.wb-bead-ready { opacity: 1; }
   /* ثقل الوقوف: الكرة تغور 4px داخل الودّ طوال وجود الماوس على الشريط وترتد عند المغادرة */
   .ds-navlinks.wb-press .wb-bead { top: 4px; }
+
+  /* طبقة المطّ الجيلي — المقطع المرجعي من هادي (ريل انستقرام DbfG6fuPE9y:
+     «لسا حركة مب طبيعية خليها ذي مقطع بالضبط»): الكرة الحقيقية ما تسافر جامدة،
+     تستطيل أفقاً باتجاه الهدف أثناء الطيران وترجع دائرة عند الوصول بنابض.
+     المتغيرات --wb-sx/--wb-sy يجيها من السكربت عند كل قفزة (سقف 1.72×
+     وارتفاع معكوس ≥ .78)، ونابض 240ms ثابت مستقل عن مدة الرحلة — عشان
+      التمدد يكتمل بدري بالطيران والرجوع للدائرة يسبق استقرار الموضع، تماماً
+     مثل استقرار المقطع. منفصلة عن طبقة الدوران (::before) حتى لا يكسر
+     نابض المطّ تزامن الدوران مع المسافة */
+  .wb-squish {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    transform: scale(var(--wb-sx, 1), var(--wb-sy, 1));
+    transition: transform 240ms cubic-bezier(.25, 1.35, .45, 1);
+    will-change: transform;
+  }
   /* الكرة (42px داخل مقرّ 54px) — بلون ثيم الموقع var(--accent) كاملاً بلا أي أبيض:
      بقعة داكنة جانبية تجعل دورانها مرئياً + تظليل سفلي يحجمها، والتوهج بلون الثيم
-     (color-mix) فيتبع الثيم تلقائياً لو تغيّر */
-  .wb-bead::before {
+     (color-mix) فيتبع الثيم تلقائياً لو تغيّر — تعيش داخل طبقة المطّ */
+  .wb-squish::before {
     content: '';
     position: absolute;
     inset: 6px;
@@ -530,8 +547,9 @@ a.ds-card:hover, .ds-card-hover:hover {
     transition: transform var(--wb-dur, 340ms) cubic-bezier(.3, 1.18, .4, 1);
   }
   /* لحظة الارتطام بعد قفزة طويلة: الكرة تنضغط رأسياً ثم ترتد — إحساس الثقل
-     (يطلقها السكربت عند transitionend فقط، والأنميشن نفسه يحفظ الدوران الحالي) */
-  .wb-bead.wb-land::before {
+     (يطلقها السكربت عند transitionend فقط، والأنميشن نفسه يحفظ الدوران الحالي)
+     — مع رجوع نابض المطّ للدائرة بنفس اللحظة = استقرار المقطع المرجعي */
+  .wb-squish.wb-land::before {
     transform-origin: 50% 78%;
     animation: wb-squash .46s cubic-bezier(.34, 1.56, .64, 1) both;
   }
@@ -542,8 +560,9 @@ a.ds-card:hover, .ds-card-hover:hover {
   }
   @media (prefers-reduced-motion: reduce) {
     .wb-bead { transition: opacity .2s ease; }
-    .wb-bead::before { transition: none; }
-    .wb-bead.wb-land::before { animation: none; }
+    .wb-squish { transition: none; }
+    .wb-squish::before { transition: none; }
+    .wb-squish.wb-land::before { animation: none; }
     .wb-dent { transition: opacity .2s ease; }
     .wb-edge i { transition: none; }
     .ds-navlinks.wb-lean-l .wb-dent, .ds-navlinks.wb-lean-r .wb-dent { transform: translateX(calc(var(--wb-x, -200px) - 50%)); }
