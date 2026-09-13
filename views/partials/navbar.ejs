@@ -229,15 +229,16 @@ async function deleteAllNotifications() {
     .catch(function () {});
 })();
 
-/* ═══ حبة التنقل (ديسكتوب ≥1024 فقط) — فيزياء ثقل كاملة بطلب هادي:
-   ① تدحرج حقيقي: الدوران يتناسب مع المسافة بنفس المدة والمنحنى (بلا انزلاق)،
-     ومدة الحركة تتناسب مع البعد، وتسارع ثم تبطئ بهدوء — بلا ارتداد أفقي غريب
-   ② الهدر يتفاعل مع ثقلها: الكبسولة تهبط 1px، الرابط الحامل يغور 2px،
-     وظل انبعاج يتبعها، وعند الارتطام بعد قفزة طويلة تنضغط وترتد (transitionend)
-   ③ وقوفها فوق أي رابط ~نصف ثانية = وقوف مقصود فيفتح صفحته تلقائياً
-     (الفتح عبر click() يستفيد من التحميل المسبق startPrefetch فتجي الصفحة جاهزة)
-   كل الحركة transform/opacity فقط = تسريع العتاد، والأحداث عند الحاجة فقط:
-   بلا مؤقتات دورية ولا rAF — العنصران يُنشآن هنا فلا وزن بالـHTML ولا طلبات جديدة ═══ */
+/* ═══ حبة التنقل (ديسكتوب ≥1024 فقط) — نسخة المينيسكوس الكاملة بطلب هادي:
+   ① تدحرج فيزيائي: الدوران يتناسب مع المسافة بنفس المدة والمنحنى، ومدة الحركة تتناسب مع البعد
+   ② الودّ/الحفرة يتبعها ويشمّ اتجاهها: الكتف الخلفي يتمدد والأمامي ينقبض أثناء الحركة
+     (wb-lean-*) ويرتد لاستقامته عند الوقوف — والحفرة ظاهرة دائماً حتى والكرة بمقرّها
+   ③ ثقل: الوقوف على الشريط يغور الكرة 3px داخل الودّ ويغور الرابط الحامل 2px
+     وتهبط الكبسولة 1px، وعند الارتطام بعد قفزة طويلة تنضغط وترتد (transitionend)
+   ④ لا فتح تلقائي إلا بعد وصول الكرة ثم وقوف ثانية كاملة فوق الرابط — طلب هادي الصريح:
+     «خليها تصبر ثانية، مو أول ما يحط الماوس على الاسم» — العد يبدأ بعد الهبوط لا بعد الهوفر
+   كل الحركة transform/opacity فقط (وtop 3px لموضع الكرة عند الأحداث فقط) — بلا
+   مؤقتات دورية ولا rAF: مؤقتان قصيران عند الأحداث فقط (انتظار الوصول ثم عدّ الوقوف) ═══ */
 (function () {
   var wrap = document.querySelector('.ds-navlinks');
   if (!wrap || !window.matchMedia('(min-width: 1024px)').matches) return;
@@ -252,15 +253,16 @@ async function deleteAllNotifications() {
   wrap.appendChild(bead);
 
   var active = wrap.querySelector('.ds-navlink.active') || wrap.querySelector('.ds-navlink');
-  var lastX = null, lastDist = 0, rot = 0;
-  var curLink = null, dwellTimer = null;
+  var lastX = null, lastDist = 0, lastDur = 0, rot = 0;
+  var curLink = null, armTimer = null, dwellTimer = null;
   var R = 15;              /* نصف قطر الكرة 30px — الإزاحة ÷ نصف القطر = زاوية التدحرج */
   var RAD = 180 / Math.PI; /* راديان → درجة */
-  var DWELL = 480;         /* مدة التوقف التي تُعتبر وقوفاً مقصوداً لا مجرد مرور */
+  var DWELL = 1000;        /* وقوف كامل: ثانية فوق الرابط بعد وصول الكرة حتى يفتح */
 
   function goTo(a, instant) {
     if (!a) return;
     var x = a.offsetLeft + a.offsetWidth / 2; /* مركز الرابط داخل الكبسولة (relative) */
+    lastDur = 0;
     if (lastX === null || instant) {
       /* أول وضع أو إعادة محاذاة (resize/خط) — تثبيت فوري بلا تدحرج */
       lastDist = 0;
@@ -269,40 +271,61 @@ async function deleteAllNotifications() {
       var dx = x - lastX;
       lastDist = Math.abs(dx);
       if (lastDist >= 1) {
-        rot += (dx / R) * RAD; /* نفس النسبة للدوران والإزاحة وبنفس المدة والمنحنى = تدحرج فيزيائي */
-        wrap.style.setProperty('--wb-dur', Math.round(Math.min(620, 220 + lastDist * 0.75)) + 'ms');
+        lastDur = Math.round(Math.min(620, 220 + lastDist * 0.75));
+        rot += (dx / R) * RAD; /* نفس النسبة للدوران والإزاحة وبنفس المدة والمنحنى */
+        wrap.style.setProperty('--wb-dur', lastDur + 'ms');
         wrap.style.setProperty('--wb-rot', rot.toFixed(1) + 'deg');
+        /* ميلان السطح مع اتجاه الحركة — يرتد لاستقامته عند الهبوط */
+        wrap.classList.remove('wb-lean-l', 'wb-lean-r');
+        wrap.classList.add(dx > 0 ? 'wb-lean-r' : 'wb-lean-l');
       }
     }
     wrap.style.setProperty('--wb-x', x + 'px');
     lastX = x;
   }
 
+  function clearTimers() {
+    if (armTimer) { clearTimeout(armTimer); armTimer = null; }
+    if (dwellTimer) { clearTimeout(dwellTimer); dwellTimer = null; }
+  }
+
+  /* سلسلة الفتح: تنتظر وصول الكرة (مدة تدحرجها) ثم عدّ ثانية الوقوف كاملة */
+  function armDwell(a, delay) {
+    clearTimers();
+    armTimer = setTimeout(function () {
+      armTimer = null;
+      dwellTimer = setTimeout(function () {
+        dwellTimer = null;
+        if (curLink === a && !a.classList.contains('active')) a.click();
+      }, DWELL);
+    }, delay);
+  }
+
   function clearPress() {
     wrap.classList.remove('wb-press');
     if (curLink) { curLink.classList.remove('wb-under'); curLink = null; }
-    if (dwellTimer) { clearTimeout(dwellTimer); dwellTimer = null; }
+    clearTimers();
   }
 
   /* تفويض واحد على الحاوية بدل مستمع لكل رابط */
   wrap.addEventListener('mouseover', function (e) {
     var a = e.target && e.target.closest ? e.target.closest('.ds-navlink') : null;
-    if (!a) { /* فوق الكبسولة لا فوق رابط: ألغِ الفتح المعلّق فقط، الحبة تبقى بمكانها */
-      if (dwellTimer) { clearTimeout(dwellTimer); dwellTimer = null; }
+    if (!a) { /* فوق الكبسولة لا فوق رابط: ألغِ العدّ فقط، الحبة تبقى بمكانها */
+      clearTimers();
       return;
     }
-    if (a === curLink) return; /* مرور بين أبناء الرابط نفسه (النص/الأيقونة) */
+    if (a === curLink) {
+      /* رجع لنفس الرابط بعد مرور بالفجوة ألغى العدّ — أعد عدّ الوقوف */
+      if (!armTimer && !dwellTimer) armDwell(a, 0);
+      return;
+    }
     clearPress();
     curLink = a;
     bead.classList.remove('wb-land'); /* أوقف انضغاط الارتطام السابق إن كان يجري */
     a.classList.add('wb-under');
     wrap.classList.add('wb-press');
     goTo(a);
-    /* وقوف مقصود فوق الرابط يفتح صفحته — طلب هادي (وقف عند من نحن ← يفتح من نحن) */
-    dwellTimer = setTimeout(function () {
-      dwellTimer = null;
-      if (!a.classList.contains('active')) a.click();
-    }, DWELL);
+    armDwell(a, lastDur + 60); /* العد يبدأ بعد هبوط الكرة لا لحظة الهوفر */
   });
 
   wrap.addEventListener('mouseleave', function () {
@@ -310,9 +333,11 @@ async function deleteAllNotifications() {
     goTo(active); /* ترجع لمقرّ الرابط النشط */
   });
 
-  /* نهاية التدحرج الطويل = ارتطام: الكرة تنضغط لحظة ثم ترتد */
+  /* هبوط الكرة: السطح يرتد لاستقامته، والقفزة الطويلة تنضغط لحظة ثم ترتد */
   bead.addEventListener('transitionend', function (e) {
-    if (e.target !== bead || e.propertyName !== 'transform' || lastDist < 40) return;
+    if (e.target !== bead || e.propertyName !== 'transform') return;
+    wrap.classList.remove('wb-lean-l', 'wb-lean-r');
+    if (lastDist < 40) return;
     bead.classList.remove('wb-land');
     void bead.offsetWidth; /* إعادة تشغيل الأنميشن حتى لو تكرر الارتطام بنفس الموضع */
     bead.classList.add('wb-land');
@@ -324,6 +349,7 @@ async function deleteAllNotifications() {
     active = wrap.querySelector('.ds-navlink.active') || active;
     goTo(active, true); /* إعادة محاذاة فورية بلا تدحرج */
     bead.classList.add('wb-bead-ready'); /* تظهر بعد أول تحديد — لا وميض بموضع خاطئ */
+    wrap.classList.add('wb-on'); /* الحفرة ظاهرة دائماً منذ أول تحديد — مثل المرجع */
   }
   sync();
   window.addEventListener('resize', sync);

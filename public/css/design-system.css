@@ -413,13 +413,13 @@ a.ds-card:hover, .ds-card-hover:hover {
 .ds-navlink.active { color: var(--accent); }
 .ds-navlink-ds { color: var(--accent); }
 
-/* ═══ حبة التنقل (ديسكتوب فقط) — فيزياء ثقل كاملة بفكرة هادي (مرجع Meniscus):
-   ① تدحرج حقيقي: دوران الكرة يتناسب مع الإزاحة بنفس المدة والمنحنى = تدحرج بلا انزلاق،
-      ومدة الحركة تتناسب مع المسافة، وتسارع ثم تبطئ بهدوء (بلا ارتداد أفقي غريب)
-   ② الزجاج يتفاعل مع ثقلها: الكبسولة كلها تهبط 1px، الرابط الحامل يغور 2px،
-      وظل انبعاج ناعم يتبعها تحت الكرة، وعند الارتطام بعد قفزة طويلة تنضغط وترتد
-   صفر صور وصفر طلبات: كل الحركة transform/opacity فقط (تسريع العتاد) والأحداث عند
-   الحاجة فقط (mouseover/mouseleave/transitionend/resize — بلا مؤقتات دورية ولا rAF) ═══ */
+/* ═══ حبة التنقل (ديسكتوب فقط) — نسخة المينيسكوس الكاملة بفكرة هادي (من ريله وسكرين شوت كوده):
+   الكرة تسكن «ودّ/حفرة» حقيقية محفورة بالحافة العلوية للكبسولة — مثل مرجعه بالضبط:
+   «الطبق أعمق من الغرفة فالحفرة لها سيلويت، والحافة (الرم) ترسم المينيسكوس» —
+   الودّ ظاهر دائماً حتى والكرة متوقفة بمقرّها، يتبعها أينما تحركت، ويميل مع اتجاهها
+   (الكتف الخلفي يتمدد والأمامي ينقبض) ويرتد لاستقامته عند الوقوف، والكرة تغور أعمق
+   عند الوقوف (ثقل) وتنضغط وترتد عند الارتطام بعد قفزة طويلة.
+   صفر صور: الودّ وأكتافه وحافته كلها تدرجات CSS — والحركة transform/opacity فقط ═══ */
 @media (min-width: 1024px) {
   /* relative ليتحسب offsetLeft الروابط داخله، وoverflow ظاهر ليخرج رأس الحبة فوق الحافة
      (الروابط بلا أيقونات <1200 وتسبق فيها المساحة، وبأيقونات ≥1200 فيها فائض ~45px مقاس) */
@@ -430,20 +430,50 @@ a.ds-card:hover, .ds-card-hover:hover {
   .ds-navlink { transition: color var(--speed), background-color var(--speed), transform .22s ease; }
   .ds-navlinks.wb-press .ds-navlink.wb-under { transform: translateY(2px); }
 
-  /* انبعاج الزجاج تحت الكرة — ظل ناعم يتبع موضعها ويظهر ما دامت واقفة عليها */
+  /* الودّ/الحفرة — يتبع الكرة أينما تحركت:
+     طبقاته: جسم الحفرة (خلفية العنصر) + الأكتاف والعمق عند الوقوف (::before)
+     + حافة المينيسكوس «الرم» (::after — قوس ضوء يحضن أسفل الكرة ويرسم الانعطاج) */
   .wb-dent {
     position: absolute;
-    top: 3px; left: 0;
-    width: 58px; height: 14px;
-    border-radius: 50%;
+    top: -10px; left: 0;
+    width: 88px; height: 26px;
     pointer-events: none;
     z-index: 1;
     transform: translateX(calc(var(--wb-x, -200px) - 50%));
-    background: radial-gradient(ellipse at 50% 30%, rgba(0, 0, 0, .5) 0%, rgba(0, 0, 0, .25) 36%, rgba(0, 0, 0, 0) 70%);
+    background: radial-gradient(ellipse 50% 58% at 50% 34%, rgba(4, 2, 10, .74) 0%, rgba(4, 2, 10, .4) 46%, rgba(4, 2, 10, 0) 72%);
     opacity: 0;
-    transition: transform var(--wb-dur, 340ms) cubic-bezier(.45, .05, .18, 1), opacity .3s ease;
+    transition: transform var(--wb-dur, 340ms) cubic-bezier(.45, .05, .18, 1), opacity .35s ease;
   }
+  /* ظاهر دائماً منذ أول تحديد — الحفرة موقار الكرة الدائم (مثل الصورة المرجعية) */
+  .ds-navlinks.wb-on .wb-dent { opacity: .9; }
   .ds-navlinks.wb-press .wb-dent { opacity: 1; }
+  /* ميلان السطح مع اتجاه الحركة — الكتف الخلفي يتمدد والأمامي ينقبض، ويرتد عند الوقوف */
+  .ds-navlinks.wb-lean-l .wb-dent { transform: translateX(calc(var(--wb-x, -200px) - 50%)) skewX(-7deg); }
+  .ds-navlinks.wb-lean-r .wb-dent { transform: translateX(calc(var(--wb-x, -200px) - 50%)) skewX(7deg); }
+  /* الأكتاف + العمق الإضافي عند الوقوف — الحافة تنعطج بوضوح تحت الثقل */
+  .wb-dent::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 34% 60% at 15% 36%, rgba(0, 0, 0, .55) 0%, rgba(0, 0, 0, 0) 72%),
+      radial-gradient(ellipse 34% 60% at 85% 36%, rgba(0, 0, 0, .55) 0%, rgba(0, 0, 0, 0) 72%),
+      radial-gradient(ellipse 46% 54% at 50% 42%, rgba(0, 0, 0, .5) 0%, rgba(0, 0, 0, 0) 76%);
+    opacity: 0;
+    transition: opacity .3s ease;
+  }
+  .ds-navlinks.wb-press .wb-dent::before { opacity: 1; }
+  /* حافة المينيسكوس — قوس ضوء رقيق يحضن أسفل الكرة (الرم اللي يرسم الانعطاج مثل المرجع) */
+  .wb-dent::after {
+    content: '';
+    position: absolute;
+    left: 50%; bottom: 1px;
+    width: 46px; height: 19px;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    border-bottom: 1.6px solid rgba(255, 255, 255, .34);
+    filter: blur(.4px);
+  }
 
   .wb-bead {
     position: absolute;
@@ -452,17 +482,20 @@ a.ds-card:hover, .ds-card-hover:hover {
     border-radius: 50%;
     pointer-events: none;
     z-index: 3;
-    /* صندوق العنصر = المقرّ/الحفرة (40px) ويتمركز مركزه على حافة الكبسولة —
+    /* صندوق العنصر = مقرّ/حفرة الكرة (40px) ويتمركز مركزه على حافة الكبسولة —
        طبقاته: الحفرة (خلفية العنصر) ثم الكرة (::before) ثم اللمعة (::after) */
     transform: translateX(calc(var(--wb-x, -200px) - 50%)) translateY(-50%);
-    /* المدة من السكربت تتناسب مع المسافة — منحنى تسارع ثم تباطؤ بلا مبالغة */
-    transition: transform var(--wb-dur, 340ms) cubic-bezier(.45, .05, .18, 1), opacity .2s ease;
+    /* المدة من السكربت تتناسب مع المسافة — منحنى تسارع ثم تباطؤ بلا مبالغة،
+       وtop منفصل بحركته النابضية: هو غور الثقل عند الوقوف (3px) لا جزء من التدحرج */
+    transition: transform var(--wb-dur, 340ms) cubic-bezier(.45, .05, .18, 1), opacity .2s ease, top .34s cubic-bezier(.34, 1.56, .64, 1);
     opacity: 0; /* تختفي حتى يحدد السكربت أول مقرّ — لا وميض بموضع خاطئ */
     /* الحفرة — قرص داكن يقطع حافة الزجاج بصرياً + ظل داخلي يرسم عمق الطَمر */
     background: radial-gradient(circle, #0e0c1a 55%, rgba(14, 12, 26, 0) 62%);
     box-shadow: inset 0 3px 5px rgba(0, 0, 0, .85);
   }
   .wb-bead.wb-bead-ready { opacity: 1; }
+  /* ثقل الوقوف: الكرة تغور 3px داخل الودّ طوال وجود الماوس على الشريط وترتد عند المغادرة */
+  .ds-navlinks.wb-press .wb-bead { top: 3px; }
   /* الكرة البنفسجية (30px داخل مقرّ 40px) — رقعة ضوء جانبية تجعل دورانها مرئياً */
   .wb-bead::before {
     content: '';
@@ -501,6 +534,7 @@ a.ds-card:hover, .ds-card-hover:hover {
     .wb-bead::before { transition: none; }
     .wb-bead.wb-land::before { animation: none; }
     .wb-dent { transition: opacity .2s ease; }
+    .ds-navlinks.wb-lean-l .wb-dent, .ds-navlinks.wb-lean-r .wb-dent { transform: translateX(calc(var(--wb-x, -200px) - 50%)); }
     .ds-navlinks, .ds-navlink { transition: none; }
   }
 }
