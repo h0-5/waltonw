@@ -547,7 +547,71 @@ async function start() {
     await ensureCol('application_questions', 'order_index', "order_index INT DEFAULT 0");
     await ensureCol('application_questions', 'max_selections', "max_selections INT DEFAULT NULL");
     await ensureCol('community_messages', 'channel_id', "channel_id VARCHAR(100) DEFAULT 'general'");
+    /* properties: CREATE TABLE ينشئها بلا category/sort_order لكن كل استعلامات الخدمة
+       (الصفحة + لوحة الإدارة) تُرتّب بـ sort_order وتُدرج category — قاعدة جديدة كانت تكسر صفحة العقارات وCRUD الإدارة */
+    await ensureCol('properties', 'category', "category VARCHAR(100) DEFAULT ''");
+    await ensureCol('properties', 'sort_order', "sort_order INT DEFAULT 0");
   } catch (e) { console.log('⚠️ API columns self-heal failed:', e.message); }
+
+  /* فهرس القاعدة — شفاء ذاتي عند الإقلاع (بنفس منطق ensureCol أعلاه):
+     كل فهرس هنا مستند لاستعلام حقيقي في الكود (WHERE/ORDER BY/JOIN):
+     - notifications (user_id, is_read) + (user_id, created_at): عدّاد غير المقروء يُستعلم مرتين بكل تحميل صفحة + قائمة آخر 20
+     - bot_actions (status, created_at): البوت يستطلع الأوامر المعلقة باستمرار
+     - submitted_applications / support_tickets / orders / ticket_replies: صفحات الأعضاء ولوحات الإدارة
+     - admin_logs / user_activity_log / product_logs / game_reward_log: سجلات الإدارة بترتيب created_at DESC (كانت full scan + filesort)
+     - users (created_at / last_login / is_banned): لوحة الإدارة والإحصائيات
+     - news / broadcasts (is_hidden|is_active, created_at): الصفحة الرئيسية وشريط الأخبار
+     الفحص: استعلام information_schema.STATISTICS واحد كل إقلاع — ALTER فقط للمفقود فعلاً. */
+  try {
+    const wantedIndexes = [
+      ['notifications',            'idx_notif_user_read',    'user_id, `is_read`'],
+      ['notifications',            'idx_notif_user_created', 'user_id, created_at'],
+      ['bot_actions',              'idx_ba_status_created',  'status, created_at'],
+      ['submitted_applications',   'idx_sa_user_type',       'user_id, application_type, status'],
+      ['submitted_applications',   'idx_sa_status_created',  'status, created_at'],
+      ['application_questions',    'idx_aq_type_sort',       'application_type, sort_order'],
+      ['support_tickets',          'idx_st_user',            'user_id'],
+      ['support_tickets',          'idx_st_status',          'status'],
+      ['ticket_replies',           'idx_tr_ticket',          'ticket_id, created_at'],
+      ['orders',                   'idx_orders_user',        'user_id, created_at'],
+      ['community_messages',       'idx_cm_channel_id',      'channel_id, id'],
+      ['news',                     'idx_news_hidden_created','`is_hidden`, created_at'],
+      ['broadcasts',               'idx_bc_active_created',  '`is_active`, created_at'],
+      ['giveaway_participants',    'idx_gp_giveaway',        'giveaway_id, user_id'],
+      ['giveaway_winners',         'idx_gw_giveaway',        'giveaway_id'],
+      ['service_requests',         'idx_sr_user',            'user_id'],
+      ['company_items',            'idx_ci_category_sort',   'category, sort_order'],
+      ['admin_logs',               'idx_al_created',         'created_at'],
+      ['admin_profile_logs',       'idx_apl_user',           'user_id, created_at'],
+      ['admin_warnings',           'idx_aw_user_del',        'user_id, `is_deleted`'],
+      ['admin_excuses',            'idx_ae_user',            'user_id, created_at'],
+      ['user_activity_log',        'idx_ual_user',           'user_id, created_at'],
+      ['user_activity_log',        'idx_ual_created',        'created_at'],
+      ['product_logs',             'idx_pl_created',         'created_at'],
+      ['game_reward_log',          'idx_grl_user',           'user_id, created_at'],
+      ['game_reward_log',          'idx_grl_created',        'created_at'],
+      ['user_achievements',        'idx_ua_discord',         'discord_id'],
+      ['user_boxes',               'idx_ub_user',            'user_id'],
+      ['bot_logs',                 'idx_bl_created',         'created_at'],
+      ['users',                    'idx_users_created',      'created_at'],
+      ['users',                    'idx_users_lastlogin',    'last_login'],
+      ['users',                    'idx_users_banned',       '`is_banned`']
+    ];
+    const [have] = await db.query(
+      "SELECT DISTINCT TABLE_NAME, INDEX_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE()"
+    );
+    const existing = new Set(have.map(r => `${r.TABLE_NAME}.${r.INDEX_NAME}`));
+    let added = 0;
+    for (const [table, idxName, cols] of wantedIndexes) {
+      if (existing.has(`${table}.${idxName}`)) continue;
+      try {
+        await db.query(`ALTER TABLE \`${table}\` ADD INDEX \`${idxName}\` (${cols})`);
+        added++;
+        console.log(`✅ index added: ${table}.${idxName}`);
+      } catch (e) { console.log(`⚠️ index ${table}.${idxName}:`, e.message); }
+    }
+    console.log(`✅ Index check done (${added} added, ${wantedIndexes.length - added} already present)`);
+  } catch (e) { console.log('⚠️ index self-heal failed:', e.message); }
 
   // روابط الويبهوك المحفوظة من لوحة الإدارة (site_settings) تتغلب على متغيرات Railway —
   // تحميل عند الإقلاع + تحديث كل دقيقة عشان أي تعديل من اللوحة ينطبق بدون إعادة نشر

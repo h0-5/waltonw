@@ -738,7 +738,7 @@ router.get('/logs', checkPermission('logs_view'), async (req, res) => {
     if (useCat === 'games') {
       const [c] = await db.query('SELECT COUNT(*) as c FROM game_reward_log');
       total = c[0].c;
-      const [r] = await db.query('SELECT * FROM game_reward_log ORDER BY rewarded_at DESC LIMIT ' + limit + ' OFFSET ' + offset);
+      const [r] = await db.query('SELECT * FROM game_reward_log ORDER BY created_at DESC LIMIT ' + limit + ' OFFSET ' + offset);
       logs = r;
     }
   } catch(e) { console.error('logs/games:', e.message); }
