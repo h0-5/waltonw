@@ -37,7 +37,7 @@ router.post('/read', isAuthenticated, async (req, res) => {
   try {
     await db.execute('UPDATE notifications SET is_read = 1 WHERE user_id = ?', [req.user.id]);
     res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error('[notifications-api] read:', e.message); res.status(500).json({ error: 'حدث خطأ في الخادم، حاول لاحقاً' }); }
 });
 
 router.post('/delete-all', isAuthenticated, async (req, res) => {
@@ -45,7 +45,7 @@ router.post('/delete-all', isAuthenticated, async (req, res) => {
   try {
     await db.execute('DELETE FROM notifications WHERE user_id = ?', [req.user.id]);
     res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error('[notifications-api] read:', e.message); res.status(500).json({ error: 'حدث خطأ في الخادم، حاول لاحقاً' }); }
 });
 
 module.exports = router;

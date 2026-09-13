@@ -389,7 +389,9 @@ const checkPageAccess = (pagePath) => {
         if (accessMap.get(pagePath)) return next();
         return denyAccess(res);
       })
-      .catch(() => next());
+      /* أمن fail-closed: عطب قاعدة البيانات = رفض وليس فتح —
+         (كان next() عند الخطأ فيفتح كل الصفحات أثناء أي عطب مؤقت) */
+      .catch(() => denyAccess(res));
   };
 };
 

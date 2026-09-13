@@ -159,7 +159,11 @@
                 var chipCls = item.service_status === 'available' ? 'ok' : (item.service_status === 'coming_soon' ? 'soon' : (item.service_status === 'ended' ? 'end' : ''));
                 var chipLbl = {available:'متوفر', coming_soon:'قريباً', ended:'منتهي'}[item.service_status] || '';
                 var svcIcon = (item.icon || '').trim();
-                var iconHtml = svcIcon ? (svcIcon.indexOf('fa') === 0 ? '<i class="fas ' + svcIcon + '"></i>' : '<span style="font-size:1.1rem;line-height:1">' + svcIcon + '</span>') : '<i class="fas fa-concierge-bell"></i>';
+                /* أمن: قيمة الأيقونة من قاعدة البيانات تُهرَّب قبل دخولها HTML —
+                   (كانت تنزل خاماً فقيمة icon فيها وسوم تنزل كوسوم حقيقية بصفحة عامة) */
+                var escH = function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); };
+                var iconSafe = escH(svcIcon);
+                var iconHtml = svcIcon ? (svcIcon.indexOf('fa') === 0 ? '<i class="fas ' + iconSafe + '"></i>' : '<span style="font-size:1.1rem;line-height:1">' + iconSafe + '</span>') : '<i class="fas fa-concierge-bell"></i>';
             %>
             <div class="cy-co-card cy-co-reveal<%= isSvc ? ' svc-card' : '' %><%= item.service_status === 'ended' ? ' ended' : '' %>" style="transition-delay:<%= i * 0.08 %>s">
                 <% if (isSvc && chipLbl) { %>
@@ -317,7 +321,7 @@
             <span id="svcPkgBadge" class="cy-svc-pkg-badge" style="display:none"></span>
         </div>
         <div id="svcPkgStep" class="cy-svc-pkg-step"></div>
-        <form id="svcForm" class="cy-svc-form" style="display:none" onsubmit="submitServiceRequest(event)">
+        <form id="svcForm" class="cy-svc-form" style="display:none" autocomplete="off" onsubmit="submitServiceRequest(event)">
             <input type="hidden" name="service_id" id="svcFormSid">
             <input type="hidden" name="package_id" id="svcFormPkgId" value="0">
             <div id="svcFormQuestions"></div>

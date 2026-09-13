@@ -14,7 +14,7 @@ module.exports = {
   DB_PASS: process.env.DB_PASS || '',
 
   // Session
-  SESSION_SECRET: process.env.SESSION_SECRET || 'walton_family_secret',
+  SESSION_SECRET: process.env.SESSION_SECRET || '',
   SESSION_MAX_AGE: parseInt(process.env.SESSION_MAX_AGE) || 2592000000,
 
   // Discord OAuth2
@@ -22,10 +22,11 @@ module.exports = {
   DISCORD_CLIENT_SECRET: process.env.DISCORD_CLIENT_SECRET,
   DISCORD_REDIRECT_URI: process.env.DISCORD_REDIRECT_URI,
 
-  // Secrets
-  SECRET_BOT_API: process.env.SECRET_BOT_API || 'walton_secret_2026',
-  SECRET_WEBHOOK: process.env.SECRET_WEBHOOK || 'walton_bot_webhook_2025',
-  SECRET_CRON: process.env.SECRET_CRON || 'walton_cron_secret_2026',
+  // Secrets — أمن: لا قيم ثابتة بكود المصدر، من متغيرات البيئة فقط
+  // (القيم القديمة كانت قابلة للتخمين — والوحدة نفسها غير مستخدمة بأي راوتر)
+  SECRET_BOT_API: process.env.SECRET_BOT_API || '',
+  SECRET_WEBHOOK: process.env.SECRET_WEBHOOK || '',
+  SECRET_CRON: process.env.SECRET_CRON || '',
 
   // Site Settings
   SITE_NAME: process.env.SITE_NAME || 'Walton Family',

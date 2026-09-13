@@ -97,6 +97,11 @@
 <script>
 let currentTicketId = null;
 
+/* أمن: كل نص قادم من المستخدم يُهرّب قبل ما يدخل innerHTML —
+   (كان message/name ينزلان خاماً فأي زائر يقدر يرسل تذكرة بنص تشغيلي
+   يتنفذ عند أول إداري يفتح الصفحة — XSS مخزن) */
+function esc(s) { const d = document.createElement('div'); d.textContent = (s === null || s === undefined) ? '' : String(s); return d.innerHTML; }
+
 function filterTickets() {
   const filter = document.getElementById('statusFilter').value;
   document.querySelectorAll('#ticketsTable tbody tr').forEach(row => {
@@ -115,14 +120,14 @@ async function viewTicket(id) {
       const t = data.ticket;
       const replies = data.replies || [];
       let html = '<div style="margin-bottom:1rem;padding:1rem;background:rgba(255,255,255,0.05);border-radius:10px">';
-      html += '<strong>' + (t.name || t.subject) + '</strong>';
-      html += '<p style="margin-top:0.5rem;color:rgba(255,255,255,0.7)">' + t.message + '</p>';
+      html += '<strong>' + esc(t.name || t.subject) + '</strong>';
+      html += '<p style="margin-top:0.5rem;color:rgba(255,255,255,0.7)">' + esc(t.message) + '</p>';
       html += '<small style="color:rgba(255,255,255,0.4)">' + new Date(t.created_at).toLocaleString('ar-EG') + '</small>';
       html += '</div>';
       replies.forEach(r => {
         html += '<div style="margin-bottom:0.5rem;padding:0.75rem;background:rgba(' + (r.is_admin ? '188, 19, 254,0.15' : '255,255,255,0.05') + ');border-radius:10px;border-right:3px solid ' + (r.is_admin ? '#bc13fe' : '#3b82f6') + '">';
         html += '<small style="color:rgba(255,255,255,0.5)">' + (r.is_admin ? 'الإدارة' : 'المستخدم') + ' - ' + new Date(r.created_at).toLocaleString('ar-EG') + '</small>';
-        html += '<p style="margin-top:0.25rem">' + r.message + '</p>';
+        html += '<p style="margin-top:0.25rem">' + esc(r.message) + '</p>';
         html += '</div>';
       });
       document.getElementById('ticketBody').innerHTML = html;

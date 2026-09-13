@@ -89,7 +89,10 @@ setInterval(() => {
 }, 30 * 1000).unref();
 
 const sessionConfig = {
-  secret: process.env.SESSION_SECRET || 'walton_family_secret',
+  /* أمن: لا سر جلسة ثابت في الكود — إن غاب متغير البيئة يتولد عشوائياً عند الإقلاع
+     (القيمة الثابتة القديمة كانت تسمح بتزوير كوكي الجلسة لو ما ضبط المضيف المتغير)
+     ملاحظة: التوليد العشوائي يفضي كل الجلسات عند كل إعادة نشر — ضع SESSION_SECRET بمتغيرات المضيف لثبات الجلسات */
+  secret: process.env.SESSION_SECRET || require('crypto').randomBytes(32).toString('hex'),
   store: cachedSessionStore,
   resave: false,
   saveUninitialized: false,

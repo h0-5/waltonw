@@ -17,10 +17,12 @@ function notifyCompany(payload) {
 router.post('/users/update', checkPermission('users_edit'), async (req, res) => {
   const { user_id, username, email } = req.body;
   try {
+    const deny = await assertTargetBelowActor(req.user, user_id);
+    if (deny) return res.status(403).json({ error: deny });
     await db.execute('UPDATE users SET username = ?, email = ? WHERE id = ?', [username, email, user_id]);
     clearUserCache(user_id);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.post('/users/role', checkPermission('users_edit'), async (req, res) => {
@@ -30,10 +32,12 @@ router.post('/users/role', checkPermission('users_edit'), async (req, res) => {
 router.post('/users/ban', checkPermission('users_ban'), async (req, res) => {
   const { user_id } = req.body;
   try {
+    const deny = await assertTargetBelowActor(req.user, user_id);
+    if (deny) return res.status(403).json({ error: deny });
     await db.execute('UPDATE users SET is_banned = 1 WHERE id = ?', [user_id]);
     clearUserCache(user_id);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.post('/users/unban', checkPermission('users_ban'), async (req, res) => {
@@ -42,7 +46,7 @@ router.post('/users/unban', checkPermission('users_ban'), async (req, res) => {
     await db.execute('UPDATE users SET is_banned = 0 WHERE id = ?', [user_id]);
     clearUserCache(user_id);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 const ROLE_RANK = {
@@ -51,6 +55,47 @@ const ROLE_RANK = {
   admin: 9, moderator: 10, support: 11, member: 12, trial: 13, user: 14
 };
 function getRank(role) { return ROLE_RANK[role] !== undefined ? ROLE_RANK[role] : 99; }
+
+/* أمن: رسالة خطأ عامة للعميل — التفاصيل الحقيقية بلوج السيرفر فقط
+   (e.message كان يكشف أسماء الجداول والأعمدة وأخطاء SQL لأي زائر) */
+function fail(res, e) {
+  console.error('[api/admin]', (e && e.message) || e);
+  res.status(500).json({ error: 'حدث خطأ في الخادم، حاول لاحقاً' });
+}
+
+/* أمن — حارس التسلسل الإداري: رتبة أي مستخدم محسوبة من الجدول أعلاه،
+   والرتب المخصصة (is_admin_role) تعامل كإدارية عليا (1) —
+   مَن هو أقل من المالك ما يقدر يعدّل/يحظر حساب رتبته مساوية أو أعلى من رتبته
+   (قبل الفحص كان على الرتبة الجديدة فقط فsupport يقدر يحظر المالك أو ينزّل رتبته!) */
+async function rankOfRole(roleName) {
+  if (roleName === 'owner') return 0;
+  const known = getRank(roleName);
+  if (known !== 99) return known;
+  try {
+    const [rows] = await db.execute('SELECT is_admin_role FROM roles WHERE name = ?', [roleName]);
+    return (rows.length && rows[0].is_admin_role === 1) ? 1 : 99;
+  } catch (_) { return known; }
+}
+async function assertTargetBelowActor(actor, targetId) {
+  if (actor.role === 'owner') return null;
+  const [rows] = await db.execute('SELECT role FROM users WHERE id = ?', [targetId]);
+  const targetRole = rows.length ? rows[0].role : null;
+  if (!targetRole) return null; // مستخدم غير موجود — الاستعلام نفسه سيرجع 404 لاحقاً
+  if (targetRole === 'owner') return 'لا يمكنك تعديل حساب المالك';
+  const tRank = await rankOfRole(targetRole);
+  const aRank = await rankOfRole(actor.role);
+  if (tRank <= aRank) return 'لا يمكنك تعديل حساب رتبته مساوية أو أعلى من رتبتك';
+  return null;
+}
+
+/* أمن — رفع الصور: امتداد صورة موثوق فقط، اسم الملف الأصلي لا يعتمد عليه أبداً
+   (كان الامتداد ينزل كما هو فيمكن رفع .html/.svg بنص تشغيلي) */
+const IMG_EXT = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
+function safeImgExt(file) {
+  const raw = String((file && file.name) || '').split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '');
+  const mimeOk = !file || !file.mimetype || String(file.mimetype).indexOf('image/') === 0;
+  return (mimeOk && IMG_EXT.includes(raw)) ? raw : 'png';
+}
 
 // ===== User Detail =====
 router.get('/users/:id', checkPermission('users_view'), async (req, res) => {
@@ -64,7 +109,7 @@ router.get('/users/:id', checkPermission('users_view'), async (req, res) => {
     const [achievements] = await db.execute('SELECT * FROM user_achievements WHERE discord_id = ?', [user.discord_id || '']);
     const [sideRoles] = await db.execute('SELECT sr.* FROM side_roles sr JOIN user_side_roles usr ON sr.id = usr.side_role_id WHERE usr.user_id = ?', [user.id]);
     res.json({ success: true, user, points: points[0] || null, inventory, boxes, achievements, sideRoles });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // ===== Unified User Update =====
@@ -76,6 +121,12 @@ router.patch('/users/:id', checkPermission('users_edit'), async (req, res) => {
     // Self-promotion check
     if (role !== undefined && req.user.id === targetId) {
       return res.status(403).json({ error: 'لا يمكنك تغيير رتبتك بنفسك' });
+    }
+
+    // أمن — حارس التسلسل: ما يقدر يعدّل حساب رتبته مساوية أو أعلى (تعديل نفسه مسموح لغير الرتبة)
+    if (req.user.id !== targetId) {
+      const deny = await assertTargetBelowActor(req.user, targetId);
+      if (deny) return res.status(403).json({ error: deny });
     }
 
     // Role hierarchy check: can't promote to equal or higher role
@@ -117,13 +168,15 @@ router.patch('/users/:id', checkPermission('users_edit'), async (req, res) => {
       }
     }
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // ===== Ban with reason + duration =====
 router.post('/users/:id/ban', checkPermission('users_ban'), async (req, res) => {
   try {
     const { reason, durationMinutes } = req.body;
+    const deny = await assertTargetBelowActor(req.user, req.params.id);
+    if (deny) return res.status(403).json({ error: deny });
     const updates = ['is_banned = 1', 'ban_reason = ?', 'banned_at = NOW()', 'banned_by = ?'];
     const params = [reason || '', req.user?.id || null];
     if (durationMinutes && durationMinutes > 0) {
@@ -134,7 +187,7 @@ router.post('/users/:id/ban', checkPermission('users_ban'), async (req, res) => 
     await db.execute(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, params);
     clearUserCache(req.params.id);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // ===== Unban by ID =====
@@ -143,7 +196,7 @@ router.post('/users/:id/unban', checkPermission('users_ban'), async (req, res) =
     await db.execute('UPDATE users SET is_banned = 0, ban_reason = NULL, banned_at = NULL, banned_until = NULL, banned_by = NULL WHERE id = ?', [req.params.id]);
     clearUserCache(req.params.id);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // ===== Unban All =====
@@ -152,7 +205,7 @@ router.post('/users/unban-all', checkPermission('users_ban'), async (req, res) =
     await db.execute('UPDATE users SET is_banned = 0, ban_reason = NULL, banned_at = NULL, banned_until = NULL, banned_by = NULL WHERE is_banned = 1');
     clearUserCache(null);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // ===== Bot Points =====
@@ -164,7 +217,7 @@ router.post('/users/:id/points', checkPermission('users_edit'), async (req, res)
     const discordId = users[0].discord_id;
     await db.execute('INSERT INTO bot_points (discord_id, points, total_earned) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE points = points + VALUES(points), total_earned = total_earned + VALUES(total_earned)', [discordId, points || 0, points > 0 ? points : 0]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // ===== Inventory =====
@@ -173,14 +226,14 @@ router.post('/users/:id/items', checkPermission('users_edit'), async (req, res) 
     const { item_key, item_name, quantity } = req.body;
     await db.execute('INSERT INTO bot_inventory (user_id, item_key, item_name, quantity) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)', [req.params.id, item_key, item_name, quantity || 1]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.delete('/users/:id/items/:key', checkPermission('users_edit'), async (req, res) => {
   try {
     await db.execute('DELETE FROM bot_inventory WHERE user_id = ? AND item_key = ?', [req.params.id, req.params.key]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // ===== Boxes =====
@@ -189,14 +242,14 @@ router.post('/users/:id/boxes', checkPermission('users_edit'), async (req, res) 
     const { box_name } = req.body;
     await db.execute('INSERT INTO user_boxes (user_id, box_name) VALUES (?, ?)', [req.params.id, box_name]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.delete('/boxes/:boxId', checkPermission('users_edit'), async (req, res) => {
   try {
     await db.execute('DELETE FROM user_boxes WHERE id = ?', [req.params.boxId]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // ===== Achievements =====
@@ -207,14 +260,14 @@ router.post('/users/:id/achievements', checkPermission('users_edit'), async (req
     if (!users.length || !users[0].discord_id) return res.status(404).json({ error: 'المستخدم غير موجود' });
     await db.execute('INSERT INTO user_achievements (discord_id, achievement_name) VALUES (?, ?)', [users[0].discord_id, achievement_name]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.delete('/users/:id/achievements/:achId', checkPermission('users_edit'), async (req, res) => {
   try {
     await db.execute('DELETE FROM user_achievements WHERE id = ?', [req.params.achId]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Admin Products API
@@ -226,7 +279,7 @@ router.post('/products/add', checkPermission('products_manage'), async (req, res
       [name, description, category_type, price_points || 0, price_money || 0, stock || 0]
     );
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.post('/products/delete', checkPermission('products_manage'), async (req, res) => {
@@ -234,7 +287,7 @@ router.post('/products/delete', checkPermission('products_manage'), async (req, 
   try {
     await db.execute('DELETE FROM fs_products WHERE id = ?', [product_id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.post('/products/edit', checkPermission('products_manage'), async (req, res) => {
@@ -245,7 +298,7 @@ router.post('/products/edit', checkPermission('products_manage'), async (req, re
       [name, description, category_type, price_points || 0, price_money || 0, stock || 0, image || null, product_id]
     );
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // ===== Orders API =====
@@ -256,7 +309,7 @@ router.post('/orders/:id/status', checkPermission('store_orders_view'), async (r
     if (!validStatuses.includes(status)) return res.status(400).json({ error: 'حالة غير صالحة' });
     await db.execute('UPDATE orders SET status = ? WHERE id = ?', [status, req.params.id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // ===== News API =====
@@ -265,7 +318,7 @@ router.get('/news/:id', checkPermission('news_add'), async (req, res) => {
     const [rows] = await db.execute('SELECT * FROM news WHERE id = ?', [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'غير موجود' });
     res.json({ news: rows[0] });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.post('/news', checkPermission('news_add'), async (req, res) => {
@@ -276,7 +329,7 @@ router.post('/news', checkPermission('news_add'), async (req, res) => {
       [title, content, type || 'news', image || null, req.user.id, is_published !== undefined ? is_published : 1]
     );
     res.json({ success: true, id: result.insertId });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.put('/news/:id', checkPermission('news_add'), async (req, res) => {
@@ -287,14 +340,14 @@ router.put('/news/:id', checkPermission('news_add'), async (req, res) => {
       [title, content, type || 'news', image || null, is_published !== undefined ? is_published : 1, req.params.id]
     );
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.delete('/news/:id', checkPermission('news_add'), async (req, res) => {
   try {
     await db.execute('DELETE FROM news WHERE id = ?', [req.params.id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // ===== Tickets API =====
@@ -304,7 +357,7 @@ router.get('/tickets/:id', checkPermission('tickets_view'), async (req, res) => 
     if (!ticket.length) return res.status(404).json({ error: 'غير موجود' });
     const [replies] = await db.execute('SELECT r.*, u.username FROM ticket_replies r LEFT JOIN users u ON r.user_id = u.id WHERE r.ticket_id = ? ORDER BY r.created_at ASC', [req.params.id]);
     res.json({ ticket: ticket[0], replies });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.post('/tickets/:id/reply', checkPermission('tickets_reply'), async (req, res) => {
@@ -314,14 +367,14 @@ router.post('/tickets/:id/reply', checkPermission('tickets_reply'), async (req, 
     await db.execute('INSERT INTO ticket_replies (ticket_id, user_id, message, is_admin, created_at) VALUES (?, ?, ?, 1, NOW())', [req.params.id, req.user.id, message.trim()]);
     await db.execute("UPDATE support_tickets SET status = 'replied' WHERE id = ? AND status = 'open'", [req.params.id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.post('/tickets/:id/close', checkPermission('tickets_reply'), async (req, res) => {
   try {
     await db.execute("UPDATE support_tickets SET status = 'closed' WHERE id = ?", [req.params.id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // ===== Giveaways API =====
@@ -329,7 +382,7 @@ router.get('/giveaways', checkPermission('gifts_manage'), async (req, res) => {
   try {
     const [giveaways] = await db.execute('SELECT * FROM giveaways ORDER BY id DESC');
     res.json({ giveaways });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.post('/giveaways', checkPermission('gifts_manage'), async (req, res) => {
@@ -340,14 +393,14 @@ router.post('/giveaways', checkPermission('gifts_manage'), async (req, res) => {
       [title, description, prize, type || 'normal', winner_count || 1, required_role || null, required_points || 0, req.user.id, starts_at || null, ends_at || null]
     );
     res.json({ success: true, id: result.insertId });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.delete('/giveaways/:id', checkPermission('gifts_manage'), async (req, res) => {
   try {
     await db.execute('DELETE FROM giveaways WHERE id = ?', [req.params.id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.post('/giveaways/:id/end', checkPermission('gifts_manage'), async (req, res) => {
@@ -359,7 +412,7 @@ router.post('/giveaways/:id/end', checkPermission('gifts_manage'), async (req, r
       await db.execute('INSERT INTO giveaway_winners (giveaway_id, user_id, username, selected_at) VALUES (?, ?, ?, NOW())', [req.params.id, participants[0].user_id, participants[0].username]);
     }
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Admin Settings API
@@ -374,14 +427,14 @@ router.post('/settings', checkPermission('site_settings_edit'), async (req, res)
     const app = require('../../app');
     if (app.invalidateSettingsCache) app.invalidateSettingsCache();
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // ===== Guard Settings — الدرع الذكي من مركز الحماية (يُطبّق فوراً بالذاكرة + يُخزن بالقاعدة) =====
 const guardApi = require('../../middleware/guard');
 router.get('/security/guard-settings', checkPermission('logs_view'), async (req, res) => {
   try { res.json({ success: true, config: guardApi.getGuardConfig() }); }
-  catch(e) { res.status(500).json({ error: e.message }); }
+  catch(e) { fail(res, e); }
 });
 router.post('/security/guard-settings', checkPermission('site_settings_edit'), async (req, res) => {
   try {
@@ -390,7 +443,7 @@ router.post('/security/guard-settings', checkPermission('site_settings_edit'), a
       logAdminAction(req.user.id, req.user.username, 'guard_settings', '', null, '', JSON.stringify(cfg).slice(0, 900));
     } catch(e) {}
     res.json({ success: true, config: cfg });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // ===== Webhook Settings — روابط ويبهوك الإشعارات من لوحة الإدارة (بدون Railway) =====
@@ -407,7 +460,7 @@ router.get('/webhook-settings', checkPermission('site_settings_edit'), async (re
       return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib) || a.key.localeCompare(b.key);
     });
     res.json({ success: true, webhooks: list });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.post('/webhook-settings', checkPermission('site_settings_edit'), async (req, res) => {
@@ -437,7 +490,7 @@ router.post('/webhook-settings', checkPermission('site_settings_edit'), async (r
         (invalid.length ? ' — مرفوض (رابط غير صالح): [' + invalid.join(', ') + ']' : ''), req.ip || '');
     }
     res.json({ success: true, saved, cleared, invalid });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.post('/webhook-test', checkPermission('site_settings_edit'), async (req, res) => {
@@ -447,7 +500,7 @@ router.post('/webhook-test', checkPermission('site_settings_edit'), async (req, 
     const url = String((req.body && req.body.url) || '').trim();
     const result = await sendTestWebhook(key, url || null);
     res.json(result.ok ? { success: true } : { success: false, error: result.error });
-  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+  } catch(e) { res.status(500).json({ success: false, error: 'حدث خطأ في الخادم، حاول لاحقاً' }); }
 });
 
 // Notifications API — انتقلت لراوتر مستقل routes/api/notifications.js
@@ -464,7 +517,7 @@ router.post('/orders/create', require('../../middleware/auth').isAuthenticated, 
       [req.user.id, `${full_name} - ${address} - ${phone}`, payment, 'pending']
     );
     res.json({ success: true, orderId: result.insertId });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Rules API
@@ -473,7 +526,7 @@ router.post('/rules', checkPermission('rules_add'), async (req, res) => {
     const { category, rule_text, sort_order } = req.body;
     await db.execute('INSERT INTO rules (category, title, content, rule_text, sort_order) VALUES (?, ?, ?, ?, ?)', [category, '', rule_text, rule_text, sort_order || 0]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.put('/rules/:id', checkPermission('rules_add'), async (req, res) => {
@@ -481,14 +534,14 @@ router.put('/rules/:id', checkPermission('rules_add'), async (req, res) => {
     const { category, rule_text, sort_order } = req.body;
     await db.execute('UPDATE rules SET category=?, content=?, rule_text=?, sort_order=? WHERE id=?', [category, rule_text, rule_text, sort_order || 0, req.params.id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.delete('/rules/:id', checkPermission('rules_delete'), async (req, res) => {
   try {
     await db.execute('DELETE FROM rules WHERE id = ?', [req.params.id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Rule Categories API
@@ -496,7 +549,7 @@ router.get('/rule-categories', checkPermission('rules_view'), async (req, res) =
   try {
     const [cats] = await db.execute('SELECT * FROM rule_categories ORDER BY sort_order ASC, id ASC');
     res.json(cats);
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.post('/rule-categories', checkPermission('rules_add'), async (req, res) => {
@@ -504,7 +557,7 @@ router.post('/rule-categories', checkPermission('rules_add'), async (req, res) =
     const { name, icon, sort_order } = req.body;
     const [result] = await db.execute('INSERT INTO rule_categories (name, icon, sort_order) VALUES (?, ?, ?)', [name, icon || 'fa-gavel', sort_order || 0]);
     res.json({ success: true, id: result.insertId });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.put('/rule-categories/:id', checkPermission('rules_add'), async (req, res) => {
@@ -517,7 +570,7 @@ router.put('/rule-categories/:id', checkPermission('rules_add'), async (req, res
       await db.execute('UPDATE rules SET category = ? WHERE category = ?', [name, old[0].name]);
     }
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.delete('/rule-categories/:id', checkPermission('rules_delete'), async (req, res) => {
@@ -529,7 +582,7 @@ router.delete('/rule-categories/:id', checkPermission('rules_delete'), async (re
     }
     await db.execute('DELETE FROM rule_categories WHERE id = ?', [req.params.id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Rule Stages API — مراحل العقوبات: نظام مستقل تماماً عن القوانين وأقسامها (نفس نمط إدارتها)
@@ -537,7 +590,7 @@ router.get('/rule-stages', checkPermission('rules_view'), async (req, res) => {
   try {
     const [stages] = await db.execute('SELECT * FROM rule_stages ORDER BY sort_order ASC, id ASC');
     res.json(stages);
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // لون مخصص للمرحلة — hex صحيح (#rgb/#rrggbb) أو null (تلقائي: يتحدد من العنوان)
@@ -553,7 +606,7 @@ router.post('/rule-stages', checkPermission('rules_add'), async (req, res) => {
     const [result] = await db.execute('INSERT INTO rule_stages (title, description, icon, color, sort_order) VALUES (?, ?, ?, ?, ?)',
       [String(title).trim().slice(0, 100), String(description || '').trim().slice(0, 500), icon || 'fa-flag', stageColor(color), parseInt(sort_order) || 0]);
     res.json({ success: true, id: result.insertId });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.put('/rule-stages/:id', checkPermission('rules_add'), async (req, res) => {
@@ -563,14 +616,14 @@ router.put('/rule-stages/:id', checkPermission('rules_add'), async (req, res) =>
     await db.execute('UPDATE rule_stages SET title=?, description=?, icon=?, color=?, sort_order=? WHERE id=?',
       [String(title).trim().slice(0, 100), String(description || '').trim().slice(0, 500), icon || 'fa-flag', stageColor(color), parseInt(sort_order) || 0, req.params.id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.delete('/rule-stages/:id', checkPermission('rules_delete'), async (req, res) => {
   try {
     await db.execute('DELETE FROM rule_stages WHERE id = ?', [req.params.id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Discounts API
@@ -580,14 +633,14 @@ router.post('/discounts', checkPermission('discounts_manage'), async (req, res) 
     await db.execute('INSERT INTO discount_codes (code, discount_percent, max_uses, expires_at) VALUES (?, ?, ?, ?)',
       [code, discount_percent, max_uses || null, expires_at || null]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.delete('/discounts/:id', checkPermission('discounts_manage'), async (req, res) => {
   try {
     await db.execute('DELETE FROM discount_codes WHERE id = ?', [req.params.id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Users Unban API (by URL param)
@@ -595,7 +648,7 @@ router.post('/users/:id/unban', checkPermission('users_ban'), async (req, res) =
   try {
     await db.execute('UPDATE users SET is_banned = 0 WHERE id = ?', [req.params.id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Broadcast API
@@ -620,7 +673,7 @@ router.post('/broadcast', checkPermission('broadcast_send'), async (req, res) =>
     await db.execute('INSERT INTO broadcasts (title, message, type, is_active, expires_at) VALUES (?, ?, ?, 1, ?)',
       [title || '', message, target || 'all', expires_at || null]);
     res.json({ success: true, sent: users.length });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // List broadcasts
@@ -628,7 +681,7 @@ router.get('/broadcasts', checkPermission('broadcast_send'), async (req, res) =>
   try {
     const [rows] = await db.execute('SELECT * FROM broadcasts ORDER BY created_at DESC LIMIT 50');
     res.json({ success: true, broadcasts: rows });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Delete broadcast
@@ -636,7 +689,7 @@ router.delete('/broadcasts/:id', checkPermission('broadcast_send'), async (req, 
   try {
     await db.execute('DELETE FROM broadcasts WHERE id = ?', [req.params.id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Toggle broadcast active
@@ -644,7 +697,7 @@ router.post('/broadcasts/:id/toggle', checkPermission('broadcast_send'), async (
   try {
     await db.execute('UPDATE broadcasts SET is_active = NOT is_active WHERE id = ?', [req.params.id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // About Content API
@@ -657,7 +710,7 @@ router.post('/about', checkPermission('about_edit'), async (req, res) => {
       );
     }
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Properties API
@@ -667,7 +720,7 @@ router.post('/properties', checkPermission('properties_edit'), async (req, res) 
     let image = image_url || '';
     if (req.files && req.files.image_file && req.files.image_file.size > 0) {
       const file = req.files.image_file;
-      const ext = file.name.split('.').pop();
+      const ext = safeImgExt(file);
       const fname = 'prop_' + Date.now() + '.' + ext;
       const uploadDir = require('path').join(__dirname, '../../public/uploads/properties');
       require('fs').mkdirSync(uploadDir, { recursive: true });
@@ -677,7 +730,7 @@ router.post('/properties', checkPermission('properties_edit'), async (req, res) 
     await db.execute('INSERT INTO properties (title, image, category, sort_order) VALUES (?, ?, ?, ?)',
       [title, image, category || 'palaces', sort_order || 0]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.put('/properties/:id', checkPermission('properties_edit'), async (req, res) => {
@@ -692,7 +745,7 @@ router.put('/properties/:id', checkPermission('properties_edit'), async (req, re
         try { require('fs').unlinkSync(fp); } catch(_) {}
       }
       const file = req.files.image_file;
-      const ext = file.name.split('.').pop();
+      const ext = safeImgExt(file);
       const fname = 'prop_' + Date.now() + '.' + ext;
       const uploadDir = require('path').join(__dirname, '../../public/uploads/properties');
       require('fs').mkdirSync(uploadDir, { recursive: true });
@@ -708,7 +761,7 @@ router.put('/properties/:id', checkPermission('properties_edit'), async (req, re
     await db.execute('UPDATE properties SET title=?, image=?, category=?, sort_order=? WHERE id=?',
       [title, image, category || 'palaces', sort_order || 0, req.params.id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.delete('/properties/:id', checkPermission('properties_delete'), async (req, res) => {
@@ -720,7 +773,7 @@ router.delete('/properties/:id', checkPermission('properties_delete'), async (re
     }
     await db.execute('DELETE FROM properties WHERE id = ?', [req.params.id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Company Items API
@@ -730,7 +783,7 @@ router.post('/company/items', checkPermission('company_edit'), async (req, res) 
     let image = '';
     if (req.files && req.files.image_file && req.files.image_file.size > 0) {
       const file = req.files.image_file;
-      const ext = file.name.split('.').pop();
+      const ext = safeImgExt(file);
       const fname = 'co_' + Date.now() + '.' + ext;
       const uploadDir = require('path').join(__dirname, '../../public/uploads/company');
       require('fs').mkdirSync(uploadDir, { recursive: true });
@@ -738,9 +791,9 @@ router.post('/company/items', checkPermission('company_edit'), async (req, res) 
       image = '/uploads/company/' + fname;
     }
     await db.execute('INSERT INTO company_items (title, description, image, video_url, category, service_status, icon, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, 0)',
-      [title, description || '', image, video_url || '', category || 'info', service_status || null, (icon || '').trim()]);
+      [title, description || '', image, video_url || '', category || 'info', service_status || null, String(icon || '').replace(/[<>"'`]/g, '').trim().slice(0, 60)]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.put('/company/items/:id', checkPermission('company_edit'), async (req, res) => {
@@ -755,7 +808,7 @@ router.put('/company/items/:id', checkPermission('company_edit'), async (req, re
         try { require('fs').unlinkSync(fp); } catch(_) {}
       }
       const file = req.files.image_file;
-      const ext = file.name.split('.').pop();
+      const ext = safeImgExt(file);
       const fname = 'co_' + Date.now() + '.' + ext;
       const uploadDir = require('path').join(__dirname, '../../public/uploads/company');
       require('fs').mkdirSync(uploadDir, { recursive: true });
@@ -763,9 +816,9 @@ router.put('/company/items/:id', checkPermission('company_edit'), async (req, re
       image = '/uploads/company/' + fname;
     }
     await db.execute('UPDATE company_items SET title=?, description=?, image=?, video_url=?, category=?, service_status=?, icon=? WHERE id=?',
-      [title, description || '', image, video_url || '', category || 'info', service_status || null, (icon || '').trim(), req.params.id]);
+      [title, description || '', image, video_url || '', category || 'info', service_status || null, String(icon || '').replace(/[<>"'`]/g, '').trim().slice(0, 60), req.params.id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.delete('/company/items/:id', checkPermission('company_delete'), async (req, res) => {
@@ -774,7 +827,7 @@ router.delete('/company/items/:id', checkPermission('company_delete'), async (re
     await db.execute('DELETE FROM service_packages WHERE service_id = ?', [req.params.id]);
     await db.execute('DELETE FROM company_items WHERE id = ?', [req.params.id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Company Service Request Actions
@@ -794,7 +847,7 @@ router.post('/company/requests/:id/approve', checkPermission('company_edit'), as
       { name: 'رقم الطلب', value: '#' + rows[0].id, inline: true }, { name: 'بواسطة', value: req.user.username, inline: true }
     ] });
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.post('/company/requests/:id/reject', checkPermission('company_edit'), async (req, res) => {
@@ -812,7 +865,7 @@ router.post('/company/requests/:id/reject', checkPermission('company_edit'), asy
       { name: 'رقم الطلب', value: '#' + rows[0].id, inline: true }, { name: 'بواسطة', value: req.user.username, inline: true }
     ].concat(notes ? [{ name: 'السبب', value: notes, inline: false }] : []) });
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // أسئلة خدمات الشركة (إدارة كاملة — إضافة/حذف)
@@ -827,14 +880,14 @@ router.post('/company/questions', checkPermission('company_edit'), async (req, r
     await db.execute('INSERT INTO service_questions (service_id, question, type, required, sort_order) VALUES (?, ?, ?, ?, ?)',
       [serviceId, question, type, required, Number(mx[0].nxt)]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.delete('/company/questions/:id', checkPermission('company_edit'), async (req, res) => {
   try {
     await db.execute('DELETE FROM service_questions WHERE id = ?', [req.params.id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // بكجات خدمات الشركة (اختيارية — باقات بأسعار)
@@ -849,14 +902,14 @@ router.post('/company/packages', checkPermission('company_edit'), async (req, re
     await db.execute('INSERT INTO service_packages (service_id, name, price, days, sort_order) VALUES (?, ?, ?, ?, ?)',
       [serviceId, name, price, days, Number(mx[0].nxt)]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.delete('/company/packages/:id', checkPermission('company_edit'), async (req, res) => {
   try {
     await db.execute('DELETE FROM service_packages WHERE id = ?', [req.params.id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Service Request from user
@@ -867,7 +920,7 @@ router.post('/service-request', require('../../middleware/auth').isAuthenticated
     await db.execute('INSERT INTO service_requests (service_id, user_id, answers, status, total_price, package_id) VALUES (?, ?, ?, ?, ?, ?)',
       [service_id, req.user.id, JSON.stringify([]), 'pending', 0, package_id || 0]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
@@ -1114,7 +1167,7 @@ router.get('/roles', checkPermission('roles_config_view'), async (req, res) => {
       permissions[p.role_id][p.page] = { can_access: p.can_access, can_edit: p.can_edit, can_delete: p.can_delete, can_manage: p.can_manage };
     });
     res.json({ roles, permissions });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Create role
@@ -1127,7 +1180,7 @@ router.post('/roles', checkPermission('roles_config_edit'), async (req, res) => 
     );
     const [role] = await db.execute('SELECT * FROM roles WHERE id = ?', [result.insertId]);
     res.json({ success: true, role: role[0] });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Update role (advanced)
@@ -1138,7 +1191,11 @@ router.put('/roles/:id', checkPermission('roles_config_edit'), async (req, res) 
     const roleId = req.params.id;
 
     // Owner role is fully protected
-    const [targetRole] = await db.execute('SELECT name FROM roles WHERE id = ?', [roleId]);
+    /* أمن — أعلام الامتياز العليا (is_admin_role/is_protected/is_staff/can_assign_roles)
+       يعدّلها المالك حصراً: حامل roles_config_edit غير المالك كان يقدر يرفع is_admin_role=1
+       لرتبته فيصير إدارياً كامل بكل الصلاحيات (isAdmin + checkPermission يمرّرونه) */
+    const isOwnerActor = req.user.role === 'owner';
+    const [targetRole] = await db.execute('SELECT name, is_admin_role, is_protected, is_default, is_staff, can_assign_roles FROM roles WHERE id = ?', [roleId]);
     if (!targetRole.length) return res.status(404).json({ error: 'غير موجود' });
     if (targetRole[0].name === 'owner') {
       return res.status(403).json({ error: 'لا يمكن تعديل رتبة المالك' });
@@ -1146,7 +1203,13 @@ router.put('/roles/:id', checkPermission('roles_config_edit'), async (req, res) 
 
     await db.execute(
       'UPDATE roles SET name=?, display_name=?, color=?, icon=?, emoji=?, description=?, is_admin_role=?, is_protected=?, is_default=?, is_staff=?, can_assign_roles=? WHERE id=?',
-      [name, display_name, color, icon, emoji || '', description || '', is_admin_role || 0, is_protected || 0, is_default || 0, is_staff || 0, can_assign_roles || 0, roleId]
+      [name, display_name, color, icon, emoji || '', description || '',
+        isOwnerActor ? (is_admin_role || 0) : (Number(targetRole[0].is_admin_role) || 0),
+        isOwnerActor ? (is_protected || 0) : (Number(targetRole[0].is_protected) || 0),
+        isOwnerActor ? (is_default || 0) : (Number(targetRole[0].is_default) || 0),
+        isOwnerActor ? (is_staff || 0) : (Number(targetRole[0].is_staff) || 0),
+        isOwnerActor ? (can_assign_roles || 0) : (Number(targetRole[0].can_assign_roles) || 0),
+        roleId]
     );
 
     // Update page permissions
@@ -1182,7 +1245,7 @@ router.put('/roles/:id', checkPermission('roles_config_edit'), async (req, res) 
     }
 
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Delete role
@@ -1204,7 +1267,7 @@ router.delete('/roles/:id', checkPermission('roles_config_edit'), async (req, re
     await db.execute('DELETE FROM role_page_access WHERE role_id = ?', [roleId]);
     await db.execute('DELETE FROM roles WHERE id = ?', [roleId]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Get role members
@@ -1215,7 +1278,7 @@ router.get('/roles/:id/members', checkPermission('roles_config_view'), async (re
     if (!role.length) return res.json({ members: [] });
     const [members] = await db.execute('SELECT id, username, profile_picture, discord_id, created_at FROM users WHERE TRIM(role) = ?', [role[0].name]);
     res.json({ members });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Assign role to user — DISABLED: use PATCH /api/admin/users/:id instead
@@ -1279,7 +1342,7 @@ router.get('/user-permissions/:userId', checkPermission('roles_config_view'), as
     } catch(e) {}
 
     res.json({ role: role[0], permissions, pagePerms, elemPerms, punish, unifiedPerms, sideRoles });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // ===== Unified Permissions API =====
@@ -1292,7 +1355,7 @@ router.get('/roles/:id/all-permissions', checkPermission('roles_config_view'), a
     const result = {};
     perms.forEach(p => { result[p.permission_key] = p.enabled; });
     res.json({ permissions: result });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Save all permissions for a role (bulk replace)
@@ -1320,7 +1383,7 @@ router.post('/roles/:id/all-permissions', checkPermission('roles_config_edit'), 
       }
     }
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // ===== Side Roles API =====
@@ -1330,7 +1393,7 @@ router.get('/side-roles', checkPermission('roles_config_view'), async (req, res)
   try {
     const [roles] = await db.execute('SELECT * FROM side_roles ORDER BY sort_order ASC, id ASC');
     res.json({ sideRoles: roles });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Create side role
@@ -1346,7 +1409,7 @@ router.post('/side-roles', checkPermission('roles_config_edit'), async (req, res
     res.json({ success: true, sideRole: role[0] });
   } catch(e) {
     if (e.code === 'ER_DUP_ENTRY') return res.status(400).json({ error: 'اسم الدور موجود مسبقاً' });
-    res.status(500).json({ error: e.message });
+    fail(res, e);
   }
 });
 
@@ -1359,7 +1422,7 @@ router.put('/side-roles/:id', checkPermission('roles_config_edit'), async (req, 
       [name, display_name, color || '#bc13fe', icon || 'fa-tag', emoji || '', is_active !== undefined ? is_active : 1, sort_order || 0, req.params.id]
     );
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Delete side role
@@ -1368,7 +1431,7 @@ router.delete('/side-roles/:id', checkPermission('roles_config_edit'), async (re
     await db.execute('DELETE FROM user_side_roles WHERE side_role_id = ?', [req.params.id]);
     await db.execute('DELETE FROM side_roles WHERE id = ?', [req.params.id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Assign side role to user
@@ -1381,7 +1444,7 @@ router.post('/side-roles/:id/assign', checkPermission('roles_config_edit'), asyn
       [user_id, req.params.id, req.user.id]
     );
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Remove side role from user
@@ -1391,7 +1454,7 @@ router.post('/side-roles/:id/unassign', checkPermission('roles_config_edit'), as
     if (!user_id) return res.status(400).json({ error: 'user_id مطلوب' });
     await db.execute('DELETE FROM user_side_roles WHERE user_id = ? AND side_role_id = ?', [user_id, req.params.id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Get users with a side role
@@ -1402,7 +1465,7 @@ router.get('/side-roles/:id/members', checkPermission('roles_config_view'), asyn
       [req.params.id]
     );
     res.json({ members });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Get side roles for a user
@@ -1413,7 +1476,7 @@ router.get('/users/:id/side-roles', checkPermission('roles_config_view'), async 
       [req.params.id]
     );
     res.json({ sideRoles: roles });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Reorder roles
@@ -1425,7 +1488,7 @@ router.post('/roles/reorder', checkPermission('roles_config_edit'), async (req, 
       await db.execute('UPDATE roles SET sort_order = ? WHERE id = ?', [item.sort_order, item.id]);
     }
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // ===== Page Access API =====
@@ -1437,7 +1500,7 @@ router.get('/roles/:id/page-access', checkPermission('roles_config_view'), async
     const access = {};
     rows.forEach(r => { access[r.page_path] = r.can_access; });
     res.json({ access });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Save page access for a role (bulk)
@@ -1465,7 +1528,7 @@ router.post('/roles/:id/page-access', checkPermission('roles_config_edit'), asyn
       }
     }
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Get all pages access for all roles (for rendering)
@@ -1478,7 +1541,7 @@ router.get('/page-access-all', checkPermission('roles_config_view'), async (req,
       result[r.role_id][r.page_path] = r.can_access;
     });
     res.json({ pageAccess: result });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // ===== Side Role Permissions API =====
@@ -1489,7 +1552,7 @@ router.get('/side-roles/:id/permissions', checkPermission('roles_config_view'), 
     const result = {};
     perms.forEach(p => { result[p.permission_key] = p.enabled; });
     res.json({ permissions: result });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.post('/side-roles/:id/permissions', checkPermission('roles_config_edit'), async (req, res) => {
@@ -1504,7 +1567,7 @@ router.post('/side-roles/:id/permissions', checkPermission('roles_config_edit'),
       }
     }
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.get('/side-roles/:id/page-access', checkPermission('roles_config_view'), async (req, res) => {
@@ -1513,7 +1576,7 @@ router.get('/side-roles/:id/page-access', checkPermission('roles_config_view'), 
     const result = {};
     rows.forEach(r => { result[r.page_path] = r.can_access; });
     res.json({ pageAccess: result });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.post('/side-roles/:id/page-access', checkPermission('roles_config_edit'), async (req, res) => {
@@ -1528,7 +1591,7 @@ router.post('/side-roles/:id/page-access', checkPermission('roles_config_edit'),
       }
     }
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Profile API - Send Warning
@@ -1552,7 +1615,7 @@ router.post('/profile/warnings', require('../../middleware/auth').isAuthenticate
     await db.execute('INSERT INTO admin_profile_logs (user_id, username, action, target_name, details) VALUES (?, ?, ?, ?, ?)',
       [user_id, target[0]?.username || '', 'تحذير', req.user.username, reason]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Profile API - Delete Warning
@@ -1568,7 +1631,7 @@ router.delete('/profile/warnings/:id', require('../../middleware/auth').isAuthen
     }
     await db.execute('UPDATE admin_warnings SET is_deleted = 1 WHERE id = ?', [req.params.id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Profile API - Submit Excuse
@@ -1590,7 +1653,7 @@ router.post('/profile/excuses', require('../../middleware/auth').isAuthenticated
     await db.execute('INSERT INTO admin_excuses (user_id, username, reason, start_date, end_date) VALUES (?, ?, ?, ?, ?)',
       [user_id, target[0]?.username || '', reason, start_date, end_date]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // Profile API - Review Excuse
@@ -1600,7 +1663,7 @@ router.post('/profile/excuses/:id/review', checkPermission('admin_profile_view')
     await db.execute('UPDATE admin_excuses SET status = ?, reviewer_id = ?, reviewer_name = ?, reviewer_note = ?, reviewed_at = NOW() WHERE id = ?',
       [status, req.user.id, req.user.username, reviewer_note || '', req.params.id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // ===== Bot Actions (Website → Discord) =====
@@ -1619,28 +1682,28 @@ router.post('/bot/action', checkPermission('admin_manage'), async (req, res) => 
       [action, target_discord_id, target_name || '', reason || '', duration_minutes || 0, role_name || '', 'pending', req.user.id]
     );
     res.json({ success: true, id: result.insertId });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.get('/bot/actions', checkPermission('admin_manage'), async (req, res) => {
   try {
     const [actions] = await db.execute('SELECT * FROM bot_actions ORDER BY created_at DESC LIMIT 50');
     res.json({ success: true, actions });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.get('/bot/actions/pending', checkPermission('admin_manage'), async (req, res) => {
   try {
     const [actions] = await db.execute('SELECT * FROM bot_actions WHERE status IN (?, ?) ORDER BY created_at ASC', ['pending', 'processing']);
     res.json({ success: true, actions });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.delete('/bot/actions/:id', checkPermission('admin_manage'), async (req, res) => {
   try {
     await db.execute('DELETE FROM bot_actions WHERE id = ?', [req.params.id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 module.exports = router;

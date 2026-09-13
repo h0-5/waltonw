@@ -4,6 +4,12 @@ const db = require('../../config/database');
 const { checkPermission } = require('../../middleware/auth');
 const bot = require('../../bot/client');
 
+/* أمن: تفاصيل الخطأ بلوج السيرفر فقط — الرسالة للعميل عامة */
+function fail(res, e) {
+  console.error('[api/bot]', (e && e.message) || e);
+  res.status(500).json({ error: 'حدث خطأ في الخادم، حاول لاحقاً' });
+}
+
 // ===== Bot Status =====
 router.get('/status', checkPermission('bot_manage'), async (req, res) => {
   try {
@@ -17,7 +23,7 @@ router.get('/status', checkPermission('bot_manage'), async (req, res) => {
       }
     }
     res.json({ success: true, connected: ready, guild: guildInfo, enabled: settings.bot_enabled === '1' });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // ===== Connect / Disconnect =====
@@ -30,7 +36,7 @@ router.post('/connect', checkPermission('bot_manage'), async (req, res) => {
     } else {
       res.json({ success: false, error: 'Failed to connect. Check token.' });
     }
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.post('/disconnect', checkPermission('bot_manage'), async (req, res) => {
@@ -38,7 +44,7 @@ router.post('/disconnect', checkPermission('bot_manage'), async (req, res) => {
     await db.execute("INSERT INTO site_settings (setting_key, setting_value) VALUES ('bot_enabled', '0') ON DUPLICATE KEY UPDATE setting_value = '0'");
     bot.disconnectBot();
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // ===== Save Config =====
@@ -54,7 +60,7 @@ router.post('/config', checkPermission('bot_manage'), async (req, res) => {
       }
     }
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // ===== Members =====
@@ -73,7 +79,7 @@ router.get('/members', checkPermission('bot_manage'), async (req, res) => {
       isOnline: m.presence?.status || 'offline',
     }));
     res.json({ success: true, members: membersData, roles: roles.map(r => ({ id: r.id, name: r.name, color: r.hexColor, position: r.position })) });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // ===== Member Actions =====
@@ -87,7 +93,7 @@ router.post('/members/:id/ban', checkPermission('bot_manage'), async (req, res) 
     } else {
       res.status(400).json({ error: result.error });
     }
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.post('/members/:id/unban', checkPermission('bot_manage'), async (req, res) => {
@@ -99,7 +105,7 @@ router.post('/members/:id/unban', checkPermission('bot_manage'), async (req, res
     } else {
       res.status(400).json({ error: result.error });
     }
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.post('/members/:id/kick', checkPermission('bot_manage'), async (req, res) => {
@@ -112,7 +118,7 @@ router.post('/members/:id/kick', checkPermission('bot_manage'), async (req, res)
     } else {
       res.status(400).json({ error: result.error });
     }
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 router.post('/members/:id/roles', checkPermission('bot_manage'), async (req, res) => {
@@ -130,7 +136,7 @@ router.post('/members/:id/roles', checkPermission('bot_manage'), async (req, res
     }
     await logBotAction(req.user, 'manage_roles', req.params.id, JSON.stringify({ addRoles, removeRoles }));
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // ===== Banned Members =====
@@ -141,7 +147,7 @@ router.get('/banned', checkPermission('bot_manage'), async (req, res) => {
     const bans = await guild.bans.fetch();
     const banned = bans.map(b => ({ id: b.user.id, username: b.user.username, avatar: b.user.displayAvatarURL({ size: 64 }), reason: b.reason }));
     res.json({ success: true, banned: Array.from(banned.values()) });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // ===== Send DM =====
@@ -156,7 +162,7 @@ router.post('/dm', checkPermission('bot_manage'), async (req, res) => {
     } else {
       res.status(400).json({ error: result.error });
     }
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // ===== Send to Channel =====
@@ -171,7 +177,7 @@ router.post('/channel', checkPermission('bot_manage'), async (req, res) => {
     } else {
       res.status(400).json({ error: result.error });
     }
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // ===== Channels =====
@@ -182,7 +188,7 @@ router.get('/channels', checkPermission('bot_manage'), async (req, res) => {
     const channels = await guild.channels.fetch();
     const textChannels = channels.filter(c => c.isTextBased() && !c.isVoiceBased()).map(c => ({ id: c.id, name: c.name, category: c.parent?.name || '' }));
     res.json({ success: true, channels: Array.from(textChannels.values()) });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 // ===== Bot Logs =====
@@ -190,7 +196,7 @@ router.get('/logs', checkPermission('bot_manage'), async (req, res) => {
   try {
     const [logs] = await db.execute('SELECT * FROM admin_logs WHERE action LIKE ? ORDER BY created_at DESC LIMIT 100', ['bot_%']);
     res.json({ success: true, logs });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { fail(res, e); }
 });
 
 async function logBotAction(user, action, targetId, details) {
