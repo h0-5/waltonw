@@ -260,7 +260,7 @@ html { scroll-behavior: smooth; }
 }
 
 /* ── الفهرس الجانبي (ديسكتوب) — زجاج كرومي لاصق ── */
-.wr-aside { position: sticky; top: 86px; }
+.wr-aside { position: sticky; top: var(--nav-h, 110px); }
 .wr-aside-box {
     background: var(--wr-glass);
     border: 1px solid var(--wr-border);

@@ -59,7 +59,7 @@
 /* ═══ بطاقة العضو (الجانب) ═══ */
 .pfw-side {
     position: sticky;
-    top: 86px;
+    top: var(--nav-h, 110px);
     background: linear-gradient(165deg, rgba(22,20,38,0.96), rgba(12,11,22,0.96));
     border: 1px solid var(--pfw-border);
     border-radius: 18px;

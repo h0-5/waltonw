@@ -27,7 +27,7 @@
   --font-body: 'IBM Plex Sans Arabic', 'Cairo', sans-serif;
   --container: 1200px;
   --speed: 180ms;
-  --nav-h: 86px; /* كان 70px — نزل الهدر بطلب هادي لنرفع فوقه «حبة التنقل» المتحركة، وكل الصفحات تنزل معه تلقائياً لأنها تحسب بدايتها من نفس المتغير */
+  --nav-h: 110px; /* كان 86px (وقبلها 70px) — نزل الهدر أكثر بطلب هادي: الكرة أكبر (42px) تحتاج مساحة تنفس فوق الكبسولة، وكل الصفحات تنزل معه تلقائياً لأنها تحسب بدايتها من نفس المتغير */
 }
 
 /* مود ليل/نهار أُزيل كلياً بطلب المستخدم — لا توجد نسخة فاتحة: الثيم الداكن دائم حتى لمن فعّل الفاتح سابقاً
@@ -424,8 +424,8 @@ a.ds-card:hover, .ds-card-hover:hover {
   /* relative ليتحسب offsetLeft الروابط داخله، وoverflow ظاهر ليخرج رأس الحبة فوق الحافة
      (الروابط بلا أيقونات <1200 وتسبق فيها المساحة، وبأيقونات ≥1200 فيها فائض ~45px مقاس) */
   .ds-navlinks { position: relative; overflow: visible; transition: transform .3s cubic-bezier(.34, 1.4, .64, 1); }
-  /* ثقل الكرة يهبط بالكبسولة كلها مليمتراً واحداً وتعود بنابض خفيف عند المغادرة */
-  .ds-navlinks.wb-press { transform: translateY(1px); }
+  /* ثقل الكرة يهبط بالكبسولة كلها 2px وتعود بنابض خفيف عند المغادرة */
+  .ds-navlinks.wb-press { transform: translateY(2px); }
   /* الرابط الذي تحمله الكرة يغور قليلاً — السطح ينحفر تحت الثقل */
   .ds-navlink { transition: color var(--speed), background-color var(--speed), transform .22s ease; }
   .ds-navlinks.wb-press .ds-navlink.wb-under { transform: translateY(2px); }
@@ -435,12 +435,17 @@ a.ds-card:hover, .ds-card-hover:hover {
      + حافة المينيسكوس «الرم» (::after — قوس ضوء يحضن أسفل الكرة ويرسم الانعطاج) */
   .wb-dent {
     position: absolute;
-    top: -10px; left: 0;
-    width: 88px; height: 26px;
+    top: -13px; left: 0;
+    width: 116px; height: 44px;
     pointer-events: none;
     z-index: 1;
     transform: translateX(calc(var(--wb-x, -200px) - 50%));
-    background: radial-gradient(ellipse 50% 58% at 50% 34%, rgba(4, 2, 10, .74) 0%, rgba(4, 2, 10, .4) 46%, rgba(4, 2, 10, 0) 72%);
+    background:
+      /* انعكاس ضوء الكرة البنفسجي داخل الودّ — لون السطح يتفاعل مع الثقل */
+      radial-gradient(ellipse 46% 40% at 50% 56%, rgba(188, 19, 254, .22) 0%, rgba(188, 19, 254, 0) 70%),
+      /* جسم الحفرة شبه المصمت — ثقبه يقطع خط الحافة حول الكرة وحديته السفلى المقوسة
+         هي نفسها الحافة المنطعجة (الخط الجديد اللي ياخذ مكان الحافة المستقيمة) */
+      radial-gradient(ellipse 40% 62% at 50% 40%, rgba(10, 8, 20, .97) 0%, rgba(10, 8, 20, .9) 46%, rgba(10, 8, 20, .42) 63%, rgba(10, 8, 20, 0) 78%);
     opacity: 0;
     transition: transform var(--wb-dur, 340ms) cubic-bezier(.45, .05, .18, 1), opacity .35s ease;
   }
@@ -450,62 +455,64 @@ a.ds-card:hover, .ds-card-hover:hover {
   /* ميلان السطح مع اتجاه الحركة — الكتف الخلفي يتمدد والأمامي ينقبض، ويرتد عند الوقوف */
   .ds-navlinks.wb-lean-l .wb-dent { transform: translateX(calc(var(--wb-x, -200px) - 50%)) skewX(-7deg); }
   .ds-navlinks.wb-lean-r .wb-dent { transform: translateX(calc(var(--wb-x, -200px) - 50%)) skewX(7deg); }
-  /* الأكتاف + العمق الإضافي عند الوقوف — الحافة تنعطج بوضوح تحت الثقل */
+  /* السطح المنطعج: كتلة داكنة تزحف تحت حافة الكبسولة إلى داخله — امتداد الحفرة للداخل،
+     أكتاف مدموجة ناعمة تربط الحفرة بالسطح المستوي على جنبها بدون بقع منفصلة */
   .wb-dent::before {
     content: '';
     position: absolute;
     inset: 0;
     background:
-      radial-gradient(ellipse 34% 60% at 15% 36%, rgba(0, 0, 0, .55) 0%, rgba(0, 0, 0, 0) 72%),
-      radial-gradient(ellipse 34% 60% at 85% 36%, rgba(0, 0, 0, .55) 0%, rgba(0, 0, 0, 0) 72%),
-      radial-gradient(ellipse 46% 54% at 50% 42%, rgba(0, 0, 0, .5) 0%, rgba(0, 0, 0, 0) 76%);
+      radial-gradient(ellipse 44% 56% at 50% 66%, rgba(10, 8, 20, .8) 0%, rgba(10, 8, 20, .38) 52%, rgba(10, 8, 20, 0) 78%),
+      radial-gradient(ellipse 38% 62% at 12% 40%, rgba(0, 0, 0, .38) 0%, rgba(0, 0, 0, 0) 74%),
+      radial-gradient(ellipse 38% 62% at 88% 40%, rgba(0, 0, 0, .38) 0%, rgba(0, 0, 0, 0) 74%);
     opacity: 0;
     transition: opacity .3s ease;
   }
   .ds-navlinks.wb-press .wb-dent::before { opacity: 1; }
-  /* حافة المينيسكوس — قوس ضوء رقيق يحضن أسفل الكرة (الرم اللي يرسم الانعطاج مثل المرجع) */
+  /* حافة المينيسكوس — شريط ضوء عريض ناعم يلاصق حدود الثقب المقوسة من تحته: سطح مقوّس
+     يلتقط الضوء، مو خط رفيع حاد (ملاحظة هادي: الخط الرفيع يقرأ «خط وهمي» مرسوم بنص الهدر) */
   .wb-dent::after {
     content: '';
     position: absolute;
-    left: 50%; bottom: 1px;
-    width: 46px; height: 19px;
+    left: 50%; bottom: 5px;
+    width: 58px; height: 24px;
     transform: translateX(-50%);
     border-radius: 50%;
-    border-bottom: 1.6px solid rgba(255, 255, 255, .34);
-    filter: blur(.4px);
+    border-bottom: 2.8px solid rgba(255, 255, 255, .3);
+    filter: blur(1.6px);
   }
 
   .wb-bead {
     position: absolute;
     top: 0; left: 0;
-    width: 40px; height: 40px;
+    width: 54px; height: 54px;
     border-radius: 50%;
     pointer-events: none;
     z-index: 3;
-    /* صندوق العنصر = مقرّ/حفرة الكرة (40px) ويتمركز مركزه على حافة الكبسولة —
+    /* صندوق العنصر = مقرّ/حفرة الكرة (54px) ويتمركز مركزه على حافة الكبسولة —
        طبقاته: الحفرة (خلفية العنصر) ثم الكرة (::before) ثم اللمعة (::after) */
     transform: translateX(calc(var(--wb-x, -200px) - 50%)) translateY(-50%);
     /* المدة من السكربت تتناسب مع المسافة — منحنى تسارع ثم تباطؤ بلا مبالغة،
-       وtop منفصل بحركته النابضية: هو غور الثقل عند الوقوف (3px) لا جزء من التدحرج */
+       وtop منفصل بحركته النابضية: هو غور الثقل عند الوقوف (4px) لا جزء من التدحرج */
     transition: transform var(--wb-dur, 340ms) cubic-bezier(.45, .05, .18, 1), opacity .2s ease, top .34s cubic-bezier(.34, 1.56, .64, 1);
     opacity: 0; /* تختفي حتى يحدد السكربت أول مقرّ — لا وميض بموضع خاطئ */
     /* الحفرة — قرص داكن يقطع حافة الزجاج بصرياً + ظل داخلي يرسم عمق الطَمر */
     background: radial-gradient(circle, #0e0c1a 55%, rgba(14, 12, 26, 0) 62%);
-    box-shadow: inset 0 3px 5px rgba(0, 0, 0, .85);
+    box-shadow: inset 0 4px 7px rgba(0, 0, 0, .85);
   }
   .wb-bead.wb-bead-ready { opacity: 1; }
-  /* ثقل الوقوف: الكرة تغور 3px داخل الودّ طوال وجود الماوس على الشريط وترتد عند المغادرة */
-  .ds-navlinks.wb-press .wb-bead { top: 3px; }
-  /* الكرة البنفسجية (30px داخل مقرّ 40px) — رقعة ضوء جانبية تجعل دورانها مرئياً */
+  /* ثقل الوقوف: الكرة تغور 4px داخل الودّ طوال وجود الماوس على الشريط وترتد عند المغادرة */
+  .ds-navlinks.wb-press .wb-bead { top: 4px; }
+  /* الكرة البنفسجية (42px داخل مقرّ 54px) — رقعة ضوء جانبية تجعل دورانها مرئياً */
   .wb-bead::before {
     content: '';
     position: absolute;
-    inset: 5px;
+    inset: 6px;
     border-radius: 50%;
     background:
       radial-gradient(circle at 68% 66%, rgba(255, 255, 255, .18) 0 13%, rgba(255, 255, 255, 0) 40%),
       radial-gradient(circle at 35% 28%, #f0d5ff 0%, #d24dff 40%, #bc13fe 64%, #8a0ebd 100%);
-    box-shadow: 0 0 14px rgba(188, 19, 254, .55), 0 0 4px rgba(188, 19, 254, .85), inset 0 -3px 6px rgba(0, 0, 0, .35);
+    box-shadow: 0 0 18px rgba(188, 19, 254, .55), 0 0 5px rgba(188, 19, 254, .85), inset 0 -4px 8px rgba(0, 0, 0, .35);
     transform: rotate(var(--wb-rot, 0deg));
     transition: transform var(--wb-dur, 340ms) cubic-bezier(.45, .05, .18, 1);
   }
@@ -524,7 +531,7 @@ a.ds-card:hover, .ds-card-hover:hover {
   .wb-bead::after {
     content: '';
     position: absolute;
-    top: 8px; left: 12px; right: 12px; height: 8px;
+    top: 11px; left: 16px; right: 16px; height: 10px;
     border-radius: 50%;
     background: linear-gradient(rgba(255, 255, 255, .75), rgba(255, 255, 255, 0));
     filter: blur(1px);
