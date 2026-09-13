@@ -1,4 +1,5 @@
 const mysql = require('mysql2/promise');
+const { sendServerAlarm } = require('../utils/webhooks');
 require('dotenv').config();
 
 function parseUrl(urlStr) {
@@ -76,12 +77,27 @@ pool.getConnection()
    هذه النبضة كل 25 ثانية تبقيها متيقظة + الاتصالات حارة لأي طلب فوري.
    25s بدل 45s لأن قياسات الإنتاج أظهرت نومة خلال نافذة 45-60s تحت خمول قصير.
    استعلام SELECT 1 من الـ pool (اتصال واحد قائم) — خفيف تماماً ولا يعرقل الطلبات. */
+let dbHealthy = null; /* null = not checked yet — first pulse decides; healthy->broken rings RED once, broken->healthy rings GREEN */
 let guardRunning = false;
 setInterval(() => {
   if (guardRunning) return;
   guardRunning = true;
   pool.query('SELECT 1')
-    .catch(() => { /* استمرار الحركة حتى لو انقطع لحظياً — إعادة تشغيل الطلبات تنتج اتصالاً جديداً */ })
+    .then(() => {
+      if (dbHealthy === false) {
+        sendServerAlarm('db-recovered', new Error('القاعدة رجعت تستجيب — الاتصال سليم والبيانات عادت'), [], 0x22c55e).catch(() => {});
+      }
+      dbHealthy = true;
+    })
+    .catch(err => {
+      if (dbHealthy !== false) {
+        dbHealthy = false;
+        sendServerAlarm('db-unreachable', err, [
+          { name: 'Host', value: String(dbConfig.host || '?') + ':' + String(dbConfig.port || '?'), inline: true },
+          { name: 'Action', value: 'Aiven service likely stopped/suspended or DNS record gone — open console.aiven.com and make sure the service is Running. If the host changed, copy the new Service URI and update DATABASE_URL in Wispbyte variables, then restart', inline: false }
+        ]).catch(() => {});
+      }
+      /* استمرار الحركة حتى لو انقطع لحظياً — إعادة تشغيل الطلبات تنتج اتصالاً جديداً */ })
     .finally(() => { guardRunning = false; });
 }, 25 * 1000).unref();
 

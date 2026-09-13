@@ -119,7 +119,9 @@ async function logAdminAction(userId, username, action, targetType, targetId, ta
    صفر تكلفة على الطلب: fire-and-forget + مهلة sendWebhook 5s + خنق داخلي
    (نفس الخطأ مرة/دقيقة، و12 جرساً كحد أقصى بالدقيقة حتى لا يُزعج القناة) */
 const _alarmState = { lastMsg: {}, lastKindAt: {}, stamps: [] };
-async function sendServerAlarm(kind, err, fields) {
+/* أدنى فاصل إرسال لكل نوع — انقطاع القاعدة الطويل يجرس مرة/10 دقائق بدل مرة/دقيقة */
+const KIND_MIN_MS = { 'db-unreachable': 600000 };
+async function sendServerAlarm(kind, err, fields, color) {
   try {
     const now = Date.now();
     /* سقف عام: 12 جرساً بالدقيقة — انفجار الأخطاء ما يغرق القناة */
@@ -127,7 +129,7 @@ async function sendServerAlarm(kind, err, fields) {
     if (_alarmState.stamps.length >= 12) return;
     const msg = String((err && (err.stack || err.message)) || err || 'unknown').slice(0, 1200);
     /* نفس الخطأ المتكرر: مرة واحدة بالدقيقة فقط */
-    if (_alarmState.lastMsg[kind] === msg && now - (_alarmState.lastKindAt[kind] || 0) < 60000) return;
+    if (_alarmState.lastMsg[kind] === msg && now - (_alarmState.lastKindAt[kind] || 0) < (KIND_MIN_MS[kind] || 60000)) return;
     _alarmState.lastMsg[kind] = msg;
     _alarmState.lastKindAt[kind] = now;
     _alarmState.stamps.push(now);
@@ -136,7 +138,7 @@ async function sendServerAlarm(kind, err, fields) {
       title: '🚨 خطأ خادم — ' + kind,
       description: '```\n' + msg.slice(0, 900) + '\n```',
       fields: Array.isArray(fields) ? fields.slice(0, 6) : [],
-      color: 0xef4444,
+      color: typeof color === 'number' ? color : 0xef4444,
       footer: 'Walton Family — Server Errors'
     });
   } catch (e) { /* الجرس لا يكسر أبداً */ }
