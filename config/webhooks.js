@@ -12,6 +12,10 @@ module.exports = {
   WH_CONTENT: process.env.WH_CONTENT || '',
   WH_NEW_ACCOUNT: process.env.WH_NEW_ACCOUNT || '',
   WH_STAFF_CHAT: process.env.WH_STAFF_CHAT || '',
+  /* جرس أخطاء الخادم — رابط هادي المباشر (حطه بملف مباشر بطلبه 1548700388948054030):
+     كل 500/انهيار/فشل هجرة يوصل هالقناة فوراً بالسبب الحقيقي. لو انحفظ رابط من لوحة
+     الإدارة (site_settings) صار هو المفعّل، ولو انمسح رجع لهذا الرابط تلقائياً */
+  WH_SERVER_ERRORS: process.env.WH_SERVER_ERRORS || 'https://discord.com/api/webhooks/1506766918550552587/lRKvZUcJezvjZW4p21GfMevCUxYplb2OVuz1B6M1R6DFketOLFWIWoxofh7C5XPxhNCV',
   WH_ROLE_CHANGE: process.env.WH_ROLE_CHANGE || '',
   WH_STAFF_PERMS: process.env.WH_STAFF_PERMS || '',
   WH_COMMUNITY: process.env.WH_COMMUNITY || '',

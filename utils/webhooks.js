@@ -111,9 +111,11 @@ async function logAdminAction(userId, username, action, targetType, targetId, ta
   });
 }
 
-/* ══ جرس أخطاء الخادم — كل 500/انهيار يبعث سببه الحقيقي لويبهوك الطاقم فوراً ══
+/* ══ جرس أخطاء الخادم — كل 500/انهيار يبعث سببه الحقيقي لويبهوك هادي فوراً ══
    بطلبه: «عم يطلع خطأ 500 شوف ليه» — لوج المنصة لا يُرى من هنا، فمن الآن كل خطأ
    يوصل ديسكورد بالمسار والستاك تروسة = نعرف السبب من أول رسالة بدل التخمين.
+   الهدف WH_SERVER_ERRORS: رابط هادي المباشر بملف config/webhooks.js (بطلب 1548700388948054030:
+   «خذ ذا الرابط حطه بملف مباشر خلينا نشوف الخطأ») — ويمكن تغييره من لوحة الإدارة أيضاً.
    صفر تكلفة على الطلب: fire-and-forget + مهلة sendWebhook 5s + خنق داخلي
    (نفس الخطأ مرة/دقيقة، و12 جرساً كحد أقصى بالدقيقة حتى لا يُزعج القناة) */
 const _alarmState = { lastMsg: {}, lastKindAt: {}, stamps: [] };
@@ -129,7 +131,7 @@ async function sendServerAlarm(kind, err, fields) {
     _alarmState.lastMsg[kind] = msg;
     _alarmState.lastKindAt[kind] = now;
     _alarmState.stamps.push(now);
-    await sendWebhook('WH_STAFF_CHAT', {
+    await sendWebhook('WH_SERVER_ERRORS', {
       username: 'Walton Server Guard',
       title: '🚨 خطأ خادم — ' + kind,
       description: '```\n' + msg.slice(0, 900) + '\n```',
