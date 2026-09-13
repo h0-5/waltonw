@@ -5,6 +5,8 @@ const db = require('../../config/database');
 // Update profile
 router.post('/update', async (req, res) => {
   if (!req.user) return res.status(401).json({ error: 'غير مصرح' });
+  /* أمن — المحظور ما يغيّر اسمه: فحص req.user وحده كان يتخطى شاشة الحظر */
+  if (req.user.is_banned) return res.status(403).json({ error: 'حسابك محظور' });
 
   const { username } = req.body;
   if (!username || username.length < 3 || username.length > 30) {

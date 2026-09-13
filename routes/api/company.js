@@ -277,7 +277,11 @@ router.post('/service-request', isAuthenticated, async (req, res) => {
           if (file.mimetype && String(file.mimetype).indexOf('image/') !== 0) {
             return res.status(400).json({ error: 'الملف المرفق لازم يكون صورة: ' + q.question });
           }
-          const ext = String(file.name || 'img.png').split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
+          /* أمن — الامتداد بقياقة صورة فقط: كان أي امتداد ينزل كما هو (req_xxx.html /
+             req_xxx.svg بنص تشغيلي تُخدم من /uploads كنطاق موقع — XSS مخزّن).
+             نفس قاعدة farm.js و admin.js: امتداد غير موثوق = png */
+          const rawExt = String(file.name || 'img.png').split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '');
+          const ext = ['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(rawExt) ? rawExt : 'png';
           const fname = 'req_' + Date.now() + '_' + Math.floor(Math.random() * 1e4) + '.' + ext;
           fs.mkdirSync(uploadDir, { recursive: true });
           await file.mv(path.join(uploadDir, fname));

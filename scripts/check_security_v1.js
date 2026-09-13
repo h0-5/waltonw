@@ -70,6 +70,52 @@ ok('api/bot.js صفر e.message للعميل', !/res\.status\(500\)\.json\(\{[^}
 const notif = read('routes/api/notifications.js');
 ok('api/notifications.js صفر e.message للعميل', !/res\.status\(500\)\.json\(\{[^}]*error: e\.message/.test(notif));
 
+console.log('\n═══ 7) التدقيق الثاني — سد مسارات التصعيد والتجاوز ═══');
+/* ① الأدوار الجانبية والنقاط لا تُعدَّل على الذات (تصعيد صلاحيات عبر PATCH نفسه) */
+ok('PATCH /users/:id: sideRoles/points محظورة على الذات', adm.includes('sideRoles !== undefined || points !== undefined'));
+/* ② فحص التسلسل على الرتبة الجديدة من القاعدة (rankOfRole) لا من الخريطة الثابتة (غير المعروفة كانت 99) */
+ok('PATCH /users/:id: التسلسل بحساب rankOfRole لا getRank الثابتة', /const myRank = await rankOfRole\(req\.user\.role\);/.test(adm) && /const targetNewRank = await rankOfRole\(role\);/.test(adm));
+/* ③ فك الحظر بحارس التسلسل أيضاً — لا فك حظر رتبة أعلى (assertTargetBelowActor × 6: update/ban/PATCH/ban:id/unban/unban:id) */
+const guardCount = (adm.match(/assertTargetBelowActor\(/g) || []).length;
+ok('حارس التسلسل على 6 مسارات بماها فكّا الحظر (فعلياً ' + guardCount + ')', guardCount >= 6);
+ok('مسار /users/:id/unban مكرر انشال (نسخة ميتة واحدة فقط)', (adm.match(/router\.post\('\/users\/:id\/unban'/g) || []).length === 1);
+/* ④ مكافأة التقديم site_role: لا owner أبداً + فحص التسلسل عند الضبط وعند القبول */
+ok('site_role=owner مرفوض بإعدادات أنواع التقديم', adm.includes('لا يمكن ضبط رتبة المكافأة إلى المالك'));
+ok('قبول التقديم يفحص رتبة المكافأة قبل منحها', adm.includes('const grantRank = await rankOfRole(grantRole);') && adm.includes("grantRole === 'owner'"));
+/* ⑤ حذف الملفات: safeUnlinkUpload فقط — لا unlink مباشر بمسار من القاعدة (path traversal) */
+ok('safeUnlinkUpload معرّف ومستخدم (≥4 مواضع)', (adm.match(/safeUnlinkUpload\(/g) || []).length >= 5);
+ok('لا unlinkSync مباشر بمسار مركب من قيمة مخزنة', !adm.includes('unlinkSync(fp)'));
+/* ⑥ رفع ملفات الشركة بامتداد صورة موثوق فقط (كان .html/.svg → XSS مخزّن بنطاق الموقع) */
+const companyApi = read('routes/api/company.js');
+ok('رفع طلبات الشركة: امتداد بقياقة صورة', companyApi.includes(".includes(rawExt)"));
+/* ⑦ المحظور ما يكتب/يشتري/يغيّر اسمه عبر الـAPI (كان يتجاوز شاشة الحظر) */
+['community', 'store', 'profile'].forEach(n => {
+  ok('api/' + n + '.js: المحظور مرفوض (is_banned)', read('routes/api/' + n + '.js').includes('req.user.is_banned'));
+});
+/* ⑧ جلسة ديسكورد بلا توكن (كان يُخزّن accessToken ولا يقرأه كود) */
+const authRoutes = read('routes/auth.js');
+ok('routes/auth.js: لا تخزين accessToken بالجلسة', !authRoutes.includes('req.session.accessToken'));
+/* ⑨ middleware/roles.js fail-closed (رتبة غير معروفة كانت تفتح الباب للجميع) */
+ok('middleware/roles.js: minRole غير معروف = رفض', read('middleware/roles.js').includes('requiredRank === undefined'));
+/* ⑩ كاش الصفحات: GET فقط يُخزَّن + سقف إدخالات + مفتاح مقصوص + الإبطال للمصدّقين فقط */
+const pageCache = read('middleware/page-cache.js');
+ok('كاش الصفحات: تخزين GET فقط (لا تلوث رد POST)', pageCache.includes("req.method === 'GET'"));
+ok('كاش الصفحات: سقف 600 إدخال ضد cache-bombing', pageCache.includes('pageCache.size < 600'));
+const appJs = read('app.js');
+ok('إبطال كاش الصفحات للطلبات المصدّقة فقط', appJs.includes('if (req.user) invalidatePageCache(null);'));
+/* ⑪ Socket.IO: هوية الحضور من الجلسة لا من العميل (كان ينتحل باسم أي عضو) */
+const serverJs = read('server.js');
+ok('Socket.IO: هوية المصافحة من كوكي الجلسة', serverJs.includes('socketUserFromHandshake') && serverJs.includes('timingSafeEqual'));
+ok('Socket.IO: user:online يتجاهل ما يرسله العميل', serverJs.includes("socket.on('user:online', () => {"));
+ok('مخزن الجلسات متاح لفحص المصافحة', read('config/session.js').includes('cachedSessionStore.sessionStore = sessionStore'));
+/* ⑫ التعبئة التلقائية: كل حقول نماذج الأسئلة + بقية النماذج */
+const appForm = read('views/pages/application-form.ejs');
+const autoOff = (appForm.match(/autocomplete="off"/g) || []).length;
+ok('نموذج التقديم: autocomplete="off" على الحقول كلها (' + autoOff + ' ≥ 12)', autoOff >= 12);
+ok('نموذج الشطب autocomplete="off"', read('views/pages/checkout.ejs').includes('<form id="checkoutForm" autocomplete="off">'));
+ok('نموذج الملف الشخصي autocomplete="off"', read('views/pages/profile.ejs').includes('<form id="profileForm" class="pfw-form" autocomplete="off">'));
+ok('نموذج دردشة المجتمع autocomplete="off"', read('views/pages/community.ejs').includes('<form id="chatForm" class="chat-form" autocomplete="off"'));
+
 console.log('\n═══ النتيجة ═══');
 console.log('نجاح: ' + pass + ' — فشل: ' + failn);
 process.exit(failn ? 1 : 0);

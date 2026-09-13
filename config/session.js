@@ -82,6 +82,10 @@ const cachedSessionStore = new CachedMySQLStore();
   sessionStore.on(ev, (...a) => cachedSessionStore.emit(ev, ...a));
 });
 
+/* أمن — مخزن الجلسات مكشوف لسيرفر Socket.IO: يُستخدم للتحقق من كوكي الجلسة
+   عند المصافحة واشتقاق هوية المستخدم من الخادم بدل الثقة بما يرسله العميل */
+cachedSessionStore.sessionStore = sessionStore;
+
 // Periodic cleanup of stale cache entries
 setInterval(() => {
   const now = Date.now();

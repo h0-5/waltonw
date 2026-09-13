@@ -254,8 +254,11 @@ app.use(function (req, res, next) {
     try {
       invalidateSettingsCache();
     } catch (e) {}
+    /* أمن توافر — إبطال كاش الصفحات للطلبات المصدّقة فقط: أي زائر كان يستطيع بـ60
+       POST/دقيقة (حتى على مسارات وهمية) يفرّغ كاش الصفحات كله ويجبر إعادة رسم كاملة
+       من القاعدة البعيدة — الآن الزوّاد المجهولون لا يلمسون الكاش */
     try {
-      invalidatePageCache(null);
+      if (req.user) invalidatePageCache(null);
     } catch (e) {}
   }
   next();

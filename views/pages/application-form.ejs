@@ -104,16 +104,16 @@
           </label>
 
           <% if (q.type === 'text') { %>
-            <input type="text" name="answers[<%= q.id %>]" class="cy-input" maxlength="200" data-qid="<%= q.id %>" data-keyword="<%= q.keyword || '' %>" <%= q.required ? 'required' : '' %>>
+            <input type="text" autocomplete="off" name="answers[<%= q.id %>]" class="cy-input" maxlength="200" data-qid="<%= q.id %>" data-keyword="<%= q.keyword || '' %>" <%= q.required ? 'required' : '' %>>
 
           <% } else if (q.type === 'textarea') { %>
-            <textarea name="answers[<%= q.id %>]" class="cy-textarea" maxlength="2000" data-qid="<%= q.id %>" data-keyword="<%= q.keyword || '' %>" <%= q.required ? 'required' : '' %>></textarea>
+            <textarea autocomplete="off" name="answers[<%= q.id %>]" class="cy-textarea" maxlength="2000" data-qid="<%= q.id %>" data-keyword="<%= q.keyword || '' %>" <%= q.required ? 'required' : '' %>></textarea>
 
           <% } else if (q.type === 'number') { %>
-            <input type="number" name="answers[<%= q.id %>]" class="cy-input" data-qid="<%= q.id %>" <%= q.required ? 'required' : '' %>>
+            <input type="number" autocomplete="off" name="answers[<%= q.id %>]" class="cy-input" data-qid="<%= q.id %>" <%= q.required ? 'required' : '' %>>
 
           <% } else if (q.type === 'select' || q.type === 'dropdown') { %>
-            <select name="answers[<%= q.id %>]" class="cy-select" data-qid="<%= q.id %>" <%= q.required ? 'required' : '' %>>
+            <select autocomplete="off" name="answers[<%= q.id %>]" class="cy-select" data-qid="<%= q.id %>" <%= q.required ? 'required' : '' %>>
               <option value="">-- اختر --</option>
               <% (q.options || '').split(/\r?\n/).forEach(function(opt) { if(opt.trim()) { %>
               <option value="<%= opt.trim() %>"><%= opt.trim() %></option>
@@ -124,7 +124,7 @@
             <div class="cy-radio-group">
               <% (q.options || '').split(/\r?\n/).forEach(function(opt) { if(opt.trim()) { %>
               <label class="cy-radio">
-                <input type="radio" name="answers[<%= q.id %>]" value="<%= opt.trim() %>" data-qid="<%= q.id %>" <%= q.required ? 'required' : '' %>>
+                <input type="radio" autocomplete="off" name="answers[<%= q.id %>]" value="<%= opt.trim() %>" data-qid="<%= q.id %>" <%= q.required ? 'required' : '' %>>
                 <label><%= opt.trim() %></label>
               </label>
               <% } }); %>
@@ -134,7 +134,7 @@
             <div class="cy-check-group">
               <% (q.options || '').split(/\r?\n/).forEach(function(opt) { if(opt.trim()) { %>
               <label class="cy-check">
-                <input type="checkbox" name="answers_multiple[<%= q.id %>][]" value="<%= opt.trim() %>" data-qid="<%= q.id %>">
+                <input type="checkbox" autocomplete="off" name="answers_multiple[<%= q.id %>][]" value="<%= opt.trim() %>" data-qid="<%= q.id %>">
                 <label><%= opt.trim() %></label>
               </label>
               <% } }); %>
@@ -144,17 +144,17 @@
           <% } else if (q.type === 'true_false') { %>
             <div class="cy-radio-group">
               <label class="cy-radio">
-                <input type="radio" name="answers[<%= q.id %>]" value="صح" data-qid="<%= q.id %>" <%= q.required ? 'required' : '' %>>
+                <input type="radio" autocomplete="off" name="answers[<%= q.id %>]" value="صح" data-qid="<%= q.id %>" <%= q.required ? 'required' : '' %>>
                 <label>صح</label>
               </label>
               <label class="cy-radio">
-                <input type="radio" name="answers[<%= q.id %>]" value="خطأ" data-qid="<%= q.id %>" <%= q.required ? 'required' : '' %>>
+                <input type="radio" autocomplete="off" name="answers[<%= q.id %>]" value="خطأ" data-qid="<%= q.id %>" <%= q.required ? 'required' : '' %>>
                 <label>خطأ</label>
               </label>
             </div>
 
           <% } else if (q.type === 'server_name') { %>
-            <input type="text" name="answers[<%= q.id %>]" class="cy-input" placeholder="اسم السيرفر" maxlength="100" data-qid="<%= q.id %>" <%= q.required ? 'required' : '' %>>
+            <input type="text" autocomplete="off" name="answers[<%= q.id %>]" class="cy-input" placeholder="اسم السيرفر" maxlength="100" data-qid="<%= q.id %>" <%= q.required ? 'required' : '' %>>
 
           <% } else if (q.type === 'image') { %>
             <div class="cy-upload-zone" onclick="this.querySelector('input').click()">
@@ -163,11 +163,11 @@
               <input type="file" name="answers_img_<%= q.id %>" accept=".jpg,.jpeg,.png,.gif,.webp" data-qid="<%= q.id %>">
             </div>
             <div style="margin-top:0.8rem">
-              <input type="url" name="answers_img_url[<%= q.id %>]" class="cy-input" placeholder="أو الصق رابط الصورة هنا" data-qid="<%= q.id %>">
+              <input type="url" autocomplete="off" name="answers_img_url[<%= q.id %>]" class="cy-input" placeholder="أو الصق رابط الصورة هنا" data-qid="<%= q.id %>">
             </div>
 
           <% } else { %>
-            <input type="text" name="answers[<%= q.id %>]" class="cy-input" maxlength="2000" data-qid="<%= q.id %>" <%= q.required ? 'required' : '' %>>
+            <input type="text" autocomplete="off" name="answers[<%= q.id %>]" class="cy-input" maxlength="2000" data-qid="<%= q.id %>" <%= q.required ? 'required' : '' %>>
           <% } %>
 
           <!-- Per-question validation message -->

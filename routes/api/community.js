@@ -23,6 +23,9 @@ router.get('/messages', async (req, res) => {
 // Send message
 router.post('/send', async (req, res) => {
   if (!req.user) return res.status(401).json({ error: 'غير مصرح' });
+  /* أمن — المحظور ما يكتب بالدردشة: كان فحص req.user فقط فيتجاوز المحظور شاشة الحظر
+     (شاشة الحظر تعيش داخل isAuthenticated وليس داخل الجلسة نفسها) */
+  if (req.user.is_banned) return res.status(403).json({ error: 'حسابك محظور' });
 
   const { message } = req.body;
   if (!message || message.trim().length === 0) {

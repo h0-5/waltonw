@@ -5,6 +5,8 @@ const db = require('../../config/database');
 // Buy product
 router.post('/buy', async (req, res) => {
   if (!req.user) return res.status(401).json({ error: 'غير مصرح' });
+  /* أمن — المحظور ما يشتري: فحص req.user وحده كان يسمح للمحظور بصرف نقاطه */
+  if (req.user.is_banned) return res.status(403).json({ error: 'حسابك محظور' });
 
   const { product_id } = req.body;
   if (!product_id) return res.status(400).json({ error: 'معرف المنتج مفقود' });

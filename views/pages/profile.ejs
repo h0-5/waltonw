@@ -212,7 +212,7 @@
         <!-- ── إعداداتي ── -->
         <section class="pfw-pane" id="pfw-pane-set">
           <h3 class="pfw-sec-title pfw-sec-first"><i class="fas fa-user-pen"></i>تعديل الملف الشخصي</h3>
-          <form id="profileForm" class="pfw-form">
+          <form id="profileForm" class="pfw-form" autocomplete="off">
             <div class="pfw-field">
               <label for="username"><i class="fas fa-user"></i>اسم المستخدم</label>
               <input type="text" id="username" value="<%= _pfUser.username || '' %>" minlength="3" maxlength="30" required>

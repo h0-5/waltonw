@@ -34,15 +34,13 @@ router.get('/discord/callback', (req, res, next) => {
     if (!user) {
       return res.redirect('/auth/login?error=failed');
     }
-    const accessToken = info && info.accessToken ? info.accessToken : null;
     req.logIn(user, (loginErr) => {
       if (loginErr) {
         console.error('Session login error:', loginErr);
         return res.redirect('/auth/login?error=login_failed');
       }
-      if (accessToken) {
-        req.session.accessToken = accessToken;
-      }
+      /* أمن — توكن ديسكورد كان يُخزّن بجلسة MySQL (accessToken) ولا يقرأه أي كود —
+         حذف التخزين: سطح تسرب أقل، والجلسة لا تحمل بيانات حساسة */
       // Update last_login
       db.execute('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]).catch(() => {});
       // Log activity

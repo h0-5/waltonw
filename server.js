@@ -39,15 +39,74 @@ const io = new Server(server, {
   cors: { origin: '*', methods: ['GET', 'POST'] }
 });
 
+/* ══ أمن — هوية الغرف المباشرة تُشتق من الجلسة لا من العميل ══
+   كان حدث user:online يأخذ id/username/avatar من العميل كما هو: أي سكربت خارجي
+   (cors: '*') يفتح socket ويبثّ حضوراً منتحلاً باسم أي عضو لكل الزوار.
+   الآن: عند المصافحة نقرأ كوكي wf_session، نفك توقيعه بمفتاح الجلسات، نحمّل
+   الجلسة من مخزن MySQL ونجلب المستخدم من القاعدة — العميل لا يملك أي كلمة بالهوية.
+   زائر بلا جلسة صالحة = متصل بلا حضور (يستقبل القائمة فقط) */
+const sessionConfigMod = require('./config/session');
+const crypto = require('crypto');
+
+/* فك توقيع كوكي الجلسة بنفس مخطط cookie-signature (HMAC-SHA256 base64 بلا حشو)
+   بمكتبة crypto المدمجة — بلا أي اعتماد إضافي */
+function unsignSessionCookie(val, secret) {
+  try {
+    const i = val.lastIndexOf('.');
+    if (i <= 0) return null;
+    const str = val.slice(0, i);
+    const mac = str + '.' + crypto.createHmac('sha256', secret).update(str).digest('base64').replace(/=+$/, '');
+    const a = Buffer.from(mac), b = Buffer.from(val);
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+    return str;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function socketUserFromHandshake(handshake) {
+  try {
+    const ck = String(handshake.headers.cookie || '');
+    let raw = null;
+    for (const part of ck.split(';')) {
+      const i = part.indexOf('=');
+      if (i === -1) continue;
+      if (part.slice(0, i).trim() === 'wf_session') { raw = part.slice(i + 1).trim(); break; }
+    }
+    if (!raw) return null;
+    if (raw.startsWith('s:')) raw = raw.slice(2);
+    const sid = unsignSessionCookie(decodeURIComponent(raw), sessionConfigMod.secret);
+    if (!sid) return null;
+    const store = sessionConfigMod.sessionStore;
+    if (!store) return null;
+    const data = await new Promise(resolve => store.get(sid, (e, d) => resolve(e ? null : d)));
+    const uid = data && data.passport && data.passport.user;
+    if (!uid) return null;
+    const [rows] = await db.execute('SELECT id, username, avatar, role, is_banned FROM users WHERE id = ?', [uid]);
+    if (!rows.length || rows[0].is_banned) return null;
+    return rows[0];
+  } catch (_) {
+    return null;
+  }
+}
+
+io.use((socket, next) => {
+  socketUserFromHandshake(socket.handshake)
+    .then(u => { socket.wfUser = u || null; next(); })
+    .catch(() => { socket.wfUser = null; next(); });
+});
+
 // Socket.IO - Community Chat
 const onlineUsers = new Map();
 
 io.on('connection', (socket) => {
   console.log('🔌 Socket connected:', socket.id);
 
-  socket.on('user:online', (userData) => {
-    if (userData && userData.id) {
-      onlineUsers.set(userData.id, { ...userData, socketId: socket.id, lastSeen: Date.now() });
+  socket.on('user:online', () => {
+    /* الهوية من الجلسة فقط — ما يرسله العميل يُتجاهل كلياً */
+    const u = socket.wfUser;
+    if (u && u.id) {
+      onlineUsers.set(u.id, { id: u.id, username: u.username, avatar: u.avatar, role: u.role, socketId: socket.id, lastSeen: Date.now() });
       io.emit('users:online', Array.from(onlineUsers.values()));
     }
   });

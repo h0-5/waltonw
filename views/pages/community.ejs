@@ -61,7 +61,7 @@
                     <i class="fas fa-lock" style="margin-left:6px;"></i>هذا الشات مقفل حالياً
                 </div>
                 <% if (user) { %>
-                <form id="chatForm" class="chat-form" onsubmit="return sendMessage(event)">
+                <form id="chatForm" class="chat-form" autocomplete="off" onsubmit="return sendMessage(event)">
                     <input type="text" id="messageInput" placeholder="اكتب رسالتك..." maxlength="1000" autocomplete="off">
                     <button type="submit" class="send-btn" id="sendBtn">
                         <i class="fas fa-paper-plane"></i>

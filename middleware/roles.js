@@ -29,17 +29,25 @@ const checkRole = (minRole) => {
       return res.redirect('/auth/discord');
     }
 
-    const userRank = ROLE_HIERARCHY[req.user.role] || 0;
-    const requiredRank = ROLE_HIERARCHY[minRole] || 0;
-
-    if (userRank >= requiredRank) {
-      return next();
+    /* أمن fail-closed: رتبة غير معروفة بالخريطة (خطأ إملائي بالمفتاح أو برتبة المستخدم)
+       كانت تُحسب 0 فيفتح الباب للجميع — الآن رتبة المطلوب غير المعروفة = خطأ إعداد
+       يرفض الجميع، ورتبة المستخدم غير المعروفة = رفض (لا يمكن إثبات رتبته) */
+    const requiredRank = ROLE_HIERARCHY[minRole];
+    if (requiredRank === undefined) {
+      console.error('[roles] checkRole: minRole غير معروف — مرفوض fail-closed:', minRole);
+      return res.status(403).render('pages/error', {
+        title: 'غير مصرح',
+        error: 'ليس لديك الصلاحية الكافية'
+      });
     }
-
-    res.status(403).render('pages/error', {
-      title: 'غير مصرح',
-      error: 'ليس لديك الصلاحية الكافية'
-    });
+    const userRank = ROLE_HIERARCHY[req.user.role];
+    if (userRank === undefined || userRank < requiredRank) {
+      return res.status(403).render('pages/error', {
+        title: 'غير مصرح',
+        error: 'ليس لديك الصلاحية الكافية'
+      });
+    }
+    return next();
   };
 };
 

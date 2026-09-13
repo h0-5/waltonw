@@ -35,8 +35,9 @@ function isSafeBrowserPublic(p) {
 
 function cacheKey(req, uid) {
   /* المفتاح بروابط الاستعلام كاملة — /store?cat=x و /store?cat=y محتواها يختلف
-     (الراوتر يمرر cat للعرض) فمفتاح بلا query كان يجعل أول نسخة تُخدم للبقية 12 ثانية */
-  return (uid || 'anon') + '|' + (req.originalUrl || req.url || '');
+     (الراوتر يمرر cat للعرض) فمفتاح بلا query كان يجعل أول نسخة تُخدم للبقية 12 ثانية.
+     أمن توافر — طول المفتاح مقصوص: استعلامات فريدة لا نهائية (cache-bombing) ما تنفخ الذاكرة */
+  return (uid || 'anon') + '|' + String(req.originalUrl || req.url || '').slice(0, 160);
 }
 
 function invalidatePageCache(userId) {
@@ -106,9 +107,14 @@ function pageCacheMiddleware(req, res, next) {
         const p = req.path || (req.originalUrl || '').split('?')[0];
         const notSkipped = p && !SKIP_PREFIXES.some(pre => p.startsWith(pre)) && p.indexOf('.') === -1 && p.indexOf('?') === -1;
         if (res.statusCode === 200 && ct.indexOf('html') !== -1 && notSkipped) {
+          /* أمن — GET فقط يُخزَّن: أي POST/PUT يرد HTML من غيره كان يتخزن تحت مفتاح
+             المسار ويُخدم لاحقاً لطلب GET بنفس المسار (تلوث رد POST في صفحة GET).
+             أمن توافر — سقف إدخالات: هجوم بروابط فريدة لا يضخم الذاكرة بلا حد */
           const html = bodyPieces.join('');
-          if (html && html.length > 500) {
-            pageCache.set(cacheKey(req, uid), { at: Date.now(), html });
+          if (req.method === 'GET' && html && html.length > 500) {
+            if (pageCache.size < 600) {
+              pageCache.set(cacheKey(req, uid), { at: Date.now(), html });
+            }
             if (isSafeBrowserPublic(p)) {
               res.setHeader('Cache-Control', 'private, max-age=15');
             }

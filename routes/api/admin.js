@@ -43,6 +43,9 @@ router.post('/users/ban', checkPermission('users_ban'), async (req, res) => {
 router.post('/users/unban', checkPermission('users_ban'), async (req, res) => {
   const { user_id } = req.body;
   try {
+    /* أمن — فك حظر رتبة أعلى أو مساوية يلغي قرار إداري أعلى منه: حارس التسلسل هنا أيضاً */
+    const deny = await assertTargetBelowActor(req.user, user_id);
+    if (deny) return res.status(403).json({ error: deny });
     await db.execute('UPDATE users SET is_banned = 0 WHERE id = ?', [user_id]);
     clearUserCache(user_id);
     res.json({ success: true });
@@ -97,6 +100,18 @@ function safeImgExt(file) {
   return (mimeOk && IMG_EXT.includes(raw)) ? raw : 'png';
 }
 
+/* أمن — حذف ملفات الرفع فقط: القيمة المخزنة كانت تنفّذ unlinkSync لأي مسار يبدأ بـ
+   /uploads/ مثل /uploads/../../.env (path.join يطبع خارج public) — الآن يُقبل فقط
+   اسم ملف بسيط داخل مجلدات الرفع المعروفة، وأي شيء آخر يُتجاهل بصمت */
+function safeUnlinkUpload(img) {
+  try {
+    if (!img || typeof img !== 'string') return;
+    const m = /^\/uploads\/(properties|company|news|services)\/([A-Za-z0-9_.-]+)$/.exec(img);
+    if (!m || m[2].indexOf('..') !== -1) return;
+    require('fs').unlinkSync(require('path').join(__dirname, '../../public', 'uploads', m[1], m[2]));
+  } catch (_) {}
+}
+
 // ===== User Detail =====
 router.get('/users/:id', checkPermission('users_view'), async (req, res) => {
   try {
@@ -129,10 +144,19 @@ router.patch('/users/:id', checkPermission('users_edit'), async (req, res) => {
       if (deny) return res.status(403).json({ error: deny });
     }
 
-    // Role hierarchy check: can't promote to equal or higher role
+    /* أمن — الأدوار الجانبية والنقاط لا تُعدَّل على الذات إطلاقاً:
+       sideRoles صلاحيات إضافية جمعية — من يقدر يضيفها لنفسه يكتسب أي صلاحية أي دور جانبي
+       (تصعيد كامل)، وpoints رصيد. تعديلها للحسابات الأخرى يبقى محكوماً بحارس التسلسل أعلاه */
+    if (req.user.id === targetId && (sideRoles !== undefined || points !== undefined)) {
+      return res.status(403).json({ error: 'لا يمكنك تعديل الأدوار الجانبية أو النقاط لحسابك بنفسك — طلبها من إداري أعلى' });
+    }
+
+    /* أمن — فحص التسلسل على الرتبة الجديدة بحساب قاعدة البيانات نفسه (rankOfRole):
+       الخريطة الثابتة كانت تعطي الرتب المخصصة غير المعروفة رتبة 99 فتنتقل الحماية —
+       إداري عادي كان يقدر يعيّن رتبة مخصصة is_admin_role=1 تنفّ كل فحوصات الصلاحيات */
     if (role !== undefined) {
-      const myRank = getRank(req.user.role);
-      const targetNewRank = getRank(role);
+      const myRank = await rankOfRole(req.user.role);
+      const targetNewRank = await rankOfRole(role);
       if (targetNewRank <= myRank) {
         return res.status(403).json({ error: 'لا يمكنك تعيين شخص في رتبة مساوية أو أعلى من رتبتك' });
       }
@@ -162,8 +186,9 @@ router.patch('/users/:id', checkPermission('users_edit'), async (req, res) => {
       }
     }
     if (sideRoles && Array.isArray(sideRoles)) {
+      const ids = sideRoles.map(v => parseInt(v, 10)).filter(v => Number.isFinite(v) && v > 0);
       await db.execute('DELETE FROM user_side_roles WHERE user_id = ?', [req.params.id]);
-      for (const srId of sideRoles) {
+      for (const srId of ids) {
         await db.execute('INSERT INTO user_side_roles (user_id, side_role_id, assigned_by) VALUES (?, ?, ?)', [req.params.id, srId, req.user?.id || null]);
       }
     }
@@ -193,6 +218,9 @@ router.post('/users/:id/ban', checkPermission('users_ban'), async (req, res) => 
 // ===== Unban by ID =====
 router.post('/users/:id/unban', checkPermission('users_ban'), async (req, res) => {
   try {
+    /* أمن — حارس التسلسل: نفس قاعدة الحظر تنطبق على فك الحظر */
+    const deny = await assertTargetBelowActor(req.user, req.params.id);
+    if (deny) return res.status(403).json({ error: deny });
     await db.execute('UPDATE users SET is_banned = 0, ban_reason = NULL, banned_at = NULL, banned_until = NULL, banned_by = NULL WHERE id = ?', [req.params.id]);
     clearUserCache(req.params.id);
     res.json({ success: true });
@@ -643,14 +671,6 @@ router.delete('/discounts/:id', checkPermission('discounts_manage'), async (req,
   } catch(e) { fail(res, e); }
 });
 
-// Users Unban API (by URL param)
-router.post('/users/:id/unban', checkPermission('users_ban'), async (req, res) => {
-  try {
-    await db.execute('UPDATE users SET is_banned = 0 WHERE id = ?', [req.params.id]);
-    res.json({ success: true });
-  } catch(e) { fail(res, e); }
-});
-
 // Broadcast API
 router.post('/broadcast', checkPermission('broadcast_send'), async (req, res) => {
   try {
@@ -740,10 +760,7 @@ router.put('/properties/:id', checkPermission('properties_edit'), async (req, re
     let image = existing.length ? existing[0].image : '';
     const hasNewFile = req.files && req.files.image_file && req.files.image_file.size > 0;
     if (hasNewFile) {
-      if (image && image.startsWith('/uploads/')) {
-        const fp = require('path').join(__dirname, '../../public', image);
-        try { require('fs').unlinkSync(fp); } catch(_) {}
-      }
+      safeUnlinkUpload(image);
       const file = req.files.image_file;
       const ext = safeImgExt(file);
       const fname = 'prop_' + Date.now() + '.' + ext;
@@ -752,10 +769,7 @@ router.put('/properties/:id', checkPermission('properties_edit'), async (req, re
       await file.mv(uploadDir + '/' + fname);
       image = '/uploads/properties/' + fname;
     } else if (image_url && image_url.trim()) {
-      if (image && image.startsWith('/uploads/')) {
-        const fp = require('path').join(__dirname, '../../public', image);
-        try { require('fs').unlinkSync(fp); } catch(_) {}
-      }
+      safeUnlinkUpload(image);
       image = image_url.trim();
     }
     await db.execute('UPDATE properties SET title=?, image=?, category=?, sort_order=? WHERE id=?',
@@ -767,10 +781,7 @@ router.put('/properties/:id', checkPermission('properties_edit'), async (req, re
 router.delete('/properties/:id', checkPermission('properties_delete'), async (req, res) => {
   try {
     const [rows] = await db.execute('SELECT image FROM properties WHERE id = ?', [req.params.id]);
-    if (rows.length && rows[0].image && rows[0].image.startsWith('/uploads/')) {
-      const fp = require('path').join(__dirname, '../../public', rows[0].image);
-      require('fs').unlinkSync(fp);
-    }
+    if (rows.length) safeUnlinkUpload(rows[0].image);
     await db.execute('DELETE FROM properties WHERE id = ?', [req.params.id]);
     res.json({ success: true });
   } catch(e) { fail(res, e); }
@@ -803,10 +814,7 @@ router.put('/company/items/:id', checkPermission('company_edit'), async (req, re
     let image = existing.length ? existing[0].image : '';
     const hasNewFile = req.files && req.files.image_file && req.files.image_file.size > 0;
     if (hasNewFile) {
-      if (image && image.startsWith('/uploads/')) {
-        const fp = require('path').join(__dirname, '../../public', image);
-        try { require('fs').unlinkSync(fp); } catch(_) {}
-      }
+      safeUnlinkUpload(image);
       const file = req.files.image_file;
       const ext = safeImgExt(file);
       const fname = 'co_' + Date.now() + '.' + ext;
@@ -938,17 +946,36 @@ router.post('/applications/:id/approve', checkPermission('apps_approve'), async 
     if (!app || !app.length) return res.status(404).json({ error: 'الطلب غير موجود' });
     if (app[0].status !== 'pending') return res.status(400).json({ error: 'يمكن قبول الطلبات المعلقة فقط' });
 
+    /* أمن — رتبة المكافأة (site_role) تُفحص قبل أي شيء:
+       كانت سلسلة حرة بدون فحص — صاحب app_types_edit كان يضبط site_role='owner'
+       ثم يوافق على تقديم فيصير صاحب الطلب مالك الموقع كاملاً (تخطّي كل الحرس).
+       القاعدة: لا منح 'owner' أبداً بهذا المسار، ولا منح أي رتبة رتبتها مساوية أو أعلى من المُوافق */
+    const [typeSetting] = await db.query('SELECT site_role FROM application_settings WHERE application_type = ?', [app[0].application_type]);
+    let grantRole = (typeSetting && typeSetting.length && typeSetting[0].site_role) ? String(typeSetting[0].site_role).trim() : '';
+    if (grantRole) {
+      if (grantRole === 'owner') {
+        grantRole = '';
+        console.warn('[security] site_role=owner مرفوض على التقديم #' + id + ' — المنح عبر إدارة المستخدمين فقط');
+      } else {
+        const grantRank = await rankOfRole(grantRole);
+        const myRank = await rankOfRole(req.user.role);
+        if (grantRank <= myRank) {
+          return res.status(403).json({ error: 'رتبة المكافأة المضبوطة لهذا النوع مساوية أو أعلى من رتبتك — عدّل إعداد النوع أو اطلب من أعلى منك الموافقة' });
+        }
+      }
+    }
+
     await db.query(
       "UPDATE submitted_applications SET status = 'waiting_join', reviewed_by = ?, reviewed_at = NOW(), review_note = ? WHERE id = ?",
       [req.user.id, req.body.notes || null, id]
     );
 
-    const [typeSetting] = await db.query('SELECT site_role FROM application_settings WHERE application_type = ?', [app[0].application_type]);
-    if (typeSetting && typeSetting.length && typeSetting[0].site_role) {
+    if (grantRole) {
       const [applicant] = await db.query('SELECT role FROM users WHERE id = ?', [app[0].user_id]);
       const adminRoles = ['owner', 'admin', 'moderator', 'support'];
       if (!applicant.length || !adminRoles.includes(applicant[0].role)) {
-        await db.query('UPDATE users SET role = ? WHERE id = ?', [typeSetting[0].site_role, app[0].user_id]);
+        await db.query('UPDATE users SET role = ? WHERE id = ?', [grantRole, app[0].user_id]);
+        clearUserCache(app[0].user_id);
       }
     }
 
@@ -1079,7 +1106,18 @@ router.put('/applications/settings/:type', checkPermission('app_types_edit'), as
     if (description !== undefined) { sets.push('description = ?'); vals.push(description.substring(0, 5000)); }
     if (requirements !== undefined) { sets.push('requirements = ?'); vals.push(requirements.substring(0, 5000)); }
     if (image !== undefined) { sets.push('image = ?'); vals.push(image.substring(0, 255)); }
-    if (site_role !== undefined) { sets.push('site_role = ?'); vals.push(site_role.substring(0, 50)); }
+    /* أمن — site_role لا يُضبط على 'owner' أبداً (مكافأة التقديم ليست طريقاً للمالكية)،
+       وغير المالك لا يضبط رتبة مساوية أو أعلى من رتبته */
+    if (site_role !== undefined) {
+      const sr = String(site_role || '').trim().substring(0, 50);
+      if (sr === 'owner') return res.status(403).json({ error: 'لا يمكن ضبط رتبة المكافأة إلى المالك' });
+      if (sr) {
+        const srRank = await rankOfRole(sr);
+        const myRank = await rankOfRole(req.user.role);
+        if (srRank <= myRank) return res.status(403).json({ error: 'لا يمكنك ضبط رتبة مكافأة مساوية أو أعلى من رتبتك' });
+      }
+      sets.push('site_role = ?'); vals.push(sr);
+    }
     if (discord_role_id !== undefined) { sets.push('discord_role_id = ?'); vals.push(discord_role_id.substring(0, 50)); }
     if (discord_role_id_2 !== undefined) { sets.push('discord_role_id_2 = ?'); vals.push(discord_role_id_2.substring(0, 50)); }
     if (discord_role_id_3 !== undefined) { sets.push('discord_role_id_3 = ?'); vals.push(discord_role_id_3.substring(0, 50)); }
