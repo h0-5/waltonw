@@ -6,11 +6,15 @@ const PORT = process.env.PORT || 3000;
 
 // Last-resort safety net — Node ≥15 kills the process on an unhandled rejection,
 // and one dead async handler must never 500 the whole site. Log loudly, stay up.
+// + جرس ديسكورد: نستلم سبب الانهيار الحقيقي بدل ما يضيع بلوج منصة لا يُرى
+const { sendServerAlarm } = require('./utils/webhooks');
 process.on('unhandledRejection', (err) => {
   console.error('[unhandledRejection]', err && err.message ? err.message : err);
+  sendServerAlarm('unhandledRejection', err).catch(() => {});
 });
 process.on('uncaughtException', (err) => {
   console.error('[uncaughtException]', err && err.message ? err.message : err);
+  sendServerAlarm('uncaughtException', err).catch(() => {});
 });
 
 const server = http.createServer(app);
@@ -62,6 +66,21 @@ io.on('connection', (socket) => {
     }
     io.emit('users:online', Array.from(onlineUsers.values()));
   });
+});
+
+/* ══ الإصغاء أولاً قبل أي عمل إقلاع (إصلاح خطأ 500 — رسالة هادي 1548691246355320905) ══
+   كان السيرفر ما يفتح منفذه إلا بعد اكتمال الهجرة والشفاء الذاتي، وأي تعثر مؤقت
+   بقاعدة Aiven (بطء/صيانة/انقطاع) كان يرمي من migrate فـ process.exit(1) وحلقة
+   انهيار مستمرة: الحاوية تعيد الإقلاع وتفشل من جديد والمستخدم يرى 500 من المنصة.
+   الآن: المنفذ يُفتح فوراً فالموقع يظل حياً حتى أثناء تعثر القاعدة (كل الصفحات
+   فيها fallback آمن)، وأي فشل هجرة يعاد المحاولة 3 مرات ولا يخرج العملية أبداً */
+server.listen(PORT, () => {
+  console.log(`\n  Walton Family Server running on http://localhost:${PORT}\n`);
+  // Auto-connect Discord bot if enabled
+  try {
+    const bot = require('./bot/client');
+    bot.connectBot().catch(() => {});
+  } catch(e) {}
 });
 
 // بذرة مراحل العقوبات: تُزرع فقط إذا كان الجدول فارغاً (أول إنشاء له) —
@@ -480,7 +499,23 @@ async function start() {
   } catch (e) { /* fresh DB → run migration */ }
 
   if (needMigrate) {
-    await migrate();
+    /* هجرة بمحاولات معادة — أي تعثر مؤقت بالقاعدة لا يقتل الإقلاع (كان يرمي مباشرة
+       فـ start().catch يخرج العملية → حلقة انهيار → المستخدم يرى 500 من المنصة) */
+    let migrated = false, migrateErr = null;
+    for (let attempt = 1; attempt <= 3 && !migrated; attempt++) {
+      try {
+        await migrate();
+        migrated = true;
+      } catch (err) {
+        migrateErr = err;
+        console.error('⚠️ migrate attempt ' + attempt + '/3 failed:', err.message);
+        if (attempt < 3) await new Promise(r => setTimeout(r, 7000));
+      }
+    }
+    if (!migrated) {
+      console.error('❌ migration failed after 3 attempts — staying up (pages serve with safe fallbacks)');
+      sendServerAlarm('migrate-failed', migrateErr, [{ name: 'Impact', value: 'الموقع شغال — الهجرة لم تكتمل، ستعاد عند الإقلاع القادم', inline: false }]).catch(() => {});
+    }
     try {
       await db.query(
         "INSERT INTO site_settings (setting_key, setting_value) VALUES ('schema_version', ?) ON DUPLICATE KEY UPDATE setting_value = ?",
@@ -655,18 +690,9 @@ async function start() {
   setInterval(() => {
     require('./routes/index').prewarmSharedCaches().catch(() => {});
   }, 45 * 1000).unref();
-
-  server.listen(PORT, () => {
-    console.log(`\n  Walton Family Server running on http://localhost:${PORT}\n`);
-    // Auto-connect Discord bot if enabled
-    try {
-      const bot = require('./bot/client');
-      bot.connectBot().catch(() => {});
-    } catch(e) {}
-  });
 }
 
 start().catch(err => {
-  console.error('❌ Fatal:', err.message);
-  process.exit(1);
+  console.error('❌ boot failed (site stays up — listen already open, fallbacks protect pages):', err.message);
+  sendServerAlarm('boot-failed', err, [{ name: 'Impact', value: 'الموقع ظل حياً — راجع الخطأ وأعد النشر عند الإصلاح', inline: false }]).catch(() => {});
 });

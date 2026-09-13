@@ -318,6 +318,15 @@ app.use((req, res) => {
 app.use((err, req, res, next) => {
   console.error('[ERROR]', new Date().toISOString(), err.message);
   console.error(err.stack);
+  /* جرس أخطاء الخادم — سبب الـ500 الحقيقي يوصل ديسكورد الطاقم فوراً (بطلبه:
+     «عم يطلع خطأ 500 شوف ليه») — fire-and-forget مقتوح: صفر تأخير على الرد */
+  try {
+    require('./utils/webhooks').sendServerAlarm('500', err, [
+      { name: 'المسار', value: ('`' + req.method + ' ' + String(req.originalUrl || req.url || '/').slice(0, 140) + '`').slice(0, 180), inline: true },
+      { name: 'الحالة', value: String(err.status || 500), inline: true },
+      { name: 'المستخدم', value: (req.user && req.user.username) ? req.user.username : (req.isAuthenticated && req.isAuthenticated() ? 'مسجل' : 'زائر'), inline: true }
+    ]).catch(() => {});
+  } catch (e) { /* الجرس لا يكسر الرد أبداً */ }
   const statusCode = err.status || 500;
   try {
     res.status(statusCode).render('pages/error', {

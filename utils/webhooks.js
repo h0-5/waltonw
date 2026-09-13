@@ -111,4 +111,33 @@ async function logAdminAction(userId, username, action, targetType, targetId, ta
   });
 }
 
-module.exports = { sendWebhook, sendTestWebhook, refreshWebhookUrls, isDiscordWebhookUrl, logAdminAction };
+/* ══ جرس أخطاء الخادم — كل 500/انهيار يبعث سببه الحقيقي لويبهوك الطاقم فوراً ══
+   بطلبه: «عم يطلع خطأ 500 شوف ليه» — لوج المنصة لا يُرى من هنا، فمن الآن كل خطأ
+   يوصل ديسكورد بالمسار والستاك تروسة = نعرف السبب من أول رسالة بدل التخمين.
+   صفر تكلفة على الطلب: fire-and-forget + مهلة sendWebhook 5s + خنق داخلي
+   (نفس الخطأ مرة/دقيقة، و12 جرساً كحد أقصى بالدقيقة حتى لا يُزعج القناة) */
+const _alarmState = { lastMsg: {}, lastKindAt: {}, stamps: [] };
+async function sendServerAlarm(kind, err, fields) {
+  try {
+    const now = Date.now();
+    /* سقف عام: 12 جرساً بالدقيقة — انفجار الأخطاء ما يغرق القناة */
+    _alarmState.stamps = _alarmState.stamps.filter(t => now - t < 60000);
+    if (_alarmState.stamps.length >= 12) return;
+    const msg = String((err && (err.stack || err.message)) || err || 'unknown').slice(0, 1200);
+    /* نفس الخطأ المتكرر: مرة واحدة بالدقيقة فقط */
+    if (_alarmState.lastMsg[kind] === msg && now - (_alarmState.lastKindAt[kind] || 0) < 60000) return;
+    _alarmState.lastMsg[kind] = msg;
+    _alarmState.lastKindAt[kind] = now;
+    _alarmState.stamps.push(now);
+    await sendWebhook('WH_STAFF_CHAT', {
+      username: 'Walton Server Guard',
+      title: '🚨 خطأ خادم — ' + kind,
+      description: '```\n' + msg.slice(0, 900) + '\n```',
+      fields: Array.isArray(fields) ? fields.slice(0, 6) : [],
+      color: 0xef4444,
+      footer: 'Walton Family — Server Errors'
+    });
+  } catch (e) { /* الجرس لا يكسر أبداً */ }
+}
+
+module.exports = { sendWebhook, sendTestWebhook, refreshWebhookUrls, isDiscordWebhookUrl, logAdminAction, sendServerAlarm };
