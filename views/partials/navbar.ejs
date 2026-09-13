@@ -229,26 +229,36 @@ async function deleteAllNotifications() {
     .catch(function () {});
 })();
 
-/* ═══ حبة التنقل (ديسكتوب ≥1024 فقط) — نسخة المينيسكوس الكاملة بطلب هادي:
-   ① تدحرج فيزيائي: الدوران يتناسب مع المسافة بنفس المدة والمنحنى، ومدة الحركة تتناسب مع البعد
-   ② الودّ/الحفرة يتبعها ويشمّ اتجاهها: الكتف الخلفي يتمدد والأمامي ينقبض أثناء الحركة
-     (wb-lean-*) ويرتد لاستقامته عند الوقوف — والحفرة ظاهرة دائماً حتى والكرة بمقرّها
-   ③ ثقل: الوقوف على الشريط يغور الكرة 4px داخل الودّ ويغور الرابط الحامل 2px
+/* ═══ حبة التنقل (ديسكتوب ≥1024 فقط) — نسخة «الخط الحي» بطلب هادي:
+   ① خط حافة الكبسولة نفسه هو اللي ينطعج: قطع منفصلة (wb-edge) كل وحدة تغور
+     بعمق جاوس حسب بعدها عن الكرة وتدور بميل المماس — المنطعج يتشكّل بمكانها
+     الجديد والقديم يرجع طبيعي بنفس مدة وسرعة التدحرج (طلب 1548519324744941720)
+   ② تدحرج فيزيائي: الدوران يتناسب مع المسافة بنفس المدة والمنحنى النابض،
+     ومدة الحركة تتناسب مع البعد
+   ③ الحفرة (ودّ داكن + انعكاس بلون الثيم) تتبع الكرة وتشمّ اتجاهها (wb-lean-*)
+     — ظاهرة دائماً حتى والكرة بمقرّها
+   ④ ثقل: الوقوف على الشريط يغور الكرة 4px داخل الودّ ويغور الرابط الحامل 2px
      وتهبط الكبسولة 2px، وعند الارتطام بعد قفزة طويلة تنضغط وترتد (transitionend)
-   ④ لا فتح تلقائي إلا بعد وصول الكرة ثم وقوف ثانية كاملة فوق الرابط — طلب هادي الصريح:
-     «خليها تصبر ثانية، مو أول ما يحط الماوس على الاسم» — العد يبدأ بعد الهبوط لا بعد الهوفر
-   كل الحركة transform/opacity فقط (وtop 3px لموضع الكرة عند الأحداث فقط) — بلا
-   مؤقتات دورية ولا rAF: مؤقتان قصيران عند الأحداث فقط (انتظار الوصول ثم عدّ الوقوف) ═══ */
+   ⑤ لا فتح تلقائي إلا بعد وصول الكرة ثم وقوف ثانية كاملة فوق الرابط — طلب هادي
+     الصريح: «خليها تصبر ثانية» — العد يبدأ بعد الهبوط لا بعد الهوفر
+   الكرة كلها بلون ثيم الموقع var(--accent) بلا أي أبيض — وكل الحركة
+   transform/opacity فقط — بلا مؤقتات دورية ولا rAF: مؤقتان قصيران عند
+   الأحداث فقط (انتظار الوصول ثم عدّ الوقوف) ═══ */
 (function () {
   var wrap = document.querySelector('.ds-navlinks');
   if (!wrap || !window.matchMedia('(min-width: 1024px)').matches) return;
 
+  var edge = document.createElement('span');
+  edge.className = 'wb-edge';
+  edge.setAttribute('aria-hidden', 'true');
   var dent = document.createElement('span');
   dent.className = 'wb-dent';
   dent.setAttribute('aria-hidden', 'true');
   var bead = document.createElement('span');
   bead.className = 'wb-bead';
   bead.setAttribute('aria-hidden', 'true');
+  /* ترتيب الرسم: خط الحافة ثم الحفرة فوقه ثم الكرة فوق الكل */
+  wrap.appendChild(edge);
   wrap.appendChild(dent);
   wrap.appendChild(bead);
 
@@ -258,6 +268,32 @@ async function deleteAllNotifications() {
   var R = 21;              /* نصف قطر الكرة 42px — الإزاحة ÷ نصف القطر = زاوية التدحرج */
   var RAD = 180 / Math.PI; /* راديان → درجة */
   var DWELL = 1000;        /* وقوف كامل: ثانية فوق الرابط بعد وصول الكرة حتى يفتح */
+
+  /* خط الحافة الحيّ — قطع منفصلة تنحني تحت ثقل الكرة:
+     كل قطعة تغور بعمق جاوس حسب بعدها عن مركز الثقل وتدور بميل المماس،
+     وبنفس var(--wb-dur) ومنحنى تدحرج الكرة — فالمنطعج يتشكّل بمكانها
+     الجديد والقديم يرجع طبيعي بنفس السرعة والنعومة */
+  var SEGS = [], SEG_W = 12, EDGE_PAD = 30, SAG = 19, SIG = 38, SIG2 = 2 * SIG * SIG;
+  function buildEdge() {
+    var n = Math.max(0, Math.floor((wrap.clientWidth - EDGE_PAD * 2) / SEG_W));
+    if (n === SEGS.length) return;
+    edge.innerHTML = '';
+    SEGS = [];
+    for (var i = 0; i < n; i++) {
+      var s = document.createElement('i');
+      s.style.left = (EDGE_PAD + i * SEG_W) + 'px';
+      edge.appendChild(s);
+      SEGS.push(s);
+    }
+  }
+  function bendEdge(x) {
+    for (var i = 0; i < SEGS.length; i++) {
+      var d = EDGE_PAD + i * SEG_W + SEG_W / 2 - x;
+      var dy = SAG * Math.exp(-(d * d) / SIG2); /* عمق الجاوس تحت مركز الثقل */
+      var slope = -(d / SIG2) * dy;             /* ميل المماس — القطع تدور مع انحناء الخط */
+      SEGS[i].style.transform = 'translateY(' + dy.toFixed(2) + 'px) rotate(' + (Math.atan(slope) * RAD).toFixed(2) + 'deg)';
+    }
+  }
 
   function goTo(a, instant) {
     if (!a) return;
@@ -271,7 +307,7 @@ async function deleteAllNotifications() {
       var dx = x - lastX;
       lastDist = Math.abs(dx);
       if (lastDist >= 1) {
-        lastDur = Math.round(Math.min(620, 220 + lastDist * 0.75));
+        lastDur = Math.round(Math.min(560, 200 + lastDist * 0.6));
         rot += (dx / R) * RAD; /* نفس النسبة للدوران والإزاحة وبنفس المدة والمنحنى */
         wrap.style.setProperty('--wb-dur', lastDur + 'ms');
         wrap.style.setProperty('--wb-rot', rot.toFixed(1) + 'deg');
@@ -281,6 +317,7 @@ async function deleteAllNotifications() {
       }
     }
     wrap.style.setProperty('--wb-x', x + 'px');
+    bendEdge(x); /* خط الحافة ينطعج بمكانها الجديد والقديم يرجع بنفس المدة والمنحنى */
     lastX = x;
   }
 
@@ -347,6 +384,7 @@ async function deleteAllNotifications() {
 
   function sync() {
     active = wrap.querySelector('.ds-navlink.active') || active;
+    buildEdge(); /* إعادة بناء القطع لو تغير عرض الكبسولة (resize) */
     goTo(active, true); /* إعادة محاذاة فورية بلا تدحرج */
     bead.classList.add('wb-bead-ready'); /* تظهر بعد أول تحديد — لا وميض بموضع خاطئ */
     wrap.classList.add('wb-on'); /* الحفرة ظاهرة دائماً منذ أول تحديد — مثل المرجع */
