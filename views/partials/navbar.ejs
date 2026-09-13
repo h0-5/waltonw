@@ -229,11 +229,14 @@ async function deleteAllNotifications() {
     .catch(function () {});
 })();
 
-/* ═══ حبة التنقل (ديسكتوب ≥1024 فقط) — v10 بطلب هادي (1548712672487546951):
-   ① لا فتح تلقائي نهائياً — بطلبه الصريح: «شيل انميشن الدائرة لما تنزل لتحت
+/* ═══ حبة التنقل (ديسكتوب ≥1024 فقط) — v13 بطلب هادي (1548787304150343834):
+   ⓪ الحبة ما تتحرك من محلها إلا بضغطة على رابط صفحة أو بضمّها وسحبها بيده —
+     مرور الماوس فوق الهدر وحده لا يحرك شي إطلاقاً، ولا رجوع ذاتي بعد الإفلات
+     ولا عند مغادرة الهدر: ما يحركها إلا ضغطته أو يده
+   ① لا فتح تلقائي نهائياً — بطلبه الصريح (1548712672487546951): «شيل انميشن الدائرة لما تنزل لتحت
      عشان تفتح الصفحة شيله ما نحتاجه اصلا»: الكرة زينة وتدحرج وثقل فقط،
-     والصفحة ما تنفتح إلا بنقرة حقيقية من المستخدم — انشال عدّ الوقوف
-     كله بمؤقتيه وصار السكربت صفر مؤقتات مطلقاً
+     والصفحة ما تنفتح إلا بنقرة حقيقية من المستخدم أو بإفلاتها على صفحة —
+     وانشال عدّ الوقوف بمؤقتيه فصار السكربت صفر مؤقتات مطلقاً
    ② خط الحافة طبيعي مطابق للحد السفلي: 1px بشفافية .14 (نفس --glass-line)
      — كان يطلع 2px بـ .46 فيقرأ أثخن وأسطع من خط الكبسولة «حين مختلف»
    ③ الانطعاج تحت الدائرة فقط (v8): جاوس σ15 وغور 13px والقطع تدور بميل
@@ -248,14 +251,17 @@ async function deleteAllNotifications() {
      الطيران (حتى 1.72× والارتفاع ينكمش معكاساً) ومنحاز الممدد نحو الجهة
      القادمة، وعند الوصول يرتد للدائرة بنابض 240ms مع انضغاط الارتطام —
      طبقة مطّ منفصلة (.wb-squish) عن طبقة الدوران حتى لا تتعارض مُدَتاهما
-   ⑦ السحب والفتح — وصف هادي للمقطع حرفياً (1548733132562370772 «متاكد شفت
+  ⑦ السحب والفتح — وصف هادي للمقطع حرفياً (1548733132562370772 «متاكد شفت
      المقطع كامل؟»): «يسحب الدائرة بالماوس ويوقفها على صفحة يطلع لوغو الصفحة
      من الهدر لمركز للدائرة وتفتح الصفحة» — الكرة تنمسك من جسمها (22px)
      وتنشل من الودّ وتتدحرج مع اليد، وأيقونة كل صفحة تقف عندها تطلع من فتحتها
      بمركز الكرة (.wb-hold تنشأ بالسكربت — صفر HTML) وترجع لفتحتها عند
      المغادرة، وعن الإفلات على صفحة تثبت فيها ويطلع لوغوها لمركزها وتنفتح
      الصفحة، والإفلات بمكان ثاني يرجعها لمقرّها بلا فتح — بلا أي مؤقتات:
-     pointer events و transitionend حصراً ═══ */
+     pointer events و transitionend حصراً
+   ⑧ «ابي حرف الهدر يبان تحتها وهو معطوج لان الان مب واضح كأنه مختفي»:
+     الرابط الحامل يرتفع بالرسم فوق الكرة بلون فاتح وظل ناعم — اسم الصفحة
+     يبان واضح تحت دائرتها بدل ما يبتلعه القرص الداكن والتوهج (بالـ CSS) ═══ */
 (function () {
   var wrap = document.querySelector('.ds-navlinks');
   if (!wrap || !window.matchMedia('(min-width: 1024px)').matches) return;
@@ -283,6 +289,7 @@ async function deleteAllNotifications() {
   var active = wrap.querySelector('.ds-navlink.active') || wrap.querySelector('.ds-navlink');
   var lastX = null, lastDist = 0, lastDur = 0, rot = 0;
   var curLink = null;
+  var parkedLink = null; /* آخر مكان وقفته صاحبها — إعادة المحاذاة تحترمه ولا ترجعها للمقر */
   var R = 21;              /* نصف قطر الكرة 42px — الإزاحة ÷ نصف القطر = زاوية التدحرج */
   var RAD = 180 / Math.PI; /* راديان → درجة */
 
@@ -369,24 +376,44 @@ async function deleteAllNotifications() {
     if (curLink) { curLink.classList.remove('wb-under'); curLink = null; }
   }
 
-  /* تفويض واحد على الحاوية بدل مستمع لكل رابط — الكرة زينة فقط: تدحرج وثقل
-     بلا أي فتح تلقائي، الصفحة تنفتح بنقرة المستخدم على الرابط حصراً */
-  wrap.addEventListener('mouseover', function (e) {
-    if (drag || opening) return;
+  /* ═══ الضغط على رابط صفحة هو اللي يحرك الحبة — مرور الماوس لا يحرك شي
+     (1548787304150343834 حرفياً: «ما تتحرك من محلها الا بحالة ضغط على صفحة
+     من مواس مو مجرد ما حركت الماوس ع هدر تتحرك»): ضغطة على أي رابط والحبة
+     تتدحرج إليه بكل فيزيائها وثقلها وتبقى واقفة عنده — والضغطة على جسم
+     الكرة نفسه يبقى للسحب باليد (المسك من مستند كامل تحت) ═══ */
+  var pressedLink = null;
+  wrap.addEventListener('pointerdown', function (e) {
+    if (drag || opening || (e.button !== undefined && e.button !== 0)) return;
     var a = e.target && e.target.closest ? e.target.closest('.ds-navlink') : null;
-    if (!a || a === curLink) return;
+    if (!a) return;
+    var b = bead.getBoundingClientRect();
+    var gdx = e.clientX - (b.left + b.width / 2);
+    var gdy = e.clientY - (b.top + b.height / 2);
+    if (gdx * gdx + gdy * gdy <= HOLD_R * HOLD_R) return; /* جسم الكرة = سحب باليد */
     clearPress();
+    pressedLink = a;
     curLink = a;
+    parkedLink = a;
     squish.classList.remove('wb-land'); /* أوقف انضغاط الارتطام السابق إن كان يجري */
     a.classList.add('wb-under');
     wrap.classList.add('wb-press');
     goTo(a);
+    e.preventDefault(); /* لا تحديد نص ولا سحب رابط أثناء الضغطة */
   });
 
-  wrap.addEventListener('mouseleave', function () {
-    if (drag || opening) return;
+  /* رفعت اليد = الثقل ينشال فوراً والحبة تبقى واقفة حيث وقفناها — ما فيها
+     رجوع ذاتي لأي مكان (1548787304150343834: «الغي انميشن لخلي دائرة تترك
+     مكانها وتنزل باتجاه اسم صفحة»): النزلة الوحيدة هي إفلاتها على صفحة
+     بالسحب اليدوي، وما بعدها ما يحركها إلا ضغطة جديدة */
+  document.addEventListener('pointerup', function () {
+    if (!pressedLink || drag) return;
     clearPress();
-    goTo(active); /* ترجع لمقرّ الرابط النشط */
+    pressedLink = null;
+  });
+  document.addEventListener('pointercancel', function () {
+    if (!pressedLink || drag) return;
+    clearPress();
+    pressedLink = null;
   });
 
   /* هبوط الكرة: السطح يرتد لاستقامته، والمطّ يرتد للدائرة، والقفزة الطويلة
@@ -542,6 +569,7 @@ async function deleteAllNotifications() {
     if (over) {
       /* الإفلات على صفحة — بالحرف: تثبت فيها ويطلع لوغوها لمركزها وتنفتح */
       curLink = over;
+      parkedLink = over;
       over.classList.add('wb-under');
       wrap.classList.add('wb-press');
       goTo(over); /* تثبيت بمركز الصفحة بنفس فيزياء التدحرج والنابض */
@@ -555,6 +583,7 @@ async function deleteAllNotifications() {
       if (d.over) d.over.classList.remove('wb-under');
       clearPress();
       goTo(curLink || active);
+      parkedLink = curLink || active;
       wrap.style.setProperty('--wb-dy', '0px');
     }
   }
@@ -565,7 +594,7 @@ async function deleteAllNotifications() {
     if (drag) return; /* لا إعادة محاذاة وسط سحب */
     active = wrap.querySelector('.ds-navlink.active') || active;
     buildEdge(); /* إعادة بناء القطع لو تغير عرض الكبسولة (resize) */
-    goTo(active, true); /* إعادة محاذاة فورية بلا تدحرج */
+    goTo(parkedLink || active, true); /* إعادة محاذاة فورية — تحترم المكان اللي وقفه صاحبها */
     bead.classList.add('wb-bead-ready'); /* تظهر بعد أول تحديد — لا وميض بموضع خاطئ */
     wrap.classList.add('wb-on'); /* الحفرة ظاهرة دائماً منذ أول تحديد — مثل المرجع */
   }
