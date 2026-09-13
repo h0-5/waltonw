@@ -263,14 +263,23 @@ async function deleteAllNotifications() {
      الرابط الحامل يرتفع بالرسم فوق الكرة بلون فاتح وظل ناعم — اسم الصفحة
      يبان واضح تحت دائرتها بدل ما يبتلعه القرص الداكن والتوهج (بالـ CSS)
    ⑨ v14 (هادي 1548796998872866937: «ارفع دائرة خلها فوق الخط تماما مب بالمنتصف»):
-     راحة الكرة REST_DY = -20px — المركز مقبوض بمقدار نصف قطر الكرة فوق حافة
-     الكبسولة فقاعها يلمس الخط تماماً ولا ينصّفه، والكبسولة نزلت 18px داخل
-     الشريط (padding-top 36px بالنافبار بالـ CSS) عشان الكرة كاملة ما تقص بحافة
-     الشاشة، ورفعة المسك LIFT وحدود اللعب الرأسي مبنية على الراحة الجديدة،
-     ونافذة إفلات الصفحة اتسعت إلى 52px عمودياً لأن مركز الكرة صار أعلى من
-     نصوص الروابط
+     راحة محسوبة على الحافة غير المنطعجة — عالجتها v15 بالقسم ⑪ لأن الحفرة
+     تغور تحت الكرة فبدت طايرة
    ⑩ «شيل ذا الخيال الاسود لتحرك جوا الدائرة» — بالـ CSS: الكرة لون الثيم
-     الصافي وما فيها أي بقع داكنة تتحرك جواها أثناء التدحرج ═══ */
+     الصافي وما فيها أي بقع داكنة تتحرك جواها أثناء التدحرج
+   ⑪ v15 (هادي 1548815865024348200: «الطابة طايرة لازم تكون فوق الخط مباشر
+     تلامسه مب غارقة جواته او فوقه» + «انطعاج الخط مو طبعي كذا صار مبكسل» +
+     «طابة تنزل لما اجي اغير بين صفحات الغي ذا شي»): ① الراحة REST_DY=-7 —
+     حساب v14 كان على الحافة غير المنطعجة والحفرة تغور 13px تحت الكرة فبدت
+     طايرة فوقها؛ الآن قاع الكرة (+14 = dy+21) يجلس على قاع الخط المنطعج
+     (+13..+14) تلامس حقيقي لا طايرة ولا غارقة، ورفعة المسك LIFT=-11
+     (نفس 4px فوق الراحة) ② الانطعاج صار مسار SVG واحد بكامل العرض يُبنى
+     مرة واحدة (وعند resize فقط) بعينات جاوس كل 3px يعملها المتصفح مُنعّمة
+     — كانت قطع 10px مدورة تقرأ مدرّجة ومتكسرة — وينزلق مع الكرة عبر
+     translateX(var(--wb-x)) بنفس مدة ومنحنى التدحرج وصفر عمل جافاسكربت
+     لكل حركة ③ الضغطة على رابط صفحة صارت حركة أفقية حصراً: انشال غور
+     الكرة عند الضغط وهبوط الكبسولة معه وانضغاط الارتطام عند تغيير الصفحة
+     (clickRoll) — ما ينزل شيء لما تغيّر صفحة، والسحب اليدوي يحفظ ثقله ═══ */
 (function () {
   var wrap = document.querySelector('.ds-navlinks');
   if (!wrap || !window.matchMedia('(min-width: 1024px)').matches) return;
@@ -302,36 +311,45 @@ async function deleteAllNotifications() {
   var R = 21;              /* نصف قطر الكرة 42px — الإزاحة ÷ نصف القطر = زاوية التدحرج */
   var RAD = 180 / Math.PI; /* راديان → درجة */
 
-  /* خط الحافة الحيّ — قطع متداخلة تقرأ كخط واحد متصل (v9 بطلب هادي 1548700388948054030:
-     «خلي خط الهدر يظهر كخط متصل مثل الخط اللي من تحت مع حفاظ ع تأثير»):
-     كل قطعة أوسع من خطوتها (14px على خطوة 10px — العرض بـ CSS) وتتمركز على مركز
-     خطوتها، والتداخل 4px يسدّ أي فتحة عند دوران المفصل، وشفافية الحاوية كوحدة
-     واحدة (opacity .46 بـ CSS على .wb-edge) تمنع تراكم اللون عند الدرزات —
-     فالخط يظل شريطاً موحداً ينطعج تحت الكرة ويستقيم بنفس مدة ومنحنى التدحرج.
-     كل قطعة تغور بعمق جاوس حسب بعدها عن مركز الثقل وتدور بميل المماس
-     (v8: جاوس ضيق σ=15 وغور 13px — الانطعاج تحت الدائرة وحدها بلا مبالغة،
-     رسالة هادي 1548691246355320905: «مبالغ فيه خليه تحت دائرة فقط») */
-  var SEGS = [], SEG_W = 10, EDGE_PAD = 30, SAG = 13, SIG = 15, SIG2 = 2 * SIG * SIG;
+  /* خط الحافة الحيّ — مسار SVG واحد بكامل العرض (v15 بطلب هادي 1548815865024348200:
+     «انطعاج الخط مو طبعي كذا صار مبكسل»): بدل القطع المدورة القصيرة اللي كانت
+     تقرأ مدرّجة ومتكسرة، الخط كله مسار متجه واحد يُبنى مرة واحدة — ويعاد
+     بناؤه عند تغيّر عرض الكبسولة فقط — بعينات جاوس كل 3px والمتصفح ينعّم
+     حوافه تلقائياً فالمنطعج يطلع طبيعي ناعم. الحفرة تنزلق مع الكرة عبر
+     translateX(var(--wb-x)) بمدة ومنحنى التدحرج نفسها (transition بـ CSS —
+     صفر عمل جافاسكربت لكل حركة). نفس مواصفات v8/v10: غور 13px وσ=15
+     وسماكة 1px بلون #fff معتم وشفافية الحاوية .14 كوحدة واحدة */
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  var SAG = 13, SIG = 15, SIG2 = 2 * SIG * SIG;
+  var DIP_R = 45; /* نصف نافذة رسم الجاوس = 3σ — الذيل بعدها أقل من 1% */
+  var edgeSvg = null, edgePath = null, edgeW = 0;
   function buildEdge() {
-    var n = Math.max(0, Math.floor((wrap.clientWidth - EDGE_PAD * 2) / SEG_W));
-    if (n === SEGS.length) return;
-    edge.innerHTML = '';
-    SEGS = [];
-    for (var i = 0; i < n; i++) {
-      var s = document.createElement('i');
-      /* تمركز القطعة (14px بالـ CSS) على مركز خطوتها — مركز الانحناء يطابق مركزها */
-      s.style.left = (EDGE_PAD + i * SEG_W + SEG_W / 2 - 7) + 'px';
-      edge.appendChild(s);
-      SEGS.push(s);
+    var w = wrap.clientWidth;
+    if (edgeSvg && w === edgeW) return;
+    edgeW = w;
+    if (!edgeSvg) {
+      edgeSvg = document.createElementNS(SVGNS, 'svg');
+      edgePath = document.createElementNS(SVGNS, 'path');
+      edgePath.setAttribute('fill', 'none');
+      edgePath.setAttribute('stroke', '#fff');
+      edgePath.setAttribute('stroke-width', '1');
+      edgePath.setAttribute('stroke-linejoin', 'round');
+      edgeSvg.appendChild(edgePath);
+      edge.appendChild(edgeSvg);
     }
-  }
-  function bendEdge(x) {
-    for (var i = 0; i < SEGS.length; i++) {
-      var d = EDGE_PAD + i * SEG_W + SEG_W / 2 - x;
-      var dy = SAG * Math.exp(-(d * d) / SIG2); /* عمق الجاوس تحت مركز الثقل */
-      var slope = -(d / SIG2) * dy;             /* ميل المماس — القطع تدور مع انحناء الخط */
-      SEGS[i].style.transform = 'translateY(' + dy.toFixed(2) + 'px) rotate(' + (Math.atan(slope) * RAD).toFixed(2) + 'deg)';
+    /* المسار بضعف عرض الكبسولة والحفرة بمركزه: left=-العرض translateX(--wb-x)
+       يجيء بمركز الحفرة على مركز الكرة بأي موضع — والقص بـ CSS يمنع التمرير */
+    edgeSvg.setAttribute('width', w * 2);
+    edgeSvg.setAttribute('height', 20);
+    edgeSvg.setAttribute('viewBox', '0 0 ' + (w * 2) + ' 20');
+    edgeSvg.style.left = -w + 'px';
+    var d = 'M 0 0.5 L ' + (w - DIP_R) + ' 0.5';
+    for (var x = w - DIP_R; x <= w + DIP_R; x += 3) {
+      var dd = x - w;
+      d += ' L ' + x + ' ' + (0.5 + SAG * Math.exp(-(dd * dd) / SIG2)).toFixed(2);
     }
+    d += ' L ' + (w * 2) + ' 0.5';
+    edgePath.setAttribute('d', d);
   }
 
   function goTo(a, instant) {
@@ -375,8 +393,7 @@ async function deleteAllNotifications() {
         squish.style.setProperty('--wb-sy', Math.max(0.78, 1 / sx).toFixed(3));
       }
     }
-    wrap.style.setProperty('--wb-x', x + 'px');
-    bendEdge(x); /* خط الحافة ينطعج بمكانها الجديد والقديم يرجع بنفس المدة والمنحنى */
+    wrap.style.setProperty('--wb-x', x + 'px'); /* خط الحافة والحفرة ينزلقون معها بنفس المدة والمنحنى (transition) */
     lastX = x;
   }
 
@@ -388,9 +405,11 @@ async function deleteAllNotifications() {
   /* ═══ الضغط على رابط صفحة هو اللي يحرك الحبة — مرور الماوس لا يحرك شي
      (1548787304150343834 حرفياً: «ما تتحرك من محلها الا بحالة ضغط على صفحة
      من مواس مو مجرد ما حركت الماوس ع هدر تتحرك»): ضغطة على أي رابط والحبة
-     تتدحرج إليه بكل فيزيائها وثقلها وتبقى واقفة عنده — والضغطة على جسم
-     الكرة نفسه يبقى للسحب باليد (المسك من مستند كامل تحت) ═══ */
-  var pressedLink = null;
+     تتدحرج إليه بأكمل فيزيائها أفقياً وتبقى واقفة عنده — v15 (1548815865024348200:
+     «طابة تنزل لما اجي اغير بين صفحات الغي ذا شي»): الضغطة صارت أفقية حصراً،
+     لا هبوط كرة ولا كبسولة ولا انضغاط ارتطام عند تغيير الصفحة — والضغطة
+     على جسم الكرة نفسه يبقى للسحب باليد (المسك من مستند كامل تحت) ═══ */
+  var pressedLink = null, clickRoll = false;
   wrap.addEventListener('pointerdown', function (e) {
     if (drag || opening || (e.button !== undefined && e.button !== 0)) return;
     var a = e.target && e.target.closest ? e.target.closest('.ds-navlink') : null;
@@ -403,9 +422,8 @@ async function deleteAllNotifications() {
     pressedLink = a;
     curLink = a;
     parkedLink = a;
+    clickRoll = true; /* تغيير صفحة بالضغط = أفقي حصراً — لا انضغاط ارتطام */
     squish.classList.remove('wb-land'); /* أوقف انضغاط الارتطام السابق إن كان يجري */
-    a.classList.add('wb-under');
-    wrap.classList.add('wb-press');
     goTo(a);
     e.preventDefault(); /* لا تحديد نص ولا سحب رابط أثناء الضغطة */
   });
@@ -435,7 +453,7 @@ async function deleteAllNotifications() {
     /* رجوع المطّ للدائرة بنابض 240ms — لحظة وصول الكرة بالضبط مثل المقطع */
     squish.style.setProperty('--wb-sx', '1');
     squish.style.setProperty('--wb-sy', '1');
-    if (lastDist < 40) return;
+    if (lastDist < 40 || clickRoll) return; /* تغيير صفحة بالضغط — بلا انضغاط نزول (v15) */
     squish.classList.remove('wb-land');
     void squish.offsetWidth; /* إعادة تشغيل الأنميشن حتى لو تكرر الارتطام بنفس الموضع */
     squish.classList.add('wb-land');
@@ -450,8 +468,10 @@ async function deleteAllNotifications() {
   var drag = null, opening = false;
   var REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var HOLD_R = 22;   /* نصف قطر جسم الكرة القابل للمسك — الهوفر والنقر على الروابط لم يُمس */
-  var REST_DY = -20; /* راحة الكرة فوق الخط (v14): المركز مقبوض بمقدار نصف القطر — القاع يلامس الحافة تماماً */
-  var LIFT = -24;    /* رفعة أول المسك — تنشل 4px فوق راحتها، وسقف مساحة الرأس فوق (ما تقص بالحافة) */
+  var REST_DY = -7;  /* راحة الكرة (v15 هادي 1548815865024348200 «فوق الخط مباشر تلامسه»):
+                        الحفرة تغور 13px تحت الكرة — قاع الكرة (+14 = dy+21) يجلس
+                        على قاع الخط المنطعج (+13..+14) تلامس حقيقي: لا طايرة ولا غارقة */
+  var LIFT = -11;    /* رفعة أول المسك — 4px فوق الراحة تنشلها من الخط بيد */
 
   /* أيقونة الرابط تطلع من فتحتها بالهدر (+24px من تحت) وتستقر بمركز الكرة،
      وعن المغادرة ترجع لفتحتها — كل عنصر ينشأ بالسكربت (صفر HTML زيادة)
@@ -524,7 +544,7 @@ async function deleteAllNotifications() {
       var r = links[i].getBoundingClientRect();
       rects.push({ a: links[i], l: r.left, r: r.right, cy: r.top + r.height / 2 });
     }
-    drag = { id: e.pointerId, sx: e.clientX, sy: e.clientY, moved: false, rects: rects, over: null, bendX: -1e9 };
+    drag = { id: e.pointerId, sx: e.clientX, sy: e.clientY, moved: false, rects: rects, over: null };
     try { wrap.setPointerCapture(e.pointerId); } catch (err) {}
     wrap.style.setProperty('--wb-dy', LIFT + 'px'); /* الرفعة أول المسك */
     e.preventDefault(); /* لا تحديد نص ولا نقرة تمرّ للرابط تحت الكرة */
@@ -536,6 +556,7 @@ async function deleteAllNotifications() {
       var mx = e.clientX - drag.sx, my = e.clientY - drag.sy;
       if (mx * mx + my * my < 36) return; /* تحت 6px = ضغطة بلا سحب */
       drag.moved = true;
+      clickRoll = false; /* سحب يدوي — انضغاط الارتطام يرجع عند الإفلات على صفحة */
       swapCarry(null); /* باليد الكرة فاضية — أيقونة المقر رجعت لفتحتها */
       pendingCarry = null;
       wrap.classList.add('wb-dragging'); /* ملصوقة باليد: بلا transition */
@@ -552,10 +573,9 @@ async function deleteAllNotifications() {
       rot += ((px - lastX) / R) * RAD; /* تدحرج فيزيائي مع اليد — نفس نسبة التدحرج */
       wrap.style.setProperty('--wb-rot', rot.toFixed(1) + 'deg');
     }
-    wrap.style.setProperty('--wb-x', px + 'px');
+    wrap.style.setProperty('--wb-x', px + 'px'); /* خط الحافة والحفرة يتبعون بـ transition 90ms — صفر عمل يدوي */
     wrap.style.setProperty('--wb-dy', py + 'px');
     lastX = px;
-    if (px - drag.bendX >= 4 || drag.bendX - px >= 4) { bendEdge(px); drag.bendX = px; }
     var over = hitLink(e.clientX, wr.top + py);
     if (over !== drag.over) {
       if (drag.over) drag.over.classList.remove('wb-under');
@@ -581,6 +601,7 @@ async function deleteAllNotifications() {
     wrap.classList.remove('wb-dragging');
     if (over) {
       /* الإفلات على صفحة — بالحرف: تثبت فيها ويطلع لوغوها لمركزها وتنفتح */
+      clickRoll = false; /* سحب يدوي — انضغاط الجلوس موجود هنا */
       curLink = over;
       parkedLink = over;
       over.classList.add('wb-under');
@@ -606,7 +627,7 @@ async function deleteAllNotifications() {
   function sync() {
     if (drag) return; /* لا إعادة محاذاة وسط سحب */
     active = wrap.querySelector('.ds-navlink.active') || active;
-    buildEdge(); /* إعادة بناء القطع لو تغير عرض الكبسولة (resize) */
+    buildEdge(); /* إعادة بناء مسار الخط لو تغير عرض الكبسولة (resize) */
     goTo(parkedLink || active, true); /* إعادة محاذاة فورية — تحترم المكان اللي وقفه صاحبها */
     bead.classList.add('wb-bead-ready'); /* تظهر بعد أول تحديد — لا وميض بموضع خاطئ */
     wrap.classList.add('wb-on'); /* الحفرة ظاهرة دائماً منذ أول تحديد — مثل المرجع */
