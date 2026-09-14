@@ -313,7 +313,17 @@ async function deleteAllNotifications() {
      (مفتوح من الفتحة العلوية وحدها) والخط الحي المنزلق يُقص على الخط
      المركزي لحد الكبسولة نفسه (clip-path بنصف قطر الزاوية الفعلي) فينتهي
      بعين نقطة التماس حيث يبدأ القوس — التحام لصق بلا طغيان ولا قطع مكشوف
-     بأي موضع للكرة حتى أقصى الزاوية ═══ */
+     بأي موضع للكرة حتى أقصى الزاوية
+   ⑮ v19 (هادي 1251665502242213979 «خط الهدر ياخي شوف كيف مفتوح من زواية من فوق»):
+     قصّ v18 inset(0.5 round rc) كان على حاوية wb-edge كلها — وأقواس الغطاء
+     الساكن مراكزها على حدّ القص ذاته فيننسج نصف سماكتها وتطلع الزوايا العلوية
+     باهتة يقرأها «مفتوحة». الآن: الحاوية بلا قص، والغطاء الساكن بكامل سماكته،
+     والقص انتقل لغلاف ثابت (.wb-livewrap) على الخط الحي وحده قصّاً مستقيماً
+     عند نقطتَي التماس بالضبط — الزاويتان مسكّرتان بسطر متصل بلا فجوة.
+     ومعها «لو سحبتها بمواس وقفتها عن صفحة معينة تنفتح صفحة ذي ويطلع لوغو
+     صفحة للدائرة بشكل سلس مدري ليه انشالو» — رجّعنا فتح الصفحة بالإفلات
+     اللي انشال بـ v17: لوغو الصفحة يطلع لمركز الكرة بالسلسلة الأصلية وبعد
+     ما يستقر (360ms) ينتقل لها — والانتقال يُلغى بأي مسك أو ضغطة جديدة ═══ */
 (function () {
   var wrap = document.querySelector('.ds-navlinks');
   if (!wrap || !window.matchMedia('(min-width: 1024px)').matches) return;
@@ -363,6 +373,7 @@ async function deleteAllNotifications() {
   var SVGNS = 'http://www.w3.org/2000/svg';
   var SAG = 13, SIG = 15;
   var edgeSvg = null, capSvg = null, tubePath = null, capPath = null;
+  var liveWrap = null; /* v19: غلاف القص الثابت للخط الحي — الزوايا مسكّرة به */
   var edgeW = 0, edgeH = 0, edgeR = -1, fitL = -1, fitR = -1;
   function buildEdge(cx) {
     var w = wrap.clientWidth;
@@ -376,6 +387,8 @@ async function deleteAllNotifications() {
     if (edgeSvg && w === edgeW && hbb === edgeH && rc === edgeR && sl === fitL && sr === fitR) return;
     edgeW = w; edgeH = hbb; edgeR = rc; fitL = sl; fitR = sr;
     if (!edgeSvg) {
+      /* v19: الغطاء الساكن يُلحق بالحاوية مباشرة (بلا أي قص — ينرسم بكامل
+         سماكته فالزوايا واضحة)، والخط الحي يُلحق بغلاف القص الثابت */
       capSvg = document.createElementNS(SVGNS, 'svg');
       capPath = document.createElementNS(SVGNS, 'path');
       capPath.setAttribute('fill', 'none');
@@ -397,7 +410,11 @@ async function deleteAllNotifications() {
       tubePath.setAttribute('stroke-linejoin', 'round');
       tubePath.setAttribute('opacity', '.4'); /* أنبوبة واحدة بوضوح موحّد */
       edgeSvg.appendChild(tubePath);
-      edge.appendChild(edgeSvg);
+      liveWrap = document.createElement('span');
+      liveWrap.className = 'wb-livewrap';
+      liveWrap.setAttribute('aria-hidden', 'true');
+      liveWrap.appendChild(edgeSvg);
+      edge.appendChild(liveWrap);
     }
     /* جسم الغطاء بإحداثيات صندوق الكبسولة بالحدود: من الطرف العلوي الأيمن
        حول النصف الأيمن كله ثم القاع ثم النصف الأيسر حتى الطرف العلوي الأيسر —
@@ -415,9 +432,11 @@ async function deleteAllNotifications() {
       ' L ' + lS + ' ' + reff +
       ' A ' + rc + ' ' + rc + ' 0 0 1 ' + lT + ' 0.5';
     capPath.setAttribute('d', cd);
-    /* القص على الخط المركزي للحد بالضبط: منتصف سماكة الحد — حيث تعيش أجسام
-       المسارين معاً فينتهي الخط الحي عند نقطة التماس ويبدأ القوس من بعدها */
-    edge.style.clipPath = 'inset(0.5px 0.5px 0.5px 0.5px round ' + rc + 'px)';
+    /* v19: القص على غلاف الخط الحي وحده — قصّ مستقيم عند نقطتَي التماس
+       (reff من كل جهة = موضع بداية القوسين) بلا تدوير: طرفا الخط الحي
+       ينقطعان قصاً عمودياً بعين نقطة التماس ويلتئمان بقوسي الغطاء
+       بكامل السماك، والغطاء نفسه بلا قص فزوايا الأنبوبة واضحة ماسكة */
+    liveWrap.style.clipPath = 'inset(0 ' + reff + 'px 0 ' + reff + 'px)';
 
     /* المسار بضعف عرض الكبسولة والحفرة بمركزه: left=-العرض translateX(--wb-x)
        يجيء بمركز الحفرة على مركز الكرة بأي موضع — والقص بـ clip-path العنصر
@@ -499,6 +518,7 @@ async function deleteAllNotifications() {
   var pressedLink = null, clickRoll = false;
   wrap.addEventListener('pointerdown', function (e) {
     if (drag || (e.button !== undefined && e.button !== 0)) return;
+    if (dropNav) { clearTimeout(dropNav); dropNav = null; } /* v19: ضغطة جديدة تشال الانتقال المعلّق */
     var a = e.target && e.target.closest ? e.target.closest('.ds-navlink') : null;
     if (!a) return;
     var b = bead.getBoundingClientRect();
@@ -550,9 +570,11 @@ async function deleteAllNotifications() {
 
   /* ═══ حوز لوغو الصفحة + السحب باليد — وصف هادي للمقطع (1548733132562370772):
      «يسحب الدائرة بالماوس ويوقفها على صفحة» — بالمسح الكرة فاضية تتبع اليد،
-     وعن الإفلات على صفحة تثبت فوقها فقط — v17 (1548861478076157995): لا لوغو
-     ولا انتقال بالإفلات، اللوغو لصفحة تُفتح بضغطة حقيقية حصراً ═══ */
+     وعن الإفلات على صفحة تثبت فوقها — v17 (1548861478076157995) كان شال
+     اللوغو والانتقال عن الإفلات، ورجّعه v19 (1251665502242213979): الإفلات
+     يحوز اللوغو وينفتح الصفحة بعد استقراره ═══ */
   var carryLink = null, pendingCarry = null, holds = [];
+  var dropNav = null; /* v19: مؤقت الانتقال بعد الإفلات على صفحة — يُشال بأي مسك أو ضغطة جديدة */
   var drag = null;
   var HOLD_R = 22;   /* نصف قطر جسم الكرة القابل للمسك — الهوفر والنقر على الروابط لم يُمس */
   var REST_DY = -7;  /* راحة الكرة (v15 هادي 1548815865024348200 «فوق الخط مباشر تلامسه»):
@@ -612,6 +634,7 @@ async function deleteAllNotifications() {
     var gdx = e.clientX - (b.left + b.width / 2);
     var gdy = e.clientY - (b.top + b.height / 2);
     if (gdx * gdx + gdy * gdy > HOLD_R * HOLD_R) return;
+    if (dropNav) { clearTimeout(dropNav); dropNav = null; } /* v19: مسك جديد يشال الانتقال المعلّق */
     var links = wrap.querySelectorAll('.ds-navlink');
     var rects = [];
     for (var i = 0; i < links.length; i++) {
@@ -672,9 +695,12 @@ async function deleteAllNotifications() {
     if (!d.moved) return; /* ضغطة بلا سحب — الكرة على راحتها الثابتة أصلاً */
     wrap.classList.remove('wb-dragging');
     if (over) {
-      /* v17 (1548861478076157995 «لما تسحب بمواس دائرة لصفحة ما يصير»):
-         الإفلات على صفحة = وقوف فقط — ما لوغو وما انتقال: الكرة تثبت فوقها
-         وتنضغط بنابض الجلوس وخلاص، واللوغو لصفحة تنفتح بضغطة حقيقية حصراً */
+      /* v19 (هادي 1251665502242213979 «لو سحبتها بمواس وقفتها عن صفحة معينة
+         تنفتح صفحة ذي ويطلع لوغو صفحة للدائرة بشكل سلس مدري ليه انشالو»):
+         رجّعنا فتح الصفحة بالإفلات اللي انشاله v17 — الكرة تثبت بمركز الصفحة
+         بفيزياء التدحرج نفسها، ولوغو الصفحة يطلع من فتحته لمركز الكرة
+         بالسلسلة الأصلية (swapCarry)، وحين يستقر ينتقل للصفحة — نبضة انتقال
+         وحيدة 360ms تُشال بأي مسك جديد أو ضغطة قبلها فما ينقلب الفتح فجأة */
       clickRoll = false; /* سحب يدوي — انضغاط الجلوس موجود هنا */
       curLink = over;
       parkedLink = over;
@@ -684,6 +710,16 @@ async function deleteAllNotifications() {
       squish.classList.remove('wb-land'); /* انضغاط الجلوس في الودّ */
       void squish.offsetWidth;
       squish.classList.add('wb-land');
+      swapCarry(over); /* لوغو الصفحة يطلع لمركز الكرة — نفس حركة الضغطة الحقيقية */
+      var dest = over.getAttribute('href') || '/';
+      if (new URL(dest, location.href).pathname !== location.pathname) {
+        /* الإفلات على الصفحة الحالية = جلوس فقط بلا إعادة تحميل */
+        if (dropNav) clearTimeout(dropNav);
+        dropNav = setTimeout(function () {
+          dropNav = null;
+          if (!drag) location.assign(dest); /* ما صار مسك ولا ضغطة جديدة — انتقل */
+        }, 360); /* 240ms طلوع اللوغو + نبضة استقرار */
+      }
     } else {
       /* الإفلات بأي مكان ثاني — ترجع لمقرّها بالنابض ولا شيء ينفتح */
       if (d.over) d.over.classList.remove('wb-under');
@@ -691,7 +727,7 @@ async function deleteAllNotifications() {
       goTo(curLink || active);
       parkedLink = curLink || active;
     }
-    pendingCarry = null; /* v17 (1548861478076157995): الإفلات ما يحوز لوغو — اللوغو لضغطة حقيقية حصراً */
+    pendingCarry = null; /* الإفلات يحوز اللوغو بنفسه أعلاه (v19) — بلا طريق مزدوج */
   }
   document.addEventListener('pointerup', function (e) { endDrag(e, false); });
   document.addEventListener('pointercancel', function (e) { endDrag(e, true); });
