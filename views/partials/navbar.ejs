@@ -235,7 +235,7 @@ async function deleteAllNotifications() {
      ولا عند مغادرة الهدر: ما يحركها إلا ضغطته أو يده
    ① لا فتح تلقائي نهائياً — بطلبه الصريح (1548712672487546951): «شيل انميشن الدائرة لما تنزل لتحت
      عشان تفتح الصفحة شيله ما نحتاجه اصلا»: الكرة زينة وتدحرج وثقل فقط،
-     والصفحة ما تنفتح إلا بنقرة حقيقية من المستخدم أو بإفلاتها على صفحة —
+     والصفحة ما تنفتح إلا بنقرة حقيقية من المستخدم على رابط الصفحة حصراً —
      وانشال عدّ الوقوف بمؤقتيه فصار السكربت صفر مؤقتات مطلقاً
    ② خط الحافة طبيعي مطابق للحد السفلي: 1px بشفافية .14 (نفس --glass-line)
      — كان يطلع 2px بـ .46 فيقرأ أثخن وأسطع من خط الكبسولة «حين مختلف»
@@ -251,14 +251,13 @@ async function deleteAllNotifications() {
      الطيران (حتى 1.72× والارتفاع ينكمش معكاساً) ومنحاز الممدد نحو الجهة
      القادمة، وعند الوصول يرتد للدائرة بنابض 240ms مع انضغاط الارتطام —
      طبقة مطّ منفصلة (.wb-squish) عن طبقة الدوران حتى لا تتعارض مُدَتاهما
-  ⑦ السحب والفتح — وصف هادي للمقطع حرفياً (1548733132562370772 «متاكد شفت
-     المقطع كامل؟»): «يسحب الدائرة بالماوس ويوقفها على صفحة يطلع لوغو الصفحة
-     من الهدر لمركز للدائرة وتفتح الصفحة» — الكرة تنمسك من جسمها (22px)
-     وتنشل من الودّ وتتدحرج مع اليد فاضية (لوغو صفحتها الحالية يرجع لفتحته
-     عند المسك)، وعن الإفلات على صفحة تثبت فيها ويطلع لوغوها لمركزها وتنفتح
-     الصفحة، والإفلات بمكان ثاني يرجعها لمقرّها بلا فتح — وحوز اللوغو بالمسح
-     انلغى بـ v16 (1548840856545656843): اللوغو لصفحة تنفتح حصراً — بلا أي
-     مؤقتات: pointer events و transitionend حصراً
+  ⑦ السحب — وصف هادي للمقطع (1548733132562370772): «يسحب الدائرة بالماوس
+     ويوقفها على صفحة» — الكرة تنمسك من جسمها (22px) وتنشل من الودّ وتتدحرج
+     مع اليد فاضية (لوغو صفحتها الحالية يرجع لفتحته عند المسك)، وعن الإفلات
+     على صفحة تثبت فيها — وحوز اللوغو بالمسح انلغى بـ v16 (1548840856545656843)
+     وظهور اللوغو عند الإفلات انلغى هو الآخر بـ v17 (1548861478076157995):
+     اللوغو لصفحة تُفتح بضغطة حقيقية حصراً — بلا أي مؤقتات: pointer events
+     و transitionend حصراً
    ⑧ «ابي حرف الهدر يبان تحتها وهو معطوج لان الان مب واضح كأنه مختفي»:
      الرابط الحامل يرتفع بالرسم فوق الكرة بلون فاتح وظل ناعم — اسم الصفحة
      يبان واضح تحت دائرتها بدل ما يبتلعه القرص الداكن والتوهج (بالـ CSS)
@@ -295,7 +294,17 @@ async function deleteAllNotifications() {
      تحت الدائرة لانه الان مختفي كما في صورة 4 تماماً» — المنطعج صار
      مساراً منفصلاً بوضوح .5 يُرسم فوق الكرة (الخط z=4 والكرة z=3 وحرف
      الرابط الحامل z=5) فيبان مرسوماً تحت الدائرة، والمستقيم يبقى بخفته
-     الزجاجية .14 ═══ */
+     الزجاجية .14
+   ⑬ v17 (هادي 1548861478076157995 بصورتين): ① «شوف ذا انميشن الغيه لما تسحب
+     بمواس دائرة لصفحة ما يصير» — الإفلات على صفحة صار وقوفاً فقط: ما لوغو
+     وما انتقال، الكرة تثبت فوق الصفحة وتنضغط بنابض الجلوس وخلاص — اللوغو
+     يطلع لمركزها حصراً لما تنفتح صفحة فعلاً بضغطة رابط حقيقية أو لأنها
+     صفحتها الحالية ② «قلت لك خليها مسكرة دائما؟» — خط الحافة صار أنبوبة
+     واحدة متصلة: مسار SVG واحد من أول الشريط لآخره (مستقيم + حفرة + مستقيم
+     بنفس المسار) بوضوح موحّد .4 — انشال انفصال الشفافيتين (مستقيم خفيف
+     مقابل منطعج ساطع) اللي كان يقرأ قطعتين منفصلتين مفتوحة الأطراف حتى
+     قرب الزوايا — المنطعج يبقى واضحاً تحت الكرة بعمقه الهندسي والأنبوبة
+     سالسة بلا فاصل بأي موضع ═══ */
 (function () {
   var wrap = document.querySelector('.ds-navlinks');
   if (!wrap || !window.matchMedia('(min-width: 1024px)').matches) return;
@@ -328,21 +337,21 @@ async function deleteAllNotifications() {
   var R = 21;              /* نصف قطر الكرة 42px — الإزاحة ÷ نصف القطر = زاوية التدحرج */
   var RAD = 180 / Math.PI; /* راديان → درجة */
 
-  /* خط الحافة الحيّ — مسارا SVG (v15 بطلب هادي 1548815865024348200 «انطعاج
-     الخط مو طبعي صار مبكسل»: مسار متجه بعينات جاوس كل 3px والمتصفح ينعّمه؛
-     v16 بطلب هادي 1548840856545656843): المسار الأول مستقيم بخفة زجاجية
-     .14 والثاني المنطعج تحت الكرة بوضوح .5 — «خلي خط المعطوج يوضح تحت
-     الدائرة لانه الان مختفي كما في صورة 4 تماماً». وأكتاف المنطعج تُقاس
-     على مساحة كل جهة (σ = المساحة ÷ 3 بحد أقصى 15): «نهاية الشريط خليها
-     تكمل انبولة ما تكون كذا مفتوحة يعني خليهم متصلين ببعض مب كذا فاصلهم
-     حتى لو كانت الدائرة قريبة من زاوية» — المنحنى يكمل دورته ويلتحم بالخط
-     قبل الحافة بأي موضع حتى أقصى السحب والنهايات مغلقة بخط دائري. الحفرة
-     تنزلق مع الكرة عبر translateX(var(--wb-x)) بمدة ومنحنى التدحرج نفسها
-     (transition بـ CSS — صفر عمل جافاسكربت لكل حركة، والبناء عند تغيّر
-     العرض أو الأكتاف فقط) */
+  /* خط الحافة الحيّ — أنبوبة واحدة (v17 بطلب هادي 1548861478076157995
+     «قلت لك خليها مسكرة دائما؟»): كان الخط مسارين — مستقيم بخفة زجاجية
+     ومنطعج بوضوح ساطع — فالتحامهما المختلف الشفافية يقرأ قطعتين منفصلتين
+     مفتوحة الأطراف حتى قرب الزوايا. الآن مسار SVG واحد متصل من أول الشريط
+     لآخره (مستقيم + حفرة + مستقيم بمسار واحد) بوضوح موحّد .4 — «خلي خط
+     المعطوج يوضح تحت الدائرة» (1548840856545656843) محقق بعمق الحفرة
+     الهندسي لا بتغيّر الشفافية، والأنبوبة سالسة بلا أي فاصل بأي موضع.
+     وأكتاف الحفرة تُقاس على مساحة كل جهة (σ = المساحة ÷ 3 بحد أقصى 15)
+     فالمنحنى يكمل دورته ويلتحم بالمستقيم قبل الحافة بأي موضع حتى أقصى
+     السحب. الحفرة تنزلق مع الكرة عبر translateX(var(--wb-x)) بمدة ومنحنى
+     التدحرج نفسها (transition بـ CSS — صفر عمل جافاسكربت لكل حركة، والبناء
+     عند تغيّر العرض أو الأكتاف فقط) */
   var SVGNS = 'http://www.w3.org/2000/svg';
   var SAG = 13, SIG = 15;
-  var edgeSvg = null, basePath = null, dipPath = null, edgeW = 0, fitL = -1, fitR = -1;
+  var edgeSvg = null, tubePath = null, edgeW = 0, fitL = -1, fitR = -1;
   function buildEdge(cx) {
     var w = wrap.clientWidth;
     var sl = Math.min(SIG, Math.max(4, (cx - 6) / 3));     /* كتف اليسار على مساحته */
@@ -351,21 +360,14 @@ async function deleteAllNotifications() {
     edgeW = w; fitL = sl; fitR = sr;
     if (!edgeSvg) {
       edgeSvg = document.createElementNS(SVGNS, 'svg');
-      basePath = document.createElementNS(SVGNS, 'path');
-      basePath.setAttribute('fill', 'none');
-      basePath.setAttribute('stroke', '#fff');
-      basePath.setAttribute('stroke-width', '1');
-      basePath.setAttribute('stroke-linecap', 'round');
-      basePath.setAttribute('opacity', '.14'); /* المستقيم بخفته الزجاجية نفسها */
-      dipPath = document.createElementNS(SVGNS, 'path');
-      dipPath.setAttribute('fill', 'none');
-      dipPath.setAttribute('stroke', '#fff');
-      dipPath.setAttribute('stroke-width', '1');
-      dipPath.setAttribute('stroke-linecap', 'round');
-      dipPath.setAttribute('stroke-linejoin', 'round');
-      dipPath.setAttribute('opacity', '.5'); /* المنطعج واضح تحت الدائرة */
-      edgeSvg.appendChild(basePath);
-      edgeSvg.appendChild(dipPath);
+      tubePath = document.createElementNS(SVGNS, 'path');
+      tubePath.setAttribute('fill', 'none');
+      tubePath.setAttribute('stroke', '#fff');
+      tubePath.setAttribute('stroke-width', '1');
+      tubePath.setAttribute('stroke-linecap', 'round');
+      tubePath.setAttribute('stroke-linejoin', 'round');
+      tubePath.setAttribute('opacity', '.4'); /* أنبوبة واحدة بوضوح موحّد */
+      edgeSvg.appendChild(tubePath);
       edge.appendChild(edgeSvg);
     }
     /* المسار بضعف عرض الكبسولة والحفرة بمركزه: left=-العرض translateX(--wb-x)
@@ -375,15 +377,15 @@ async function deleteAllNotifications() {
     edgeSvg.setAttribute('viewBox', '0 0 ' + (w * 2) + ' 20');
     edgeSvg.style.left = -w + 'px';
     var x0 = w - sl * 3, x1 = w + sr * 3;
-    basePath.setAttribute('d',
-      'M 0 0.5 L ' + x0 + ' 0.5 M ' + x1 + ' 0.5 L ' + (w * 2) + ' 0.5');
-    var d = 'M ' + x0 + ' 0.5';
+    /* مسار واحد متصل: مستقيم + حفرة + مستقيم — يُرسم دفعة واحدة فلا يوجد
+       التقاء مسارين ولا تلاقي شفافيتين يقرأ فتحة أنبوبة في أي موضع */
+    var d = 'M 0 0.5 L ' + x0 + ' 0.5';
     for (var x = x0 + 3; x < x1; x += 3) {
       var dd = x - w, sg = dd < 0 ? sl : sr;
       d += ' L ' + x + ' ' + (0.5 + SAG * Math.exp(-(dd * dd) / (2 * sg * sg))).toFixed(2);
     }
-    d += ' L ' + x1 + ' 0.5';
-    dipPath.setAttribute('d', d);
+    d += ' L ' + x1 + ' 0.5 L ' + (w * 2) + ' 0.5';
+    tubePath.setAttribute('d', d);
   }
 
   function goTo(a, instant) {
@@ -446,7 +448,7 @@ async function deleteAllNotifications() {
      على جسم الكرة نفسه يبقى للسحب باليد (المسك من مستند كامل تحت) ═══ */
   var pressedLink = null, clickRoll = false;
   wrap.addEventListener('pointerdown', function (e) {
-    if (drag || opening || (e.button !== undefined && e.button !== 0)) return;
+    if (drag || (e.button !== undefined && e.button !== 0)) return;
     var a = e.target && e.target.closest ? e.target.closest('.ds-navlink') : null;
     if (!a) return;
     var b = bead.getBoundingClientRect();
@@ -496,12 +498,12 @@ async function deleteAllNotifications() {
   /* بعد انتهاء الانضغاط تُرفع الكلاس ليعود التحكم بالدوران للانتقال (transition) لا للأنميشن */
   squish.addEventListener('animationend', function () { squish.classList.remove('wb-land'); });
 
-  /* ═══ حوز لوغو الصفحة + السحب باليد + فتح الصفحة — وصف هادي للمقطع حرفياً
-     (1548733132562370772): «يسحب الدائرة بالماوس ويوقفها على صفحة يطلع لوغو
-     الصفحة من الهدر لمركز للدائرة وتفتح الصفحة» ═══ */
+  /* ═══ حوز لوغو الصفحة + السحب باليد — وصف هادي للمقطع (1548733132562370772):
+     «يسحب الدائرة بالماوس ويوقفها على صفحة» — بالمسح الكرة فاضية تتبع اليد،
+     وعن الإفلات على صفحة تثبت فوقها فقط — v17 (1548861478076157995): لا لوغو
+     ولا انتقال بالإفلات، اللوغو لصفحة تُفتح بضغطة حقيقية حصراً ═══ */
   var carryLink = null, pendingCarry = null, holds = [];
-  var drag = null, opening = false;
-  var REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var drag = null;
   var HOLD_R = 22;   /* نصف قطر جسم الكرة القابل للمسك — الهوفر والنقر على الروابط لم يُمس */
   var REST_DY = -7;  /* راحة الكرة (v15 هادي 1548815865024348200 «فوق الخط مباشر تلامسه»):
                         الحفرة تغور 13px تحت الكرة — قاع الكرة (+14 = dy+21) يجلس
@@ -543,21 +545,6 @@ async function deleteAllNotifications() {
     if (ix > -1) holds.splice(ix, 1);
   });
 
-  /* فتح الصفحة بعد ما يستقر لوغوها بمركز الكرة — بالضبط مثل تسلسل المقطع:
-     الوقوف على الصفحة يطلع اللوغو، واكتمال طلوعه يفتح الصفحة */
-  function openPage(a) {
-    if (opening) return;
-    opening = true;
-    pendingCarry = null;
-    if (REDUCED) { window.location.assign(a.href); return; }
-    var h = swapCarry(a);
-    if (h) h.addEventListener('transitionend', function (e) {
-      if (e.propertyName !== 'transform') return;
-      window.location.assign(a.href);
-    });
-    else window.location.assign(a.href);
-  }
-
   /* نافذة الإفلات العمودية 52px (v14): مركز الكرة فوق الخط أعلى بنحو نصف قطرها
      من نصوص الروابط — النافذة الأوسع تلتقط الإفلات وهي راكبة على الخط */
   function hitLink(cx, cy) {
@@ -570,7 +557,7 @@ async function deleteAllNotifications() {
 
   /* المسك من مستند كامل — الكرة راحةً وسحباً تعلو حدود الكبسولة فوق الخط (v14) */
   document.addEventListener('pointerdown', function (e) {
-    if (drag || opening || (e.button !== undefined && e.button !== 0)) return;
+    if (drag || (e.button !== undefined && e.button !== 0)) return;
     var b = bead.getBoundingClientRect();
     var gdx = e.clientX - (b.left + b.width / 2);
     var gdy = e.clientY - (b.top + b.height / 2);
@@ -635,7 +622,9 @@ async function deleteAllNotifications() {
     if (!d.moved) return; /* ضغطة بلا سحب — الكرة على راحتها الثابتة أصلاً */
     wrap.classList.remove('wb-dragging');
     if (over) {
-      /* الإفلات على صفحة — بالحرف: تثبت فيها ويطلع لوغوها لمركزها وتنفتح */
+      /* v17 (1548861478076157995 «لما تسحب بمواس دائرة لصفحة ما يصير»):
+         الإفلات على صفحة = وقوف فقط — ما لوغو وما انتقال: الكرة تثبت فوقها
+         وتنضغط بنابض الجلوس وخلاص، واللوغو لصفحة تنفتح بضغطة حقيقية حصراً */
       clickRoll = false; /* سحب يدوي — انضغاط الجلوس موجود هنا */
       curLink = over;
       parkedLink = over;
@@ -645,7 +634,6 @@ async function deleteAllNotifications() {
       squish.classList.remove('wb-land'); /* انضغاط الجلوس في الودّ */
       void squish.offsetWidth;
       squish.classList.add('wb-land');
-      openPage(over);
     } else {
       /* الإفلات بأي مكان ثاني — ترجع لمقرّها بالنابض ولا شيء ينفتح */
       if (d.over) d.over.classList.remove('wb-under');
@@ -653,6 +641,7 @@ async function deleteAllNotifications() {
       goTo(curLink || active);
       parkedLink = curLink || active;
     }
+    pendingCarry = null; /* v17 (1548861478076157995): الإفلات ما يحوز لوغو — اللوغو لضغطة حقيقية حصراً */
   }
   document.addEventListener('pointerup', function (e) { endDrag(e, false); });
   document.addEventListener('pointercancel', function (e) { endDrag(e, true); });
