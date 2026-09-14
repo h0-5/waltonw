@@ -34,6 +34,31 @@ function invalidateQueryCache() {
   queryCache.clear();
 }
 
+/* استعلامات الأخبار بشفاء ذاتي (نفس منطق qCache + علاج عمود ناقص):
+   قاعدة حية قديمة ناقصة أعمدة news (schema_version محدّث يتخطى migrate فلا تنطبق
+   ALTERات الأخبار) ترمي Unknown column — كانت safeQuery تبلعه فيختفي الأخبار بصمت.
+   الآن: نشخّص نوع الخطأ، نشفي schema، ونعيد المحاولة مرة واحدة ونخزّن النتيجة */
+async function newsQuery(sql, params = [], ttl = QUERY_TTL) {
+  const key = sql + '|' + (params || []).join('|');
+  const hit = queryCache.get(key);
+  if (hit && Date.now() - hit.at < ttl) return hit.rows;
+  try {
+    const [rows] = await db.execute(sql, params);
+    queryCache.set(key, { at: Date.now(), rows });
+    return rows;
+  } catch (e) {
+    const bad = e && (e.code === 'ER_BAD_FIELD_ERROR' || /Unknown column/i.test(e.message || ''));
+    if (!bad) return [];
+    try {
+      const { ensureNewsSchema } = require('../utils/db-heal');
+      await ensureNewsSchema();
+      const [rows] = await db.execute(sql, params);
+      queryCache.set(key, { at: Date.now(), rows });
+      return rows;
+    } catch (e2) { return []; }
+  }
+}
+
 // Get site settings (cached 30s — settings таблица يتغير نادراً، وقاعدة الـVPN API بعيدة)
 let settingsCache = null;
 let settingsCacheAt = 0;
@@ -67,9 +92,9 @@ router.get('/', isAuthenticated, isInGuild, checkPageAccess('/'), async (req, re
     /* الأخبار المنشورة حصراً — كان الفلتر is_hidden فقط فالمسودات (is_published=0) تظهر للناس
        رغم أن اللوحة تعرضها «مسودة»، والمسابقات بلا تاريخ انتهاء (NULL) تسقط من شرط
        expires_at > NOW() فما تظهر أبداً — النشر الآن: is_hidden=0 + منشور + غير منتهي */
-    qCache('SELECT * FROM news WHERE is_hidden = 0 AND (is_published IS NULL OR is_published = 1) ORDER BY created_at DESC LIMIT 10'),
+    newsQuery('SELECT * FROM news WHERE is_hidden = 0 AND (is_published IS NULL OR is_published = 1) ORDER BY created_at DESC LIMIT 10'),
     qCache('SELECT COUNT(*) as c FROM users'),
-    qCache("SELECT * FROM news WHERE type = 'giveaway' AND (expires_at IS NULL OR expires_at > NOW()) AND is_hidden = 0 AND (is_published IS NULL OR is_published = 1)", [], 5000),
+    newsQuery("SELECT * FROM news WHERE type = 'giveaway' AND (expires_at IS NULL OR expires_at > NOW()) AND is_hidden = 0 AND (is_published IS NULL OR is_published = 1)", [], 5000),
     qCache('SELECT id, name, price_points, price_money, category_type, description FROM fs_products ORDER BY id ASC LIMIT 2'),
     qCache('SELECT category, rule_text FROM rules ORDER BY sort_order ASC LIMIT 8'),
     qCache('SELECT application_type, requirements FROM application_settings ORDER BY id ASC')
@@ -452,9 +477,9 @@ async function prewarmSharedCaches() {
   await Promise.all([
     warm('settings', () => getSettings(true)),
     warm('home', () => Promise.all([
-      qCache('SELECT * FROM news WHERE is_hidden = 0 AND (is_published IS NULL OR is_published = 1) ORDER BY created_at DESC LIMIT 10'),
+      newsQuery('SELECT * FROM news WHERE is_hidden = 0 AND (is_published IS NULL OR is_published = 1) ORDER BY created_at DESC LIMIT 10'),
       qCache('SELECT COUNT(*) as c FROM users'),
-      qCache("SELECT * FROM news WHERE type = 'giveaway' AND (expires_at IS NULL OR expires_at > NOW()) AND is_hidden = 0 AND (is_published IS NULL OR is_published = 1)", [], 5000),
+      newsQuery("SELECT * FROM news WHERE type = 'giveaway' AND (expires_at IS NULL OR expires_at > NOW()) AND is_hidden = 0 AND (is_published IS NULL OR is_published = 1)", [], 5000),
       qCache('SELECT id, name, price_points, price_money, category_type, description FROM fs_products ORDER BY id ASC LIMIT 2'),
       qCache('SELECT category, rule_text FROM rules ORDER BY sort_order ASC LIMIT 8'),
       qCache('SELECT application_type, requirements FROM application_settings ORDER BY id ASC')

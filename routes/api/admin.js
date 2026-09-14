@@ -361,17 +361,30 @@ function parseExpiry(expires_at) {
   return { ok: true, value: s };
 }
 
+/* كتابة الأخبار بشفاء ذاتي: قاعدة حية قديمة ناقصة أعمدة (schema_version محدّث
+   يتخطى migrate فلا تنطبق ALTERات الأخبار) كانت ترمي Unknown column —
+   نشفّ schema ونعيد المحاولة مرة واحدة فتشتغل الإضافة/التعديل/الإظهار */
+const { ensureNewsSchema, isBadField } = require('../../utils/db-heal');
+const healRetry = async (op) => {
+  try { return await op(); }
+  catch (e) {
+    if (!isBadField(e)) throw e;
+    await ensureNewsSchema();
+    return await op();
+  }
+};
+
 router.post('/news', checkPermission('news_add'), async (req, res) => {
   try {
     const { title, content, type, image, is_published, is_hidden } = req.body;
     const exp = parseExpiry(req.body.expires_at);
     if (!exp.ok) return res.status(400).json({ error: 'صيغة تاريخ الانتهاء غير صالحة' });
-    const [result] = await db.execute(
+    const [result] = await healRetry(() => db.execute(
       'INSERT INTO news (title, content, type, image, author_id, is_published, is_hidden, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())',
       [title, content, type || 'news', image || null, req.user.id,
        is_published !== undefined ? is_published : 1,
        is_hidden ? 1 : 0, exp.value]
-    );
+    ));
     res.json({ success: true, id: result.insertId });
   } catch(e) { fail(res, e); }
 });
@@ -381,12 +394,12 @@ router.put('/news/:id', checkPermission('news_add'), async (req, res) => {
     const { title, content, type, image, is_published, is_hidden } = req.body;
     const exp = parseExpiry(req.body.expires_at);
     if (!exp.ok) return res.status(400).json({ error: 'صيغة تاريخ الانتهاء غير صالحة' });
-    await db.execute(
+    await healRetry(() => db.execute(
       'UPDATE news SET title=?, content=?, type=?, image=?, is_published=?, is_hidden=?, expires_at=? WHERE id=?',
       [title, content, type || 'news', image || null,
        is_published !== undefined ? is_published : 1,
        is_hidden ? 1 : 0, exp.value, req.params.id]
-    );
+    ));
     res.json({ success: true });
   } catch(e) { fail(res, e); }
 });
@@ -395,7 +408,7 @@ router.put('/news/:id', checkPermission('news_add'), async (req, res) => {
 router.post('/news/:id/visibility', checkPermission('news_add'), async (req, res) => {
   try {
     const hide = req.body.is_hidden ? 1 : 0;
-    const [r] = await db.execute('UPDATE news SET is_hidden = ? WHERE id = ?', [hide, req.params.id]);
+    const [r] = await healRetry(() => db.execute('UPDATE news SET is_hidden = ? WHERE id = ?', [hide, req.params.id]));
     if (!r.affectedRows) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, is_hidden: hide });
   } catch(e) { fail(res, e); }

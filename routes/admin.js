@@ -191,14 +191,26 @@ router.get('/orders', checkPermission('store_orders_view'), async (req, res) => 
 });
 
 // News
+/* صفحة إدارة الأخبار بشفاء ذاتي: قاعدة قديمة ناقصة عمود (author_id مثلاً) كانت
+   ترندر قائمة فارغة بصمت — نصحح schema ونعيد الاستعلام مرة واحدة قبل الهبوط للفارغة */
 router.get('/news', checkPermission('news_add'), async (req, res) => {
-  try {
-    const [news] = await db.execute('SELECT n.*, u.username as author_name FROM news n LEFT JOIN users u ON n.author_id = u.id ORDER BY n.id DESC');
+  const newsSql = 'SELECT n.*, u.username as author_name FROM news n LEFT JOIN users u ON n.author_id = u.id ORDER BY n.id DESC';
+  const load = async () => {
+    const [news] = await db.execute(newsSql);
     const [giveaways] = await db.execute('SELECT id, title FROM giveaways ORDER BY id DESC');
-    res.render('admin/news', { title: 'إدارة الأخبار', news, giveaways, currentPath: req.originalUrl });
+    return [news, giveaways];
+  };
+  let pairs;
+  try {
+    pairs = await load();
   } catch(err) {
-    res.render('admin/news', { title: 'إدارة الأخبار', news: [], giveaways: [], currentPath: req.originalUrl });
+    try {
+      const { ensureNewsSchema } = require('../utils/db-heal');
+      await ensureNewsSchema();
+      pairs = await load();
+    } catch(e2) { pairs = [[], []]; }
   }
+  res.render('admin/news', { title: 'إدارة الأخبار', news: pairs[0], giveaways: pairs[1], currentPath: req.originalUrl });
 });
 
 // Tickets

@@ -604,6 +604,16 @@ async function start() {
     }
   } catch (e) { console.log('⚠️ in_guild ensure failed:', e.message); }
 
+  // شفاء ذاتي لنظام الأخبار — مستقل تماماً عن schema_version (نفس علة in_guild/rule_stages:
+  // قاعدة رقمها محدّث تتخطى migrate فأعمدة news المضافة لاحقاً ما تنطبق → الأخبار تختفي من
+  // الرئيسية وإضافة خبر من اللوحة يرمي خطأ). فحص information_schema واحد رخيص كل إقلاع
+  // يضيف الناقص ويوحّد تخطيطي الجدول القديمين (author_id/is_published و created_by/is_hidden)
+  try {
+    const { ensureNewsSchema } = require('./utils/db-heal');
+    await ensureNewsSchema();
+    console.log('✅ news schema ensured');
+  } catch (e) { console.log('⚠️ news schema ensure failed:', e.message); }
+
   // شفاء ذاتي لجدول مراحل العقوبات — مستقل تماماً عن schema_version (الإنتاج كان الجدول مفقوداً فيه
   // رغم ترقية الإصدار) — فحص information_schema رخيص كل إقلاع يضمن: الجدول موجود + عمود اللون موجود + بذرة لو فارغ
   try {
