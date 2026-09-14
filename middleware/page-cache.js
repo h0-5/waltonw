@@ -66,7 +66,7 @@ function pageCacheMiddleware(req, res, next) {
       if (hit && Date.now() - hit.at < CONTENT_TTL && (!ct || ct.indexOf('html') !== -1)) {
         const p = req.path || req.originalUrl.split('?')[0];
         if (isSafeBrowserPublic(p)) {
-          res.setHeader('Cache-Control', 'private, max-age=15');
+          res.setHeader('Cache-Control', 'private, max-age=30');
         }
         return res.type('html').send(hit.html);
       }
@@ -116,7 +116,7 @@ function pageCacheMiddleware(req, res, next) {
               pageCache.set(cacheKey(req, uid), { at: Date.now(), html });
             }
             if (isSafeBrowserPublic(p)) {
-              res.setHeader('Cache-Control', 'private, max-age=15');
+              res.setHeader('Cache-Control', 'private, max-age=30');
             }
           }
         }

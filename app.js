@@ -272,13 +272,14 @@ app.use(function (req, res, next) {
 });
 
 // كاش قصير لصفحات المحتوى شبه الثابت — التنقل بينها يصير لحظي من كاش متصفح العميل
-// بلا أي طلب ولا تكلفة سيرفر (private = كاش العميل فقط). الصفحات الديناميكية
-// (store/company/properties/profile/orders/applications) تبقى بلا TTL — لها ETag
-// revalidation تلقائي مع التحميل الخفي فترد 304 سريعة بدون إعادة تنزيل
+// بلا أي طلب ولا تكلفة سيرفر (private = كاش العميل فقط). 30 ثانية موحّدة مع كاش
+// page-cache (نفس السياسة بكل الصفحات الآمنة) — التعديلات تصل خلال ≤30ث كحد أقصى.
+// الصفحات الديناميكية (store/company/properties/profile/orders/applications) تبقى بلا TTL
+// — لها ETag revalidation تلقائي مع التحميل الخفي فترد 304 سريعة بدون إعادة تنزيل
 var CONTENT_TTL_PAGES = ['/', '/about', '/rules', '/community', '/contact', '/support', '/games'];
 app.use(function (req, res, next) {
   if (req.method === 'GET' && CONTENT_TTL_PAGES.indexOf(req.path) !== -1) {
-    res.set('Cache-Control', 'private, max-age=60');
+    res.set('Cache-Control', 'private, max-age=30');
   }
   next();
 });

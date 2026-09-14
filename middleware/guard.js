@@ -100,6 +100,13 @@ const SEARCH_BOT_RE = /googlebot|bingbot|duckduckbot|slurp|yandexbot|yandeximage
    التي تجرب مسارات شائعة تسقط فيها مباشرة. */
 const TRAP_RE = /^\/(wp-login\.php|wp-admin|phpmyadmin|\.env|\.git\/|backup\.zip|database\.sql|config\.php\.bak|admin\/config\.php|xmlrpc\.php|shell\.php|aspnet_client\/)/i;
 
+/* الأصول الثابتة القابلة للتخزين (css/js/صور/خطوط) — ما تنحسب بالفيضان.
+   التصفح الطبيعي + السحب الخلفي (WFI prefetch) يطلقون ٢٠-٣٠ طلب أصل خلال ثوانٍ
+   بكل تنقل — عدّها بعدّاد الفيضان كان يقرّب المستخدمين النشطين من عتبة الحظر
+   (٨٠ طلب/١٠ث = حظر ١٥ دقيقة) بلا أي ذنب. الفيضان الحقيقي يُقاس على الصفحات
+   والـAPI — الأصول ما تكسر التطبيق وإن انفجرت (ملفات ميتة من الكاش). */
+const STATIC_ASSET_RE = /\.(?:css|js|mjs|map|png|jpe?g|webp|gif|svg|avif|ico|woff2?|ttf|otf|eot|txt)(?:\?|$)/i;
+
 let initPromise = null;
 function ensureTables() {
   if (!initPromise) {
@@ -321,15 +328,17 @@ function guard(req, res, next) {
   }
 
   // 4) Flood detection (applies to everyone, bots included)
+  // الأصول الثابتة تتخطى عدّادَي الفيضان (تعليق أعلاه) — burstCount=0 يلغي إشارة burst بالتقييم
+  const isStaticAsset = STATIC_ASSET_RE.test(req.path);
   const now = Date.now();
 
   let min = minuteWin.get(ip);
   if (!min || now - min.start > 60000) { min = { count: 0, start: now }; minuteWin.set(ip, min); }
-  min.count++;
+  if (!isStaticAsset) min.count++;
 
   let burst = burstWin.get(ip);
   if (!burst || now - burst.start > 10000) { burst = { count: 0, start: now }; burstWin.set(ip, burst); }
-  burst.count++;
+  if (!isStaticAsset) burst.count++;
 
   if (isWhitelisted(ip)) return next(); // القائمة البيضاء: تجتاز الفيضان والمسبار (ليس أدوات الهجوم)
 
@@ -344,8 +353,8 @@ function guard(req, res, next) {
     return deny(res, 429, 'Too Many Requests — تم حظرك مؤقتاً (' + cfg.autoBlockMinutes + ' دقيقة)', cfg.autoBlockMinutes * 60);
   }
 
-  // 5) التقييم السلوكي — بلا أي تكلفة DB
-  if (smartScoreCheck(req, res, cls, burst.count)) return;
+  // 5) التقييم السلوكي — بلا أي تكلفة DB (الأصول الثابتة تمرّ بعدّاد فيضان صفري)
+  if (smartScoreCheck(req, res, cls, isStaticAsset ? 0 : burst.count)) return;
 
   // 6) مسبار 404 — نسمع النتيجة من finish (بعد ما يعرف الراوتر الرد)
   if (res.on) {

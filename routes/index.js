@@ -77,9 +77,13 @@ async function getSettings(force = false) {
 router.get('/api/broadcasts', async (req, res) => {
   /* كاش قصير بالمتصفح — الشريط يتفحص بكل تحميل صفحة، 20 ثانية كاش تقلل الاستعلامات بلا أي فرق محسوس */
   res.set('Cache-Control', 'public, max-age=20');
+  /* كاش سيرفر 30 ثانية فوق كاش المتصفح — بدونها كل زائر جديد (أو بعد 20ث) يدفع استعلام
+     كامل على القاعدة البعيدة (~60ms) عند كل تنقل. الان: القاعدة تُسأل مرة كل 30ث كحد أقصى
+     للجميع، وأي إضافة/تعديل إذاعي يمسح الكاش فوراً بخطاف invalidateQueryCache العام */
   try {
-    const [rows] = await db.execute(
-      "SELECT id, title, message, type, created_at, expires_at FROM broadcasts WHERE is_active = 1 AND (expires_at IS NULL OR expires_at > NOW()) ORDER BY created_at DESC LIMIT 5"
+    const rows = await qCache(
+      "SELECT id, title, message, type, created_at, expires_at FROM broadcasts WHERE is_active = 1 AND (expires_at IS NULL OR expires_at > NOW()) ORDER BY created_at DESC LIMIT 5",
+      [], 30000
     );
     res.json(rows);
   } catch(e) { res.json([]); }
