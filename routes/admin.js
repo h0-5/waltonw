@@ -216,10 +216,38 @@ router.get('/news', checkPermission('news_add'), async (req, res) => {
 // Tickets
 router.get('/tickets', checkPermission('tickets_view'), async (req, res) => {
   try {
-    const [tickets] = await db.execute('SELECT t.*, u.username, u.profile_picture as user_avatar FROM support_tickets t LEFT JOIN users u ON t.user_id = u.id ORDER BY t.id DESC');
-    res.render('admin/tickets', { title: 'إدارة التذاكر', tickets, currentPath: req.originalUrl });
+    const { ensureTicketSchema } = require('../utils/tickets-schema');
+    await ensureTicketSchema();
+    const [tickets] = await db.execute(
+      `SELECT t.*, u.username, u.profile_picture as user_avatar, c.name AS category_name
+         FROM support_tickets t
+         LEFT JOIN users u ON t.user_id = u.id
+         LEFT JOIN ticket_categories c ON t.category_id = c.id
+        ORDER BY t.id DESC`
+    );
+    // أعلام الصلاحيات للإداركي الحالي — تحكم خيارات الحالة والأقسام والقائمة السوداء بالنافذة
+    const { userHasPermission } = require('../middleware/auth');
+    const uid = req.user.id;
+    const perms = {
+      can_review:     req.user.role === 'owner' || await userHasPermission(uid, 'tickets_change_status'),
+      can_close:      req.user.role === 'owner' || await userHasPermission(uid, 'tickets_close'),
+      can_reopen:     req.user.role === 'owner' || await userHasPermission(uid, 'tickets_reopen'),
+      can_reply:      req.user.role === 'owner' || await userHasPermission(uid, 'tickets_reply'),
+      can_manage_cats:req.user.role === 'owner' || await userHasPermission(uid, 'tickets_manage_categories'),
+      can_blacklist:  req.user.role === 'owner' || await userHasPermission(uid, 'tickets_blacklist_manage'),
+    };
+    let categories = [];
+    try { const [cats] = await db.execute('SELECT c.*, (SELECT COUNT(*) FROM support_tickets t WHERE t.category_id = c.id) AS tickets_count FROM ticket_categories c ORDER BY c.sort_order ASC, c.id ASC'); categories = cats; } catch(e) {}
+    let blacklist = [];
+    try {
+      const [bl] = await db.execute(
+        `SELECT b.*, c.name AS category_name FROM ticket_blacklist b LEFT JOIN ticket_categories c ON b.category_id = c.id ORDER BY b.id DESC LIMIT 200`);
+      blacklist = bl;
+    } catch(e) {}
+    res.render('admin/tickets', { title: 'إدارة التذاكر', tickets, categories, blacklist, perms, currentPath: req.originalUrl });
   } catch(err) {
-    res.render('admin/tickets', { title: 'إدارة التذاكر', tickets: [], currentPath: req.originalUrl });
+    console.error('[admin/tickets]', err.message);
+    res.render('admin/tickets', { title: 'إدارة التذاكر', tickets: [], categories: [], blacklist: [], perms: {}, currentPath: req.originalUrl });
   }
 });
 

@@ -175,6 +175,7 @@ const PERMISSION_GROUPS = {
       tickets_change_status:     { label: 'تغيير الحالة',    desc: 'تغيير حالة التذكرة' },
       tickets_bulk_delete:       { label: 'حذف مجموعة',      desc: 'حذف عدة تذاكر مرة واحدة' },
       tickets_manage_categories: { label: 'إدارة الأقسام',   desc: 'إضافة وتعديل أقسام التذاكر' },
+      tickets_blacklist_manage:  { label: 'القائمة السوداء', desc: 'حظر مستخدمين من فتح التذاكر (شامل أو قسم محدد)' },
     },
   },
 

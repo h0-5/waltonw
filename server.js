@@ -750,6 +750,15 @@ async function start() {
   } catch (e) { console.log('⚠️ company schema ensure failed:', e.message); }
   try { await seedCompanyServices(); } catch (e) { console.log('⚠️ company services seed failed:', e.message); }
 
+  // نظام التذاكر — شفاء ذاتي مستقل عن schema_version (أقسام/صور/قائمة سوداء + عمودا category_id/closed_at)
+  // + مهمة حذف الصور نهائياً بعد 48 ساعة من إغلاق التذكرة (عند الإقلاع ثم كل ساعة)
+  try {
+    const tickets = require('./utils/tickets-schema');
+    await tickets.ensureTicketSchema();
+    tickets.startTicketCleanup();
+    console.log('✅ tickets schema ensured + 48h image cleanup armed');
+  } catch (e) { console.log('⚠️ tickets init failed:', e.message); }
+
   // تدفئة كاش المحتوى المشترك عند الإقلاع — أول طلب بعد إعادة النشر يجب ألا يدفع
   // ثمن برودة الكاش (كان يأخذ ثوانٍ لأن قاعدة Aiven بعيدة). تستند بصمت على الفشل.
   try {

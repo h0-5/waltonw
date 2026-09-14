@@ -1,0 +1,96 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+
+<main class="support-page">
+  <section class="support-hero">
+    <div class="container">
+      <div class="support-hero-content">
+        <div class="support-hero-icon">
+          <i class="fas fa-ticket"></i>
+        </div>
+        <h1>تذاكري</h1>
+        <p>كل التذاكر اللي فتحتها وحالتها وردود الإدارة</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="support-form-section">
+    <div class="container">
+      <div class="support-form-wrapper mt-wrapper">
+
+        <% var stMap = { open: ['مفتوحة', 'st-open'], reviewing: ['قيد المراجعة', 'st-reviewing'], replied: ['تم الرد', 'st-replied'], closed: ['مغلقة', 'st-closed'] }; %>
+
+        <% if (!tickets.length) { %>
+          <div class="mt-empty">
+            <i class="fas fa-inbox"></i>
+            <p>ما عندك تذاكر بعد</p>
+            <a href="/support" class="submit-btn mt-new-btn"><i class="fas fa-plus"></i> افتح تذكرة جديدة</a>
+          </div>
+        <% } else { %>
+          <% tickets.forEach(function(t) { %>
+            <% var st = stMap[t.status] || [t.status, 'st-open']; %>
+            <details class="mt-card">
+              <summary class="mt-head">
+                <div class="mt-head-r1">
+                  <b class="mt-id">#<%= t.id %></b>
+                  <span class="mt-cat"><%= t.category_name || 'بدون قسم' %></span>
+                  <span class="mt-status <%= st[1] %>"><%= st[0] %></span>
+                </div>
+                <div class="mt-head-r2">
+                  <span class="mt-date"><i class="fas fa-clock"></i> <%= new Date(t.created_at).toLocaleString('ar-EG') %></span>
+                  <span class="mt-meta"><%= (t.replies || []).length %> رد · <%= (t.images || []).length %> صورة</span>
+                </div>
+              </summary>
+
+              <div class="mt-body">
+                <div class="mt-bubble mt-user">
+                  <div class="mt-bubble-head">
+                    <b><%= t.name || 'أنت' %></b>
+                    <span><%= new Date(t.created_at).toLocaleString('ar-EG') %></span>
+                  </div>
+                  <p><%= t.message %></p>
+                  <% if (t.images && t.images.length) { %>
+                    <div class="mt-imgs">
+                      <% t.images.forEach(function(im) { %>
+                        <a href="<%= im.file_path %>" target="_blank" rel="noopener">
+                          <img src="<%= im.file_path %>" alt="<%= im.original_name || 'صورة مرفقة' %>" loading="lazy">
+                        </a>
+                      <% }); %>
+                    </div>
+                    <div class="form-note mt-img-note">
+                      <i class="fas fa-shield-halved"></i>
+                      الصور تنحذف نهائياً بعد 48 ساعة من إغلاق التذكرة
+                    </div>
+                  <% } %>
+                </div>
+
+                <% (t.replies || []).forEach(function(r) { %>
+                  <div class="mt-bubble <%= r.is_admin ? 'mt-admin' : 'mt-user' %>">
+                    <div class="mt-bubble-head">
+                      <b><%= r.is_admin ? 'الإدارة' : (r.username || 'المستخدم') %></b>
+                      <span><%= new Date(r.created_at).toLocaleString('ar-EG') %></span>
+                    </div>
+                    <p><%= r.message %></p>
+                  </div>
+                <% }); %>
+
+                <div class="mt-readonly">
+                  <i class="fas fa-lock"></i>
+                  التذكرة للعرض فقط — لا يمكن إضافة رسالة ثانية
+                </div>
+              </div>
+            </details>
+          <% }); %>
+
+          <a href="/support" class="mt-open-new"><i class="fas fa-plus"></i> تذكرة جديدة</a>
+        <% } %>
+
+      </div>
+    </div>
+  </section>
+</main>
+
+<%- include('../partials/footer') %>
+<script src="/js/main.js"></script>
+</body>
+</html>

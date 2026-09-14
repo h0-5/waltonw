@@ -53,7 +53,7 @@ ok('فحص وصول الصفحات fail-closed (عطب القاعدة = رفض)'
 
 console.log('\n═══ 4) XSS مخزن ═══');
 const tickets = read('views/admin/tickets.ejs');
-ok('تذاكر الإدارة: esc() على نص المستخدم', tickets.includes('esc(t.message)') && tickets.includes('esc(r.message)') && tickets.includes('esc(t.name || t.subject)'));
+ok('تذاكر الإدارة: esc() على نص المستخدم', tickets.includes('esc(t.message)') && tickets.includes('esc(r.message)') && tickets.includes("esc(t.category_name || 'بدون قسم')") && tickets.includes("esc(r.username || 'المستخدم')") && tickets.includes('esc(im.file_path)'));
 const company = read('views/pages/company.ejs');
 ok('أيقونات الشركة تُهرَّب قبل HTML', company.includes('iconSafe = escH(svcIcon)'));
 ok('icon يُنظّف عند الحفظ (بلا وسوم)', adm.includes("replace(/[<>\"'`]/g, '')"));

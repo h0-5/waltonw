@@ -352,7 +352,49 @@ router.get('/applications/form/:type', isAuthenticated, isInGuild, checkPageAcce
 // Support
 router.get('/support', isAuthenticated, isInGuild, checkPageAccess('/support'), async (req, res) => {
   const settings = await getSettings();
-  res.render('pages/support', { title: 'الدعم الفني', settings });
+  // أقسام التذاكر المفعلة — تصنعها الإدارة من لوحة إدارة التذاكر (شفاء ذاتي لو الجدول جديد)
+  let categories = [];
+  try {
+    const { ensureTicketSchema } = require('../utils/tickets-schema');
+    await ensureTicketSchema();
+    const [cats] = await db.execute('SELECT id, name FROM ticket_categories WHERE is_active = 1 ORDER BY sort_order ASC, id ASC');
+    categories = cats;
+  } catch (e) { console.error('[support] categories:', e.message); }
+  res.render('pages/support', { title: 'الدعم الفني', settings, categories });
+});
+
+// تذاكري — كل تذاكر المستخدم وحالتها والردود والصور (عرض فقط بلا رسالة ثانية)
+router.get('/support/my-tickets', isAuthenticated, isInGuild, checkPageAccess('/support'), async (req, res) => {
+  const settings = await getSettings();
+  let tickets = [];
+  try {
+    const [rows] = await db.execute(
+      `SELECT t.*, c.name AS category_name
+         FROM support_tickets t
+         LEFT JOIN ticket_categories c ON t.category_id = c.id
+        WHERE t.user_id = ?
+        ORDER BY t.id DESC
+        LIMIT 50`,
+      [req.user.id]
+    );
+    // ردود وصور كل التذاكر دفعة واحدة — استعلامان رخيصان بدل N+1
+    if (rows.length) {
+      const ids = rows.map(r => r.id);
+      const ph = ids.map(() => '?').join(',');
+      const [replies] = await db.execute(
+        `SELECT r.*, u.username FROM ticket_replies r LEFT JOIN users u ON r.user_id = u.id WHERE r.ticket_id IN (${ph}) ORDER BY r.created_at ASC`, ids
+      );
+      const [images] = await db.execute(
+        `SELECT id, ticket_id, file_path, original_name FROM ticket_images WHERE ticket_id IN (${ph}) ORDER BY id ASC`, ids
+      );
+      const repBy = {}, imgBy = {};
+      replies.forEach(r => { (repBy[r.ticket_id] = repBy[r.ticket_id] || []).push(r); });
+      images.forEach(i => { (imgBy[i.ticket_id] = imgBy[i.ticket_id] || []).push(i); });
+      rows.forEach(t => { t.replies = repBy[t.id] || []; t.images = imgBy[t.id] || []; });
+    }
+    tickets = rows;
+  } catch (e) { console.error('[my-tickets]', e.message); }
+  res.render('pages/my-tickets', { title: 'تذاكري', settings, tickets });
 });
 
 // Profile

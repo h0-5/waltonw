@@ -41,6 +41,13 @@ app.use('/css', express.static(path.join(__dirname, 'public/css'), { maxAge: '30
 app.use('/js', express.static(path.join(__dirname, 'public/js'), { maxAge: '30d', immutable: true }));
 app.use('/fonts', express.static(path.join(__dirname, 'public/fonts'), { maxAge: '30d', immutable: true }));
 // Uploads are user content, can change — shorter cache (1h ok, browser revalidates)
+// صور التذاكر المرفقة — تخدم بنوع محدد و nosniff و CSP معطل التنفيذ تماماً
+// (درس التدقيق الأمني: أي ملف مرفوع يجب ألا يستطيع تنفيذ سكربت حتى افتراضاً تسلل)
+app.use('/uploads/tickets', (req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Content-Security-Policy', "default-src 'none'");
+  next();
+});
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads'), { maxAge: '1h' }));
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1d' }));
 

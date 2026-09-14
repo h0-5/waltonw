@@ -1,10 +1,11 @@
 ﻿const express = require('express');
 const router = express.Router();
 const db = require('../../config/database');
-const { isAdmin, checkPermission } = require('../../middleware/auth');
+const { isAdmin, checkPermission, userHasPermission } = require('../../middleware/auth');
 const { clearUserCache } = require('../../config/auth'); // إبطال كاش مستخدم الجلسة فور تعديل إداري (حظر/رتبة)
 const { sendWebhook, sendTestWebhook, refreshWebhookUrls, isDiscordWebhookUrl, logAdminAction } = require('../../utils/webhooks');
 const webhooks = require('../../config/webhooks');
+const { ensureTicketSchema } = require('../../utils/tickets-schema');
 
 /* إشعار قناة الشركة بالويبهوك (طلب خدمات الشركة) */
 function notifyCompany(payload) {
@@ -422,12 +423,25 @@ router.delete('/news/:id', checkPermission('news_add'), async (req, res) => {
 });
 
 // ===== Tickets API =====
+
+// إشعار موحد لصاحب التذكرة — يُتخطى إذا المرسل هو صاحب التذكرة نفسه
+async function notifyTicketOwner(userId, title, message) {
+  try {
+    if (!userId) return;
+    await db.execute(
+      'INSERT INTO notifications (user_id, title, message, type, link, is_read, created_at) VALUES (?, ?, ?, ?, ?, 0, NOW())',
+      [userId, title, message, 'ticket', '/support/my-tickets']
+    );
+  } catch(e) { console.error('[tickets/notify]', e.message); }
+}
+
 router.get('/tickets/:id', checkPermission('tickets_view'), async (req, res) => {
   try {
-    const [ticket] = await db.execute('SELECT t.*, u.username FROM support_tickets t LEFT JOIN users u ON t.user_id = u.id WHERE t.id = ?', [req.params.id]);
+    const [ticket] = await db.execute('SELECT t.*, u.username, c.name AS category_name FROM support_tickets t LEFT JOIN users u ON t.user_id = u.id LEFT JOIN ticket_categories c ON t.category_id = c.id WHERE t.id = ?', [req.params.id]);
     if (!ticket.length) return res.status(404).json({ error: 'غير موجود' });
     const [replies] = await db.execute('SELECT r.*, u.username FROM ticket_replies r LEFT JOIN users u ON r.user_id = u.id WHERE r.ticket_id = ? ORDER BY r.created_at ASC', [req.params.id]);
-    res.json({ ticket: ticket[0], replies });
+    const [images] = await db.execute('SELECT id, file_path, original_name FROM ticket_images WHERE ticket_id = ? ORDER BY id ASC', [req.params.id]);
+    res.json({ ticket: ticket[0], replies, images });
   } catch(e) { fail(res, e); }
 });
 
@@ -437,13 +451,127 @@ router.post('/tickets/:id/reply', checkPermission('tickets_reply'), async (req, 
     if (!message || !message.trim()) return res.status(400).json({ error: 'الرسالة مطلوبة' });
     await db.execute('INSERT INTO ticket_replies (ticket_id, user_id, message, is_admin, created_at) VALUES (?, ?, ?, 1, NOW())', [req.params.id, req.user.id, message.trim()]);
     await db.execute("UPDATE support_tickets SET status = 'replied' WHERE id = ? AND status = 'open'", [req.params.id]);
+    const [t] = await db.execute('SELECT user_id FROM support_tickets WHERE id = ?', [req.params.id]);
+    if (t.length) await notifyTicketOwner(t[0].user_id, 'رد جديد على تذكرتك #' + req.params.id, 'ردت الإدارة على تذكرتك — تفقد الرد من صفحة تذاكري');
     res.json({ success: true });
   } catch(e) { fail(res, e); }
 });
 
-router.post('/tickets/:id/close', checkPermission('tickets_reply'), async (req, res) => {
+// تحديث حالة التذكرة — كل حالة بصلاحيتها:
+//   قيد المراجعة → tickets_change_status | مغلق → tickets_close | إعادة الفتح → tickets_reopen (للمغلقة فقط)
+router.post('/tickets/:id/status', checkPermission('tickets_view'), async (req, res) => {
   try {
-    await db.execute("UPDATE support_tickets SET status = 'closed' WHERE id = ?", [req.params.id]);
+    const { status } = req.body;
+    const PERM_BY_STATUS = { reviewing: 'tickets_change_status', closed: 'tickets_close', open: 'tickets_reopen' };
+    const needed = PERM_BY_STATUS[status];
+    if (!needed) return res.status(400).json({ error: 'حالة غير صحيحة' });
+    const [t] = await db.execute('SELECT id, user_id, status FROM support_tickets WHERE id = ?', [req.params.id]);
+    if (!t.length) return res.status(404).json({ error: 'التذكرة غير موجودة' });
+    if (!(await userHasPermission(req.user.id, needed))) return res.status(403).json({ error: 'ليس لديك صلاحية لهذه الحالة' });
+    if (status === 'open' && t[0].status !== 'closed') return res.status(400).json({ error: 'إعادة الفتح للتذاكر المغلقة فقط' });
+    if (t[0].status === status) return res.json({ success: true });
+    if (status === 'closed') {
+      await db.execute("UPDATE support_tickets SET status = 'closed', closed_at = NOW() WHERE id = ?", [req.params.id]);
+    } else {
+      await db.execute('UPDATE support_tickets SET status = ?, closed_at = NULL WHERE id = ?', [status, req.params.id]);
+    }
+    const labels = { reviewing: 'قيد المراجعة', closed: 'مغلقة', open: 'مفتوحة' };
+    await notifyTicketOwner(t[0].user_id, 'تحديث حالة تذكرتك #' + t[0].id, 'أصبحت حالة تذكرتك: ' + (labels[status] || status));
+    res.json({ success: true });
+  } catch(e) { fail(res, e); }
+});
+
+// إغلاق سريع من الجدول — نفس منطق الحالة المغلقة
+router.post('/tickets/:id/close', checkPermission('tickets_close'), async (req, res) => {
+  try {
+    const [t] = await db.execute('SELECT user_id FROM support_tickets WHERE id = ?', [req.params.id]);
+    await db.execute("UPDATE support_tickets SET status = 'closed', closed_at = NOW() WHERE id = ?", [req.params.id]);
+    if (t.length) await notifyTicketOwner(t[0].user_id, 'تحديث حالة تذكرتك #' + req.params.id, 'أصبحت حالة تذكرتك: مغلقة');
+    res.json({ success: true });
+  } catch(e) { fail(res, e); }
+});
+
+// ===== أقسام التذاكر =====
+router.get('/ticket-categories', checkPermission('tickets_view'), async (req, res) => {
+  try {
+    await ensureTicketSchema();
+    const [cats] = await db.execute(`
+      SELECT c.*, (SELECT COUNT(*) FROM support_tickets t WHERE t.category_id = c.id) AS tickets_count
+      FROM ticket_categories c ORDER BY c.sort_order ASC, c.id ASC`);
+    res.json({ categories: cats });
+  } catch(e) { fail(res, e); }
+});
+
+router.post('/ticket-categories', checkPermission('tickets_manage_categories'), async (req, res) => {
+  try {
+    const name = (req.body.name || '').trim();
+    if (name.length < 2 || name.length > 80) return res.status(400).json({ error: 'اسم القسم بين حرفين و80 حرف' });
+    const [cnt] = await db.execute('SELECT COUNT(*) AS c FROM ticket_categories');
+    if (cnt[0].c >= 30) return res.status(400).json({ error: 'وصلت الحد الأقصى للأقسام (30)' });
+    const [dup] = await db.execute('SELECT id FROM ticket_categories WHERE name = ?', [name]);
+    if (dup.length) return res.status(400).json({ error: 'يوجد قسم بنفس الاسم' });
+    const [r] = await db.execute('INSERT INTO ticket_categories (name, sort_order, is_active) VALUES (?, ?, 1)', [name, cnt[0].c + 1]);
+    res.json({ success: true, id: r.insertId });
+  } catch(e) { fail(res, e); }
+});
+
+router.post('/ticket-categories/:id/delete', checkPermission('tickets_manage_categories'), async (req, res) => {
+  try {
+    // حظر كان مخصصاً لهذا القسم حصراً يُرفع معه، وتذاكر القسم تبقى بلا قسم
+    await db.execute('DELETE FROM ticket_blacklist WHERE category_id = ?', [req.params.id]);
+    await db.execute('UPDATE support_tickets SET category_id = NULL WHERE category_id = ?', [req.params.id]);
+    await db.execute('DELETE FROM ticket_categories WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { fail(res, e); }
+});
+
+// ===== القائمة السوداء للتذاكر =====
+router.get('/tickets-blacklist', checkPermission('tickets_blacklist_manage'), async (req, res) => {
+  try {
+    const [rows] = await db.execute(`
+      SELECT b.*, c.name AS category_name, a.username AS created_by_name
+      FROM ticket_blacklist b
+      LEFT JOIN ticket_categories c ON b.category_id = c.id
+      LEFT JOIN users a ON b.created_by = a.id
+      ORDER BY b.id DESC LIMIT 200`);
+    res.json({ blacklist: rows });
+  } catch(e) { fail(res, e); }
+});
+
+router.post('/tickets-blacklist', checkPermission('tickets_blacklist_manage'), async (req, res) => {
+  try {
+    const uname = (req.body.username || '').trim();
+    const { user_id, reason } = req.body;
+    const cid = req.body.category_id ? Number(req.body.category_id) : null;
+    if (!uname && !user_id) return res.status(400).json({ error: 'اكتب اسم المستخدم' });
+    let uid = user_id ? Number(user_id) : null;
+    let discordId = null;
+    let finalName = uname;
+    if (uid) {
+      const [u] = await db.execute('SELECT id, username, discord_id FROM users WHERE id = ?', [uid]);
+      if (!u.length) return res.status(404).json({ error: 'المستخدم غير موجود' });
+      finalName = u[0].username; discordId = u[0].discord_id;
+    } else {
+      // نربط الاسم بحساب موجود إن وجد — وإن لا نخزن الاسم فقط فيستمر الحظر حتى لو انضاف مستقبلاً بنفس الاسم
+      const [u] = await db.execute('SELECT id, username, discord_id FROM users WHERE username = ?', [finalName]);
+      if (u.length) { uid = u[0].id; discordId = u[0].discord_id; }
+    }
+    const [dup] = await db.execute(
+      'SELECT id FROM ticket_blacklist WHERE username = ? AND ((category_id IS NULL AND ? IS NULL) OR category_id = ?) LIMIT 1',
+      [finalName, cid, cid]
+    );
+    if (dup.length) return res.status(400).json({ error: 'موجود أصلاً بنفس النطاق' });
+    const [r] = await db.execute(
+      'INSERT INTO ticket_blacklist (user_id, discord_id, username, category_id, reason, created_by) VALUES (?, ?, ?, ?, ?, ?)',
+      [uid, discordId, finalName, cid, (reason || '').trim().slice(0, 255) || null, req.user.id]
+    );
+    res.json({ success: true, id: r.insertId });
+  } catch(e) { fail(res, e); }
+});
+
+router.post('/tickets-blacklist/:id/delete', checkPermission('tickets_blacklist_manage'), async (req, res) => {
+  try {
+    await db.execute('DELETE FROM ticket_blacklist WHERE id = ?', [req.params.id]);
     res.json({ success: true });
   } catch(e) { fail(res, e); }
 });

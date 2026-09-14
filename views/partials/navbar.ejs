@@ -184,7 +184,7 @@ function _nfRender(items) {
   var list = document.getElementById('notificationList');
   if (!list) return;
   if (!items.length) { list.innerHTML = '<div class="ds-drop-empty">لا توجد إشعارات</div>'; return; }
-  var ico = { success: 'fa-circle-check', warning: 'fa-triangle-exclamation', info: 'fa-circle-info' };
+  var ico = { success: 'fa-circle-check', warning: 'fa-triangle-exclamation', info: 'fa-circle-info', ticket: 'fa-headset' };
   list.innerHTML = items.map(function (n) {
     return '<a href="' + _nfEsc(n.link || '#') + '" class="ds-drop-item ds-notif-item' + (Number(n.is_read) ? '' : ' unread') + '">' +
       '<i class="fas ' + (ico[n.type] || 'fa-bell') + '"></i>' +

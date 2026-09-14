@@ -5,10 +5,8 @@
   <section class="support-hero">
     <div class="container">
       <div class="support-hero-content">
-        <div class="wf-orb">
-          <span class="wf-orb-glow" aria-hidden="true"></span>
-          <span class="wf-orb-ring" aria-hidden="true"></span>
-          <span class="wf-orb-core"><i class="fas fa-headset" aria-hidden="true"></i></span>
+        <div class="support-hero-icon">
+          <i class="fas fa-headset"></i>
         </div>
         <h1>الدعم الفني</h1>
         <p>نحن هنا لمساعدتك - أرسل تذكرة وسنرد عليك في أقرب وقت</p>
@@ -25,59 +23,58 @@
             إرسال تذكرة جديدة
           </h2>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label for="name">
-                <i class="fas fa-user"></i>
-                الاسم
-              </label>
-              <input type="text" id="name" name="name" required 
-                     value="<%= user ? user.username : '' %>" 
-                     placeholder="اسمك">
-            </div>
-            <div class="form-group">
-              <label for="email">
-                <i class="fas fa-envelope"></i>
-                البريد الإلكتروني
-              </label>
-              <input type="email" id="email" name="email" required 
-                     value="<%= user ? user.email || '' : '' %>" 
-                     placeholder="بريدك الإلكتروني">
-            </div>
+          <div class="form-group">
+            <label for="name">
+              <i class="fas fa-user"></i>
+              الاسم
+            </label>
+            <input type="text" id="name" name="name" required readonly
+                   value="<%= user ? user.username : '' %>"
+                   placeholder="اسمك">
           </div>
 
           <div class="form-group">
-            <label for="priority">
-              <i class="fas fa-flag"></i>
-              الأولوية
+            <label for="category">
+              <i class="fas fa-layer-group"></i>
+              القسم
             </label>
-            <select id="priority" name="priority" required>
-              <option value="low">منخفضة</option>
-              <option value="medium" selected>متوسطة</option>
-              <option value="high">عالية</option>
-              <option value="urgent">عاجلة</option>
+            <select id="category" name="category_id" required>
+              <% if (typeof categories !== 'undefined' && categories && categories.length) { %>
+                <% categories.forEach(function(c) { %>
+                  <option value="<%= c.id %>"><%= c.name %></option>
+                <% }); %>
+              <% } else { %>
+                <option value="">لا توجد أقسام حالياً — تواصل مع الإدارة</option>
+              <% } %>
             </select>
-          </div>
-
-          <div class="form-group">
-            <label for="subject">
-              <i class="fas fa-heading"></i>
-              الموضوع
-            </label>
-            <input type="text" id="subject" name="subject" required 
-                   placeholder="موضوع التذكرة">
           </div>
 
           <div class="form-group">
             <label for="message">
               <i class="fas fa-comment"></i>
               الرسالة
+              <span class="form-hint">حياك الله يرجى ذكر مشكلتك / استفسارك بشكل واضح</span>
             </label>
-            <textarea id="message" name="message" rows="6" required 
-                      placeholder="اشرح مشكلتك بالتفصيل..."></textarea>
+            <textarea id="message" name="message" rows="6" required maxlength="5000"
+                      placeholder="اشرح مشكلتك بالتفصيل... (20 حرف على الأقل)"></textarea>
+            <div class="form-note">
+              <i class="fas fa-circle-info"></i>
+              لا يمكنك تعديل رسالتك او ارسال رسالة ثانية بهذه تذكرة.
+            </div>
+            <div class="char-count" id="charCount">0 / 20</div>
           </div>
 
-          <button type="submit" class="submit-btn">
+          <div class="form-group">
+            <label for="ticketImages">
+              <i class="fas fa-paperclip"></i>
+              إرفاق صور (اختياري — 3 كحد أقصى)
+            </label>
+            <input type="file" id="ticketImages" name="images" class="file-input"
+                   accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+            <div class="file-list" id="fileList"></div>
+          </div>
+
+          <button type="submit" class="submit-btn" id="submitBtn">
             <i class="fas fa-paper-plane"></i>
             إرسال التذكرة
           </button>
@@ -100,12 +97,12 @@
             <p>يمكنك الحصول على النقاط من الألعاب والمشاركة في الأنشطة والجوائز.</p>
           </div>
           <div class="faq-item">
-            <h3>كيف أشتر من المتجر؟</h3>
-            <p>اذهب للمتجر واختر المنتج ثم اضغط شراء. تأكد من أن لديك نقاط كافية.</p>
+            <h3>هل أقدر أعدل تذكرتي؟</h3>
+            <p>لا — التذكرة ترسل رسالة واحدة نهائية، ورد الإدارة يوصلك بإشعار في جرس الموقع وتتابعها من صفحة "تذاكري".</p>
           </div>
           <div class="faq-item">
             <h3>كم يستغرق الرد؟</h3>
-            <p>نحاول الرد خلال 24 ساعة. للحالات العاجلة، استخدم الأولوية العالية.</p>
+            <p>نحاول الرد في أقرب وقت. ستصلك إشعارات عند الرد وعند تحديث حالة تذكرتك.</p>
           </div>
         </div>
       </div>
@@ -116,28 +113,68 @@
 <%- include('../partials/footer') %>
 <script src="/js/main.js"></script>
 <script>
-document.getElementById('supportForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  const formData = new FormData(this);
-  const data = Object.fromEntries(formData);
+(function () {
+  var form = document.getElementById('supportForm');
+  var msg = document.getElementById('message');
+  var cnt = document.getElementById('charCount');
+  var fileInput = document.getElementById('ticketImages');
+  var fileList = document.getElementById('fileList');
+  var btn = document.getElementById('submitBtn');
+  var MIN = 20;
 
-  try {
-    const res = await fetch('/api/support/submit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    const result = await res.json();
-    if (result.success) {
-      WaltonAPI.showNotification('تم إرسال التذكرة بنجاح!', 'success');
-      this.reset();
-    } else {
-      WaltonAPI.showNotification(result.error || 'فشل الإرسال', 'error');
-    }
-  } catch(e) {
-    WaltonAPI.showNotification('حدث خطأ في الإرسال', 'error');
+  function updCount() {
+    var n = msg.value.trim().length;
+    if (n >= MIN) { cnt.textContent = 'جاهزة للإرسال (' + n + ' حرف)'; cnt.classList.add('ok'); }
+    else { cnt.textContent = n + ' / ' + MIN; cnt.classList.remove('ok'); }
   }
-});
+  msg.addEventListener('input', updCount); updCount();
+
+  fileInput.addEventListener('change', function () {
+    var fs = Array.from(fileInput.files || []);
+    if (fs.length > 3) { fs = fs.slice(0, 3); }
+    var bad = null;
+    fs.forEach(function (f) {
+      if (f.size > 5 * 1024 * 1024) bad = '«' + f.name + '» أكبر من 5 ميجا';
+    });
+    if (bad) { WaltonAPI.showNotification(bad, 'error'); fileInput.value = ''; fileList.innerHTML = ''; return; }
+    fileList.innerHTML = fs.length
+      ? fs.map(function (f) { return '<span class="file-chip"><i class="fas fa-image"></i> ' + f.name + '</span>'; }).join('')
+      : '';
+  });
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    if (msg.value.trim().length < MIN) {
+      WaltonAPI.showNotification('الرسالة قصيرة — اكتب ' + MIN + ' حرف على الأقل', 'error');
+      msg.focus();
+      return;
+    }
+    var cat = document.getElementById('category').value;
+    if (!cat) { WaltonAPI.showNotification('لا توجد أقسام متاحة حالياً — تواصل مع الإدارة', 'error'); return; }
+
+    btn.disabled = true;
+    try {
+      var fd = new FormData();
+      fd.append('category_id', cat);
+      fd.append('message', msg.value);
+      var imgs = Array.from(fileInput.files || []).slice(0, 3);
+      imgs.forEach(function (f) { fd.append('images', f); });
+
+      var res = await fetch('/api/support/submit', { method: 'POST', body: fd, credentials: 'same-origin' });
+      var result = await res.json();
+      if (result.success) {
+        WaltonAPI.showNotification('تم إرسال التذكرة بنجاح!', 'success');
+        setTimeout(function () { window.location.href = '/support/my-tickets'; }, 900);
+      } else {
+        WaltonAPI.showNotification(result.error || 'فشل الإرسال', 'error');
+        btn.disabled = false;
+      }
+    } catch (e2) {
+      WaltonAPI.showNotification('حدث خطأ في الإرسال', 'error');
+      btn.disabled = false;
+    }
+  });
+})();
 </script>
 </body>
 </html>
