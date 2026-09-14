@@ -349,12 +349,28 @@ router.get('/news/:id', checkPermission('news_add'), async (req, res) => {
   } catch(e) { fail(res, e); }
 });
 
+/* تاريخ الانتهاء — نص فقط بصيغة YYYY-MM-DD HH:MM(:SS) يُمرر للقاعدة كما هو
+   (datetime-local يرسل T والقاعدة تريده مسافة). أي شيء آخر = رفض مبكر بلا DB */
+function parseExpiry(expires_at) {
+  if (expires_at === undefined || expires_at === null || String(expires_at).trim() === '') return { ok: true, value: null };
+  var s = String(expires_at).trim().replace('T', ' ');
+  if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(s)) return { ok: false };
+  if (s.length === 16) s += ':00';
+  var d = new Date(s.replace(' ', 'T'));
+  if (isNaN(d.getTime())) return { ok: false };
+  return { ok: true, value: s };
+}
+
 router.post('/news', checkPermission('news_add'), async (req, res) => {
   try {
-    const { title, content, type, image, is_published } = req.body;
+    const { title, content, type, image, is_published, is_hidden } = req.body;
+    const exp = parseExpiry(req.body.expires_at);
+    if (!exp.ok) return res.status(400).json({ error: 'صيغة تاريخ الانتهاء غير صالحة' });
     const [result] = await db.execute(
-      'INSERT INTO news (title, content, type, image, author_id, is_published, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())',
-      [title, content, type || 'news', image || null, req.user.id, is_published !== undefined ? is_published : 1]
+      'INSERT INTO news (title, content, type, image, author_id, is_published, is_hidden, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())',
+      [title, content, type || 'news', image || null, req.user.id,
+       is_published !== undefined ? is_published : 1,
+       is_hidden ? 1 : 0, exp.value]
     );
     res.json({ success: true, id: result.insertId });
   } catch(e) { fail(res, e); }
@@ -362,12 +378,26 @@ router.post('/news', checkPermission('news_add'), async (req, res) => {
 
 router.put('/news/:id', checkPermission('news_add'), async (req, res) => {
   try {
-    const { title, content, type, image, is_published } = req.body;
+    const { title, content, type, image, is_published, is_hidden } = req.body;
+    const exp = parseExpiry(req.body.expires_at);
+    if (!exp.ok) return res.status(400).json({ error: 'صيغة تاريخ الانتهاء غير صالحة' });
     await db.execute(
-      'UPDATE news SET title=?, content=?, type=?, image=?, is_published=? WHERE id=?',
-      [title, content, type || 'news', image || null, is_published !== undefined ? is_published : 1, req.params.id]
+      'UPDATE news SET title=?, content=?, type=?, image=?, is_published=?, is_hidden=?, expires_at=? WHERE id=?',
+      [title, content, type || 'news', image || null,
+       is_published !== undefined ? is_published : 1,
+       is_hidden ? 1 : 0, exp.value, req.params.id]
     );
     res.json({ success: true });
+  } catch(e) { fail(res, e); }
+});
+
+/* إظهار/إخفاء سريع من جدول اللوحة — زر واحد يقلب is_hidden بلا فتح نموذج التعديل */
+router.post('/news/:id/visibility', checkPermission('news_add'), async (req, res) => {
+  try {
+    const hide = req.body.is_hidden ? 1 : 0;
+    const [r] = await db.execute('UPDATE news SET is_hidden = ? WHERE id = ?', [hide, req.params.id]);
+    if (!r.affectedRows) return res.status(404).json({ error: 'غير موجود' });
+    res.json({ success: true, is_hidden: hide });
   } catch(e) { fail(res, e); }
 });
 

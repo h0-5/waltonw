@@ -64,9 +64,12 @@ router.get('/api/broadcasts', async (req, res) => {
 router.get('/', isAuthenticated, isInGuild, checkPageAccess('/'), async (req, res) => {
   const [settingsResult, newsResult, memberCountResult, giveawaysResult, storePreviewResult, rulesPreviewResult, joinAppsResult] = await Promise.all([
     getSettings(),
-    qCache('SELECT * FROM news WHERE is_hidden = 0 ORDER BY created_at DESC LIMIT 10'),
+    /* الأخبار المنشورة حصراً — كان الفلتر is_hidden فقط فالمسودات (is_published=0) تظهر للناس
+       رغم أن اللوحة تعرضها «مسودة»، والمسابقات بلا تاريخ انتهاء (NULL) تسقط من شرط
+       expires_at > NOW() فما تظهر أبداً — النشر الآن: is_hidden=0 + منشور + غير منتهي */
+    qCache('SELECT * FROM news WHERE is_hidden = 0 AND (is_published IS NULL OR is_published = 1) ORDER BY created_at DESC LIMIT 10'),
     qCache('SELECT COUNT(*) as c FROM users'),
-    qCache("SELECT * FROM news WHERE type = 'giveaway' AND expires_at > NOW() AND is_hidden = 0", [], 5000),
+    qCache("SELECT * FROM news WHERE type = 'giveaway' AND (expires_at IS NULL OR expires_at > NOW()) AND is_hidden = 0 AND (is_published IS NULL OR is_published = 1)", [], 5000),
     qCache('SELECT id, name, price_points, price_money, category_type, description FROM fs_products ORDER BY id ASC LIMIT 2'),
     qCache('SELECT category, rule_text FROM rules ORDER BY sort_order ASC LIMIT 8'),
     qCache('SELECT application_type, requirements FROM application_settings ORDER BY id ASC')
@@ -449,9 +452,9 @@ async function prewarmSharedCaches() {
   await Promise.all([
     warm('settings', () => getSettings(true)),
     warm('home', () => Promise.all([
-      qCache('SELECT * FROM news WHERE is_hidden = 0 ORDER BY created_at DESC LIMIT 10'),
+      qCache('SELECT * FROM news WHERE is_hidden = 0 AND (is_published IS NULL OR is_published = 1) ORDER BY created_at DESC LIMIT 10'),
       qCache('SELECT COUNT(*) as c FROM users'),
-      qCache("SELECT * FROM news WHERE type = 'giveaway' AND expires_at > NOW() AND is_hidden = 0", [], 5000),
+      qCache("SELECT * FROM news WHERE type = 'giveaway' AND (expires_at IS NULL OR expires_at > NOW()) AND is_hidden = 0 AND (is_published IS NULL OR is_published = 1)", [], 5000),
       qCache('SELECT id, name, price_points, price_money, category_type, description FROM fs_products ORDER BY id ASC LIMIT 2'),
       qCache('SELECT category, rule_text FROM rules ORDER BY sort_order ASC LIMIT 8'),
       qCache('SELECT application_type, requirements FROM application_settings ORDER BY id ASC')

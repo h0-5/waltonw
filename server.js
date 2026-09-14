@@ -413,6 +413,12 @@ async function migrate() { console.log('🔄 Running migration...');
     { table: 'news', col: 'type', sql: "ALTER TABLE news ADD COLUMN type VARCHAR(50) DEFAULT 'news'" },
     { table: 'news', col: 'expires_at', sql: "ALTER TABLE news ADD COLUMN expires_at DATETIME" },
     { table: 'news', col: 'is_hidden', sql: "ALTER TABLE news ADD COLUMN is_hidden TINYINT(1) DEFAULT 0" },
+    /* جولة التنظيف (هادي 1548890210702589953): قاعدة حية قديمة قد تكون بلا author_id/is_published
+       (سكيما الجدول الأصلي قبل الترحيل) — كان INSERT الأخبار في لوحة الإدارة يفشل كله
+       بـ«Unknown column» فلا يُحفظ خبر أبداً، وقائمة الإدارة تنهار بفشل الـ JOIN.
+       الأعمدة تُضاف ذاتياً عند الإقلاع فتشتغل القصص كلها بأي حالة سكيما */
+    { table: 'news', col: 'author_id', sql: "ALTER TABLE news ADD COLUMN author_id INT" },
+    { table: 'news', col: 'is_published', sql: "ALTER TABLE news ADD COLUMN is_published TINYINT(1) DEFAULT 1" },
     { table: 'orders', col: 'total_amount', sql: "ALTER TABLE orders ADD COLUMN total_amount DECIMAL(10,2) DEFAULT 0" },
     { table: 'orders', col: 'shipping_address', sql: "ALTER TABLE orders ADD COLUMN shipping_address TEXT" },
     { table: 'orders', col: 'payment_method', sql: "ALTER TABLE orders ADD COLUMN payment_method VARCHAR(50) DEFAULT 'points'" },

@@ -64,10 +64,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-  <!-- خطان للهوية الجديدة (Cairo عناوين + IBM Plex Sans Arabic نصوص) — Space Grotesk وCinzel تبقى لصفحات/أنميشن قديمة حتى مرحلتها — حذف Noto Sans Arabic وفّر 4 ملفات
+  <!-- خطان للهوية الجديدة (Cairo عناوين + IBM Plex Sans Arabic نصوص) — Space Grotesk وCinzel تبقى لصفحات/أنميشن قديمة حتى مرحلتها
+       طلب واحد حصراً لجوجل فونتس: Rubik (بطاقة الدعم بالهيرو) كانت طلباً ثانياً معيقاً بالرئيسية — اندمجت بنفس الرابط فالرئيسية طلب واحد بدل اثنين
        الأوزان المحمّلة = كل الأوزان المستخدمة فعلاً بالكود (بلاغ المستخدم: «طبق نفس الموضوع ع خطوط كل الموقع»):
        أي وزن غير محمّل كان المتصفح يصنعه مصطنعاً فيبدو مشوشاً — كايرو اكتمل 400-800 وPlex حتى 700 (أقصاه المتاح) — ملفات variable نفسها بلا زيادة حجم -->
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet">
+  <% var _pCss0 = (typeof currentPath === 'string' ? currentPath : ''); %>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Cinzel+Decorative:wght@700<%= (_pCss0 === '/' || _pCss0 === '/home') ? '&family=Rubik:wght@700;800' : '' %>&display=swap" rel="stylesheet">
   
   <!-- Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -79,8 +81,6 @@
   <link rel="stylesheet" href="/css/design-system.css?v=16">
   <% var _pCss = (typeof currentPath === 'string' ? currentPath : ''); %>
   <% if (_pCss === '/' || _pCss === '/home') { %>
-  <!-- خط Rubik عصري — يُحمَّل بصفحة الرئيسية فقط (بطاقة الدعم بالهيرو السفلي) لا على كل الصفحات -->
-  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/home.css">
   <% } %>
   <link rel="stylesheet" href="/css/page-hero.css">
