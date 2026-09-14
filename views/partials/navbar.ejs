@@ -304,7 +304,16 @@ async function deleteAllNotifications() {
      بنفس المسار) بوضوح موحّد .4 — انشال انفصال الشفافيتين (مستقيم خفيف
      مقابل منطعج ساطع) اللي كان يقرأ قطعتين منفصلتين مفتوحة الأطراف حتى
      قرب الزوايا — المنطعج يبقى واضحاً تحت الكرة بعمقه الهندسي والأنبوبة
-     سالسة بلا فاصل بأي موضع ═══ */
+     سالسة بلا فاصل بأي موضع
+   ⑭ v18 (هادي 1548880484820324404 «ليك راسل الصورة وحرف الامبولة مفتوح؟»):
+     طرفا الخط الحي ظلّا مقصوصين بحافة المستطيل — الخط يطغي على قوس الزاوية
+     وينقطع قطعاً حاداً مكشوف الطرف، وقوسا الزاوية من حدود CSS بنصفهما العلوي
+     باهت لأن حد أعلى شفاف يدهن نصف القوس. الآن الأغطية ماسكة من الطرفين:
+     مسار ساكن يرسم نصف دائرة اليمين كاملة والقاع ونصف دائرة اليسار كاملة
+     (مفتوح من الفتحة العلوية وحدها) والخط الحي المنزلق يُقص على الخط
+     المركزي لحد الكبسولة نفسه (clip-path بنصف قطر الزاوية الفعلي) فينتهي
+     بعين نقطة التماس حيث يبدأ القوس — التحام لصق بلا طغيان ولا قطع مكشوف
+     بأي موضع للكرة حتى أقصى الزاوية ═══ */
 (function () {
   var wrap = document.querySelector('.ds-navlinks');
   if (!wrap || !window.matchMedia('(min-width: 1024px)').matches) return;
@@ -337,28 +346,48 @@ async function deleteAllNotifications() {
   var R = 21;              /* نصف قطر الكرة 42px — الإزاحة ÷ نصف القطر = زاوية التدحرج */
   var RAD = 180 / Math.PI; /* راديان → درجة */
 
-  /* خط الحافة الحيّ — أنبوبة واحدة (v17 بطلب هادي 1548861478076157995
-     «قلت لك خليها مسكرة دائما؟»): كان الخط مسارين — مستقيم بخفة زجاجية
-     ومنطعج بوضوح ساطع — فالتحامهما المختلف الشفافية يقرأ قطعتين منفصلتين
-     مفتوحة الأطراف حتى قرب الزوايا. الآن مسار SVG واحد متصل من أول الشريط
-     لآخره (مستقيم + حفرة + مستقيم بمسار واحد) بوضوح موحّد .4 — «خلي خط
-     المعطوج يوضح تحت الدائرة» (1548840856545656843) محقق بعمق الحفرة
-     الهندسي لا بتغيّر الشفافية، والأنبوبة سالسة بلا أي فاصل بأي موضع.
-     وأكتاف الحفرة تُقاس على مساحة كل جهة (σ = المساحة ÷ 3 بحد أقصى 15)
-     فالمنحنى يكمل دورته ويلتحم بالمستقيم قبل الحافة بأي موضع حتى أقصى
-     السحب. الحفرة تنزلق مع الكرة عبر translateX(var(--wb-x)) بمدة ومنحنى
-     التدحرج نفسها (transition بـ CSS — صفر عمل جافاسكربت لكل حركة، والبناء
-     عند تغيّر العرض أو الأكتاف فقط) */
+  /* جسم الأنبوبة الساكن + خط الحافة الحيّ — v18 بطلب هادي 1548880484820324404
+     «ليك راسل الصورة وحرف الامبولة مفتوح؟»: v17 وحّد المسار لكن طرفيه ظلّا
+     مقصوصين بحافة المستطيل فيطغى الخط على قوس الزاوية وينقطع مكشوف الطرف.
+     الآن أنبوبة ماسكة من الطرفين بأي موضع:
+     ① جسم ساكن بمسار واحد يرسم نصف دائرة اليمين كاملة والقاع ونصف دائرة
+       اليسار كاملة — مفتوح من الفتحة العلوية وحدها، بأطراف قاطعة تلتحم
+       بالخط الحي لصقاً تام بلا مضاعفة ضوء
+     ② الخط الحي (مستقيم + حفرة + مستقيم) ينزلق فوق الجسم ويُقص على الخط
+       المركزي لحد الكبسولة نفسه (clip-path بنصف قطر الزاوية الفعلي) فينتهي
+       بعين نقطة التماس حيث يبدأ القوس — لا طغيان ولا قطع مكشوف
+     ③ الاثنان بنفس اللون والسماك والوضوح (#fff / 1px / .4) = خط واحد متصل
+     الحفرة تنزلق مع الكرة عبر translateX(var(--wb-x)) بمدة ومنحنى التدحرج
+     نفسها (transition بـ CSS — صفر عمل جافاسكربت لكل حركة، والبناء عند
+     تغيّر العرض أو الارتفاع أو الأكتاف فقط) */
   var SVGNS = 'http://www.w3.org/2000/svg';
   var SAG = 13, SIG = 15;
-  var edgeSvg = null, tubePath = null, edgeW = 0, fitL = -1, fitR = -1;
+  var edgeSvg = null, capSvg = null, tubePath = null, capPath = null;
+  var edgeW = 0, edgeH = 0, edgeR = -1, fitL = -1, fitR = -1;
   function buildEdge(cx) {
     var w = wrap.clientWidth;
+    var hbb = wrap.offsetHeight; /* صندوق الكبسولة بالحدود — الأغطية تنسد عليه */
     var sl = Math.min(SIG, Math.max(4, (cx - 6) / 3));     /* كتف اليسار على مساحته */
     var sr = Math.min(SIG, Math.max(4, (w - 6 - cx) / 3)); /* كتف اليمين على مساحته */
-    if (edgeSvg && w === edgeW && sl === fitL && sr === fitR) return;
-    edgeW = w; fitL = sl; fitR = sr;
+    var br = parseFloat(getComputedStyle(wrap).borderTopLeftRadius);
+    if (!isFinite(br) || br <= 0) br = hbb / 2;
+    var reff = Math.max(1, Math.min(br, hbb / 2, (w + 2) / 2)); /* قيمة 999 تستقر على نصف الارتفاع */
+    var rc = reff - 0.5; /* الخط المركزي لحد سماكته 1px */
+    if (edgeSvg && w === edgeW && hbb === edgeH && rc === edgeR && sl === fitL && sr === fitR) return;
+    edgeW = w; edgeH = hbb; edgeR = rc; fitL = sl; fitR = sr;
     if (!edgeSvg) {
+      capSvg = document.createElementNS(SVGNS, 'svg');
+      capPath = document.createElementNS(SVGNS, 'path');
+      capPath.setAttribute('fill', 'none');
+      capPath.setAttribute('stroke', '#fff');
+      capPath.setAttribute('stroke-width', '1');
+      capPath.setAttribute('stroke-linecap', 'butt'); /* طرف القاطعة يلتحم بالخط الحي بلا مضاعفة */
+      capPath.setAttribute('stroke-linejoin', 'round');
+      capPath.setAttribute('opacity', '.4'); /* نفس وضوح الخط الحي — خط واحد متصل */
+      capSvg.appendChild(capPath);
+      capSvg.style.transform = 'none'; /* الجسم ساكن — الانزلاق للخط الحي وحده */
+      edge.appendChild(capSvg);
+
       edgeSvg = document.createElementNS(SVGNS, 'svg');
       tubePath = document.createElementNS(SVGNS, 'path');
       tubePath.setAttribute('fill', 'none');
@@ -370,8 +399,29 @@ async function deleteAllNotifications() {
       edgeSvg.appendChild(tubePath);
       edge.appendChild(edgeSvg);
     }
+    /* جسم الغطاء بإحداثيات صندوق الكبسولة بالحدود: من الطرف العلوي الأيمن
+       حول النصف الأيمن كله ثم القاع ثم النصف الأيسر حتى الطرف العلوي الأيسر —
+       والفتحة العلوية بين الطرفين يسدها الخط الحي المنزلق بأي موضع */
+    capSvg.setAttribute('width', w + 2);
+    capSvg.setAttribute('height', hbb);
+    capSvg.setAttribute('viewBox', '0 0 ' + (w + 2) + ' ' + hbb);
+    var rT = w + 2 - reff, rS = w + 1.5, lT = reff, lS = 0.5;
+    var cd = 'M ' + rT + ' 0.5' +
+      ' A ' + rc + ' ' + rc + ' 0 0 1 ' + rS + ' ' + reff +
+      ' L ' + rS + ' ' + (hbb - reff) +
+      ' A ' + rc + ' ' + rc + ' 0 0 1 ' + rT + ' ' + (hbb - 0.5) +
+      ' L ' + lT + ' ' + (hbb - 0.5) +
+      ' A ' + rc + ' ' + rc + ' 0 0 1 ' + lS + ' ' + (hbb - reff) +
+      ' L ' + lS + ' ' + reff +
+      ' A ' + rc + ' ' + rc + ' 0 0 1 ' + lT + ' 0.5';
+    capPath.setAttribute('d', cd);
+    /* القص على الخط المركزي للحد بالضبط: منتصف سماكة الحد — حيث تعيش أجسام
+       المسارين معاً فينتهي الخط الحي عند نقطة التماس ويبدأ القوس من بعدها */
+    edge.style.clipPath = 'inset(0.5px 0.5px 0.5px 0.5px round ' + rc + 'px)';
+
     /* المسار بضعف عرض الكبسولة والحفرة بمركزه: left=-العرض translateX(--wb-x)
-       يجيء بمركز الحفرة على مركز الكرة بأي موضع — والقص بـ CSS يمنع التمرير */
+       يجيء بمركز الحفرة على مركز الكرة بأي موضع — والقص بـ clip-path العنصر
+       (الخط المركزي للحد) يمنع التمرير وينهي الطرف عند التماس */
     edgeSvg.setAttribute('width', w * 2);
     edgeSvg.setAttribute('height', 20);
     edgeSvg.setAttribute('viewBox', '0 0 ' + (w * 2) + ' 20');
