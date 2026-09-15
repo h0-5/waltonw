@@ -617,18 +617,10 @@ a.ds-card:hover, .ds-card-hover:hover {
     transform: rotate(var(--wb-rot, 0deg));
     transition: transform var(--wb-dur, 340ms) cubic-bezier(.3, 1.18, .4, 1);
   }
-  /* لحظة الارتطام بعد قفزة طويلة: الكرة تنضغط رأسياً ثم ترتد — إحساس الثقل
-     (يطلقها السكربت عند transitionend فقط، والأنميشن نفسه يحفظ الدوران الحالي)
-     — مع رجوع نابض المطّ للدائرة بنفس اللحظة = استقرار المقطع المرجعي */
-  .wb-squish.wb-land::before {
-    transform-origin: 50% 78%;
-    animation: wb-squash .46s cubic-bezier(.34, 1.56, .64, 1) both;
-  }
-  @keyframes wb-squash {
-    0%   { transform: rotate(var(--wb-rot, 0deg)) scale(1.14, .78); }
-    55%  { transform: rotate(var(--wb-rot, 0deg)) scale(.94, 1.08); }
-    100% { transform: rotate(var(--wb-rot, 0deg)) scale(1, 1); }
-  }
+  /* انضغاط الارتطام (‎.wb-land + ‎@keyframes wb-squash) انشال كلياً v21
+     (هادي 1549216054113341561 «في انميشن يخلها تنزل لتحت شوية وتطلع اول
+     ماتفلتها ابغا نشيله») — الإفلات جلوس مباشر بلا هبوط ورجوع، ورجوع المطّ
+     للدائرة بنابضه الأصلي (transition) هو الوحيد الباقي عند الوصول */
 
   /* لوغو الصفحة داخل الكرة — أيقونة الرابط الحامل تعيش بمركز الكرة، تطلع من
      فتحتها بالهدر (من تحت: +24px) وتستقر بالمركز، وعن المغادرة ترجع لفتحتها.
@@ -669,7 +661,6 @@ a.ds-card:hover, .ds-card-hover:hover {
     .wb-bead { transition: opacity .2s ease; }
     .wb-squish { transition: none; }
     .wb-squish::before { transition: none; }
-    .wb-squish.wb-land::before { animation: none; }
     .wb-hold { transition: none; }
     .wb-dent { transition: opacity .2s ease; }
     .wb-edge svg { transition: none; }

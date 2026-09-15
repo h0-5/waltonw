@@ -323,7 +323,13 @@ async function deleteAllNotifications() {
      ومعها «لو سحبتها بمواس وقفتها عن صفحة معينة تنفتح صفحة ذي ويطلع لوغو
      صفحة للدائرة بشكل سلس مدري ليه انشالو» — رجّعنا فتح الصفحة بالإفلات
      اللي انشال بـ v17: لوغو الصفحة يطلع لمركز الكرة بالسلسلة الأصلية وبعد
-     ما يستقر (360ms) ينتقل لها — والانتقال يُلغى بأي مسك أو ضغطة جديدة ═══ */
+     ما يستقر (360ms) ينتقل لها — والانتقال يُلغى بأي مسك أو ضغطة جديدة
+   ⑯ v21 (هادي 1549216054113341561 «في انميشن يخلها تنزل لتحت شوية وتطلع
+     اول ماتفلتها ابغا نشيله»): انضغاط الارتطام انشال كلياً — كلاس wb-land
+     ومشغلاته الثلاثة بالسكربت (انضغاط الجلوس عند الإفلات على صفحة + إعادة
+     تشغيله عند transitionend للقفزات الطويلة) ومفتاح الإطارة wb-squash بالـCSS
+     — الإفلات الآن جلوس مباشر على مكان الوقوف بلا أي هبوط ورجوع، وكل ما عداه
+     باقٍ حرفياً: التدحرج الفيزيائي والمطّ الجيلي وفتح الصفحة بعد الاستقرار ═══ */
 (function () {
   var wrap = document.querySelector('.ds-navlinks');
   if (!wrap || !window.matchMedia('(min-width: 1024px)').matches) return;
@@ -515,7 +521,7 @@ async function deleteAllNotifications() {
      «طابة تنزل لما اجي اغير بين صفحات الغي ذا شي»): الضغطة صارت أفقية حصراً،
      لا هبوط كرة ولا كبسولة ولا انضغاط ارتطام عند تغيير الصفحة — والضغطة
      على جسم الكرة نفسه يبقى للسحب باليد (المسك من مستند كامل تحت) ═══ */
-  var pressedLink = null, clickRoll = false;
+  var pressedLink = null;
   wrap.addEventListener('pointerdown', function (e) {
     if (drag || (e.button !== undefined && e.button !== 0)) return;
     if (dropNav) { clearTimeout(dropNav); dropNav = null; } /* v19: ضغطة جديدة تشال الانتقال المعلّق */
@@ -529,8 +535,6 @@ async function deleteAllNotifications() {
     pressedLink = a;
     curLink = a;
     parkedLink = a;
-    clickRoll = true; /* تغيير صفحة بالضغط = أفقي حصراً — لا انضغاط ارتطام */
-    squish.classList.remove('wb-land'); /* أوقف انضغاط الارتطام السابق إن كان يجري */
     goTo(a);
     e.preventDefault(); /* لا تحديد نص ولا سحب رابط أثناء الضغطة */
   });
@@ -550,8 +554,9 @@ async function deleteAllNotifications() {
     pressedLink = null;
   });
 
-  /* هبوط الكرة: السطح يرتد لاستقامته، والمطّ يرتد للدائرة، والقفزة الطويلة
-     تنضغط لحظة ثم ترتد — الثلاثة معاً = استقرار المقطع المرجعي */
+  /* هبوط الكرة: السطح يرتد لاستقامته والمطّ يرجع للدائرة بنابضه — وانضغاط
+     الارتطام (تنضغط لحظة ثم ترتد فتقرأ هبوطاً ثم طلوع) انشاله v21
+     (1549216054113341561) حسب طلبه الحرفي — الإفلات جلوس مباشر */
   bead.addEventListener('transitionend', function (e) {
     if (e.target !== bead || e.propertyName !== 'transform') return;
     wrap.classList.remove('wb-lean-l', 'wb-lean-r');
@@ -560,13 +565,7 @@ async function deleteAllNotifications() {
     /* رجوع المطّ للدائرة بنابض 240ms — لحظة وصول الكرة بالضبط مثل المقطع */
     squish.style.setProperty('--wb-sx', '1');
     squish.style.setProperty('--wb-sy', '1');
-    if (lastDist < 40 || clickRoll) return; /* تغيير صفحة بالضغط — بلا انضغاط نزول (v15) */
-    squish.classList.remove('wb-land');
-    void squish.offsetWidth; /* إعادة تشغيل الأنميشن حتى لو تكرر الارتطام بنفس الموضع */
-    squish.classList.add('wb-land');
   });
-  /* بعد انتهاء الانضغاط تُرفع الكلاس ليعود التحكم بالدوران للانتقال (transition) لا للأنميشن */
-  squish.addEventListener('animationend', function () { squish.classList.remove('wb-land'); });
 
   /* ═══ حوز لوغو الصفحة + السحب باليد — وصف هادي للمقطع (1548733132562370772):
      «يسحب الدائرة بالماوس ويوقفها على صفحة» — بالمسح الكرة فاضية تتبع اليد،
@@ -652,7 +651,6 @@ async function deleteAllNotifications() {
       var mx = e.clientX - drag.sx, my = e.clientY - drag.sy;
       if (mx * mx + my * my < 36) return; /* تحت 6px = ضغطة بلا سحب */
       drag.moved = true;
-      clickRoll = false; /* سحب يدوي — انضغاط الارتطام يرجع عند الإفلات على صفحة */
       swapCarry(null); /* باليد الكرة فاضية — أيقونة المقر رجعت لفتحتها */
       pendingCarry = null;
       wrap.classList.add('wb-dragging'); /* ملصوقة باليد: بلا transition */
@@ -701,15 +699,11 @@ async function deleteAllNotifications() {
          بفيزياء التدحرج نفسها، ولوغو الصفحة يطلع من فتحته لمركز الكرة
          بالسلسلة الأصلية (swapCarry)، وحين يستقر ينتقل للصفحة — نبضة انتقال
          وحيدة 360ms تُشال بأي مسك جديد أو ضغطة قبلها فما ينقلب الفتح فجأة */
-      clickRoll = false; /* سحب يدوي — انضغاط الجلوس موجود هنا */
       curLink = over;
       parkedLink = over;
       over.classList.add('wb-under');
       wrap.classList.add('wb-press');
-      goTo(over); /* تثبيت بمركز الصفحة بنفس فيزياء التدحرج والنابض */
-      squish.classList.remove('wb-land'); /* انضغاط الجلوس في الودّ */
-      void squish.offsetWidth;
-      squish.classList.add('wb-land');
+      goTo(over); /* تثبيت بمركز الصفحة بنفس فيزياء التدحرج — جلوس مباشر بلا انضغاط ارتطام (v21) */
       swapCarry(over); /* لوغو الصفحة يطلع لمركز الكرة — نفس حركة الضغطة الحقيقية */
       var dest = over.getAttribute('href') || '/';
       if (new URL(dest, location.href).pathname !== location.pathname) {
