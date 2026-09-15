@@ -347,8 +347,8 @@
 </div>
 
 <script>
-var svcQData = <%- JSON.stringify(servicesQuestions).replace(/</g,'\\u003c') %>;
-var svcPkgData = <%- JSON.stringify(servicesPackages).replace(/</g,'\\u003c') %>;
+var svcQData = <%- JSON.stringify(servicesQuestions).replace(/</g, '\\u003c') %>;
+var svcPkgData = <%- JSON.stringify(servicesPackages).replace(/</g, '\\u003c') %>;
 
 function showTab(tab) { /* الأقسام صارت ظاهرة كلها بدون تابات */ }
 /* تهريب HTML — أي نص من المستخدم ما يدخل كـ HTML (حماية من إدخال أكواد) */
@@ -455,7 +455,7 @@ async function submitServiceRequest(e) {
 <% if (farmState && user) { %>
 <script>
 /* ═══ نظام استئجار المزارع ═══ */
-var farmState = <%- JSON.stringify(farmState).replace(/</g,'\\u003c') %>;
+var farmState = <%- JSON.stringify(farmState).replace(/</g, '\\u003c') %>;
 var farmSelDur = null, farmExtBid = null, farmExtDur = null;
 var farmSelFarm = null, farmSelStart = null; /* بداية الحجز المحددة: مزرعة + تاريخ (فارغ = الآن) */
 

@@ -304,7 +304,7 @@
 </div>
 
 <script>
-const PERMISSION_GROUPS = <%- JSON.stringify(PERMISSION_GROUPS || {}).replace(/</g,'\\u003c') %>;
+const PERMISSION_GROUPS = <%- JSON.stringify(PERMISSION_GROUPS || {}).replace(/</g, '\\u003c') %>;
 const ALL_PAGES = [
   { path: '/', name: 'الرئيسية', icon: 'fa-home', category: 'site', desc: 'صفحة الدخول' },
   { path: '/about', name: 'من نحن', icon: 'fa-users', category: 'site', desc: 'معلومات عن العائلة' },
@@ -343,12 +343,12 @@ const ALL_PAGES = [
   { path: '/admin/broadcast', name: 'البث', icon: 'fa-bullhorn', category: 'admin', desc: 'نظام البث' },
   { path: '/admin/logs', name: 'السجلات', icon: 'fa-list', category: 'admin', desc: 'سجلات الإدارة' }
 ];
-let roles = <%- JSON.stringify(roles || []).replace(/</g,'\\u003c') %>;
-let unifiedPerms = <%- JSON.stringify(unifiedPerms || {}).replace(/</g,'\\u003c') %>;
-let sideRoles = <%- JSON.stringify(sideRoles || []).replace(/</g,'\\u003c') %>;
-let sideRolePermsData = <%- JSON.stringify(sideRolePerms || {}).replace(/</g,'\\u003c') %>;
-let sideRolePageAccessData = <%- JSON.stringify(sideRolePageAccess || {}).replace(/</g,'\\u003c') %>;
-let pageAccess = <%- JSON.stringify(pageAccess || {}).replace(/</g,'\\u003c') %>;
+let roles = <%- JSON.stringify(roles || []).replace(/</g, '\\u003c') %>;
+let unifiedPerms = <%- JSON.stringify(unifiedPerms || {}).replace(/</g, '\\u003c') %>;
+let sideRoles = <%- JSON.stringify(sideRoles || []).replace(/</g, '\\u003c') %>;
+let sideRolePermsData = <%- JSON.stringify(sideRolePerms || {}).replace(/</g, '\\u003c') %>;
+let sideRolePageAccessData = <%- JSON.stringify(sideRolePageAccess || {}).replace(/</g, '\\u003c') %>;
+let pageAccess = <%- JSON.stringify(pageAccess || {}).replace(/</g, '\\u003c') %>;
 let selectedRoleId = roles.length ? roles[0].id : null;
 let permState = {};
 let hasUnsavedChanges = false;

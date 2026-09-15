@@ -6,6 +6,7 @@
  */
 
 const express = require('express');
+const { strictLimiter } = require('../../middleware/rateLimiter');
 const router = express.Router();
 const db = require('../../config/database');
 const path = require('path');
@@ -36,8 +37,8 @@ async function getBlacklistHit(discordId, userId, username, categoryId) {
   return rows.length ? rows[0] : null;
 }
 
-// Submit support ticket
-router.post('/submit', async (req, res) => {
+// Submit support ticket — strictLimiter (v21 audit 1549242103588986951): 5 طلبات/دقيقة ضد سبام النماذج فوق الدرع العام
+router.post('/submit', strictLimiter, async (req, res) => {
   if (!req.user) return res.status(401).json({ error: 'سجل دخول أولاً' });
 
   const { category_id, message } = req.body;

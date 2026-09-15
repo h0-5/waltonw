@@ -15,7 +15,9 @@ module.exports = {
   /* جرس أخطاء الخادم — رابط هادي المباشر (حطه بملف مباشر بطلبه 1548700388948054030):
      كل 500/انهيار/فشل هجرة يوصل هالقناة فوراً بالسبب الحقيقي. لو انحفظ رابط من لوحة
      الإدارة (site_settings) صار هو المفعّل، ولو انمسح رجع لهذا الرابط تلقائياً */
-  WH_SERVER_ERRORS: process.env.WH_SERVER_ERRORS || 'https://discord.com/api/webhooks/1506766918550552587/lRKvZUcJezvjZW4p21GfMevCUxYplb2OVuz1B6M1R6DFketOLFWIWoxofh7C5XPxhNCV',
+  /* v21 audit (1549242103588986951): كان رابط ويبهوك حقيقاً مكتوباً هنا (تسرب بسجل git) —
+     القراءة من البيئة حصراً + لا بد من حذف/تجديد الويبهوك من ديسكورد لأن القديم مكشوف */
+  WH_SERVER_ERRORS: process.env.WH_SERVER_ERRORS || '',
   WH_ROLE_CHANGE: process.env.WH_ROLE_CHANGE || '',
   WH_STAFF_PERMS: process.env.WH_STAFF_PERMS || '',
   WH_COMMUNITY: process.env.WH_COMMUNITY || '',

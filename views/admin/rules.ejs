@@ -402,9 +402,9 @@ async function deleteRule(id) {
   if (r.success) { showToast('تم الحذف'); location.reload(); } else alert(r.error || 'خطأ');
 }
 
-var allRules = <%- JSON.stringify(rules).replace(/</g,'\\u003c') %>;
-var allCats = <%- JSON.stringify(categories).replace(/</g,'\\u003c') %>;
-var allStages = <%- JSON.stringify(stages).replace(/</g,'\\u003c') %>;
+var allRules = <%- JSON.stringify(rules).replace(/</g, '\\u003c') %>;
+var allCats = <%- JSON.stringify(categories).replace(/</g, '\\u003c') %>;
+var allStages = <%- JSON.stringify(stages).replace(/</g, '\\u003c') %>;
 
 // ═══ مراحل العقوبات — مستقلة تماماً عن إدارة القوانين والأقسام ═══
 function toggleNewStageForm() {

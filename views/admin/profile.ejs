@@ -276,7 +276,7 @@
 <script src="/js/profile.js"></script>
 <script>
 // Activity Chart
-var chartData = <%- JSON.stringify(chartData).replace(/</g,'\\u003c') %>;
+var chartData = <%- JSON.stringify(chartData).replace(/</g, '\\u003c') %>;
 var ctx = document.getElementById('activityChart');
 if (ctx) {
   new Chart(ctx, {

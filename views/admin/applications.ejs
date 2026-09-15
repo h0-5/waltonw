@@ -104,8 +104,8 @@
 </div>
 
 <script>
-let allApps = <%- JSON.stringify(applications).replace(/</g,'\\u003c') %>;
-let allQuestions = <%- JSON.stringify(questionsMap).replace(/</g,'\\u003c') %>;
+let allApps = <%- JSON.stringify(applications).replace(/</g, '\\u003c') %>;
+let allQuestions = <%- JSON.stringify(questionsMap).replace(/</g, '\\u003c') %>;
 let typeNames = {};
 <% types.forEach(function(t) { %>
 typeNames['<%= t.application_type %>'] = '<%= (t.title || t.application_type).replace(/'/g, "\\'") %>';

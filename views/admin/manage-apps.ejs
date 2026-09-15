@@ -262,7 +262,7 @@ function showTypeForm(editData) {
 }
 
 async function editType(id) {
-  const types = <%- JSON.stringify(types).replace(/</g,'\\u003c') %>;
+  const types = <%- JSON.stringify(types).replace(/</g, '\\u003c') %>;
   const t = types.find(x => x.id === id);
   if (t) showTypeForm(t);
 }

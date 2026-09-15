@@ -4,12 +4,13 @@ const path = require('path');
 const fs = require('fs');
 const db = require('../../config/database');
 const { isAuthenticated } = require('../../middleware/auth');
+const { strictLimiter } = require('../../middleware/rateLimiter');
 const { sendWebhook } = require('../../utils/webhooks');
 
 const UPLOAD_DIR = path.join(__dirname, '../../public/uploads/applications');
 const EXT_MAP = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/gif': '.gif', 'image/webp': '.webp' };
 
-router.post('/submit', isAuthenticated, async (req, res) => {
+router.post('/submit', strictLimiter, isAuthenticated, async (req, res) => {
   try {
     const user = req.user;
     if (!user || !user.discord_id) {
